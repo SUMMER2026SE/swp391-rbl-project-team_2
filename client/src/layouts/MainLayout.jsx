@@ -1,30 +1,44 @@
 import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
-import { Home, Search, Heart, User, Menu } from 'lucide-react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Search, Heart, User, Menu } from 'lucide-react';
 import { ROUTES } from '../constants';
 import './MainLayout.css';
 
 const MainLayout = () => {
+  const location = useLocation();
+  const isAuthenticated = false; // Mock state, ideally from useAuthStore
+
   return (
     <div className="main-layout">
       {/* Header */}
       <header className="header">
         <div className="container header-content">
-          <Link to={ROUTES.HOME} className="logo">
-            <Home className="logo-icon" />
-            <span className="logo-text">SmartBoard AI</span>
-          </Link>
-          
-          <div className="search-bar">
-            <Search className="search-icon" size={18} />
-            <input type="text" placeholder="Tìm kiếm phòng trọ, khu vực..." />
+          <div className="header-left">
+            <Link to={ROUTES.HOME} className="logo">
+              SmartBoard
+            </Link>
+            <div className="quick-search">
+              <Search className="quick-search-icon" size={16} />
+              <input type="text" placeholder="Quick search..." />
+            </div>
           </div>
-
-          <nav className="nav-actions">
-            <button className="icon-btn" title="Yêu thích"><Heart size={20} /></button>
-            <Link to={ROUTES.LOGIN} className="btn btn-primary">Đăng nhập</Link>
-            <button className="icon-btn mobile-menu"><Menu size={24} /></button>
+          
+          <nav className="header-tabs">
+            <Link to={ROUTES.ROOMS} className={`tab-link ${location.pathname === ROUTES.ROOMS ? 'active' : ''}`}>Explore</Link>
+            <Link to={ROUTES.TENANT.FAVORITES} className={`tab-link ${location.pathname === ROUTES.TENANT.FAVORITES ? 'active' : ''}`}>Favorites</Link>
+            <Link to="#" className="tab-link">Requests</Link>
           </nav>
+
+          <div className="header-right">
+            {isAuthenticated ? (
+              <button className="user-profile-btn">
+                <User size={20} />
+              </button>
+            ) : (
+              <Link to={ROUTES.LOGIN} className="sign-in-btn">Sign In</Link>
+            )}
+            <button className="icon-btn mobile-menu"><Menu size={24} /></button>
+          </div>
         </div>
       </header>
 
@@ -38,18 +52,18 @@ const MainLayout = () => {
         <div className="container footer-content">
           <div className="footer-brand">
             <h3>SmartBoard AI</h3>
-            <p>Nền tảng tìm kiếm và quản lý phòng trọ thông minh.</p>
+            <p>Modern housing for modern people.</p>
           </div>
           <div className="footer-links">
             <div>
-              <h4>Về chúng tôi</h4>
-              <Link to="#">Giới thiệu</Link>
-              <Link to="#">Quy chế hoạt động</Link>
+              <h4>About Us</h4>
+              <Link to="#">Company</Link>
+              <Link to="#">Terms of Service</Link>
             </div>
             <div>
-              <h4>Hỗ trợ</h4>
-              <Link to="#">Hướng dẫn sử dụng</Link>
-              <Link to="#">Liên hệ</Link>
+              <h4>Support</h4>
+              <Link to="#">Help Center</Link>
+              <Link to="#">Contact</Link>
             </div>
           </div>
         </div>

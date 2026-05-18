@@ -10,6 +10,7 @@ import AuthLayout from '../layouts/AuthLayout';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../features/auth/pages/LoginPage';
 import RegisterPage from '../features/auth/pages/RegisterPage';
+import SearchPage from '../features/tenant/pages/SearchPage';
 
 // Placeholder Pages (Will be created later)
 const NotFoundPage = () => <div style={{ padding: '2rem', textAlign: 'center' }}><h1>404</h1><p>Page Not Found</p></div>;
@@ -20,7 +21,7 @@ const AppRoutes = () => {
       {/* Public / Tenant Routes */}
       <Route element={<MainLayout />}>
         <Route path={ROUTES.HOME} element={<HomePage />} />
-        {/* Placeholder for Room list, details etc */}
+        <Route path={ROUTES.ROOMS} element={<SearchPage />} />
       </Route>
 
       {/* Auth Routes */}
