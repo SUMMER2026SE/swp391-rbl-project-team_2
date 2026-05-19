@@ -11,7 +11,10 @@ import AdminLayout from '../layouts/AdminLayout';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../features/auth/pages/LoginPage';
 import RegisterPage from '../features/auth/pages/RegisterPage';
-import { RentalRequestManagementPage } from '../features/rental';
+import SearchPage from '../features/tenant/pages/SearchPage';
+import FavoritesPage from '../features/tenant/pages/FavoritesPage';
+import DepositPaymentPage from '../features/tenant/pages/DepositPaymentPage';
+import RentalRequestManagementPage from '../features/rental';
 
 // Placeholder Pages (Will be created later)
 const NotFoundPage = () => <div style={{ padding: '2rem', textAlign: 'center' }}><h1>404</h1><p>Page Not Found</p></div>;
@@ -22,7 +25,8 @@ const AppRoutes = () => {
       {/* Public / Tenant Routes */}
       <Route element={<MainLayout />}>
         <Route path={ROUTES.HOME} element={<HomePage />} />
-        {/* Placeholder for Room list, details etc */}
+        <Route path={ROUTES.ROOMS} element={<SearchPage />} />
+        <Route path={ROUTES.TENANT.FAVORITES} element={<FavoritesPage />} />
       </Route>
 
       {/* Auth Routes */}
@@ -30,13 +34,15 @@ const AppRoutes = () => {
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       </Route>
 
-      {/* Standalone Split Layouts */}
-      <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-
-      {/* Landlord Admin Routes */}
+      {/* Admin / Landlord Routes */}
       <Route element={<AdminLayout />}>
+        <Route path={ROUTES.LANDLORD.DASHBOARD} element={<div>Admin Dashboard Placeholder</div>} />
         <Route path={ROUTES.LANDLORD.REQUESTS} element={<RentalRequestManagementPage />} />
       </Route>
+
+      {/* Standalone Split & Minimal Layouts */}
+      <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+      <Route path={ROUTES.TENANT.PAYMENT} element={<DepositPaymentPage />} />
 
       {/* Fallback */}
       <Route path="*" element={<NotFoundPage />} />

@@ -28,7 +28,8 @@
   width: 40px;
   height: 40px;
   border-radius: 9999px;
-  background-color: #CBD5E1; /* Placeholder color */
+  background-color: #CBD5E1;
+  /* Placeholder color */
   flex-shrink: 0;
 }
 
@@ -147,9 +148,6 @@
   background-color: #F1F5F9;
 }
 
-.btn-signout {
-  /* Inherits from .footer-nav-item */
-}
 
 .admin-main {
   flex: 1;

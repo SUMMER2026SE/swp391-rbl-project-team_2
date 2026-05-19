@@ -1,0 +1,200 @@
+.register-split-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-main);
+}
+
+/* Left Column */
+.register-image-section {
+  display: none;
+  flex: 1;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+@media (min-width: 900px) {
+  .register-image-section {
+    display: block;
+  }
+}
+
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,0.85) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 4rem;
+}
+
+.overlay-content {
+  color: white;
+  max-width: 450px;
+}
+
+.overlay-logo {
+  margin-bottom: 1.5rem;
+}
+
+.overlay-content h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+}
+
+.overlay-content p {
+  font-size: 1rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+/* Right Column */
+.register-form-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: #FAFAFA; /* Matches the very light background in Figma */
+}
+
+.register-form-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+.register-header {
+  margin-bottom: 2rem;
+}
+
+.register-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.register-header p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.role-selector {
+  margin-bottom: 1.5rem;
+}
+
+.role-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.75rem;
+}
+
+.role-tabs {
+  display: flex;
+  gap: 1rem;
+}
+
+.role-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.role-text {
+  font-size: 0.875rem;
+}
+
+.role-tab.active {
+  background-color: #EBF3FF; /* Light blue tint matching Figma */
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.role-tab:hover:not(.active) {
+  border-color: #cbd5e1;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.terms-checkbox {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.terms-checkbox label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.terms-checkbox input[type="checkbox"] {
+  margin-top: 0.15rem;
+  width: 1rem;
+  height: 1rem;
+  min-width: 1rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+}
+
+.terms-checkbox a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.terms-checkbox a:hover {
+  text-decoration: underline;
+}
+
+.btn-create-account {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem;
+  font-size: 0.875rem;
+  border-radius: 8px;
+}
+
+.register-footer {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+.register-footer a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 0.25rem;
+}
+
+.register-footer a:hover {
+  text-decoration: underline;
+}

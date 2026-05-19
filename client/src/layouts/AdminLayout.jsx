@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, 
+  Wallet,
   Building, 
   Inbox, 
   BarChart2, 
@@ -16,6 +17,7 @@ import './AdminLayout.css';
 const AdminLayout = () => {
   const navItems = [
     { name: 'Dashboard', path: ROUTES.LANDLORD.DASHBOARD, icon: <LayoutDashboard size={18} /> },
+    { name: 'Deposits', path: ROUTES.LANDLORD.DEPOSITS || '/admin/deposits', icon: <Wallet size={18} /> },
     { name: 'Listings', path: ROUTES.LANDLORD.LISTINGS, icon: <Building size={18} /> },
     { name: 'Requests', path: ROUTES.LANDLORD.REQUESTS, icon: <Inbox size={18} /> },
     { name: 'Analytics', path: '/admin/analytics', icon: <BarChart2 size={18} /> },
