@@ -4,6 +4,22 @@
   min-height: 100vh;
 }
 
+.main-layout.chat-layout-mode {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-layout.chat-layout-mode .container {
+  max-width: 100%;
+}
+
 .main-content {
   flex: 1;
 }
+
+.main-layout.chat-layout-mode .main-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+

@@ -7,18 +7,25 @@ const RoomCard = ({ room, variant = 'standard' }) => {
   const { title, price, rating, location, distance, tags = [], imageTags = [], specs = [], isFavorite, image } = room;
 
   return (
-    <div className={clsx("room-card", variant === 'favorite' && "room-card-favorite")}>
+    <div className={clsx("room-card", `room-card-${variant}`)}>
       <div className="room-card-image-wrapper">
         <img src={image} alt={title} className="room-card-image" />
         
-        {/* Floating tags on the image (For Favorite variant) */}
-        {variant === 'favorite' && imageTags.length > 0 && (
+        {/* Floating tags on the image (For Favorite/Chat variant) */}
+        {(variant === 'favorite' || variant === 'chat') && imageTags.length > 0 && (
           <div className="room-card-image-tags">
             {imageTags.map((tag, idx) => (
               <span key={idx} className={clsx("image-tag", tag.type === 'primary' ? 'primary-tag' : 'secondary-tag')}>
                 {tag.text}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Floating price for chat variant */}
+        {variant === 'chat' && (
+          <div className="chat-floating-price">
+            ${price.toLocaleString()}/mo
           </div>
         )}
 
@@ -53,7 +60,7 @@ const RoomCard = ({ room, variant = 'standard' }) => {
               ))}
             </div>
           </>
-        ) : (
+        ) : variant === 'favorite' ? (
           // FAVORITE LAYOUT
           <>
             <div className="room-card-header favorite-header">
@@ -78,6 +85,31 @@ const RoomCard = ({ room, variant = 'standard' }) => {
                   <span>{spec.text}</span>
                 </div>
               ))}
+            </div>
+          </>
+        ) : (
+          // CHAT LAYOUT
+          <>
+            <div className="room-card-header chat-header">
+              <h3 className="room-card-title">{title}</h3>
+            </div>
+            <div className="room-card-location">
+              <MapPin size={14} />
+              <span>{location}</span>
+            </div>
+            
+            <hr className="room-card-divider" />
+            
+            <div className="chat-card-footer">
+              <div className="room-card-specs">
+                {specs.map((spec, index) => (
+                  <React.Fragment key={index}>
+                    <span className="spec-text-only">{spec.text}</span>
+                    {index < specs.length - 1 && <span className="spec-dot">•</span>}
+                  </React.Fragment>
+                ))}
+              </div>
+              <a href={`/rooms/${room.id}`} className="view-details-link">View Details</a>
             </div>
           </>
         )}

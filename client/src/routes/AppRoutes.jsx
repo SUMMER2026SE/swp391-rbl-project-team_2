@@ -9,11 +9,12 @@ import AdminLayout from '../layouts/AdminLayout';
 
 // Features (using unified exports)
 import { LoginPage, RegisterPage } from '../features/auth';
-import { SearchPage, FavoritesPage, DepositPaymentPage } from '../features/tenant';
+import { SearchPage, FavoritesPage, DepositPaymentPage, AIChatPage } from '../features/tenant';
 
 // Pages
 import HomePage from '../pages/HomePage';
 import HelpCenterPage from '../pages/HelpCenterPage';
+
 
 // Placeholder Pages (Will be created later)
 const NotFoundPage = () => (
@@ -31,6 +32,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.HOME} element={<HomePage />} />
         <Route path={ROUTES.ROOMS} element={<SearchPage />} />
         <Route path={ROUTES.TENANT.FAVORITES} element={<FavoritesPage />} />
+        <Route path={ROUTES.TENANT.CHAT} element={<AIChatPage />} />
       </Route>
 
       {/* Auth Routes */}

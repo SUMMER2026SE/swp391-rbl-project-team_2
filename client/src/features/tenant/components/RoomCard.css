@@ -200,3 +200,62 @@
   color: var(--text-muted);
   font-weight: 500;
 }
+
+/* Chat Variant Styles */
+.room-card-chat .room-card-title {
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.room-card-chat .room-card-location {
+  margin-bottom: 0;
+}
+
+.chat-floating-price {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background-color: white;
+  color: var(--text-main);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.chat-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-card-footer .room-card-specs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0;
+}
+
+.spec-text-only {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.spec-dot {
+  font-size: 0.75rem;
+  color: var(--border-light);
+  margin: 0 0.25rem;
+}
+
+.view-details-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #007BFF;
+  text-decoration: none;
+}
+
+.view-details-link:hover {
+  text-decoration: underline;
+}

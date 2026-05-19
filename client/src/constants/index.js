@@ -10,6 +10,7 @@ export const ROUTES = {
     DEPOSIT_HISTORY: '/history',
     MAINTENANCE: '/maintenance',
     PAYMENT: '/payment',
+    CHAT: '/chat',
   },
   LANDLORD: {
     DASHBOARD: '/admin',
