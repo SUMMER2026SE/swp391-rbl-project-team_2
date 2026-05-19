@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Search, Heart, User, Menu } from 'lucide-react';
+import { Search, Heart, User, Menu, Grid } from 'lucide-react';
 import { ROUTES } from '../constants';
 import './MainLayout.css';
 
@@ -30,13 +30,10 @@ const MainLayout = () => {
           </nav>
 
           <div className="header-right">
-            {isAuthenticated ? (
-              <button className="user-profile-btn">
-                <User size={20} />
-              </button>
-            ) : (
-              <Link to={ROUTES.LOGIN} className="sign-in-btn">Sign In</Link>
-            )}
+            <Link to={ROUTES.LOGIN} className="sign-in-btn">Sign In</Link>
+            <div className="header-avatar">
+              <img src="https://i.pravatar.cc/150?img=11" alt="Avatar" />
+            </div>
             <button className="icon-btn mobile-menu"><Menu size={24} /></button>
           </div>
         </div>
@@ -48,27 +45,18 @@ const MainLayout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="footer">
-        <div className="container footer-content">
-          <div className="footer-brand">
-            <h3>SmartBoard AI</h3>
-            <p>Modern housing for modern people.</p>
+      <footer className="footer-minimal">
+        <div className="container footer-minimal-content">
+          <div className="footer-left">
+            &copy; 2024 SmartBoard AI. Modern housing for modern people.
           </div>
-          <div className="footer-links">
-            <div>
-              <h4>About Us</h4>
-              <Link to="#">Company</Link>
-              <Link to="#">Terms of Service</Link>
-            </div>
-            <div>
-              <h4>Support</h4>
-              <Link to="#">Help Center</Link>
-              <Link to="#">Contact</Link>
-            </div>
+          <div className="footer-right">
+            <Link to="#">Terms</Link>
+            <Link to="#">Privacy</Link>
+            <Link>Support</Link>
+            <span>English</span>
+            <button className="grid-icon-btn"><Grid size={20} /></button>
           </div>
-        </div>
-        <div className="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} SmartBoard AI. All rights reserved.</p>
         </div>
       </footer>
     </div>
