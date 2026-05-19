@@ -1,0 +1,249 @@
+.tenant-notifications-container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+/* Page Header */
+.notifications-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+}
+
+.notifications-main-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.notifications-main-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-top: 0.4rem;
+  font-weight: 500;
+}
+
+.mark-all-read-link {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #2563eb;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+  margin-bottom: 0.2rem;
+}
+
+.mark-all-read-link:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+/* Category Filter Pills */
+.notifications-filter-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.filter-pill-btn {
+  border: none;
+  outline: none;
+  background-color: #e2e8f0;
+  color: #475569;
+  border-radius: 9999px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-pill-btn:hover {
+  background-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.filter-pill-btn.active {
+  background-color: #2563eb;
+  color: white;
+}
+
+/* List Wrapper Card */
+.notifications-wrapper-card {
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+
+.notifications-list-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-row-item {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.notification-row-item.unread {
+  background-color: #eff6ff; /* Soft blue highlight for unread items */
+}
+
+.notification-row-item.read {
+  background-color: white;
+}
+
+.notification-row-item:hover {
+  background-color: #f8fafc;
+}
+
+.notification-row-item.unread:hover {
+  background-color: #e0f2fe;
+}
+
+/* Border Separator */
+.notification-row-item.with-top-border {
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Icon column styling */
+.notification-icon-col {
+  flex-shrink: 0;
+  margin-right: 1.25rem;
+}
+
+.notification-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Icon category coloring rules */
+.notification-icon-circle.blue {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.notification-icon-circle.gold {
+  background-color: #b45309; /* Yellowish-gold/brown from screenshot */
+  color: white;
+}
+
+.notification-icon-circle.grey {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+/* Title and description text column */
+.notification-content-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-row-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+}
+
+.notification-row-desc {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
+/* Meta Data (time & unread badge dot) */
+.notification-meta-col {
+  flex-shrink: 0;
+  margin-left: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.notification-row-time {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.notification-row-time.highlight-blue {
+  color: #2563eb;
+}
+
+.notification-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #2563eb;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Empty State styling */
+.notifications-empty-state {
+  text-align: center;
+  padding: 4.5rem 2rem;
+  color: #64748b;
+}
+
+.empty-state-sparkles {
+  color: #94a3b8;
+  margin-bottom: 1.25rem;
+  animation: floatEffect 3s ease-in-out infinite;
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-desc {
+  font-size: 0.9rem;
+  color: #64748b;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+@keyframes floatEffect {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (max-width: 600px) {
+  .notification-row-item {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.25rem;
+  }
+
+  .notification-icon-col {
+    margin-bottom: 0.75rem;
+  }
+
+  .notification-meta-col {
+    margin-left: 0;
+    margin-top: 0.75rem;
+    width: 100%;
+    justify-content: space-between;
+  }
+}
