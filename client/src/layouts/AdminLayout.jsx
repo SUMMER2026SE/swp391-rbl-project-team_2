@@ -1,7 +1,8 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
-import { Bell, Mail, MessageSquare, Search, ChevronDown } from 'lucide-react';
+import { Outlet, Link } from 'react-router-dom';
+import { Bell, Mail, MessageSquare, Search } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
+import { ROUTES } from '../constants';
 import './AdminLayout.css';
 
 const AdminLayout = () => {
@@ -17,34 +18,33 @@ const AdminLayout = () => {
         <header className="admin-topbar">
           <div className="topbar-search">
             <Search size={18} className="search-icon" />
-            <input type="text" placeholder="Search" />
+            <input type="text" placeholder="Search..." />
           </div>
 
           <div className="topbar-actions">
-            {/* Header Icons */}
-            <button className="topbar-icon-btn">
+            {/* Support Text link */}
+            <Link to={ROUTES.LANDLORD.HELP} className="btn-support">Support</Link>
+            
+            {/* Filled Blue Quick Action button */}
+            <button className="btn-quick-action-solid">
+              Quick Action
+            </button>
+
+            {/* Notification Bell wrapped in a link to Notifications page */}
+            <Link to={ROUTES.LANDLORD.NOTIFICATIONS} className="topbar-icon-btn">
               <Bell size={20} />
               <span className="badge-dot"></span>
-            </button>
+            </Link>
+
+            {/* Email Icon */}
             <button className="topbar-icon-btn">
               <Mail size={20} />
             </button>
+
+            {/* Chat Icon */}
             <button className="topbar-icon-btn">
               <MessageSquare size={20} />
             </button>
-
-            <div className="divider-vertical"></div>
-
-            <button className="btn-support">Support</button>
-            
-            <button className="btn-quick-action">
-              <span>Quick Action</span>
-              <ChevronDown size={14} />
-            </button>
-
-            <div className="user-avatar-container">
-              <img src="https://i.pravatar.cc/150?img=11" alt="Admin Avatar" className="admin-avatar-img" />
-            </div>
           </div>
         </header>
 

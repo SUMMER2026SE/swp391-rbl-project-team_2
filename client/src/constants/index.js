@@ -21,8 +21,10 @@ export const ROUTES = {
     ANALYTICS: '/admin/analytics',
     SETTINGS: '/admin/settings',
     HELP: '/admin/help',
+    NOTIFICATIONS: '/admin/notifications',
   }
 };
+
 
 export const ROLES = {
   TENANT: 'TENANT',
