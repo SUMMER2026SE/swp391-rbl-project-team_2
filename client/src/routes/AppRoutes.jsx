@@ -9,7 +9,7 @@ import AdminLayout from '../layouts/AdminLayout';
 
 // Features (using unified exports)
 import { LoginPage, RegisterPage } from '../features/auth';
-import { SearchPage, FavoritesPage, DepositPaymentPage, RoomDetailPage, AIChatPage, TenantNotificationsPage } from '../features/tenant';
+import { SearchPage, FavoritesPage, DepositPaymentPage, RoomDetailPage, AIChatPage, TenantNotificationsPage, RentalRequestPage } from '../features/tenant';
 import { LandlordDashboard, ManageListingsPage, AddNewPropertyPage, DepositManagementPage, LandlordProfilePage, MessagesPage, LandlordNotificationsPage } from '../features/landlord';
 import { VerificationPage } from '../features/verification';
 
@@ -32,6 +32,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.TENANT.FAVORITES} element={<FavoritesPage />} />
         <Route path={ROUTES.TENANT.CHAT} element={<AIChatPage />} />
         <Route path={ROUTES.TENANT.NOTIFICATIONS} element={<TenantNotificationsPage />} />
+        <Route path={ROUTES.TENANT.RENTAL_REQUEST} element={<RentalRequestPage />} />
         <Route path={ROUTES.TENANT.PROFILE} element={<div className="container" style={{ padding: '2rem' }}><h2>Profile</h2><p>Coming soon...</p></div>} />
         <Route path={ROUTES.HELP} element={<HelpCenterPage />} />
       </Route>
