@@ -213,7 +213,7 @@ const HomePage = () => {
 
       {/* Floating Chat Widget Circle Button (Bottom Right) */}
       <button className="floating-chat-widget" onClick={() => navigate(ROUTES.TENANT.CHAT)}>
-        <MessageSquare size={24} />
+        <Sparkles size={24} />
       </button>
     </div>
   );
