@@ -15,7 +15,12 @@ const RoomCard = ({ room, variant = 'standard' }) => {
         {(variant === 'favorite' || variant === 'chat') && imageTags.length > 0 && (
           <div className="room-card-image-tags">
             {imageTags.map((tag, idx) => (
-              <span key={idx} className={clsx("image-tag", tag.type === 'primary' ? 'primary-tag' : 'secondary-tag')}>
+              <span key={idx} className={clsx(
+                "image-tag", 
+                tag.type === 'primary' && 'primary-tag',
+                tag.type === 'match' && 'match-tag',
+                (!tag.type || tag.type === 'secondary') && 'secondary-tag'
+              )}>
                 {tag.text}
               </span>
             ))}
@@ -29,9 +34,11 @@ const RoomCard = ({ room, variant = 'standard' }) => {
           </div>
         )}
 
-        <button className="favorite-btn">
-          <Heart size={20} className={clsx('heart-icon', isFavorite && 'filled')} />
-        </button>
+        {variant !== 'chat' && (
+          <button className="favorite-btn">
+            <Heart size={20} className={clsx('heart-icon', isFavorite && 'filled')} />
+          </button>
+        )}
       </div>
       
       <div className="room-card-content">
@@ -97,19 +104,10 @@ const RoomCard = ({ room, variant = 'standard' }) => {
               <MapPin size={14} />
               <span>{location}</span>
             </div>
-            
-            <hr className="room-card-divider" />
-            
-            <div className="chat-card-footer">
-              <div className="room-card-specs">
-                {specs.map((spec, index) => (
-                  <React.Fragment key={index}>
-                    <span className="spec-text-only">{spec.text}</span>
-                    {index < specs.length - 1 && <span className="spec-dot">•</span>}
-                  </React.Fragment>
-                ))}
-              </div>
-              <a href={`/rooms/${room.id}`} className="view-details-link">View Details</a>
+            <div className="room-card-tags chat-tags">
+              {tags.map((tag, index) => (
+                <span key={index} className="room-card-tag chat-tag">{tag}</span>
+              ))}
             </div>
           </>
         )}

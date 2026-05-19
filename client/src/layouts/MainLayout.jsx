@@ -20,7 +20,7 @@ const MainLayout = () => {
       </main>
 
       {/* Footer */}
-      {!isChatPage && <Footer />}
+      <Footer />
     </div>
   );
 };

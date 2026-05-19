@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Paperclip, Send, Plus, MessageSquare, Sparkles, User } from 'lucide-react';
+import { Paperclip, Send, MessageSquare, Bot, Lightbulb, Compass, Home } from 'lucide-react';
 import RoomCard from '../components/RoomCard';
 import './AIChatPage.css';
 
@@ -19,88 +19,72 @@ const AIChatPage = () => {
     {
       id: 1,
       sender: 'bot',
-      type: 'text_with_chips',
-      text: "Hello! I'm your SmartBoard Assistant. I can help you find your next home, manage your current lease, or answer any questions about our properties.\n\nHere are a few things you can ask me:",
-      chips: ["Find a 2-bedroom", "Book a tour", "Maintenance help"]
+      type: 'text',
+      text: "Hello! I'm your SmartBoard Assistant. How can I help you with your housing search today?"
     },
     {
       id: 2,
       sender: 'user',
       type: 'text',
-      text: "I'm looking for a 1-bedroom apartment in the Westside area. My budget is around $2,500/month, and I need it to be pet-friendly."
+      text: "I'm looking for a modern 1-bedroom apartment near the tech park. Needs to have good natural light and in-unit laundry. Budget is around $2,200."
     },
     {
       id: 3,
       sender: 'bot',
       type: 'text_with_cards',
-      text: "I found a few excellent options for you in Westside that are pet-friendly and within your budget. Here are the top matches:",
+      text: "I found a few great options that match your criteria near the tech park. They all feature modern amenities, excellent natural light, and in-unit laundry.\n\nHere are the top recommendations:",
       cards: [
         {
           id: 1,
-          title: 'The Westland Lofts',
-          price: 2300,
-          location: 'Westside District',
-          specs: [
-            { icon: 'bed', text: '1 Bed' },
-            { icon: 'bath', text: '1 Bath' }
-          ],
-          imageTags: [{ text: 'Pet Friendly', type: 'primary' }],
-          rating: 4.8,
-          image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60'
+          title: 'The Lumina Lofts',
+          price: 2100,
+          location: 'Tech Park District (0.5 miles)',
+          tags: ['1 Bed', '1 Bath', 'In-unit W/D'],
+          imageTags: [{ text: '★ Match', type: 'match' }],
+          image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500&auto=format&fit=crop&q=60'
         },
         {
           id: 2,
-          title: 'Lumina Apartments',
-          price: 2450,
-          location: 'Westside Heights',
-          specs: [
-            { icon: 'bed', text: '1 Bed' },
-            { icon: 'bath', text: '1.5 Bath' }
-          ],
-          imageTags: [{ text: 'Pet Friendly', type: 'primary' }],
-          rating: 4.9,
-          image: 'https://images.unsplash.com/photo-1502672260266-1c1e52408437?w=500&auto=format&fit=crop&q=60'
+          title: 'Vertex Residences',
+          price: 2250,
+          location: 'Tech Park District (0.2 miles)',
+          tags: ['1 Bed', '1.5 Bath', 'Gym'],
+          imageTags: [],
+          image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&auto=format&fit=crop&q=60'
         }
       ]
     }
   ];
 
   const SUGGESTED_PROMPTS = [
-    "Show me available studio apartments in downtown under $2,000.",
-    "How do I split my upcoming rent payment?",
-    "Submit a maintenance request for a leaky faucet."
+    { text: "Find pet-friendly apartments under $2000 in Downtown.", icon: Lightbulb },
+    { text: "What are the best neighborhoods for young professionals?", icon: Compass },
+    { text: "Show me places with a gym and pool.", icon: Home }
   ];
 
   const RECENT_CHATS = [
-    "Lease renewal terms",
-    "Pet policy clarification",
-    "Gym access hours"
+    "Studios in Northside",
+    "Lease terms explanation",
+    "Maintenance request status"
   ];
 
   return (
     <div className="ai-chat-page">
       {/* Sidebar */}
       <aside className="chat-sidebar">
-        <div className="sidebar-header">
-          <div className="bot-icon-wrapper">
-            <Sparkles size={24} className="text-primary" />
-          </div>
-          <div className="bot-info">
-            <h2>AI Assistant</h2>
-            <p>SmartBoard Help</p>
-          </div>
-        </div>
-
         <div className="sidebar-content">
           <div className="sidebar-section">
-            <h3>SUGGESTED</h3>
+            <h3>SUGGESTED QUERIES</h3>
             <ul className="prompt-list">
-              {SUGGESTED_PROMPTS.map((prompt, idx) => (
-                <li key={idx} className="prompt-item">
-                  <Sparkles size={16} className="text-muted" />
-                  <span>{prompt}</span>
-                </li>
-              ))}
+              {SUGGESTED_PROMPTS.map((prompt, idx) => {
+                const IconComponent = prompt.icon;
+                return (
+                  <li key={idx} className="prompt-item">
+                    <IconComponent size={18} className="text-muted" />
+                    <span>{prompt.text}</span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
@@ -109,49 +93,29 @@ const AIChatPage = () => {
             <ul className="history-list">
               {RECENT_CHATS.map((chat, idx) => (
                 <li key={idx} className="history-item">
-                  <MessageSquare size={16} className="text-muted" />
+                  <MessageSquare size={18} className="text-muted" />
                   <span>{chat}</span>
                 </li>
               ))}
             </ul>
           </div>
         </div>
-
-        <div className="sidebar-footer">
-          <button className="new-chat-btn">
-            <Plus size={18} />
-            New Conversation
-          </button>
-        </div>
       </aside>
 
       {/* Main Chat Window */}
       <main className="chat-main">
         <div className="chat-messages">
-          <div className="date-divider">
-            <span>Today</span>
-          </div>
-
           {MOCK_MESSAGES.map(msg => (
             <div key={msg.id} className={`message-row ${msg.sender}`}>
               {msg.sender === 'bot' && (
                 <div className="message-avatar bot-avatar">
-                  <Sparkles size={20} className="text-white" />
+                  <Bot size={20} className="text-white" />
                 </div>
               )}
               
               <div className="message-content">
                 <div className="message-bubble">
                   <p>{msg.text}</p>
-
-                  {/* Optional Chips */}
-                  {msg.type === 'text_with_chips' && (
-                    <div className="message-chips">
-                      {msg.chips.map((chip, idx) => (
-                        <button key={idx} className="chip-btn">{chip}</button>
-                      ))}
-                    </div>
-                  )}
 
                   {/* Optional Cards Grid */}
                   {msg.type === 'text_with_cards' && (
@@ -182,7 +146,7 @@ const AIChatPage = () => {
             </button>
             <input 
               type="text" 
-              placeholder="Type your message or ask for recommendations..."
+              placeholder="Ask about properties, leases, or neighborhoods..."
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
             />
@@ -191,7 +155,7 @@ const AIChatPage = () => {
             </button>
           </div>
           <p className="chat-disclaimer">
-            AI Assistant can make mistakes. Verify important information.
+            AI can make mistakes. Verify important lease details.
           </p>
         </div>
       </main>

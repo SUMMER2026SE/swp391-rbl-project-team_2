@@ -14,8 +14,7 @@ const Footer = () => {
           <Link to="#">Terms</Link>
           <Link to="#">Privacy</Link>
           <Link to="#">Support</Link>
-          <span>English</span>
-          <button className="grid-icon-btn"><Grid size={20} /></button>
+          <Link to="#">English (US)</Link>
         </div>
       </div>
     </footer>

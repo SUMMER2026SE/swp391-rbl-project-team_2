@@ -80,6 +80,11 @@
   color: white;
 }
 
+.match-tag {
+  background-color: #6366F1; /* Indigo / Purple */
+  color: white;
+}
+
 .secondary-tag {
   background-color: white;
   color: var(--text-main);
@@ -216,8 +221,8 @@
   top: 0.75rem;
   right: 0.75rem;
   background-color: white;
-  color: var(--text-main);
-  padding: 0.25rem 0.5rem;
+  color: #1E40AF; /* Bold Blue matching Figma */
+  padding: 0.25rem 0.75rem;
   border-radius: var(--radius-full);
   font-size: 0.75rem;
   font-weight: 700;
@@ -258,4 +263,18 @@
 
 .view-details-link:hover {
   text-decoration: underline;
+}
+
+.chat-tags {
+  margin-top: 0.5rem;
+}
+
+.chat-tag {
+  background-color: #F1F5F9; /* Slate 100 */
+  color: #475569; /* Slate 600 */
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: none;
 }

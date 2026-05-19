@@ -21,45 +21,29 @@
 }
 
 .logo {
-  color: var(--primary);
+  color: #1E40AF; /* Royal Deep Blue */
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+  margin-right: 2rem;
 }
 
-.quick-search {
-  position: relative;
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .quick-search {
-    display: block;
-    width: 250px;
-  }
-}
-
-.quick-search input {
-  width: 100%;
-  padding: 0.5rem 1rem 0.5rem 2.25rem;
+.search-btn {
+  background: transparent;
   border: none;
-  border-radius: var(--radius-full);
-  outline: none;
-  background-color: #F1F5F9;
-  transition: all 0.2s;
-  font-size: 0.875rem;
-}
-
-.quick-search input:focus {
-  border-color: var(--primary);
-  background-color: var(--bg-card);
-}
-
-.quick-search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
   color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: var(--radius-full);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.search-btn:hover {
+  background-color: #F1F5F9;
+  color: var(--text-main);
 }
 
 .header-tabs {
