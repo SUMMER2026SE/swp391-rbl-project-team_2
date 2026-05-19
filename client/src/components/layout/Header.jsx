@@ -14,6 +14,10 @@ const Header = () => {
           <Link to={ROUTES.HOME} className="logo">
             SmartBoard
           </Link>
+          <div className="header-search-bar">
+            <Search size={16} className="search-icon" />
+            <input type="text" placeholder="Quick search..." />
+          </div>
           <nav className="header-tabs">
             <Link to={ROUTES.ROOMS} className={`tab-link ${location.pathname === ROUTES.ROOMS ? 'active' : ''}`}>Explore</Link>
             <Link to={ROUTES.TENANT.FAVORITES} className={`tab-link ${location.pathname === ROUTES.TENANT.FAVORITES ? 'active' : ''}`}>Favorites</Link>
@@ -22,9 +26,6 @@ const Header = () => {
         </div>
 
         <div className="header-right">
-          <button className="icon-btn search-btn">
-            <Search size={20} />
-          </button>
           <Link to={ROUTES.LOGIN} className="sign-in-btn">Sign In</Link>
           <div className="header-avatar">
             <img src="https://i.pravatar.cc/150?img=11" alt="Avatar" />
