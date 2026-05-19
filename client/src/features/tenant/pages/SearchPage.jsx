@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Map, ChevronDown } from 'lucide-react';
+import { Sparkles, Bot } from 'lucide-react';
 import RoomCard from '../components/RoomCard';
 import './SearchPage.css';
 
@@ -40,13 +40,14 @@ const SearchPage = () => {
   const [aiQuery, setAiQuery] = useState('');
 
   return (
-    <div className="search-page container">
-      <div className="search-layout">
-        {/* Sidebar Filters */}
+    <div className="search-page">
+      <div className="container">
+        <div className="search-layout">
+          {/* Sidebar Filters */}
         <aside className="search-sidebar">
           <div className="sidebar-header">
             <h3>Filters</h3>
-            <button className="clear-all-btn">Clear all</button>
+            <button className="clear-all-btn">Reset</button>
           </div>
 
           <div className="filter-group">
@@ -100,50 +101,40 @@ const SearchPage = () => {
 
           <div className="filter-group">
             <h4 className="filter-title">Neighborhood</h4>
-            <div className="select-dropdown-wrapper">
-              <select className="neighborhood-select">
-                <option>All Neighborhoods</option>
-                <option>Midtown Arts District</option>
-                <option>University District</option>
-                <option>Downtown Core</option>
-              </select>
-              <ChevronDown className="select-arrow-icon" size={16} />
+            <div className="checkbox-list">
+              <label className="custom-checkbox">
+                <input type="checkbox" defaultChecked />
+                <span>University District</span>
+              </label>
+              <label className="custom-checkbox">
+                <input type="checkbox" />
+                <span>Downtown Core</span>
+              </label>
+              <label className="custom-checkbox">
+                <input type="checkbox" />
+                <span>Tech Park</span>
+              </label>
             </div>
           </div>
         </aside>
 
         {/* Main Results Area */}
         <div className="search-results-area">
-          {/* Top Search & Actions Row */}
-          <div className="explore-search-row">
-            <div className="explore-search-input-wrapper">
-              <Search className="search-icon" size={18} />
-              <input 
-                type="text" 
-                placeholder="Describe your ideal stay (e.g., 'Quiet studio near transit under $1500')" 
-                value={aiQuery}
-                onChange={(e) => setAiQuery(e.target.value)}
-              />
-              <button className="ask-ai-btn">Ask AI</button>
-            </div>
-            
-            <button className="map-view-btn">
-              <Map className="map-icon" size={18} />
-              <span>Map View</span>
-            </button>
-
-            <div className="sort-dropdown-wrapper">
-              <select className="sort-select">
-                <option>Recommended</option>
-                <option>Price: Low to High</option>
-                <option>Price: High to Low</option>
-              </select>
-              <ChevronDown className="select-arrow-icon" size={16} />
-            </div>
+          {/* Top Search AI Row */}
+          <div className="ask-ai-container">
+            <Sparkles className="sparkles-icon" size={20} />
+            <input 
+              type="text" 
+              placeholder="Ask AI: &quot;Find a studio near university with parking&quot;" 
+              value={aiQuery}
+              onChange={(e) => setAiQuery(e.target.value)}
+              className="ask-ai-input"
+            />
+            <button className="ask-ai-btn">Search AI</button>
           </div>
 
           <div className="results-header">
-            <h2>Explore Rooms</h2>
+            <h2>Available Rooms</h2>
             <p>Showing 24 results</p>
           </div>
 
@@ -158,6 +149,12 @@ const SearchPage = () => {
           </div>
         </div>
       </div>
+      </div>
+
+      {/* Floating Chat Bot Button */}
+      <button className="floating-chat-btn">
+        <Sparkles size={24} />
+      </button>
     </div>
   );
 };

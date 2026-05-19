@@ -6,3 +6,4 @@ export { default as AIChatPage } from './pages/AIChatPage';
 export { default as RoomDetailPage } from './pages/RoomDetailPage';
 export { default as TenantNotificationsPage } from './pages/TenantNotificationsPage';
 export { default as RentalRequestPage } from './pages/RentalRequestPage';
+export { default as DepositHistoryPage } from './pages/DepositHistoryPage';

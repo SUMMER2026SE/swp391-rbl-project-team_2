@@ -1,0 +1,139 @@
+.deposit-history-page {
+  padding: 3rem 0 5rem 0;
+  background-color: #F8FAFC;
+  min-height: calc(100vh - 64px);
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.page-header p {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.table-container {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  overflow-x: auto; /* Responsive scrolling for small screens */
+}
+
+.deposit-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 800px; /* Ensure table doesn't squish too much on mobile */
+}
+
+.deposit-table th,
+.deposit-table td {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+
+.deposit-table th {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background-color: #F8FAFC;
+  text-transform: capitalize;
+}
+
+.deposit-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.deposit-table tbody tr:hover {
+  background-color: #F8FAFC;
+}
+
+.col-date {
+  color: var(--text-main);
+  font-size: 0.875rem;
+}
+
+.room-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-main);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.col-amount {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.9375rem;
+}
+
+.align-right {
+  text-align: right;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-success {
+  background-color: #EFF6FF;
+  color: #2563EB;
+}
+
+.status-pending {
+  background-color: #FEF3C7;
+  color: #D97706;
+}
+
+.status-failed {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+/* Actions */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  transition: background-color 0.2s;
+}
+
+.action-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.action-download,
+.action-retry {
+  color: var(--primary);
+}
+
+.action-text-muted {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  padding: 0.5rem;
+}
