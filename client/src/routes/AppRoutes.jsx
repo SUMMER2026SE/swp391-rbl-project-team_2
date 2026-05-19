@@ -10,11 +10,11 @@ import AdminLayout from '../layouts/AdminLayout';
 // Features (using unified exports)
 import { LoginPage, RegisterPage } from '../features/auth';
 import { SearchPage, FavoritesPage, DepositPaymentPage } from '../features/tenant';
+import { AnalyticsPage, TransactionsPage } from '../features/admin';
 
 // Pages
 import HomePage from '../pages/HomePage';
 import HelpCenterPage from '../pages/HelpCenterPage';
-
 // Placeholder Pages (Will be created later)
 const NotFoundPage = () => (
   <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -45,7 +45,8 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.USERS} element={<div style={{ padding: '1rem' }}><h2>Users Management</h2><p>Admin console users database table.</p></div>} />
         <Route path={ROUTES.LANDLORD.LISTINGS} element={<div style={{ padding: '1rem' }}><h2>Listings Management</h2><p>Admin console property listings database table.</p></div>} />
         <Route path={ROUTES.LANDLORD.REQUESTS} element={<div style={{ padding: '1rem' }}><h2>Requests Management</h2><p>Admin console tenant requests database table.</p></div>} />
-        <Route path={ROUTES.LANDLORD.ANALYTICS} element={<div style={{ padding: '1rem' }}><h2>Analytics Dashboard</h2><p>Admin console property business analytics graphs.</p></div>} />
+        <Route path={ROUTES.LANDLORD.ANALYTICS} element={<AnalyticsPage />} />
+        <Route path={ROUTES.LANDLORD.TRANSACTIONS} element={<TransactionsPage />} />
         <Route path={ROUTES.LANDLORD.SETTINGS} element={<div style={{ padding: '1rem' }}><h2>Portal Settings</h2><p>Admin console configuration fields.</p></div>} />
       </Route>
 
