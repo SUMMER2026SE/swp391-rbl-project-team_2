@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Bell, Mail, MessageSquare, Search } from 'lucide-react';
+import { Bell, Mail, MessageSquare, Search, ChevronDown } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
 import { ROUTES } from '../constants';
 import './AdminLayout.css';
@@ -16,7 +16,7 @@ const AdminLayout = () => {
 
       {/* Main Content Area */}
       <div className="admin-main-container">
-        
+
         {/* Topbar */}
         <header className="admin-topbar">
           <div className="topbar-search">
@@ -44,12 +44,13 @@ const AdminLayout = () => {
             {/* Support Text link */}
             <Link to={ROUTES.LANDLORD.HELP} className="btn-support">Support</Link>
             
-            {/* Filled Blue Quick Action button */}
-            <button className="btn-quick-action-solid">
-              Quick Action
+            {/* Outline Quick Action button with Chevron */}
+            <button className="btn-quick-action">
+              <span>Quick Action</span>
+              <ChevronDown size={14} />
             </button>
 
-            {/* Avatar returned to far right of Topbar as shown in the Real-time Chat layout */}
+            {/* Avatar on far right */}
             <div className="user-avatar-container">
               <img src="https://i.pravatar.cc/150?img=11" alt="Admin Avatar" className="admin-avatar-img" />
             </div>
