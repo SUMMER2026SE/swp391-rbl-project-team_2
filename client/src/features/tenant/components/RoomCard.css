@@ -30,10 +30,11 @@
 .favorite-btn {
   position: absolute;
   top: 0.75rem;
-  right: 0.75rem;
-  background-color: white;
+  left: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-full);
-  padding: 0.5rem;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,14 +42,16 @@
   transition: all 0.2s;
   border: none;
   cursor: pointer;
+  z-index: 10;
 }
 
 .favorite-btn:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
+  background-color: white;
 }
 
 .heart-icon {
-  color: var(--text-muted);
+  color: #4B5563; /* Slate 600 */
   transition: color 0.2s, fill 0.2s;
 }
 
@@ -175,13 +178,17 @@
 }
 
 .room-card-tag {
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  background-color: #EEF2FF; /* Indigo light */
+  color: #4F46E5; /* Indigo 600 */
   font-size: 0.75rem;
   font-weight: 500;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-light);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: none;
+}
+
+.room-card-standard .chat-floating-price {
+  color: #111827; /* Dark text for Explore Rooms */
 }
 
 /* Specs */

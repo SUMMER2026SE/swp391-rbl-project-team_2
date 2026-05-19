@@ -27,8 +27,8 @@ const RoomCard = ({ room, variant = 'standard' }) => {
           </div>
         )}
 
-        {/* Floating price for chat variant */}
-        {variant === 'chat' && (
+        {/* Floating price for chat and standard variants */}
+        {(variant === 'chat' || variant === 'standard') && (
           <div className="chat-floating-price">
             ${price.toLocaleString()}/mo
           </div>
@@ -36,7 +36,7 @@ const RoomCard = ({ room, variant = 'standard' }) => {
 
         {variant !== 'chat' && (
           <button className="favorite-btn">
-            <Heart size={20} className={clsx('heart-icon', isFavorite && 'filled')} />
+            <Heart size={18} className={clsx('heart-icon', isFavorite && 'filled')} />
           </button>
         )}
       </div>
@@ -50,13 +50,10 @@ const RoomCard = ({ room, variant = 'standard' }) => {
               {rating && (
                 <div className="room-card-rating">
                   <Star size={14} className="star-icon" />
-                  <span>{rating}</span>
+                  <span>{rating.toFixed(1)}</span>
                 </div>
               )}
             </div>
-            <p className="room-card-price">
-              <span>${price}</span>/mo
-            </p>
             <div className="room-card-location">
               <MapPin size={14} />
               <span>{location} {distance ? `• ${distance}` : ''}</span>
