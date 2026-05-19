@@ -20,24 +20,27 @@ const Sidebar = () => {
 
   const navLinks = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.LANDLORD.DASHBOARD },
-    { icon: <Users size={20} />, label: 'Users', path: ROUTES.LANDLORD.USERS },
-    { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
+    { icon: <Home size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
     { icon: <ClipboardList size={20} />, label: 'Requests', path: ROUTES.LANDLORD.REQUESTS },
     { icon: <BarChart3 size={20} />, label: 'Analytics', path: ROUTES.LANDLORD.ANALYTICS },
+    { icon: <Users size={20} />, label: 'Users', path: ROUTES.LANDLORD.USERS },
     { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.LANDLORD.SETTINGS },
   ];
 
   return (
     <aside className="admin-sidebar">
-      {/* Brand Header */}
+      {/* Brand Header with User Profile */}
       <div className="sidebar-brand">
-        <div className="brand-logo-container">
-          <Home className="brand-icon" size={24} />
-          <span className="brand-text">SmartBoarding</span>
+        <img 
+          src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80" 
+          alt="Avatar" 
+          className="sidebar-avatar" 
+        />
+        <div className="sidebar-brand-text">
+          <div className="brand-text">Management Portal</div>
+          <div className="brand-subtext">Smart Boarding Admin</div>
         </div>
       </div>
-
-      <div className="console-label">ADMIN CONSOLE</div>
 
       {/* Navigation Links */}
       <nav className="sidebar-nav">
@@ -56,12 +59,11 @@ const Sidebar = () => {
         </ul>
       </nav>
 
-      {/* Sidebar Footer with Buttons & Help */}
+      {/* Sidebar Footer with Support Center & Help */}
       <div className="sidebar-footer">
-        <div className="new-listing-btn-container">
-          <Link to={ROUTES.LANDLORD.NEW_LISTING} className="btn-new-listing">
-            <Plus size={18} />
-            <span>New Listing</span>
+        <div className="support-center-btn-container">
+          <Link to={ROUTES.LANDLORD.HELP} className="btn-support-center">
+            Support Center
           </Link>
         </div>
 
@@ -72,13 +74,13 @@ const Sidebar = () => {
               className={`sidebar-link ${location.pathname === ROUTES.LANDLORD.HELP ? 'active-help' : ''}`}
             >
               <HelpCircle size={20} />
-              <span>Help Center</span>
+              <span>Help</span>
             </Link>
           </li>
           <li>
             <Link to={ROUTES.LOGIN} className="sidebar-link logout-link">
               <LogOut size={20} />
-              <span>Logout</span>
+              <span>Sign Out</span>
             </Link>
           </li>
         </ul>
