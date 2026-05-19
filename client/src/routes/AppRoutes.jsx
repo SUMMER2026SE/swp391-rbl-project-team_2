@@ -16,6 +16,8 @@ import HomePage from '../pages/HomePage';
 import HelpCenterPage from '../pages/HelpCenterPage';
 import NotificationsPage from '../pages/NotificationsPage';
 import MessagesPage from '../pages/MessagesPage';
+import TermsPage from '../pages/TermsPage';
+
 
 
 
@@ -60,6 +62,8 @@ const AppRoutes = () => {
       {/* Standalone Split & Minimal Layouts */}
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
       <Route path={ROUTES.TENANT.PAYMENT} element={<DepositPaymentPage />} />
+      <Route path={ROUTES.TERMS} element={<TermsPage />} />
+
 
       {/* Fallback */}
       <Route path="*" element={<NotFoundPage />} />

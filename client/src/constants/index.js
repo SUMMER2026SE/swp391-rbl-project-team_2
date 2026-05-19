@@ -4,7 +4,9 @@ export const ROUTES = {
   REGISTER: '/register',
   ROOMS: '/rooms',
   ROOM_DETAIL: '/rooms/:id',
+  TERMS: '/terms',
   TENANT: {
+
     PROFILE: '/profile',
     FAVORITES: '/favorites',
     DEPOSIT_HISTORY: '/history',

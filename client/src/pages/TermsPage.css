@@ -1,0 +1,351 @@
+.terms-page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 2.5rem;
+  background-color: #F8FAFC;
+  min-height: 100vh;
+}
+
+/* Standalone Header */
+.terms-standalone-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.terms-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: #0F172A;
+}
+
+.brand-logo-icon {
+  color: #2563EB;
+}
+
+.brand-name-text {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -0.02em;
+}
+
+.back-dashboard-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.back-dashboard-btn:hover {
+  color: #2563EB;
+}
+
+/* Split Panels */
+.terms-split-layout {
+  display: flex;
+  gap: 3rem;
+  align-items: flex-start;
+}
+
+/* Left Sidebar Contents */
+.terms-sidebar-contents {
+  width: 280px;
+  position: sticky;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex-shrink: 0;
+}
+
+.sidebar-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+}
+
+.search-box-icon {
+  color: #94A3B8;
+  margin-right: 0.5rem;
+}
+
+.search-box-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: #1E293B;
+  width: 100%;
+  font-weight: 500;
+}
+
+.search-box-input::placeholder {
+  color: #94A3B8;
+}
+
+.contents-label-hdr {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #94A3B8;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.contents-nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.content-nav-btn {
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.content-nav-btn:hover {
+  background-color: #F1F5F9;
+  color: #0F172A;
+}
+
+.content-nav-btn.active {
+  background-color: #EFF6FF;
+  color: #2563EB;
+}
+
+.nav-arrow-indicator {
+  color: #94A3B8;
+  transition: transform 0.2s;
+  opacity: 0;
+}
+
+.content-nav-btn.active .nav-arrow-indicator {
+  opacity: 1;
+  transform: translateX(2px);
+  color: #2563EB;
+}
+
+.nav-number-badge {
+  margin-right: 0.25rem;
+  font-weight: 700;
+}
+
+/* Right Document Paper Card */
+.terms-main-document {
+  flex: 1;
+  min-width: 0;
+}
+
+.document-paper-card {
+  background-color: white;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: var(--radius-lg);
+  padding: 3rem 4rem;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
+}
+
+.document-header-block {
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.doc-main-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -0.04em;
+}
+
+.doc-last-updated {
+  font-size: 0.875rem;
+  color: #64748B;
+  margin-top: 0.4rem;
+  font-weight: 500;
+}
+
+/* Document content elements */
+.doc-content-section {
+  margin-bottom: 3.5rem;
+  scroll-margin-top: 120px;
+}
+
+.section-title-hdr {
+  font-size: 1.35rem;
+  font-weight: 750;
+  color: #0F172A;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.section-paragraph-text {
+  font-size: 0.95rem;
+  color: #334155;
+  line-height: 1.65;
+  margin-bottom: 1.25rem;
+  font-weight: 450;
+}
+
+/* Callout Box */
+.section-callout-box {
+  background-color: #F8FAFC;
+  border-left: 4px solid #64748B;
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.callout-box-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 0.4rem;
+}
+
+.callout-box-desc {
+  font-size: 0.875rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+  font-weight: 450;
+}
+
+/* Bullet Checkmarks list */
+.section-bullet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  padding-left: 0.5rem;
+  list-style: none;
+}
+
+.section-bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.925rem;
+  color: #334155;
+  line-height: 1.5;
+  font-weight: 450;
+}
+
+.bullet-checkmark-icon {
+  color: #2563EB;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+/* Footer Section */
+.document-footer-block {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-light);
+  padding-top: 1.5rem;
+  margin-top: 4rem;
+}
+
+.doc-end-label {
+  font-size: 0.875rem;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.btn-print-document-solid {
+  background-color: #2563EB;
+  color: white;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-print-document-solid:hover {
+  background-color: #1D4ED8;
+}
+
+/* Text Search Engine Highlight */
+.highlighted-match {
+  background-color: #FEF08A; /* Light Yellow Highlight */
+  color: #854D0E;
+  padding: 0.05rem 0.15rem;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+/* Responsive Rules */
+@media (max-width: 960px) {
+  .terms-page-container {
+    padding: 1.5rem 1.25rem;
+  }
+  .terms-split-layout {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .terms-sidebar-contents {
+    width: 100%;
+    position: relative;
+    top: 0;
+  }
+  .document-paper-card {
+    padding: 2rem;
+  }
+}
+
+/* Print Media Query Override */
+@media print {
+  body {
+    background-color: white !important;
+  }
+  .terms-standalone-header,
+  .terms-sidebar-contents,
+  .document-footer-block {
+    display: none !important;
+  }
+  .terms-page-container {
+    padding: 0 !important;
+    background-color: white !important;
+  }
+  .terms-main-document {
+    width: 100% !important;
+  }
+  .document-paper-card {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .doc-content-section {
+    page-break-inside: avoid;
+  }
+}
