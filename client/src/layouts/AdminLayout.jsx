@@ -12,7 +12,7 @@ const AdminLayout = () => {
 
       {/* Main Content Area */}
       <div className="admin-main-container">
-        
+
         {/* Topbar */}
         <header className="admin-topbar">
           <div className="topbar-search">
@@ -36,7 +36,7 @@ const AdminLayout = () => {
             <div className="divider-vertical"></div>
 
             <button className="btn-support">Support</button>
-            
+
             <button className="btn-quick-action">
               <span>Quick Action</span>
               <ChevronDown size={14} />
