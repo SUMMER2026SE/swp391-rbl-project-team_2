@@ -9,9 +9,11 @@ export const ROUTES = {
     FAVORITES: '/favorites',
     DEPOSIT_HISTORY: '/history',
     MAINTENANCE: '/maintenance',
+    PAYMENT: '/payment',
   },
   LANDLORD: {
     DASHBOARD: '/admin',
+    DEPOSITS: '/admin/deposits',
     LISTINGS: '/admin/listings',
     NEW_LISTING: '/admin/listings/new',
     REQUESTS: '/admin/requests',
