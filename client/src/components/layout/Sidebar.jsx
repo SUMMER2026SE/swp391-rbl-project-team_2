@@ -5,6 +5,7 @@ import {
   Users, 
   Building2, 
   ClipboardList, 
+  MessageSquare,
   BarChart3, 
   Settings, 
   Plus, 
@@ -23,6 +24,7 @@ const Sidebar = () => {
     { icon: <Users size={20} />, label: 'Users', path: ROUTES.LANDLORD.USERS },
     { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
     { icon: <ClipboardList size={20} />, label: 'Requests', path: ROUTES.LANDLORD.REQUESTS },
+    { icon: <MessageSquare size={20} />, label: 'Messages', path: ROUTES.LANDLORD.MESSAGES },
     { icon: <BarChart3 size={20} />, label: 'Analytics', path: ROUTES.LANDLORD.ANALYTICS },
     { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.LANDLORD.SETTINGS },
   ];
@@ -35,9 +37,16 @@ const Sidebar = () => {
           <Home className="brand-icon" size={24} />
           <span className="brand-text">SmartBoarding</span>
         </div>
+        <div className="console-label-sub">Admin Console</div>
       </div>
 
-      <div className="console-label">ADMIN CONSOLE</div>
+      {/* New Listing Button - Placed ABOVE the Navigation Links as requested in the new Figma mock */}
+      <div className="new-listing-btn-container-top">
+        <Link to={ROUTES.LANDLORD.NEW_LISTING} className="btn-new-listing-top">
+          <Plus size={18} />
+          <span>New Listing</span>
+        </Link>
+      </div>
 
       {/* Navigation Links */}
       <nav className="sidebar-nav">
@@ -56,15 +65,8 @@ const Sidebar = () => {
         </ul>
       </nav>
 
-      {/* Sidebar Footer with Buttons & Help */}
+      {/* Sidebar Footer */}
       <div className="sidebar-footer">
-        <div className="new-listing-btn-container">
-          <Link to={ROUTES.LANDLORD.NEW_LISTING} className="btn-new-listing">
-            <Plus size={18} />
-            <span>New Listing</span>
-          </Link>
-        </div>
-
         <ul className="footer-links">
           <li>
             <Link 
@@ -82,6 +84,11 @@ const Sidebar = () => {
             </Link>
           </li>
         </ul>
+
+        {/* Small Avatar Image at the very bottom left corner as per the new Figma layout */}
+        <div className="sidebar-avatar-container">
+          <img src="https://i.pravatar.cc/150?img=11" alt="Profile" className="sidebar-avatar-img" />
+        </div>
       </div>
     </aside>
   );
