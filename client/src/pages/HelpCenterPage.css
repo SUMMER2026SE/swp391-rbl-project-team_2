@@ -1,0 +1,218 @@
+.help-center-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+/* Hero Section */
+.help-hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.help-main-title {
+  font-size: 2.25rem;
+  font-weight: 750;
+  color: #0F172A; /* Slate 900 */
+  letter-spacing: -0.03em;
+}
+
+.help-subtitle {
+  font-size: 1rem;
+  color: #475569; /* Slate 600 */
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+/* Large Search Bar */
+.help-search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 700px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  margin-top: 1.5rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.help-search-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 1.15rem 1.5rem 1.15rem 3.5rem;
+  font-size: 0.95rem;
+  color: #1E293B;
+  font-weight: 500;
+}
+
+.help-search-input::placeholder {
+  color: #94A3B8;
+}
+
+.help-search-icon {
+  position: absolute;
+  left: 1.5rem;
+  color: #94A3B8;
+}
+
+/* Cards Categories Grid */
+.help-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.help-card {
+  background-color: var(--bg-card);
+  border: 1px solid rgba(241, 245, 249, 0.9);
+  border-radius: var(--radius-lg);
+  padding: 2.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+}
+
+.help-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+}
+
+.help-card-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background-color: #EEF2F6; /* Soft Blue-Gray Icon background */
+  color: #1E3A8A; /* SmartBoarding Blue icon */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.help-card-icon {
+  stroke-width: 2px;
+}
+
+.help-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.help-card-desc {
+  font-size: 0.85rem;
+  color: #64748B;
+  line-height: 1.5;
+}
+
+/* Still need assistance Banner */
+.still-need-assistance-banner {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 2rem 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.banner-text-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.banner-title {
+  font-size: 1.25rem;
+  font-weight: 750;
+  color: #0F172A;
+  letter-spacing: -0.02em;
+}
+
+.banner-subtitle {
+  font-size: 0.875rem;
+  color: #64748B;
+}
+
+.banner-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn-contact-support {
+  border-color: #2563EB !important;
+  color: #2563EB !important;
+  font-weight: 600 !important;
+  background: transparent !important;
+  padding: 0.65rem 1.25rem !important;
+  font-size: 0.875rem !important;
+}
+
+.btn-contact-support:hover {
+  background: #EFF6FF !important;
+}
+
+.btn-chat-ai {
+  background-color: #2563EB !important;
+  color: white !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.65rem 1.5rem !important;
+  font-size: 0.875rem !important;
+}
+
+.btn-chat-ai:hover {
+  background-color: #1D4ED8 !important;
+}
+
+/* Responsiveness */
+@media (max-width: 900px) {
+  .help-categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .still-need-assistance-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  .banner-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 600px) {
+  .help-categories-grid {
+    grid-template-columns: 1fr;
+  }
+  .help-main-title {
+    font-size: 1.75rem;
+  }
+  .banner-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

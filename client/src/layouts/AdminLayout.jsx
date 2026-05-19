@@ -1,82 +1,66 @@
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Wallet,
-  Building, 
-  Inbox, 
-  BarChart2, 
-  Users, 
-  Settings, 
-  LifeBuoy, 
-  LogOut 
-} from 'lucide-react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Bell, Mail, MessageSquare, Search } from 'lucide-react';
+import Sidebar from '../components/layout/Sidebar';
 import { ROUTES } from '../constants';
 import './AdminLayout.css';
 
 const AdminLayout = () => {
-  const navItems = [
-    { name: 'Dashboard', path: ROUTES.LANDLORD.DASHBOARD, icon: <LayoutDashboard size={18} /> },
-    { name: 'Deposits', path: ROUTES.LANDLORD.DEPOSITS || '/admin/deposits', icon: <Wallet size={18} /> },
-    { name: 'Listings', path: ROUTES.LANDLORD.LISTINGS, icon: <Building size={18} /> },
-    { name: 'Requests', path: ROUTES.LANDLORD.REQUESTS, icon: <Inbox size={18} /> },
-    { name: 'Analytics', path: '/admin/analytics', icon: <BarChart2 size={18} /> },
-    { name: 'Users', path: '/admin/users', icon: <Users size={18} /> },
-    { name: 'Settings', path: '/admin/settings', icon: <Settings size={18} /> },
-  ];
+  const location = useLocation();
+  const isMessagesActive = location.pathname === ROUTES.LANDLORD.MESSAGES;
 
   return (
     <div className="admin-layout">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <div className="admin-profile-photo">
-            {/* Placeholder for admin avatar */}
-          </div>
-          <div className="admin-info">
-            <h1 className="admin-title">Management<br/>Portal</h1>
-            <p className="admin-subtitle">Smart Boarding Admin</p>
-          </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              className={({ isActive }) => 
-                `nav-item ${isActive ? 'active' : ''}`
-              }
-            >
-              {item.icon}
-              <span>{item.name}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="sidebar-footer">
-          <button className="btn-support">
-            <LifeBuoy size={16} />
-            Support Center
-          </button>
-          
-          <div className="footer-links">
-            <NavLink to="/admin/help" className="footer-nav-item">
-              <LifeBuoy size={18} />
-              <span>Help</span>
-            </NavLink>
-            <button className="footer-nav-item btn-signout">
-              <LogOut size={18} />
-              <span>Sign Out</span>
-            </button>
-          </div>
-        </div>
-      </aside>
+      {/* Left Sidebar */}
+      <Sidebar />
 
       {/* Main Content Area */}
-      <main className="admin-main">
-        <Outlet />
-      </main>
+      <div className="admin-main-container">
+        
+        {/* Topbar */}
+        <header className="admin-topbar">
+          <div className="topbar-search">
+            <Search size={18} className="search-icon" />
+            <input type="text" placeholder="Search..." />
+          </div>
+
+          <div className="topbar-actions">
+            {/* Notification Bell wrapped in a link to Notifications page */}
+            <Link to={ROUTES.LANDLORD.NOTIFICATIONS} className="topbar-icon-btn">
+              <Bell size={20} />
+              <span className="badge-dot"></span>
+            </Link>
+
+            {/* Chat Icon - highlighted if active */}
+            <Link 
+              to={ROUTES.LANDLORD.MESSAGES} 
+              className={`topbar-icon-btn ${isMessagesActive ? 'active-chat-icon' : ''}`}
+            >
+              <MessageSquare size={20} />
+            </Link>
+
+            <div className="divider-vertical"></div>
+
+            {/* Support Text link */}
+            <Link to={ROUTES.LANDLORD.HELP} className="btn-support">Support</Link>
+            
+            {/* Filled Blue Quick Action button */}
+            <button className="btn-quick-action-solid">
+              Quick Action
+            </button>
+
+            {/* Avatar returned to far right of Topbar as shown in the Real-time Chat layout */}
+            <div className="user-avatar-container">
+              <img src="https://i.pravatar.cc/150?img=11" alt="Admin Avatar" className="admin-avatar-img" />
+            </div>
+          </div>
+        </header>
+
+        {/* Dynamic Route Content */}
+        <main className="admin-main-content">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 };

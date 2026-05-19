@@ -1,14 +1,17 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, Search, Menu, Grid } from 'lucide-react';
+import { Outlet, useLocation } from 'react-router-dom';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
 import { ROUTES } from '../constants';
 import './MainLayout.css';
 
 const MainLayout = () => {
   const location = useLocation();
   const isAuthenticated = false; // Mock state, ideally from useAuthStore
+  const isChatPage = location.pathname === ROUTES.TENANT.CHAT;
+
   return (
-    <div className="main-layout">
+    <div className={`main-layout ${isChatPage ? 'chat-layout-mode' : ''}`}>
       {/* Header */}
       <header className="header">
         <div className="container header-content">
@@ -66,3 +69,4 @@ const MainLayout = () => {
 };
 
 export default MainLayout;
+

@@ -1,0 +1,185 @@
+.admin-sidebar {
+  width: 260px;
+  background-color: var(--bg-card);
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+}
+
+.sidebar-brand {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.25rem 0.75rem;
+}
+
+.brand-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-icon {
+  color: #2563EB; /* Figma Blue Brand */
+}
+
+.brand-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1E3A8A; /* SmartBoarding Blue */
+  letter-spacing: -0.025em;
+}
+
+.console-label-sub {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748B;
+  margin-top: 0.25rem;
+  padding-left: 2rem;
+}
+
+.new-listing-btn-container-top {
+  padding: 0.25rem 1.25rem 1rem;
+}
+
+.btn-new-listing-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  background-color: #2563EB;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: background-color 0.2s;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn-new-listing-top:hover {
+  background-color: #1D4ED8;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 0.25rem 0;
+  overflow-y: auto;
+}
+
+.sidebar-nav ul, .footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  border-right: 3px solid transparent;
+}
+
+.sidebar-link:hover {
+  background-color: #F8FAFC;
+  color: var(--text-main);
+}
+
+.sidebar-link svg {
+  color: #64748B;
+  transition: color 0.2s;
+}
+
+.sidebar-link.active,
+.sidebar-link.active-help {
+  background-color: #F1F5F9;
+  color: #2563EB;
+  font-weight: 600;
+  border-right: 3px solid #2563EB;
+}
+
+.sidebar-link.active svg,
+.sidebar-link.active-help svg {
+  color: #2563EB;
+}
+
+.sidebar-footer {
+  padding: 1rem 0 1.25rem;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.logout-link {
+  color: #64748B;
+}
+
+.logout-link:hover {
+  background-color: #FEE2E2;
+  color: #EF4444;
+}
+
+.logout-link:hover svg {
+  color: #EF4444;
+}
+
+.sidebar-avatar-container {
+  padding: 0.5rem 1.25rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sidebar-avatar-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #E2E8F0;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.sidebar-avatar-img:hover {
+  border-color: #2563EB;
+}
+
+.sidebar-avatar-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.avatar-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0F172A;
+  line-height: 1.2;
+}
+
+.avatar-email {
+  font-size: 0.7rem;
+  color: #64748B;
+  font-weight: 500;
+  margin-top: 0.1rem;
+}
+

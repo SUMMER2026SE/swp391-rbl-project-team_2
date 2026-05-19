@@ -7,24 +7,38 @@ const RoomCard = ({ room, variant = 'standard' }) => {
   const { title, price, rating, location, distance, tags = [], imageTags = [], specs = [], isFavorite, image } = room;
 
   return (
-    <div className={clsx("room-card", variant === 'favorite' && "room-card-favorite")}>
+    <div className={clsx("room-card", `room-card-${variant}`)}>
       <div className="room-card-image-wrapper">
         <img src={image} alt={title} className="room-card-image" />
         
-        {/* Floating tags on the image (For Favorite variant) */}
-        {variant === 'favorite' && imageTags.length > 0 && (
+        {/* Floating tags on the image (For Favorite/Chat variant) */}
+        {(variant === 'favorite' || variant === 'chat') && imageTags.length > 0 && (
           <div className="room-card-image-tags">
             {imageTags.map((tag, idx) => (
-              <span key={idx} className={clsx("image-tag", tag.type === 'primary' ? 'primary-tag' : 'secondary-tag')}>
+              <span key={idx} className={clsx(
+                "image-tag", 
+                tag.type === 'primary' && 'primary-tag',
+                tag.type === 'match' && 'match-tag',
+                (!tag.type || tag.type === 'secondary') && 'secondary-tag'
+              )}>
                 {tag.text}
               </span>
             ))}
           </div>
         )}
 
-        <button className="favorite-btn">
-          <Heart size={20} className={clsx('heart-icon', isFavorite && 'filled')} />
-        </button>
+        {/* Floating price for chat variant */}
+        {variant === 'chat' && (
+          <div className="chat-floating-price">
+            ${price.toLocaleString()}/mo
+          </div>
+        )}
+
+        {variant !== 'chat' && (
+          <button className="favorite-btn">
+            <Heart size={20} className={clsx('heart-icon', isFavorite && 'filled')} />
+          </button>
+        )}
       </div>
       
       <div className="room-card-content">
@@ -53,7 +67,7 @@ const RoomCard = ({ room, variant = 'standard' }) => {
               ))}
             </div>
           </>
-        ) : (
+        ) : variant === 'favorite' ? (
           // FAVORITE LAYOUT
           <>
             <div className="room-card-header favorite-header">
@@ -77,6 +91,22 @@ const RoomCard = ({ room, variant = 'standard' }) => {
                   {spec.icon === 'square' && <Maximize size={14} />}
                   <span>{spec.text}</span>
                 </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          // CHAT LAYOUT
+          <>
+            <div className="room-card-header chat-header">
+              <h3 className="room-card-title">{title}</h3>
+            </div>
+            <div className="room-card-location">
+              <MapPin size={14} />
+              <span>{location}</span>
+            </div>
+            <div className="room-card-tags chat-tags">
+              {tags.map((tag, index) => (
+                <span key={index} className="room-card-tag chat-tag">{tag}</span>
               ))}
             </div>
           </>

@@ -1,0 +1,152 @@
+.header {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+  gap: 1rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.logo {
+  color: #1E40AF; /* Royal Deep Blue */
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+  margin-right: 2rem;
+}
+
+.search-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: var(--radius-full);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.search-btn:hover {
+  background-color: #F1F5F9;
+  color: var(--text-main);
+}
+
+.header-tabs {
+  display: none;
+  align-items: center;
+  height: 100%;
+  gap: 2rem;
+}
+
+@media (min-width: 900px) {
+  .header-tabs {
+    display: flex;
+  }
+}
+
+.tab-link {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-link:hover {
+  color: var(--text-main);
+}
+
+.tab-link.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-profile-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background-color: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.user-profile-btn:hover {
+  background-color: #dbeafe;
+}
+
+.header-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  display: flex;
+  cursor: pointer;
+}
+
+.header-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.icon-btn {
+  color: var(--text-muted);
+  padding: 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.sign-in-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  background-color: var(--primary);
+  color: var(--text-inverse);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.sign-in-btn:hover {
+  background-color: var(--primary-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.mobile-menu {
+  display: block;
+}
+
+@media (min-width: 900px) {
+  .mobile-menu {
+    display: none;
+  }
+}
