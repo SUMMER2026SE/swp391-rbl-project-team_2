@@ -10,7 +10,7 @@ import AdminLayout from '../layouts/AdminLayout';
 // Features (using unified exports)
 import { LoginPage, RegisterPage } from '../features/auth';
 import { SearchPage, FavoritesPage, DepositPaymentPage, AIChatPage, RoomDetailPage } from '../features/tenant';
-import { LandlordDashboard } from '../features/landlord';
+import { LandlordDashboard, ManageListingsPage } from '../features/landlord';
 
 // Pages
 import HomePage from '../pages/HomePage';
@@ -79,7 +79,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.MESSAGES} element={<MessagesPage />} />
 
         <Route path={ROUTES.LANDLORD.USERS} element={<div style={{ padding: '1rem' }}><h2>Users Management</h2><p>Admin console users database table.</p></div>} />
-        <Route path={ROUTES.LANDLORD.LISTINGS} element={<div style={{ padding: '1rem' }}><h2>Listings Management</h2><p>Admin console property listings database table.</p></div>} />
+        <Route path={ROUTES.LANDLORD.LISTINGS} element={<ManageListingsPage />} />
         <Route path={ROUTES.LANDLORD.REQUESTS} element={<div style={{ padding: '1rem' }}><h2>Requests Management</h2><p>Admin console tenant requests database table.</p></div>} />
         <Route path={ROUTES.LANDLORD.ANALYTICS} element={<div style={{ padding: '1rem' }}><h2>Analytics Dashboard</h2><p>Admin console property business analytics graphs.</p></div>} />
         <Route path={ROUTES.LANDLORD.SETTINGS} element={<SettingsPage />} />
