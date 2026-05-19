@@ -10,8 +10,42 @@
 /* Hero Section */
 .hero {
   background-color: #FFFFFF;
-  padding: 4.5rem 0 7rem;
+  padding: 5rem 0 7.5rem;
   position: relative;
+  overflow: hidden;
+}
+
+/* Full-width Background Image on the right with fading blur effect */
+.hero-bg-wrapper {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 58%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Fades from solid white on the left (to blend text) to transparent on the right */
+  background: linear-gradient(
+    to right, 
+    #FFFFFF 0%, 
+    #FFFFFF 12%, 
+    rgba(255, 255, 255, 0.8) 35%, 
+    rgba(255, 255, 255, 0) 100%
+  );
 }
 
 .hero-container {
@@ -19,6 +53,8 @@
   grid-template-columns: 1.15fr 1fr;
   gap: 3.5rem;
   align-items: center;
+  position: relative;
+  z-index: 2;
 }
 
 /* Left side */
@@ -64,6 +100,7 @@
   line-height: 1.6;
   margin-bottom: 2.25rem;
   font-weight: 500;
+  max-width: 520px;
 }
 
 .hero-actions {
@@ -75,6 +112,7 @@
 
 .hero-divider-line {
   width: 100%;
+  max-width: 520px;
   height: 1px;
   background-color: #E2E8F0;
   margin-bottom: 2.5rem;
@@ -111,32 +149,17 @@
   background-color: #E2E8F0;
 }
 
-/* Right side graphic */
+/* Right side graphic container */
 .hero-graphic-side {
   position: relative;
-}
-
-.hero-image-wrapper {
-  position: relative;
-  border-radius: 24px;
-  overflow: visible;
-}
-
-.hero-main-img {
-  width: 100%;
   height: 420px;
-  object-fit: cover;
-  border-radius: 24px;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 /* Floating AI Card */
 .floating-ai-card {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  right: -2rem;
   background-color: #FFFFFF;
   border-radius: 16px;
   padding: 1.25rem;
@@ -144,6 +167,7 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   border: 1px solid #F1F5F9;
   z-index: 5;
+  margin-right: 2rem;
 }
 
 .ai-card-header {
@@ -405,6 +429,19 @@
 
 /* Responsiveness */
 @media (max-width: 1024px) {
+  .hero-bg-wrapper {
+    width: 100%;
+    opacity: 0.85;
+  }
+
+  .hero-bg-overlay {
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.75) 0%,
+      rgba(255, 255, 255, 0.95) 100%
+    );
+  }
+
   .hero-container {
     grid-template-columns: 1fr;
     gap: 3rem;
@@ -427,10 +464,12 @@
     max-width: 600px;
     margin: 0 auto;
     width: 100%;
+    height: auto;
+    justify-content: center;
   }
 
   .floating-ai-card {
-    right: 2rem;
+    margin-right: 0;
   }
 }
 
@@ -461,19 +500,5 @@
 @media (max-width: 640px) {
   .hero-title {
     font-size: 2.5rem;
-  }
-  
-  .hero-main-img {
-    height: 300px;
-  }
-  
-  .floating-ai-card {
-    position: relative;
-    right: 0;
-    bottom: 0;
-    margin: 1.5rem auto 0;
-    width: 100%;
-    transform: none;
-    top: auto;
   }
 }

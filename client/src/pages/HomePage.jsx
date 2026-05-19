@@ -5,7 +5,7 @@ import {
   ShieldCheck,
   Sliders,
   CreditCard,
-  Bot,
+  Sparkles,
   MapPin,
   Calendar,
   DollarSign,
@@ -30,12 +30,23 @@ const HomePage = () => {
     <div className="home-page">
       {/* Hero Section */}
       <section className="hero">
+        
+        {/* Full-width Background Image on the right with smooth fade-out gradient to the left */}
+        <div className="hero-bg-wrapper">
+          <img 
+            src="https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1200&h=800&q=80" 
+            alt="Cozy clean bedroom interior" 
+            className="hero-bg-img"
+          />
+          <div className="hero-bg-overlay"></div>
+        </div>
+
         <div className="container hero-container">
           
           {/* Left Column: Text & Stats */}
           <div className="hero-text-side">
             <div className="ai-badge">
-              <Bot size={16} className="ai-badge-icon" />
+              <Sparkles size={16} className="ai-badge-icon" />
               <span>AI-Powered Matching</span>
             </div>
             
@@ -71,35 +82,26 @@ const HomePage = () => {
             </div>
           </div>
           
-          {/* Right Column: Hero Graphic Image with Floating AI Card */}
+          {/* Right Column: Floating AI Card on top of Background Image */}
           <div className="hero-graphic-side">
-            <div className="hero-image-wrapper">
-              <img 
-                src="https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=800&h=600&q=80" 
-                alt="Cozy clean bedroom interior" 
-                className="hero-main-img"
-              />
-              
-              {/* Floating AI Search Status Card */}
-              <div className="floating-ai-card">
-                <div className="ai-card-header">
-                  <div className="ai-search-icon-circle">
-                    <Search size={18} />
-                  </div>
-                  <div className="ai-search-info">
-                    <span className="ai-search-title">Smart Search Active</span>
-                    <span className="ai-search-desc">Finding matches near Downtown...</span>
-                  </div>
+            <div className="floating-ai-card">
+              <div className="ai-card-header">
+                <div className="ai-search-icon-circle">
+                  <Search size={18} />
                 </div>
-                
-                <div className="ai-progress-container">
-                  <div className="ai-progress-bar">
-                    <div className="ai-progress-fill"></div>
-                  </div>
-                  <div className="ai-progress-labels">
-                    <span>Scanning verified listings</span>
-                    <span className="percentage-text">68%</span>
-                  </div>
+                <div className="ai-search-info">
+                  <span className="ai-search-title">Smart Search Active</span>
+                  <span className="ai-search-desc">Finding matches near Downtown...</span>
+                </div>
+              </div>
+              
+              <div className="ai-progress-container">
+                <div className="ai-progress-bar">
+                  <div className="ai-progress-fill"></div>
+                </div>
+                <div className="ai-progress-labels">
+                  <span>Scanning verified listings</span>
+                  <span className="percentage-text">68%</span>
                 </div>
               </div>
             </div>
