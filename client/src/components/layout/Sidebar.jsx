@@ -5,6 +5,7 @@ import {
   Users, 
   Building2, 
   ClipboardList, 
+  MessageSquare,
   BarChart3, 
   Settings, 
   Plus, 
@@ -23,6 +24,7 @@ const Sidebar = () => {
     { icon: <Users size={20} />, label: 'Users', path: ROUTES.LANDLORD.USERS },
     { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
     { icon: <ClipboardList size={20} />, label: 'Requests', path: ROUTES.LANDLORD.REQUESTS },
+    { icon: <MessageSquare size={20} />, label: 'Messages', path: ROUTES.LANDLORD.MESSAGES },
     { icon: <BarChart3 size={20} />, label: 'Analytics', path: ROUTES.LANDLORD.ANALYTICS },
     { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.LANDLORD.SETTINGS },
   ];

@@ -22,8 +22,10 @@ export const ROUTES = {
     SETTINGS: '/admin/settings',
     HELP: '/admin/help',
     NOTIFICATIONS: '/admin/notifications',
+    MESSAGES: '/admin/messages',
   }
 };
+
 
 
 export const ROLES = {

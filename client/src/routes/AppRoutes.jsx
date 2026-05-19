@@ -15,6 +15,8 @@ import { SearchPage, FavoritesPage, DepositPaymentPage } from '../features/tenan
 import HomePage from '../pages/HomePage';
 import HelpCenterPage from '../pages/HelpCenterPage';
 import NotificationsPage from '../pages/NotificationsPage';
+import MessagesPage from '../pages/MessagesPage';
+
 
 // Placeholder Pages (Will be created later)
 const NotFoundPage = () => (
@@ -44,6 +46,8 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.DASHBOARD} element={<Navigate to={ROUTES.LANDLORD.HELP} replace />} />
         <Route path={ROUTES.LANDLORD.HELP} element={<HelpCenterPage />} />
         <Route path={ROUTES.LANDLORD.NOTIFICATIONS} element={<NotificationsPage />} />
+        <Route path={ROUTES.LANDLORD.MESSAGES} element={<MessagesPage />} />
+
         <Route path={ROUTES.LANDLORD.USERS} element={<div style={{ padding: '1rem' }}><h2>Users Management</h2><p>Admin console users database table.</p></div>} />
         <Route path={ROUTES.LANDLORD.LISTINGS} element={<div style={{ padding: '1rem' }}><h2>Listings Management</h2><p>Admin console property listings database table.</p></div>} />
         <Route path={ROUTES.LANDLORD.REQUESTS} element={<div style={{ padding: '1rem' }}><h2>Requests Management</h2><p>Admin console tenant requests database table.</p></div>} />
