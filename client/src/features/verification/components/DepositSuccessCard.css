@@ -1,0 +1,89 @@
+.deposit-success-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  max-width: 480px;
+  width: 100%;
+}
+
+.deposit-success-card__accent {
+  height: 5px;
+  background: var(--success);
+  width: 100%;
+}
+
+.deposit-success-card__body {
+  padding: 2.5rem 2rem 2rem;
+  text-align: center;
+}
+
+.deposit-success-card__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--success-bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.deposit-success-card__icon svg {
+  color: var(--success);
+}
+
+.deposit-success-card__title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.deposit-success-card__subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 1.75rem;
+}
+
+.deposit-success-card__details {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.75rem;
+  overflow: hidden;
+}
+
+.deposit-success-card__detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.25rem;
+  font-size: 0.875rem;
+}
+
+.deposit-success-card__detail-row + .deposit-success-card__detail-row {
+  border-top: 1px solid var(--border-light);
+}
+
+.deposit-success-card__detail-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.deposit-success-card__detail-value {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.deposit-success-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 400px) {
+  .deposit-success-card__actions {
+    grid-template-columns: 1fr;
+  }
+}

@@ -7,7 +7,6 @@ import './MainLayout.css';
 
 const MainLayout = () => {
   const location = useLocation();
-  const isAuthenticated = false; // Mock state, ideally from useAuthStore
   const isChatPage = location.pathname === ROUTES.TENANT.CHAT;
 
   return (
@@ -25,4 +24,3 @@ const MainLayout = () => {
 };
 
 export default MainLayout;
-

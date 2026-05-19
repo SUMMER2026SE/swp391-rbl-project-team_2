@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants';
 import { 
   Plus, 
   Search, 
@@ -81,6 +83,7 @@ const INITIAL_LISTINGS = [
 ];
 
 const ManageListingsPage = () => {
+  const navigate = useNavigate();
   const [listings, setListings] = useState(INITIAL_LISTINGS);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
@@ -216,10 +219,7 @@ const ManageListingsPage = () => {
         <Button 
           variant="primary" 
           icon={<Plus size={18} />} 
-          onClick={() => {
-            resetForm();
-            setIsAddModalOpen(true);
-          }}
+          onClick={() => navigate(ROUTES.LANDLORD.NEW_LISTING)}
         >
           Add New Listing
         </Button>

@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Building2,
   ClipboardList,
-  MessageSquare,
   BarChart3,
   Users,
   Settings,
@@ -17,13 +16,12 @@ import './Sidebar.css';
 const Sidebar = () => {
   const location = useLocation();
 
-  // Navigation Links ordered exactly as Figma design, including Messages from main branch:
-  // Dashboard -> Listings -> Requests -> Messages -> Analytics -> Users -> Settings
+  // Navigation Links ordered exactly as Figma design:
+  // Dashboard -> Listings -> Requests -> Analytics -> Users -> Settings
   const navLinks = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.LANDLORD.DASHBOARD },
     { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
     { icon: <ClipboardList size={20} />, label: 'Requests', path: ROUTES.LANDLORD.REQUESTS },
-    { icon: <MessageSquare size={20} />, label: 'Messages', path: ROUTES.LANDLORD.MESSAGES },
     { icon: <BarChart3 size={20} />, label: 'Analytics', path: ROUTES.LANDLORD.ANALYTICS },
     { icon: <Users size={20} />, label: 'Users', path: ROUTES.LANDLORD.USERS },
     { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.LANDLORD.SETTINGS },
@@ -31,44 +29,47 @@ const Sidebar = () => {
 
   return (
     <aside className="admin-sidebar">
-      {/* User Header Profile (Matches Figma Management Portal Brand Element) */}
-      <div className="sidebar-brand-profile">
-        <div className="profile-avatar">
-          <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=120&h=120&q=80" alt="Admin Profile" />
+      {/* Brand Header (Matches Figma Brand Element with Avatar) */}
+      <Link to={ROUTES.LANDLORD.PROFILE} className="sidebar-brand-profile-link">
+        <div className="sidebar-brand-profile">
+          <img 
+            src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&auto=format&fit=crop&q=80" 
+            alt="Robert Sterling" 
+            className="sidebar-brand-avatar"
+          />
+          <div className="profile-info">
+            <span className="profile-title">Management Portal</span>
+            <span className="profile-subtitle">Smart Boarding Admin</span>
+          </div>
         </div>
-        <div className="profile-info">
-          <span className="profile-title">Management Portal</span>
-          <span className="profile-subtitle">Smart Boarding Admin</span>
-        </div>
-      </div>
-
-      <div className="sidebar-divider"></div>
+      </Link>
 
       {/* Navigation Links */}
       <nav className="sidebar-nav">
         <ul>
-          {navLinks.map((link) => (
-            <li key={link.label}>
-              <Link
-                to={link.path}
-                className={`sidebar-link ${location.pathname === link.path ? 'active' : ''}`}
-              >
-                {link.icon}
-                <span>{link.label}</span>
-              </Link>
-            </li>
-          ))}
+          {navLinks.map((link) => {
+            const isSettingsOrProfileActive = 
+              link.path === ROUTES.LANDLORD.SETTINGS && 
+              (location.pathname === ROUTES.LANDLORD.SETTINGS || location.pathname === ROUTES.LANDLORD.PROFILE);
+            const isActive = location.pathname === link.path || isSettingsOrProfileActive;
+
+            return (
+              <li key={link.label}>
+                <Link
+                  to={link.path}
+                  className={`sidebar-link ${isActive ? 'active' : ''}`}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
       {/* Sidebar Footer */}
       <div className="sidebar-footer">
-        <div className="support-btn-container">
-          <Link to={ROUTES.LANDLORD.HELP} className="btn-support-center">
-            Support Center
-          </Link>
-        </div>
-
         <ul className="footer-links">
           <li>
             <Link
@@ -86,6 +87,11 @@ const Sidebar = () => {
             </Link>
           </li>
         </ul>
+        <div className="support-btn-container" style={{ marginTop: '0.75rem' }}>
+          <Link to={ROUTES.LANDLORD.HELP} className="btn-support-center">
+            Support Center
+          </Link>
+        </div>
       </div>
     </aside>
   );
