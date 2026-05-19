@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
+  Wallet,
   Building2,
   ClipboardList,
   MessageSquare,
@@ -17,10 +18,11 @@ import './Sidebar.css';
 const Sidebar = () => {
   const location = useLocation();
 
-  // Navigation Links ordered exactly as Figma design, including Messages from main branch:
-  // Dashboard -> Listings -> Requests -> Messages -> Analytics -> Users -> Settings
+  // Navigation Links ordered exactly as Figma design, including Deposits:
+  // Dashboard -> Deposits -> Listings -> Requests -> Messages -> Analytics -> Users -> Settings
   const navLinks = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.LANDLORD.DASHBOARD },
+    { icon: <Wallet size={20} />, label: 'Deposits', path: ROUTES.LANDLORD.DEPOSITS },
     { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
     { icon: <ClipboardList size={20} />, label: 'Requests', path: ROUTES.LANDLORD.REQUESTS },
     { icon: <MessageSquare size={20} />, label: 'Messages', path: ROUTES.LANDLORD.MESSAGES },
