@@ -62,7 +62,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.LISTINGS} element={<ManageListingsPage />} />
         <Route path={ROUTES.LANDLORD.DEPOSITS} element={<DepositManagementPage />} />
         <Route path={ROUTES.LANDLORD.NEW_LISTING} element={<AddNewPropertyPage />} />
-        <Route path={ROUTES.LANDLORD.REQUESTS} element={<div style={{ padding: '1rem' }}><h2>Requests Management</h2><p>Admin console tenant requests database table.</p></div>} />
+        <Route path={ROUTES.LANDLORD.REQUESTS} element={<RentalRequestManagementPage />} />
         <Route path={ROUTES.LANDLORD.ANALYTICS} element={<div style={{ padding: '1rem' }}><h2>Analytics Dashboard</h2><p>Admin console property business analytics graphs.</p></div>} />
         <Route path={ROUTES.LANDLORD.SETTINGS} element={<SettingsPage />} />
       </Route>

@@ -1,75 +1,584 @@
-.rental-page {
-  padding: 32px;
-  max-width: 1200px;
-  margin: 0 auto;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  min-height: 100vh;
-  background-color: #f8fafc;
+/* ==========================================================================
+   Rental Request Kanban Dashboard Styles
+   ========================================================================== */
+
+.rental-requests-container {
+  padding: 1.5rem;
 }
 
-.page-header {
+/* Header Grid Layout */
+.rental-requests-header-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-  gap: 24px;
-  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
-.header-content {
+.rental-requests-main-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: #1E293B;
+  letter-spacing: -0.025em;
+  margin-bottom: 0.25rem;
+}
+
+.rental-requests-sub-title {
+  font-size: 0.95rem;
+  color: #64748B;
+  font-weight: 500;
+}
+
+.rental-requests-search-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Applicants Search Input Box */
+.applicants-search-box {
+  position: relative;
+  width: 260px;
+}
+
+.applicants-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+  pointer-events: none;
+}
+
+.applicants-search-box input {
+  width: 100%;
+  height: 40px;
+  padding-left: 2.5rem;
+  padding-right: 1rem;
+  border: 1.5px solid #E2E8F0;
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: #1E293B;
+  font-weight: 550;
+  transition: all 0.15s ease;
+}
+
+.applicants-search-box input:focus {
+  border-color: #2563EB;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Filter Dropdown Container */
+.filter-dropdown-wrapper {
+  position: relative;
+}
+
+.btn-applicants-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 40px;
+  padding: 0 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+  background-color: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-applicants-filter:hover,
+.btn-applicants-filter.active {
+  background-color: #F8FAFC;
+  color: #1E293B;
+  border-color: #CBD5E1;
+}
+
+/* Filter Dropdown Menu Box */
+.applicants-filter-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  width: 250px;
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.filter-menu-header {
+  background-color: #F8FAFC;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.filter-menu-body {
+  padding: 1rem;
+}
+
+.filter-score-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1E293B;
+  margin-bottom: 0.5rem;
+}
+
+.threshold-val {
+  color: #2563EB;
+  font-weight: 700;
+}
+
+.match-score-slider {
+  width: 100%;
+  accent-color: #2563EB;
+}
+
+.slider-limits {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #94A3B8;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.filter-menu-footer {
+  border-top: 1px solid #F1F5F9;
+  padding: 0.75rem 1rem;
+  background-color: #F8FAFC;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-clear-menu-filter {
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: #EF4444;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-clear-menu-filter:hover {
+  text-decoration: underline;
+}
+
+/* Kanban Board Column Grid */
+.requests-kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.kanban-column {
   display: flex;
   flex-direction: column;
+  height: 100%;
+}
+
+.kanban-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #E2E8F0;
+}
+
+.column-title-box {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 30px;
+.column-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.column-indicator-dot.dot-blue {
+  background-color: #2563EB;
+}
+
+.column-indicator-dot.dot-gold {
+  background-color: #D97706;
+}
+
+.kanban-column-header h3 {
+  font-size: 0.975rem;
+  font-weight: 800;
+  color: #1E293B;
+  letter-spacing: -0.01em;
+}
+
+.column-count-badge {
+  font-size: 0.75rem;
   font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.02em;
+  color: #475569;
+  background-color: #E2E8F0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.page-subtitle {
-  margin: 0;
-  font-size: 16px;
-  color: #64748b;
+/* Kanban Card Styles */
+.kanban-column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 400px;
 }
 
-.requests-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 24px;
+.kanban-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
 }
 
-.loading-state,
-.error-state,
-.empty-state {
+.kanban-card:hover {
+  border-color: #CBD5E1;
+  box-shadow: var(--shadow-md);
+}
+
+.card-approved-highlight {
+  border-left: 4px solid #059669;
+}
+
+/* Card Header Profile row */
+.kanban-card-profile {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.profile-details-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kanban-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.kanban-avatar-initials {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #F1F5F9;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-name-box h4 {
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: #1E293B;
+  line-height: 1.2;
+}
+
+.profile-job-title {
+  font-size: 0.775rem;
+  color: #64748B;
+  font-weight: 600;
+}
+
+/* Match Label Tags */
+.match-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.725rem;
+  font-weight: 700;
+  border-radius: 9999px;
+}
+
+.match-badge-tag.match-high {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+}
+
+.match-badge-tag.match-pending {
+  background-color: #F1F5F9;
+  color: #475569;
+}
+
+/* Card Location details items list */
+.kanban-card-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.card-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.detail-icon {
+  color: #94A3B8;
+  flex-shrink: 0;
+}
+
+/* Message quote comment bubble */
+.kanban-card-message-bubble {
+  background-color: #F8FAFC;
+  border-left: 3px solid #3B82F6;
+  padding: 0.75rem 1rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.825rem;
+  color: #334155;
+  font-style: italic;
+  line-height: 1.4;
+  margin-bottom: 1.25rem;
+}
+
+/* Kanban Card Footer Actions row */
+.kanban-card-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-card-action-blue {
+  flex-grow: 1;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  background-color: #2563EB;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-card-action-blue:hover {
+  background-color: #1D4ED8;
+}
+
+.btn-card-icon-action {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #E2E8F0;
+  background-color: #FFFFFF;
+  color: #64748B;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-card-icon-action.chat:hover {
+  background-color: #F1F5F9;
+  color: #1E293B;
+  border-color: #CBD5E1;
+}
+
+.btn-card-icon-action.reject:hover {
+  background-color: #FEF2F2;
+  border-color: #FECACA;
+  color: #EF4444;
+}
+
+/* Column 2 Checklist block for Under Review */
+.verification-checks-box {
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.check-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.825rem;
+}
+
+.check-label-text {
+  color: #64748B;
+  font-weight: 600;
+}
+
+.check-status-val {
+  font-weight: 700;
+}
+
+.check-status-val.completed {
+  color: #2563EB;
+}
+
+.check-status-val.awaiting {
+  color: #D97706;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.under-review-actions-row {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-send-reminder {
+  flex-grow: 1;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: #475569;
+  background-color: #F1F5F9;
+  border: 1.5px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-send-reminder:hover {
+  background-color: #E2E8F0;
+}
+
+.btn-send-reminder.sent {
+  background-color: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #047857;
+  cursor: not-allowed;
+}
+
+/* Column 3 Lease Sent description box */
+.lease-deposit-status-box {
+  background-color: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  color: #047857;
+  font-weight: 600;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+
+.lease-deposit-status-box .text-green {
+  color: #059669;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Empty Columns placeholders */
+.column-empty-state {
   text-align: center;
-  padding: 48px;
-  background-color: white;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
-  font-size: 16px;
+  padding: 2rem 1rem;
+  color: #94A3B8;
+  font-size: 0.85rem;
+  font-weight: 550;
+  border: 1px dashed #E2E8F0;
+  border-radius: var(--radius-lg);
 }
 
-.error-state {
-  color: #ef4444;
-  border-color: #fecaca;
-  background-color: #fef2f2;
+.column-empty-state-dashed {
+  border: 2.5px dashed #E2E8F0;
+  border-radius: var(--radius-lg);
+  padding: 4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-color: #FAFAFA;
+  height: 350px;
 }
 
-@media (max-width: 768px) {
-  .rental-page {
-    padding: 16px;
+.empty-double-circle-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid #E2E8F0;
+  background-color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  color: #94A3B8;
+}
+
+.empty-state-headline {
+  font-size: 0.85rem;
+  color: #64748B;
+  font-weight: 600;
+  line-height: 1.5;
+  max-width: 220px;
+}
+
+/* Page animations */
+@keyframes entryFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
-  
-  .page-header {
-    flex-direction: column;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .requests-grid {
+}
+
+.entry-animated {
+  animation: entryFade 0.35s ease forwards;
+}
+
+/* Responsive columns scaling */
+@media (max-width: 1024px) {
+  .requests-kanban-board {
     grid-template-columns: 1fr;
+    gap: 2rem;
   }
 }

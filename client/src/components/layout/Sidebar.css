@@ -9,60 +9,33 @@
   bottom: 0;
   left: 0;
   z-index: 40;
-  padding: 1.5rem 0;
+  padding: 2rem 0;
 }
 
 /* User Profile Header */
 .sidebar-brand-profile {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0 1.25rem 1.25rem;
-}
-
-.profile-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 1px solid var(--border-light);
-  flex-shrink: 0;
-}
-
-.profile-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  flex-direction: column;
+  padding: 0 1.75rem 1.75rem;
 }
 
 .profile-info {
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
 
 .profile-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #1E3A8A; /* Dark blue title */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e3a8a; /* Dark blue title */
+  letter-spacing: -0.02em;
+  margin-bottom: 0.2rem;
 }
 
 .profile-subtitle {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-size: 0.775rem;
+  color: #64748b;
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sidebar-divider {
-  height: 1px;
-  background-color: var(--border-light);
-  margin: 0 1.25rem 1rem;
 }
 
 /* Navigation Links */
@@ -97,7 +70,7 @@
 
 .sidebar-link:hover {
   background-color: #F8FAFC;
-  color: var(--text-main);
+  color: #1E293B;
 }
 
 .sidebar-link svg {
@@ -108,14 +81,14 @@
 /* Active Nav Item - Pill Shape Matches Figma */
 .sidebar-link.active,
 .sidebar-link.active-help {
-  background-color: #EFF6FF;
-  color: #2563EB;
+  background-color: #e0e7ff; /* Soft indigo/blue bg */
+  color: #4f46e5; /* Indigo/blue text */
   font-weight: 600;
 }
 
 .sidebar-link.active svg,
 .sidebar-link.active-help svg {
-  color: #2563EB;
+  color: #4f46e5;
 }
 
 /* Footer Section */
