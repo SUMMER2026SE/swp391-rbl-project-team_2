@@ -19,7 +19,7 @@ const Header = () => {
             <input type="text" placeholder="Quick search..." />
           </div>
         </div>
-        
+
         <nav className="header-tabs">
           <Link to={ROUTES.ROOMS} className={`tab-link ${location.pathname === ROUTES.ROOMS ? 'active' : ''}`}>Explore</Link>
           <Link to={ROUTES.TENANT.FAVORITES} className={`tab-link ${location.pathname === ROUTES.TENANT.FAVORITES ? 'active' : ''}`}>Favorites</Link>
