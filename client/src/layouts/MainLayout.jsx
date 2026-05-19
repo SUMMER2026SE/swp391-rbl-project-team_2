@@ -1,7 +1,6 @@
 import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import Header from '../components/layout/Header';
-import Footer from '../components/layout/Footer';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Home, Search, Menu, Grid } from 'lucide-react';
 import { ROUTES } from '../constants';
 import './MainLayout.css';
 

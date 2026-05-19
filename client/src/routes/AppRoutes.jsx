@@ -13,12 +13,8 @@ import { SearchPage, FavoritesPage, DepositPaymentPage, AIChatPage } from '../fe
 
 // Pages
 import HomePage from '../pages/HomePage';
-import LoginPage from '../features/auth/pages/LoginPage';
-import RegisterPage from '../features/auth/pages/RegisterPage';
-import SearchPage from '../features/tenant/pages/SearchPage';
-import FavoritesPage from '../features/tenant/pages/FavoritesPage';
-import DepositPaymentPage from '../features/tenant/pages/DepositPaymentPage';
-import RentalRequestManagementPage from '../features/rental';
+
+
 import HelpCenterPage from '../pages/HelpCenterPage';
 import NotificationsPage from '../pages/NotificationsPage';
 import MessagesPage from '../pages/MessagesPage';
