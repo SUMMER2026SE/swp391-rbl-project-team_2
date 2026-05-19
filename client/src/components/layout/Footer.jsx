@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Grid } from 'lucide-react';
 import './Footer.css';
 
 const Footer = () => {
@@ -8,13 +7,20 @@ const Footer = () => {
     <footer className="footer-minimal">
       <div className="container footer-minimal-content">
         <div className="footer-left">
-          &copy; 2024 SmartBoard AI. Modern housing for modern people.
+          <Link to="/" className="footer-logo">
+            SmartBoard
+          </Link>
         </div>
-        <div className="footer-right">
+        
+        <div className="footer-middle">
           <Link to="#">Terms</Link>
           <Link to="#">Privacy</Link>
           <Link to="#">Support</Link>
           <Link to="#">English (US)</Link>
+        </div>
+
+        <div className="footer-right">
+          &copy; 2024 SmartBoard AI. Modern housing for modern people.
         </div>
       </div>
     </footer>
