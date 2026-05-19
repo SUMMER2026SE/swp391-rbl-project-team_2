@@ -9,73 +9,71 @@
   bottom: 0;
   left: 0;
   z-index: 40;
+  padding: 1.5rem 0;
 }
 
-.sidebar-brand {
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1.25rem 0.75rem;
-}
-
-.brand-logo-container {
+/* User Profile Header */
+.sidebar-brand-profile {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding: 0 1.25rem 1.25rem;
 }
 
-.brand-icon {
-  color: #2563EB; /* Figma Blue Brand */
+.profile-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  flex-shrink: 0;
 }
 
-.brand-text {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #1E3A8A; /* SmartBoarding Blue */
-  letter-spacing: -0.025em;
-}
-
-.console-label-sub {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #64748B;
-  margin-top: 0.25rem;
-  padding-left: 2rem;
-}
-
-.new-listing-btn-container-top {
-  padding: 0.25rem 1.25rem 1rem;
-}
-
-.btn-new-listing-top {
+.profile-avatar img {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-info {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.65rem;
-  background-color: #2563EB;
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-  text-align: center;
-  transition: background-color 0.2s;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  flex-direction: column;
+  min-width: 0;
 }
 
-.btn-new-listing-top:hover {
-  background-color: #1D4ED8;
+.profile-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1E3A8A; /* Dark blue title */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+.profile-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background-color: var(--border-light);
+  margin: 0 1.25rem 1rem;
+}
+
+/* Navigation Links */
 .sidebar-nav {
   flex: 1;
-  padding: 0.25rem 0;
+  padding: 0 1rem;
   overflow-y: auto;
 }
 
-.sidebar-nav ul, .footer-links {
+.sidebar-nav ul,
+.footer-links {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -88,13 +86,13 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 1rem;
   color: #475569;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
   text-decoration: none;
-  transition: all 0.2s;
-  border-right: 3px solid transparent;
+  transition: all 0.2s ease;
 }
 
 .sidebar-link:hover {
@@ -104,15 +102,14 @@
 
 .sidebar-link svg {
   color: #64748B;
-  transition: color 0.2s;
+  transition: color 0.2s ease;
 }
 
+/* Active Nav Item - Pill Shape Matches Figma */
 .sidebar-link.active,
 .sidebar-link.active-help {
-  background-color: #F1F5F9;
+  background-color: #EFF6FF;
   color: #2563EB;
-  font-weight: 600;
-  border-right: 3px solid #2563EB;
 }
 
 .sidebar-link.active svg,
@@ -120,12 +117,36 @@
   color: #2563EB;
 }
 
+/* Footer Section */
 .sidebar-footer {
-  padding: 1rem 0 1.25rem;
+  padding: 1.25rem 1rem 0;
   border-top: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-top: auto;
+}
+
+.support-btn-container {
+  margin-bottom: 0.25rem;
+}
+
+.btn-support-center {
+  width: 100%;
+  display: block;
+  text-align: center;
+  padding: 0.75rem;
+  background-color: #E2E8F0;
+  color: #334155;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.btn-support-center:hover {
+  background-color: #CBD5E1;
 }
 
 .logout-link {
@@ -140,46 +161,3 @@
 .logout-link:hover svg {
   color: #EF4444;
 }
-
-.sidebar-avatar-container {
-  padding: 0.5rem 1.25rem 0;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.sidebar-avatar-img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1.5px solid #E2E8F0;
-  cursor: pointer;
-  transition: border-color 0.2s;
-  flex-shrink: 0;
-}
-
-.sidebar-avatar-img:hover {
-  border-color: #2563EB;
-}
-
-.sidebar-avatar-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.avatar-name {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #0F172A;
-  line-height: 1.2;
-}
-
-.avatar-email {
-  font-size: 0.7rem;
-  color: #64748B;
-  font-weight: 500;
-  margin-top: 0.1rem;
-}
-

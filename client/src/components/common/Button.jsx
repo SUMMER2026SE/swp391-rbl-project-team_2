@@ -3,15 +3,15 @@ import { clsx } from 'clsx';
 import { Loader2 } from 'lucide-react';
 import './Button.css';
 
-const Button = ({ 
-  children, 
-  variant = 'primary', 
-  size = 'md', 
-  fullWidth = false, 
+const Button = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
   isLoading = false,
   className,
   disabled,
-  ...props 
+  ...props
 }) => {
   return (
     <button

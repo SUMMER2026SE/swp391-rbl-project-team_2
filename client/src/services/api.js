@@ -1,12 +1,11 @@
 import httpClient from './httpClient';
 
-export const authApi = {
-  login: (credentials) => httpClient.post('/auth/login', credentials),
-  register: (data) => httpClient.post('/auth/register', data),
-  getProfile: () => httpClient.get('/auth/profile'),
+export const api = {
+  // Example API methods
+  get: (url, config) => httpClient.get(url, config),
+  post: (url, data, config) => httpClient.post(url, data, config),
+  put: (url, data, config) => httpClient.put(url, data, config),
+  delete: (url, config) => httpClient.delete(url, config),
 };
 
-export const roomApi = {
-  getRooms: (params) => httpClient.get('/rooms', { params }),
-  getRoomById: (id) => httpClient.get(`/rooms/${id}`),
-};
+export default api;

@@ -9,10 +9,12 @@ import AdminLayout from '../layouts/AdminLayout';
 
 // Features (using unified exports)
 import { LoginPage, RegisterPage } from '../features/auth';
-import { SearchPage, FavoritesPage, DepositPaymentPage } from '../features/tenant';
+import { SearchPage, FavoritesPage, DepositPaymentPage, AIChatPage, RoomDetailPage } from '../features/tenant';
+import { LandlordDashboard } from '../features/landlord';
 
 // Pages
 import HomePage from '../pages/HomePage';
+import { RentalRequestManagementPage } from '../features/rental';
 import HelpCenterPage from '../pages/HelpCenterPage';
 import NotificationsPage from '../pages/NotificationsPage';
 import MessagesPage from '../pages/MessagesPage';
@@ -27,17 +29,28 @@ const AppRoutes = () => {
       <Route element={<MainLayout />}>
         <Route path={ROUTES.HOME} element={<HomePage />} />
         <Route path={ROUTES.ROOMS} element={<SearchPage />} />
+        <Route path={ROUTES.ROOM_DETAIL} element={<RoomDetailPage />} />
         <Route path={ROUTES.TENANT.FAVORITES} element={<FavoritesPage />} />
+        <Route path={ROUTES.TENANT.CHAT} element={<AIChatPage />} />
+        <Route path={ROUTES.TENANT.NOTIFICATIONS} element={<div className="container" style={{padding:'2rem'}}><h2>Notifications</h2><p>Coming soon...</p></div>} />
+        <Route path={ROUTES.TENANT.PROFILE} element={<div className="container" style={{padding:'2rem'}}><h2>Profile</h2><p>Coming soon...</p></div>} />
+        <Route path={ROUTES.HELP} element={<HelpCenterPage />} />
       </Route>
 
       {/* Auth Routes */}
       <Route element={<AuthLayout />}>
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+        <Route path={ROUTES.FORGOT_PASSWORD} element={<div style={{maxWidth:480,margin:'0 auto',textAlign:'center',padding:'3rem'}}><h2>Forgot Password</h2><p>Coming soon...</p></div>} />
       </Route>
+
+      {/* Standalone Pages (no layout wrapper) */}
+      <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+      <Route path={ROUTES.TENANT.PAYMENT} element={<DepositPaymentPage />} />
+      <Route path={ROUTES.TERMS} element={<TermsPage />} />
 
       {/* Admin / Landlord Routes */}
       <Route element={<AdminLayout />}>
-        <Route path={ROUTES.LANDLORD.DASHBOARD} element={<Navigate to={ROUTES.LANDLORD.HELP} replace />} />
+        <Route path={ROUTES.LANDLORD.DASHBOARD} element={<LandlordDashboard />} />
         <Route path={ROUTES.LANDLORD.HELP} element={<HelpCenterPage />} />
         <Route path={ROUTES.LANDLORD.NOTIFICATIONS} element={<NotificationsPage />} />
         <Route path={ROUTES.LANDLORD.MESSAGES} element={<MessagesPage />} />
@@ -47,14 +60,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.REQUESTS} element={<div style={{ padding: '1rem' }}><h2>Requests Management</h2><p>Admin console tenant requests database table.</p></div>} />
         <Route path={ROUTES.LANDLORD.ANALYTICS} element={<div style={{ padding: '1rem' }}><h2>Analytics Dashboard</h2><p>Admin console property business analytics graphs.</p></div>} />
         <Route path={ROUTES.LANDLORD.SETTINGS} element={<SettingsPage />} />
-
       </Route>
-
-      {/* Standalone Split & Minimal Layouts */}
-      <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-      <Route path={ROUTES.TENANT.PAYMENT} element={<DepositPaymentPage />} />
-      <Route path={ROUTES.TERMS} element={<TermsPage />} />
-
 
       {/* Fallback */}
       <Route path="*" element={<NotFoundPage />} />

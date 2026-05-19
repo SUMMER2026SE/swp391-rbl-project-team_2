@@ -1,35 +1,36 @@
 import axios from 'axios';
-import { CONFIG } from '../config';
+import { API_URL } from '../config';
 
 const httpClient = axios.create({
-  baseURL: CONFIG.API_URL,
-  timeout: CONFIG.TIMEOUT,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000,
 });
 
-// Request Interceptor
+// Request interceptor
 httpClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // You can add auth tokens here
+    // const token = localStorage.getItem('token');
+    // if (token) {
+    //   config.headers.Authorization = `Bearer ${token}`;
+    // }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
-// Response Interceptor
+// Response interceptor
 httpClient.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    return response.data;
+  },
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized (e.g., logout, redirect to login)
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
+    // Handle global errors here
     return Promise.reject(error);
   }
 );

@@ -13,15 +13,15 @@ const Input = forwardRef(({ label, error, leftIcon, rightIcon, rightLabel, class
       )}
       <div className="input-wrapper">
         {leftIcon && <span className="input-icon-left">{leftIcon}</span>}
-        <input 
+        <input
           ref={ref}
           className={clsx(
-            'input-field', 
+            'input-field',
             error && 'input-error',
             leftIcon && 'has-left-icon',
             rightIcon && 'has-right-icon'
           )}
-          {...props} 
+          {...props}
         />
         {rightIcon && <span className="input-icon-right">{rightIcon}</span>}
       </div>
