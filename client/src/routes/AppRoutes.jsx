@@ -7,21 +7,27 @@ import MainLayout from '../layouts/MainLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import AdminLayout from '../layouts/AdminLayout';
 
-// Features (using unified exports)
+// Auth feature
 import { LoginPage, RegisterPage } from '../features/auth';
-import { SearchPage, FavoritesPage, DepositPaymentPage } from '../features/tenant';
-import { AnalyticsPage, TransactionsPage, ListingsPage } from '../features/admin';
 
-// Pages
+// Tenant feature
+import { SearchPage, FavoritesPage, DepositPaymentPage } from '../features/tenant';
+
+// Admin feature
+import {
+  DashboardPage,
+  AnalyticsPage,
+  TransactionsPage,
+  ListingsPage,
+  UsersPage,
+  RequestsPage,
+  SettingsPage,
+} from '../features/admin';
+
+// Shared pages
 import HomePage from '../pages/HomePage';
 import HelpCenterPage from '../pages/HelpCenterPage';
-// Placeholder Pages (Will be created later)
-const NotFoundPage = () => (
-  <div style={{ padding: '2rem', textAlign: 'center' }}>
-    <h1>404</h1>
-    <p>Page Not Found</p>
-  </div>
-);
+import NotFoundPage from '../pages/NotFoundPage';
 
 const AppRoutes = () => {
   return (
@@ -40,17 +46,17 @@ const AppRoutes = () => {
 
       {/* Admin / Landlord Routes */}
       <Route element={<AdminLayout />}>
-        <Route path={ROUTES.LANDLORD.DASHBOARD} element={<Navigate to={ROUTES.LANDLORD.HELP} replace />} />
-        <Route path={ROUTES.LANDLORD.HELP} element={<HelpCenterPage />} />
-        <Route path={ROUTES.LANDLORD.USERS} element={<div style={{ padding: '1rem' }}><h2>Users Management</h2><p>Admin console users database table.</p></div>} />
-        <Route path={ROUTES.LANDLORD.LISTINGS} element={<ListingsPage />} />
-        <Route path={ROUTES.LANDLORD.REQUESTS} element={<div style={{ padding: '1rem' }}><h2>Requests Management</h2><p>Admin console tenant requests database table.</p></div>} />
+        <Route path={ROUTES.LANDLORD.DASHBOARD} element={<DashboardPage />} />
         <Route path={ROUTES.LANDLORD.ANALYTICS} element={<AnalyticsPage />} />
         <Route path={ROUTES.LANDLORD.TRANSACTIONS} element={<TransactionsPage />} />
-        <Route path={ROUTES.LANDLORD.SETTINGS} element={<div style={{ padding: '1rem' }}><h2>Portal Settings</h2><p>Admin console configuration fields.</p></div>} />
+        <Route path={ROUTES.LANDLORD.LISTINGS} element={<ListingsPage />} />
+        <Route path={ROUTES.LANDLORD.USERS} element={<UsersPage />} />
+        <Route path={ROUTES.LANDLORD.REQUESTS} element={<RequestsPage />} />
+        <Route path={ROUTES.LANDLORD.SETTINGS} element={<SettingsPage />} />
+        <Route path={ROUTES.LANDLORD.HELP} element={<HelpCenterPage />} />
       </Route>
 
-      {/* Standalone Split & Minimal Layouts */}
+      {/* Standalone layouts */}
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
       <Route path={ROUTES.TENANT.PAYMENT} element={<DepositPaymentPage />} />
 
