@@ -11,7 +11,7 @@ import AdminLayout from '../layouts/AdminLayout';
 import { LoginPage, RegisterPage, ForgotPasswordPage } from '../features/auth';
 import { VerificationPage } from '../features/verification';
 import { SearchPage, FavoritesPage, DepositPaymentPage, RoomDetailPage, AIChatPage, TenantNotificationsPage, RentalRequestPage, DepositHistoryPage, TenantProfilePage } from '../features/tenant';
-import { LandlordDashboard, ManageListingsPage, AddNewPropertyPage, DepositManagementPage, SystemLogsPage, LandlordProfilePage, MessagesPage, LandlordNotificationsPage } from '../features/landlord';
+import { LandlordDashboard, ManageListingsPage, AddNewPropertyPage, DepositManagementPage, AISystemMonitoringPage, LandlordProfilePage, MessagesPage, LandlordNotificationsPage } from '../features/landlord';
 
 // Pages
 import HomePage from '../pages/HomePage';
@@ -61,7 +61,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.DEPOSITS} element={<DepositManagementPage />} />
         <Route path={ROUTES.LANDLORD.NEW_LISTING} element={<AddNewPropertyPage />} />
         <Route path={ROUTES.LANDLORD.REQUESTS} element={<RentalRequestManagementPage />} />
-        <Route path={ROUTES.LANDLORD.ANALYTICS} element={<SystemLogsPage />} />
+        <Route path={ROUTES.LANDLORD.ANALYTICS} element={<AISystemMonitoringPage />} />
         <Route path={ROUTES.LANDLORD.PROFILE} element={<LandlordProfilePage />} />
         <Route path={ROUTES.LANDLORD.SETTINGS} element={<SettingsPage />} />
       </Route>
