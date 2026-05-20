@@ -29,6 +29,8 @@ const Sidebar = () => {
     { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.LANDLORD.SETTINGS },
   ];
 
+  const isActive = (path) => location.pathname === path;
+
   return (
     <aside className="admin-sidebar">
       {/* Brand Header */}
@@ -48,7 +50,7 @@ const Sidebar = () => {
             <li key={link.label}>
               <Link
                 to={link.path}
-                className={`sidebar-link ${location.pathname === link.path ? 'active' : ''}`}
+                className={`sidebar-link ${isActive(link.path) ? 'active' : ''}`}
               >
                 {link.icon}
                 <span>{link.label}</span>
@@ -71,7 +73,7 @@ const Sidebar = () => {
           <li>
             <Link 
               to={ROUTES.LANDLORD.HELP} 
-              className={`sidebar-link ${location.pathname === ROUTES.LANDLORD.HELP ? 'active-help' : ''}`}
+              className={`sidebar-link ${isActive(ROUTES.LANDLORD.HELP) ? 'active' : ''}`}
             >
               <HelpCircle size={20} />
               <span>Help Center</span>
