@@ -10,10 +10,8 @@ import {
   Wifi, 
   Shield, 
   FileText, 
-  Image as ImageIcon,
-  DollarSign,
-  Layers,
   Sparkles,
+  Layers,
   Info
 } from 'lucide-react';
 import { ROUTES } from '../../../constants';
@@ -30,15 +28,17 @@ const AddNewPropertyPage = () => {
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
     title: '',
-    type: '',
-    rent: '',
     description: '',
-    // Step 2: Location
+    category: '',
+    size: '',
+    
+    // Step 2: Location & Price
     address: '',
     city: '',
     district: '',
-    zip: '',
-    // Step 3: Amenities (boolean toggles)
+    rent: '',
+    
+    // Step 3: Amenities & Photos
     wifi: false,
     ac: false,
     parking: false,
@@ -47,7 +47,6 @@ const AddNewPropertyPage = () => {
     security: false,
     bathroom: false,
     balcony: false,
-    // Step 4: Images
     images: []
   });
 
@@ -96,13 +95,14 @@ const AddNewPropertyPage = () => {
   const validateStep = (step) => {
     const errors = {};
     if (step === 1) {
-      if (!formData.title.trim()) errors.title = 'Property Title is required';
-      if (!formData.type) errors.type = 'Property Type is required';
-      if (!formData.rent || Number(formData.rent) <= 0) errors.rent = 'Please enter a valid monthly rent';
+      if (!formData.title.trim()) errors.title = 'Listing Title is required';
+      if (!formData.description.trim()) errors.description = 'Property Description is required';
+      if (!formData.category) errors.category = 'Property Category is required';
     } else if (step === 2) {
       if (!formData.address.trim()) errors.address = 'Street Address is required';
       if (!formData.city.trim()) errors.city = 'City is required';
       if (!formData.district.trim()) errors.district = 'District/Ward is required';
+      if (!formData.rent || Number(formData.rent) <= 0) errors.rent = 'Please enter a valid monthly rent';
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -135,37 +135,31 @@ const AddNewPropertyPage = () => {
   return (
     <div className="add-property-container" id="add-property-page">
       
-      {/* Back button */}
-      <button 
-        className="add-property-back-link"
-        onClick={() => navigate(ROUTES.LANDLORD.LISTINGS)}
-      >
-        <ArrowLeft size={16} />
-        <span>Back to Listings</span>
-      </button>
+      {/* Header Section */}
+      <div className="add-property-header">
+        <h1 className="add-property-main-title">Add New Listing</h1>
+        <p className="add-property-subtitle">Provide detailed information to attract the right tenants.</p>
+      </div>
 
-      <h1 className="add-property-main-title">Add New Property</h1>
-
-      {/* Stepper Wizard Indicator */}
-      <div className="property-stepper-box">
-        {[
-          { step: 1, label: 'Basic Info' },
-          { step: 2, label: 'Location' },
-          { step: 3, label: 'Amenities' },
-          { step: 4, label: 'Images' }
-        ].map((item, index) => (
-          <React.Fragment key={item.step}>
-            <div className={`stepper-node ${currentStep >= item.step ? 'active' : ''} ${currentStep === item.step ? 'current' : ''}`}>
-              <div className="stepper-circle">
-                {currentStep > item.step ? <Check size={16} /> : item.step}
-              </div>
-              <span className="stepper-label">{item.label}</span>
-            </div>
-            {index < 3 && (
-              <div className={`stepper-connector-line ${currentStep > item.step ? 'active' : ''}`} />
-            )}
-          </React.Fragment>
-        ))}
+      {/* Stepper Wizard Indicator (New Style) */}
+      <div className="property-stepper-container">
+        <div className="stepper-progress-bg">
+          <div 
+            className="stepper-progress-fill" 
+            style={{ width: `${((currentStep - 1) / 2) * 100}%` }}
+          />
+        </div>
+        <div className="stepper-labels">
+          <div className={`step-label ${currentStep >= 1 ? 'active' : ''}`}>
+            1. Basic Info
+          </div>
+          <div className={`step-label ${currentStep >= 2 ? 'active' : ''}`}>
+            2. Location &amp; Price
+          </div>
+          <div className={`step-label ${currentStep >= 3 ? 'active' : ''}`}>
+            3. Amenities &amp; Photos
+          </div>
+        </div>
       </div>
 
       {/* Main Form Content Card */}
@@ -176,33 +170,46 @@ const AddNewPropertyPage = () => {
           <div className="form-step-content animation-fade-in">
             <div className="form-step-header">
               <h2 className="form-step-title">Basic Information</h2>
-              <p className="form-step-subtitle">Provide the primary details for your rental property.</p>
+              <p className="form-step-subtitle">Start with the essential details of the property.</p>
             </div>
 
             <div className="form-group-field">
-              <label className="form-input-label">Property Title *</label>
+              <label className="form-input-label">Listing Title <span className="text-danger">*</span></label>
               <input 
                 type="text" 
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
                 className={`form-input-text ${formErrors.title ? 'error' : ''}`}
-                placeholder="e.g., Modern Loft in Downtown" 
+                placeholder="e.g. Spacious Studio in Downtown" 
               />
               {formErrors.title && <span className="form-field-error-msg">{formErrors.title}</span>}
             </div>
 
+            <div className="form-group-field">
+              <label className="form-input-label">Property Description <span className="text-danger">*</span></label>
+              <textarea 
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className={`form-textarea-field ${formErrors.description ? 'error' : ''}`}
+                rows={5}
+                placeholder="Describe the property's key features, atmosphere, and neighborhood..."
+              />
+              {formErrors.description && <span className="form-field-error-msg">{formErrors.description}</span>}
+            </div>
+
             <div className="form-row-double-cols">
               <div className="form-group-field">
-                <label className="form-input-label">Property Type *</label>
+                <label className="form-input-label">Property Category <span className="text-danger">*</span></label>
                 <div className="form-select-wrapper">
                   <select 
-                    name="type"
-                    value={formData.type}
+                    name="category"
+                    value={formData.category}
                     onChange={handleInputChange}
-                    className={`form-input-select ${formErrors.type ? 'error' : ''}`}
+                    className={`form-input-select ${formErrors.category ? 'error' : ''}`}
                   >
-                    <option value="">Select Type</option>
+                    <option value="">Select Category</option>
                     <option value="Apartment">Apartment</option>
                     <option value="Room">Private Room</option>
                     <option value="Studio">Studio Apartment</option>
@@ -210,50 +217,34 @@ const AddNewPropertyPage = () => {
                     <option value="House">House</option>
                   </select>
                 </div>
-                {formErrors.type && <span className="form-field-error-msg">{formErrors.type}</span>}
+                {formErrors.category && <span className="form-field-error-msg">{formErrors.category}</span>}
               </div>
 
               <div className="form-group-field">
-                <label className="form-input-label">Monthly Rent ($) *</label>
-                <div className="form-input-currency-wrapper">
-                  <span className="currency-prefix-symbol">$</span>
-                  <input 
-                    type="number" 
-                    name="rent"
-                    value={formData.rent}
-                    onChange={handleInputChange}
-                    className={`form-input-text form-input-currency ${formErrors.rent ? 'error' : ''}`}
-                    placeholder="1200" 
-                  />
-                </div>
-                {formErrors.rent && <span className="form-field-error-msg">{formErrors.rent}</span>}
+                <label className="form-input-label">Size (sqm)</label>
+                <input 
+                  type="number" 
+                  name="size"
+                  value={formData.size}
+                  onChange={handleInputChange}
+                  className="form-input-text"
+                  placeholder="e.g. 45" 
+                />
               </div>
-            </div>
-
-            <div className="form-group-field">
-              <label className="form-input-label">Property Description</label>
-              <textarea 
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="form-textarea-field"
-                rows={5}
-                placeholder="Describe the key features, neighborhood, and vibe of the property..."
-              />
             </div>
           </div>
         )}
 
-        {/* Step 2: Location Info */}
+        {/* Step 2: Location & Price */}
         {currentStep === 2 && (
           <div className="form-step-content animation-fade-in">
             <div className="form-step-header">
-              <h2 className="form-step-title">Location Details</h2>
-              <p className="form-step-subtitle">Specify where your rental property is situated.</p>
+              <h2 className="form-step-title">Location &amp; Price</h2>
+              <p className="form-step-subtitle">Specify where your rental is situated and set your pricing.</p>
             </div>
 
             <div className="form-group-field">
-              <label className="form-input-label">Street Address *</label>
+              <label className="form-input-label">Street Address <span className="text-danger">*</span></label>
               <input 
                 type="text" 
                 name="address"
@@ -267,7 +258,7 @@ const AddNewPropertyPage = () => {
 
             <div className="form-row-double-cols">
               <div className="form-group-field">
-                <label className="form-input-label">City *</label>
+                <label className="form-input-label">City <span className="text-danger">*</span></label>
                 <input 
                   type="text" 
                   name="city"
@@ -280,7 +271,7 @@ const AddNewPropertyPage = () => {
               </div>
 
               <div className="form-group-field">
-                <label className="form-input-label">District / Ward *</label>
+                <label className="form-input-label">District / Ward <span className="text-danger">*</span></label>
                 <input 
                   type="text" 
                   name="district"
@@ -294,97 +285,96 @@ const AddNewPropertyPage = () => {
             </div>
 
             <div className="form-group-field">
-              <label className="form-input-label">Postal / ZIP Code</label>
-              <input 
-                type="text" 
-                name="zip"
-                value={formData.zip}
-                onChange={handleInputChange}
-                className="form-input-text"
-                placeholder="e.g., 550000" 
-              />
+              <label className="form-input-label">Monthly Rent ($) <span className="text-danger">*</span></label>
+              <div className="form-input-currency-wrapper">
+                <span className="currency-prefix-symbol">$</span>
+                <input 
+                  type="number" 
+                  name="rent"
+                  value={formData.rent}
+                  onChange={handleInputChange}
+                  className={`form-input-text form-input-currency ${formErrors.rent ? 'error' : ''}`}
+                  placeholder="1200" 
+                />
+              </div>
+              {formErrors.rent && <span className="form-field-error-msg">{formErrors.rent}</span>}
             </div>
           </div>
         )}
 
-        {/* Step 3: Amenities Select */}
+        {/* Step 3: Amenities & Photos */}
         {currentStep === 3 && (
           <div className="form-step-content animation-fade-in">
             <div className="form-step-header">
-              <h2 className="form-step-title">Amenities & Utilities</h2>
-              <p className="form-step-subtitle">Select the key features and services included in the property.</p>
+              <h2 className="form-step-title">Amenities &amp; Photos</h2>
+              <p className="form-step-subtitle">Select features and upload high-quality images of your property.</p>
             </div>
 
-            <div className="amenities-selection-grid">
-              {amenitiesList.map(amenity => (
-                <div 
-                  key={amenity.id} 
-                  className={`amenity-select-card ${formData[amenity.id] ? 'selected' : ''}`}
-                  onClick={() => handleAmenityToggle(amenity.id)}
-                >
-                  <div className="amenity-card-icon">
-                    {amenity.icon}
-                  </div>
-                  <span className="amenity-card-label">{amenity.label}</span>
-                  <div className="amenity-card-checkbox">
-                    {formData[amenity.id] && <Check size={12} />}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Image Drag & Drop Upload */}
-        {currentStep === 4 && (
-          <div className="form-step-content animation-fade-in">
-            <div className="form-step-header">
-              <h2 className="form-step-title">Property Media</h2>
-              <p className="form-step-subtitle">Upload high-quality images of your property to attract tenants.</p>
-            </div>
-
-            {/* Drag and Drop Container */}
-            <div className="media-drag-drop-zone">
-              <input 
-                type="file" 
-                id="file-upload-input" 
-                multiple 
-                accept="image/*"
-                onChange={handleImageUpload}
-                style={{ display: 'none' }} 
-              />
-              <label htmlFor="file-upload-input" className="drag-drop-label-wrapper">
-                <div className="drag-drop-cloud-icon">
-                  <Upload size={32} />
-                </div>
-                <div className="drag-drop-text-instructions">
-                  <span className="bold-instruction-text">Click to upload</span> or drag and drop
-                </div>
-                <span className="upload-limit-info">PNG, JPG, JPEG up to 10MB</span>
-              </label>
-            </div>
-
-            {/* Previews grid */}
-            {formData.images.length > 0 && (
-              <div className="media-preview-container">
-                <h4 className="preview-section-title">Uploaded Images ({formData.images.length})</h4>
-                <div className="media-previews-grid">
-                  {formData.images.map((src, idx) => (
-                    <div className="preview-image-card" key={idx}>
-                      <img src={src} alt={`Property Upload ${idx}`} />
-                      <button 
-                        type="button" 
-                        className="remove-preview-image-btn"
-                        onClick={() => removeImage(idx)}
-                      >
-                        <X size={14} />
-                      </button>
-                      {idx === 0 && <span className="featured-image-tag">Cover Photo</span>}
+            <div className="form-group-field" style={{ marginBottom: '2rem' }}>
+              <label className="form-input-label">Select Amenities</label>
+              <div className="amenities-selection-grid">
+                {amenitiesList.map(amenity => (
+                  <div 
+                    key={amenity.id} 
+                    className={`amenity-select-card ${formData[amenity.id] ? 'selected' : ''}`}
+                    onClick={() => handleAmenityToggle(amenity.id)}
+                  >
+                    <div className="amenity-card-icon">
+                      {amenity.icon}
                     </div>
-                  ))}
-                </div>
+                    <span className="amenity-card-label">{amenity.label}</span>
+                    <div className="amenity-card-checkbox">
+                      {formData[amenity.id] && <Check size={12} />}
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
+
+            <div className="form-group-field">
+              <label className="form-input-label">Property Photos</label>
+              <div className="media-drag-drop-zone">
+                <input 
+                  type="file" 
+                  id="file-upload-input" 
+                  multiple 
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: 'none' }} 
+                />
+                <label htmlFor="file-upload-input" className="drag-drop-label-wrapper">
+                  <div className="drag-drop-cloud-icon">
+                    <Upload size={32} />
+                  </div>
+                  <div className="drag-drop-text-instructions">
+                    <span className="bold-instruction-text">Click to upload</span> or drag and drop
+                  </div>
+                  <span className="upload-limit-info">PNG, JPG, JPEG up to 10MB</span>
+                </label>
+              </div>
+
+              {formData.images.length > 0 && (
+                <div className="media-preview-container">
+                  <h4 className="preview-section-title">Uploaded Images ({formData.images.length})</h4>
+                  <div className="media-previews-grid">
+                    {formData.images.map((src, idx) => (
+                      <div className="preview-image-card" key={idx}>
+                        <img src={src} alt={`Upload ${idx}`} />
+                        <button 
+                          type="button" 
+                          className="remove-preview-image-btn"
+                          onClick={() => removeImage(idx)}
+                        >
+                          <X size={14} />
+                        </button>
+                        {idx === 0 && <span className="featured-image-tag">Cover</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 
@@ -396,22 +386,21 @@ const AddNewPropertyPage = () => {
               className="btn-draft-save"
               onClick={() => navigate(ROUTES.LANDLORD.LISTINGS)}
             >
-              Save as Draft
+              Save Draft
             </button>
           ) : (
             <button 
               type="button" 
-              className="btn-wizard-back"
+              className="btn-draft-save"
               onClick={handleBack}
             >
-              <ArrowLeft size={16} />
-              <span>Back</span>
+              Back
             </button>
           )}
 
-          {currentStep < 4 ? (
+          {currentStep < 3 ? (
             <Button variant="primary" onClick={handleNext}>
-              <span>Continue</span>
+              <span>Next Step</span>
               <ArrowRight size={16} />
             </Button>
           ) : (
@@ -420,7 +409,7 @@ const AddNewPropertyPage = () => {
               onClick={handlePublish}
               isLoading={isSubmitting}
             >
-              <span>Publish Property</span>
+              <span>Publish Listing</span>
               <Check size={16} />
             </Button>
           )}
@@ -435,9 +424,9 @@ const AddNewPropertyPage = () => {
             <div className="success-modal-icon-circle">
               <Check size={32} />
             </div>
-            <h2 className="success-modal-title">Property Published!</h2>
+            <h2 className="success-modal-title">Listing Published!</h2>
             <p className="success-modal-message">
-              Your new listing has been successfully published and is now visible to potential tenants.
+              Your new room listing has been successfully published and is now visible to potential tenants.
             </p>
             <button 
               className="btn-success-modal-close"

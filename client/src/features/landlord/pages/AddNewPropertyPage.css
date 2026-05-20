@@ -24,91 +24,66 @@
   color: #2563EB;
 }
 
+/* Header */
+.add-property-header {
+  margin-bottom: 2.5rem;
+}
+
 .add-property-main-title {
   font-size: 1.875rem;
-  font-weight: 800;
-  color: #1E293B;
-  letter-spacing: -0.025em;
-  margin-bottom: 2rem;
-}
-
-/* Stepper Wizard Navigation */
-.property-stepper-box {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2.5rem;
-  padding: 0 1rem;
-}
-
-.stepper-node {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
-  position: relative;
-  z-index: 10;
-}
-
-.stepper-circle {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 2px solid #E2E8F0;
-  background-color: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
   font-weight: 700;
-  color: #94A3B8;
-  transition: all 0.25s ease;
+  color: #1E293B;
+  margin-bottom: 0.5rem;
 }
 
-.stepper-label {
+.add-property-subtitle {
+  font-size: 1rem;
+  color: #64748B;
+}
+
+/* Stepper Progress Bar (New Style) */
+.property-stepper-container {
+  margin-bottom: 2.5rem;
+}
+
+.stepper-progress-bg {
+  height: 6px;
+  background-color: #E2E8F0;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.stepper-progress-fill {
+  height: 100%;
+  background-color: #2563EB;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.stepper-labels {
+  display: flex;
+  justify-content: space-between;
+}
+
+.step-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #64748B;
-  white-space: nowrap;
-  transition: color 0.25s ease;
+  color: #94A3B8;
+  transition: color 0.3s ease;
 }
 
-.stepper-connector-line {
-  flex: 1;
-  height: 2px;
-  background-color: #E2E8F0;
-  margin: 0 1rem;
-  margin-bottom: 1.5rem; /* align vertically with circles */
-  transition: background-color 0.25s ease;
-}
-
-/* Active / Current Node Stepper States */
-.stepper-node.active .stepper-circle {
-  background-color: #2563EB;
-  border-color: #2563EB;
-  color: #FFFFFF;
-}
-
-.stepper-node.active .stepper-label {
+.step-label.active {
   color: #2563EB;
-  font-weight: 700;
-}
-
-.stepper-node.current .stepper-circle {
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
-}
-
-.stepper-connector-line.active {
-  background-color: #2563EB;
 }
 
 /* Form Card Container */
 .property-form-card {
   background-color: #FFFFFF;
   border: 1px solid #E2E8F0;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 2.25rem 2.5rem;
+  border-radius: var(--radius-lg, 12px);
+  padding: 2.5rem;
 }
 
 .form-step-header {
@@ -151,6 +126,10 @@
   margin-bottom: 0.5rem;
 }
 
+.text-danger {
+  color: #EF4444;
+}
+
 /* Input Fields Styles */
 .form-input-text,
 .form-input-select,
@@ -158,34 +137,30 @@
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid #E2E8F0;
-  background-color: #F8FAFC;
-  border-radius: var(--radius-md);
+  background-color: #FFFFFF;
+  border-radius: var(--radius-md, 8px);
   font-size: 0.95rem;
   color: #1E293B;
-  font-weight: 500;
   transition: all 0.15s ease;
 }
 
 .form-input-text::placeholder,
 .form-textarea-field::placeholder {
   color: #94A3B8;
-  font-weight: 400;
 }
 
 .form-input-text:focus,
 .form-input-select:focus,
 .form-textarea-field:focus {
   border-color: #2563EB;
-  background-color: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
   outline: none;
 }
 
 /* Error States */
 .form-input-text.error,
-.form-input-select.error {
+.form-input-select.error,
+.form-textarea-field.error {
   border-color: #EF4444;
-  background-color: #FFF8F8;
 }
 
 .form-field-error-msg {
@@ -251,7 +226,7 @@
   border: 1px solid #E2E8F0;
   background-color: #FFFFFF;
   padding: 1rem 1.15rem;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md, 8px);
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -318,7 +293,7 @@
 .media-drag-drop-zone {
   border: 2px dashed #CBD5E1;
   background-color: #F8FAFC;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg, 12px);
   padding: 3.5rem 2rem;
   text-align: center;
   transition: all 0.2s ease;
@@ -345,7 +320,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   margin-bottom: 1rem;
   transition: color 0.2s, transform 0.2s;
 }
@@ -393,10 +368,10 @@
 .preview-image-card {
   position: relative;
   aspect-ratio: 4/3;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md, 8px);
   overflow: hidden;
   border: 1px solid #E2E8F0;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .preview-image-card img {
@@ -419,6 +394,8 @@
   justify-content: center;
   backdrop-filter: blur(2px);
   transition: background-color 0.15s;
+  border: none;
+  cursor: pointer;
 }
 
 .remove-preview-image-btn:hover {
@@ -449,40 +426,18 @@
 }
 
 .btn-draft-save {
-  padding: 0.65rem 1.5rem;
   font-size: 0.875rem;
-  font-weight: 700;
-  color: #475569;
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.15s ease;
+  font-weight: 600;
+  color: #2563EB;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
 }
 
 .btn-draft-save:hover {
-  background-color: #F8FAFC;
-  border-color: #CBD5E1;
-  color: #1E293B;
-}
-
-.btn-wizard-back {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #475569;
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  border-radius: var(--radius-md);
-  transition: all 0.15s ease;
-}
-
-.btn-wizard-back:hover {
-  background-color: #F8FAFC;
-  color: #1E293B;
+  color: #1D4ED8;
 }
 
 /* Fade in animations */
@@ -513,8 +468,7 @@
 
 .property-success-modal-card {
   background-color: #FFFFFF;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-xl, 16px);
   padding: 2.5rem;
   text-align: center;
   max-width: 440px;
@@ -555,8 +509,9 @@
   color: #FFFFFF;
   font-size: 0.95rem;
   font-weight: 700;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  cursor: pointer;
   transition: background-color 0.15s;
 }
 
@@ -587,10 +542,5 @@
 
   .media-previews-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .property-stepper-box {
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
   }
 }
