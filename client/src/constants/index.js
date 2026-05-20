@@ -32,6 +32,7 @@ export const ROUTES = {
     ANALYTICS: '/landlord/analytics',
     SETTINGS: '/landlord/settings',
     HELP: '/landlord/help',
+    CONTACT_SUPPORT: '/landlord/contact-support',
     PROFILE: '/landlord/profile',
     NOTIFICATIONS: '/landlord/notifications',
     MANAGE_ROOMS: '/landlord/rooms',
