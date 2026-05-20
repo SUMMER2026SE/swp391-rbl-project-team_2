@@ -1,4 +1,3 @@
-import React from 'react';
 import { DollarSign, Users, Home, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import StatCard from '../components/StatCard';
