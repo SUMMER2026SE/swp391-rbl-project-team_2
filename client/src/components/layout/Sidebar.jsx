@@ -9,6 +9,10 @@ import {
   Settings,
   HelpCircle,
   LogOut,
+
+  Home,
+  CreditCard
+
 } from 'lucide-react';
 import { ROUTES } from '../../constants';
 import './Sidebar.css';
@@ -20,12 +24,22 @@ const Sidebar = () => {
   // Dashboard -> Listings -> Requests -> Analytics -> Users -> Settings
   const navLinks = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.LANDLORD.DASHBOARD },
+
+    { icon: <BarChart3 size={20} />, label: 'Reports & Analytics', path: ROUTES.LANDLORD.ANALYTICS },
+    { icon: <CreditCard size={20} />, label: 'Payment & Transaction', path: ROUTES.LANDLORD.TRANSACTIONS },
+    { icon: <Users size={20} />, label: 'Users', path: ROUTES.LANDLORD.USERS },
+    { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
+    { icon: <ClipboardList size={20} />, label: 'Requests', path: ROUTES.LANDLORD.REQUESTS },
+
     { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
     { icon: <ClipboardList size={20} />, label: 'Requests', path: ROUTES.LANDLORD.REQUESTS },
     { icon: <BarChart3 size={20} />, label: 'Analytics', path: ROUTES.LANDLORD.ANALYTICS },
     { icon: <Users size={20} />, label: 'Users', path: ROUTES.LANDLORD.USERS },
+
     { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.LANDLORD.SETTINGS },
   ];
+
+  const isActive = (path) => location.pathname === path;
 
   return (
     <aside className="admin-sidebar">
@@ -47,6 +61,19 @@ const Sidebar = () => {
       {/* Navigation Links */}
       <nav className="sidebar-nav">
         <ul>
+
+          {navLinks.map((link) => (
+            <li key={link.label}>
+              <Link
+                to={link.path}
+                className={`sidebar-link ${isActive(link.path) ? 'active' : ''}`}
+              >
+                {link.icon}
+                <span>{link.label}</span>
+              </Link>
+            </li>
+          ))}
+
           {navLinks.map((link) => {
             const isSettingsOrProfileActive = 
               link.path === ROUTES.LANDLORD.SETTINGS && 
@@ -65,6 +92,7 @@ const Sidebar = () => {
               </li>
             );
           })}
+
         </ul>
       </nav>
 
@@ -72,9 +100,15 @@ const Sidebar = () => {
       <div className="sidebar-footer">
         <ul className="footer-links">
           <li>
+
+            <Link 
+              to={ROUTES.LANDLORD.HELP} 
+              className={`sidebar-link ${isActive(ROUTES.LANDLORD.HELP) ? 'active' : ''}`}
+
             <Link
               to={ROUTES.LANDLORD.HELP}
               className={`sidebar-link ${location.pathname === ROUTES.LANDLORD.HELP ? 'active-help' : ''}`}
+
             >
               <HelpCircle size={20} />
               <span>Help</span>

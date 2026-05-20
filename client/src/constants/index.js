@@ -44,6 +44,7 @@ export const ROUTES = {
     LISTINGS: '/admin/listings',
     MODERATION: '/admin/moderation',
     ANALYTICS: '/admin/analytics',
+    TRANSACTIONS: '/admin/transactions',
     SETTINGS: '/admin/settings',
     HELP: '/admin/help',
     NOTIFICATIONS: '/admin/notifications',

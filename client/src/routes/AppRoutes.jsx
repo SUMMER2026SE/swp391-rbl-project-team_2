@@ -7,13 +7,29 @@ import MainLayout from '../layouts/MainLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import AdminLayout from '../layouts/AdminLayout';
 
+// Auth feature
+import { LoginPage, RegisterPage } from '../features/auth';
+
+// Tenant feature
+import { SearchPage, FavoritesPage, DepositPaymentPage } from '../features/tenant';
 // Features (using unified exports)
 import { LoginPage, RegisterPage, ForgotPasswordPage } from '../features/auth';
 import { VerificationPage } from '../features/verification';
 import { SearchPage, FavoritesPage, DepositPaymentPage, RoomDetailPage, AIChatPage, TenantNotificationsPage, RentalRequestPage, DepositHistoryPage, TenantProfilePage } from '../features/tenant';
 import { LandlordDashboard, ManageListingsPage, AddNewPropertyPage, DepositManagementPage, AISystemMonitoringPage, LandlordProfilePage, MessagesPage, LandlordNotificationsPage } from '../features/landlord';
 
-// Pages
+// Admin feature
+import {
+  DashboardPage,
+  AnalyticsPage,
+  TransactionsPage,
+  ListingsPage,
+  UsersPage,
+  RequestsPage,
+  SettingsPage,
+} from '../features/admin';
+
+// Shared pages
 import HomePage from '../pages/HomePage';
 import { RentalRequestManagementPage } from '../features/rental';
 import HelpCenterPage from '../pages/HelpCenterPage';
@@ -51,6 +67,19 @@ const AppRoutes = () => {
 
       {/* Admin / Landlord Routes */}
       <Route element={<AdminLayout />}>
+        <Route path={ROUTES.LANDLORD.DASHBOARD} element={<DashboardPage />} />
+        <Route path={ROUTES.LANDLORD.ANALYTICS} element={<AnalyticsPage />} />
+        <Route path={ROUTES.LANDLORD.TRANSACTIONS} element={<TransactionsPage />} />
+        <Route path={ROUTES.LANDLORD.LISTINGS} element={<ListingsPage />} />
+        <Route path={ROUTES.LANDLORD.USERS} element={<UsersPage />} />
+        <Route path={ROUTES.LANDLORD.REQUESTS} element={<RequestsPage />} />
+        <Route path={ROUTES.LANDLORD.SETTINGS} element={<SettingsPage />} />
+        <Route path={ROUTES.LANDLORD.HELP} element={<HelpCenterPage />} />
+      </Route>
+
+      {/* Standalone layouts */}
+      <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+      <Route path={ROUTES.TENANT.PAYMENT} element={<DepositPaymentPage />} />
         <Route path={ROUTES.LANDLORD.DASHBOARD} element={<LandlordDashboard />} />
         <Route path={ROUTES.LANDLORD.HELP} element={<HelpCenterPage />} />
         <Route path={ROUTES.LANDLORD.NOTIFICATIONS} element={<LandlordNotificationsPage />} />
