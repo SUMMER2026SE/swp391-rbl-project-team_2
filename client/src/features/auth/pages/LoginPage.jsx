@@ -68,7 +68,7 @@ const LoginPage = () => {
             </div>
           }
           rightLabel={
-            <Link to="#" className="forgot-password">Forgot password?</Link>
+            <Link to={ROUTES.FORGOT_PASSWORD} className="forgot-password">Forgot password?</Link>
           }
           error={errors.password?.message}
           {...register('password')}

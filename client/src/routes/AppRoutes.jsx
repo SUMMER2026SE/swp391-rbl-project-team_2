@@ -8,7 +8,7 @@ import AuthLayout from '../layouts/AuthLayout';
 import AdminLayout from '../layouts/AdminLayout';
 
 // Features (using unified exports)
-import { LoginPage, RegisterPage } from '../features/auth';
+import { LoginPage, RegisterPage, ForgotPasswordPage } from '../features/auth';
 import { SearchPage, FavoritesPage, DepositPaymentPage, RoomDetailPage, AIChatPage, TenantNotificationsPage, RentalRequestPage, DepositHistoryPage, TenantProfilePage } from '../features/tenant';
 import { LandlordDashboard, ManageListingsPage, AddNewPropertyPage, DepositManagementPage, LandlordProfilePage, MessagesPage, LandlordNotificationsPage } from '../features/landlord';
 import { VerificationPage } from '../features/verification';
@@ -41,7 +41,7 @@ const AppRoutes = () => {
       {/* Auth Routes */}
       <Route element={<AuthLayout />}>
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-        <Route path={ROUTES.FORGOT_PASSWORD} element={<div style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center', padding: '3rem' }}><h2>Forgot Password</h2><p>Coming soon...</p></div>} />
+        <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
       </Route>
 
       {/* Standalone Pages (no layout wrapper) */}
