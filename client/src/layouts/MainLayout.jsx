@@ -1,13 +1,17 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
+import { Home, Search, Menu, Grid } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import { ROUTES } from '../constants';
 import './MainLayout.css';
 
 const MainLayout = () => {
+  const location = useLocation();
+  const isChatPage = location.pathname === ROUTES.TENANT.CHAT;
+
   return (
-    <div className="main-layout">
-      {/* Header */}
+    <div className={`main-layout ${isChatPage ? 'chat-layout-mode' : ''}`}>
       <Header />
 
       {/* Main Content */}
@@ -15,8 +19,7 @@ const MainLayout = () => {
         <Outlet />
       </main>
 
-      {/* Footer */}
-      <Footer />
+      {!isChatPage && <Footer />}
     </div>
   );
 };

@@ -30,10 +30,11 @@
 .favorite-btn {
   position: absolute;
   top: 0.75rem;
-  right: 0.75rem;
-  background-color: white;
+  left: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-full);
-  padding: 0.5rem;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,14 +42,16 @@
   transition: all 0.2s;
   border: none;
   cursor: pointer;
+  z-index: 10;
 }
 
 .favorite-btn:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
+  background-color: white;
 }
 
 .heart-icon {
-  color: var(--text-muted);
+  color: #4B5563; /* Slate 600 */
   transition: color 0.2s, fill 0.2s;
 }
 
@@ -77,6 +80,11 @@
 
 .primary-tag {
   background-color: #007BFF; /* Bright blue */
+  color: white;
+}
+
+.match-tag {
+  background-color: #6366F1; /* Indigo / Purple */
   color: white;
 }
 
@@ -170,13 +178,17 @@
 }
 
 .room-card-tag {
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  background-color: #EEF2FF; /* Indigo light */
+  color: #4F46E5; /* Indigo 600 */
   font-size: 0.75rem;
   font-weight: 500;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-light);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: none;
+}
+
+.room-card-standard .chat-floating-price {
+  color: #111827; /* Dark text for Explore Rooms */
 }
 
 /* Specs */
@@ -199,4 +211,77 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   font-weight: 500;
+}
+
+/* Chat Variant Styles */
+.room-card-chat .room-card-title {
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.room-card-chat .room-card-location {
+  margin-bottom: 0;
+}
+
+.chat-floating-price {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background-color: white;
+  color: #1E40AF; /* Bold Blue matching Figma */
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.chat-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-card-footer .room-card-specs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0;
+}
+
+.spec-text-only {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.spec-dot {
+  font-size: 0.75rem;
+  color: var(--border-light);
+  margin: 0 0.25rem;
+}
+
+.view-details-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #007BFF;
+  text-decoration: none;
+}
+
+.view-details-link:hover {
+  text-decoration: underline;
+}
+
+.chat-tags {
+  margin-top: 0.5rem;
+}
+
+.chat-tag {
+  background-color: #F1F5F9; /* Slate 100 */
+  color: #475569; /* Slate 600 */
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: none;
 }

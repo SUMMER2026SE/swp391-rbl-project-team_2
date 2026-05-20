@@ -1,0 +1,116 @@
+.verification-page {
+  min-height: 100vh;
+  background: var(--bg-main);
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Page Header ── */
+.verification-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1000px;
+  margin: 0 auto 2.5rem;
+}
+
+.verification-page__title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+
+.verification-page__desc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.verification-page__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.verification-page__brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verification-page__brand-icon svg {
+  color: white;
+}
+
+/* ── Section Label ── */
+.verification-page__section-label {
+  max-width: 1000px;
+  margin: 0 auto 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-dark);
+  color: var(--text-inverse);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.02em;
+}
+
+/* ── Grid Layout ── */
+.verification-page__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.verification-page__col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Center cards within columns */
+.verification-page__col > * {
+  width: 100%;
+  max-width: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .verification-page {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .verification-page__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .verification-page__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .verification-page__title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .verification-page {
+    padding: 1rem 0.75rem 2rem;
+  }
+
+  .verification-page__title {
+    font-size: 1.25rem;
+  }
+}

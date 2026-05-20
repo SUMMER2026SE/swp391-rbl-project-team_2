@@ -9,46 +9,58 @@
   bottom: 0;
   left: 0;
   z-index: 40;
+  padding: 2rem 0;
 }
 
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  padding: 1.5rem 1.25rem 1.25rem;
+/* User Profile Header */
+.sidebar-brand-profile-link {
+  text-decoration: none;
 }
 
-.brand-logo-container {
+.sidebar-brand-profile {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 0.75rem;
+  padding: 0 1.75rem 1.75rem;
 }
 
-.brand-icon {
-  color: #2563EB; /* Figma Blue Brand */
+.sidebar-brand-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #cbd5e1;
 }
 
-.brand-text {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #1E3A8A; /* SmartBoarding Blue */
-  letter-spacing: -0.025em;
+.profile-info {
+  display: flex;
+  flex-direction: column;
 }
 
-.console-label {
-  padding: 0.5rem 1.25rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
+.profile-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1e3a8a; /* Dark blue title */
+  letter-spacing: -0.02em;
+  margin-bottom: 0.1rem;
 }
 
+.profile-subtitle {
+  font-size: 0.725rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Navigation Links */
 .sidebar-nav {
   flex: 1;
-  padding: 0.5rem 0;
+  padding: 0 1rem;
   overflow-y: auto;
 }
 
-.sidebar-nav ul, .footer-links {
+.sidebar-nav ul,
+.footer-links {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -61,72 +73,68 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 1rem;
   color: #475569;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
   text-decoration: none;
-  transition: all 0.2s;
-  border-right: 3px solid transparent;
+  transition: all 0.2s ease;
 }
 
 .sidebar-link:hover {
   background-color: #F8FAFC;
-  color: var(--text-main);
+  color: #1E293B;
 }
 
 .sidebar-link svg {
   color: #64748B;
-  transition: color 0.2s;
+  transition: color 0.2s ease;
 }
 
+/* Active Nav Item - Pill Shape Matches Figma */
 .sidebar-link.active,
 .sidebar-link.active-help {
-  background-color: #F1F5F9;
-  color: #2563EB;
+  background-color: #e0e7ff; /* Soft indigo/blue bg */
+  color: #4f46e5; /* Indigo/blue text */
   font-weight: 600;
-  border-right: 3px solid #2563EB;
 }
 
 .sidebar-link.active svg,
 .sidebar-link.active-help svg {
-  color: #2563EB;
+  color: #4f46e5;
 }
 
+/* Footer Section */
 .sidebar-footer {
-  padding: 1.25rem 0;
+  padding: 1.25rem 1rem 0;
   border-top: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-top: auto;
 }
 
-.new-listing-btn-container {
-  padding: 0 1.25rem;
-  margin-bottom: 0.5rem;
+.support-btn-container {
+  margin-bottom: 0.25rem;
 }
 
-.btn-new-listing {
+.btn-support-center {
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  display: block;
+  text-align: center;
   padding: 0.75rem;
-  background-color: #2563EB;
-  color: white;
-  border: none;
+  background-color: #3b82f6; /* Modern blue */
+  color: #ffffff;
   border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
-  text-align: center;
-  transition: background-color 0.2s;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: opacity 0.2s ease;
 }
 
-.btn-new-listing:hover {
-  background-color: #1D4ED8;
+.btn-support-center:hover {
+  opacity: 0.9;
 }
 
 .logout-link {
