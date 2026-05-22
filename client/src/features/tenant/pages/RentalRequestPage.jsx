@@ -100,7 +100,7 @@ const RentalRequestPage = () => {
               </div>
               <div className="trust-content">
                 <h3>Landlord Verified</h3>
-                <p>This property is managed by a SmartBoard certified partner. Your security deposit is protected through our platform.</p>
+                <p>This property is managed by a RentalRoom certified partner. Your security deposit is protected through our platform.</p>
               </div>
             </div>
           </div>

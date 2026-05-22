@@ -63,7 +63,7 @@ const VerificationPage = () => {
           <div className="verification-page__brand-icon">
             <Shield size={16} />
           </div>
-          SmartBoarding
+          RentalRoom
         </div>
       </div>
 
