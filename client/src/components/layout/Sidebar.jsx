@@ -21,12 +21,6 @@ const Sidebar = () => {
     { icon: <ClipboardList size={20} />, label: 'Requests', path: ROUTES.ADMIN.MODERATION },
     { icon: <BarChart3 size={20} />, label: 'Analytics', path: ROUTES.ADMIN.ANALYTICS },
     { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.ADMIN.SETTINGS },
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.LANDLORD.DASHBOARD },
-    { icon: <BarChart3 size={20} />, label: 'Reports & Analytics', path: ROUTES.LANDLORD.ANALYTICS },
-    { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
-    { icon: <ClipboardList size={20} />, label: 'Requests', path: ROUTES.LANDLORD.REQUESTS },
-    { icon: <CreditCard size={20} />, label: 'Deposits', path: ROUTES.LANDLORD.DEPOSITS },
-    { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.LANDLORD.SETTINGS },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -34,7 +28,7 @@ const Sidebar = () => {
   return (
     <aside className="admin-sidebar">
       {/* Brand Header */}
-      <Link to={ROUTES.LANDLORD.PROFILE} className="sidebar-brand-profile-link">
+      <Link to={ROUTES.ADMIN.PROFILE || ROUTES.ADMIN.SETTINGS} className="sidebar-brand-profile-link">
         <div className="sidebar-brand-profile">
           <img
             src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&auto=format&fit=crop&q=80"
@@ -72,8 +66,6 @@ const Sidebar = () => {
             <Link
               to={ROUTES.ADMIN.HELP}
               className={`sidebar-link ${isActive(ROUTES.ADMIN.HELP) ? 'active' : ''}`}
-              to={ROUTES.LANDLORD.HELP}
-              className={`sidebar-link ${isActive(ROUTES.LANDLORD.HELP) ? 'active' : ''}`}
             >
               <HelpCircle size={20} />
               <span>Help</span>

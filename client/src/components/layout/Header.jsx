@@ -13,7 +13,7 @@ const Header = () => {
       <div className="header-content">
         <div className="header-left">
           <Link to={ROUTES.HOME} className="logo">
-            SmartBoard
+            RentalRoom
           </Link>
           {!isNotificationsPage && (
             <div className="header-search-bar">

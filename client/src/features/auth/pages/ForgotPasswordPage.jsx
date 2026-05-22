@@ -24,7 +24,7 @@ const ForgotPasswordPage = () => {
 
     setError('');
     setIsSubmitting(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
@@ -60,10 +60,10 @@ const ForgotPasswordPage = () => {
           error={error}
         />
 
-        <Button 
-          type="submit" 
-          variant="primary" 
-          fullWidth 
+        <Button
+          type="submit"
+          variant="primary"
+          fullWidth
           isLoading={isSubmitting}
           className="submit-btn"
         >
