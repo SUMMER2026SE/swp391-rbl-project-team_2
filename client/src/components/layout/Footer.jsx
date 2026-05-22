@@ -8,10 +8,10 @@ const Footer = () => {
       <div className="container footer-minimal-content">
         <div className="footer-left">
           <Link to="/" className="footer-logo">
-            SmartBoard
+            RentalRoom
           </Link>
         </div>
-        
+
         <div className="footer-middle">
           <Link to="#">Terms</Link>
           <Link to="#">Privacy</Link>
@@ -20,7 +20,7 @@ const Footer = () => {
         </div>
 
         <div className="footer-right">
-          &copy; 2024 SmartBoard AI. Modern housing for modern people.
+          &copy; 2024 RentalRoom. Modern housing for modern people.
         </div>
       </div>
     </footer>
