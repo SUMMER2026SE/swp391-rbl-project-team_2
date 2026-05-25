@@ -58,7 +58,6 @@ import HomePage from '../pages/HomePage';
 import HelpCenterPage from '../pages/HelpCenterPage';
 import TermsPage from '../pages/TermsPage';
 import ContactSupportPage from '../pages/ContactSupportPage';
-import TermsPage from '../pages/TermsPage';
 import LandlordSettingsPage from '../pages/SettingsPage';
 import GlobalSearchPage from '../pages/GlobalSearchPage';
 import NotFoundPage from '../pages/NotFoundPage';
