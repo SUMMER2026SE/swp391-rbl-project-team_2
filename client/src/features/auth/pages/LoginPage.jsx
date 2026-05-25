@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../../../config/supabase';
+import useAuthStore from '../../../store/useAuthStore';
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import Input from '../../../components/common/Input';
@@ -26,13 +28,37 @@ const GoogleIcon = () => (
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const login = useAuthStore(state => state.login);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(loginSchema)
   });
 
   const onSubmit = async (data) => {
-    console.log(data);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      login(authData.user, authData.session.access_token);
+      
+      const role = authData.user.user_metadata?.role || 'TENANT';
+      if (role === 'LANDLORD') {
+        navigate(ROUTES.LANDLORD.DASHBOARD);
+      } else if (role === 'ADMIN') {
+        navigate(ROUTES.ADMIN.DASHBOARD);
+      } else {
+        navigate(ROUTES.HOME);
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error.message || 'Login failed');
+    }
   };
 
   return (
