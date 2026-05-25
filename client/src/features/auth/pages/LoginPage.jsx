@@ -23,11 +23,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const FacebookIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" fill="#1877F2" />
-  </svg>
-);
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +39,7 @@ const LoginPage = () => {
     <div className="login-page">
       <div className="login-header">
         <h1>Welcome back</h1>
-        <p>Sign in to manage your premium boarding experience.</p>
+        <p>Sign in to find and manage your perfect rental room.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="login-form">
@@ -91,11 +86,8 @@ const LoginPage = () => {
       </div>
 
       <div className="social-login">
-        <Button variant="secondary" className="social-btn">
-          <GoogleIcon /> Google
-        </Button>
-        <Button variant="secondary" className="social-btn">
-          <FacebookIcon /> Facebook
+        <Button variant="secondary" className="social-btn" fullWidth>
+          <GoogleIcon /> Continue with Google
         </Button>
       </div>
 
