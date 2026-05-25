@@ -38,7 +38,7 @@ const RegisterPage = () => {
     <div className="register-form-container">
       <div className="register-header">
         <h1>Create an Account</h1>
-        <p>Welcome! Let's get you set up.</p>
+        <p>Join our community and find your ideal rental room today.</p>
       </div>
 
       <div className="role-selector">
