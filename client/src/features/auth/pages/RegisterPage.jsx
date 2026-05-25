@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Home, ArrowRight } from 'lucide-react';
+import { supabase } from '../../../config/supabase';
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import Input from '../../../components/common/Input';
@@ -29,9 +30,26 @@ const RegisterPage = () => {
   });
 
   const onSubmit = async (data) => {
-    console.log({ ...data, role });
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    navigate(ROUTES.LOGIN);
+    try {
+      const { data: authData, error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            fullName: data.fullName,
+            phone: data.phone,
+            role: role
+          }
+        }
+      });
+
+      if (error) throw error;
+      
+      navigate(ROUTES.VERIFY_OTP, { state: { email: data.email, type: 'signup' } });
+    } catch (error) {
+      console.error(error);
+      alert(error.message || 'Registration failed');
+    }
   };
 
   return (

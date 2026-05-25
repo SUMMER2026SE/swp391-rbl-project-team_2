@@ -8,12 +8,13 @@ import {
   Monitor,
   Bot,
   ChevronRight,
-  Check,
 } from 'lucide-react';
+import ChangePasswordModal from '../features/auth/components/ChangePasswordModal';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
   const [activeSection, setActiveSection] = useState('general');
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   // Appearance
   const [appearance, setAppearance] = useState('light');
@@ -290,7 +291,15 @@ const SettingsPage = () => {
                   <p className="sys-section-desc">Manage authentication and access control.</p>
                 </div>
               </div>
-              <p className="sys-placeholder-text">Security settings content coming soon.</p>
+              <div style={{ marginTop: '20px' }}>
+                <button 
+                  className="sys-btn-save" 
+                  onClick={() => setIsPasswordModalOpen(true)}
+                  style={{ background: '#6C3AED', color: '#fff' }}
+                >
+                  Change Password
+                </button>
+              </div>
             </div>
           )}
 
@@ -330,6 +339,11 @@ const SettingsPage = () => {
 
         </div>
       </div>
+
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+      />
     </div>
   );
 };
