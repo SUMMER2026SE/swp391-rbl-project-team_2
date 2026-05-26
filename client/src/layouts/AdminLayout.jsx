@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Bell, Mail, MessageSquare, Search, ChevronDown } from 'lucide-react';
+import { Bell, MessageSquare, Search, ChevronDown } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
 import SearchOverlay from '../components/ui/SearchOverlay';
 import { ROUTES } from '../constants';
@@ -8,11 +8,23 @@ import './AdminLayout.css';
 
 const AdminLayout = () => {
   const location = useLocation();
-  const isMessagesActive = location.pathname === ROUTES.LANDLORD.MESSAGES;
-  const hideTopbar = 
-    location.pathname === ROUTES.LANDLORD.REQUESTS || 
-    location.pathname === ROUTES.LANDLORD.SETTINGS;
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+
+  // Detect role context from current URL
+  const isLandlord = location.pathname.startsWith('/landlord');
+
+  // Dynamic route references based on role
+  const notificationsPath = isLandlord ? ROUTES.LANDLORD.NOTIFICATIONS : ROUTES.ADMIN.NOTIFICATIONS;
+  const messagesPath = isLandlord ? ROUTES.LANDLORD.MESSAGES : ROUTES.ADMIN.MESSAGES;
+  const helpPath = isLandlord ? ROUTES.LANDLORD.HELP : ROUTES.ADMIN.HELP;
+
+  const isMessagesActive = location.pathname === messagesPath;
+
+  // Hide topbar on specific pages
+  const hideTopbar =
+    location.pathname === ROUTES.LANDLORD.REQUESTS ||
+    location.pathname === ROUTES.LANDLORD.SETTINGS ||
+    location.pathname === ROUTES.ADMIN.SETTINGS;
 
   return (
     <div className="admin-layout">
@@ -22,11 +34,11 @@ const AdminLayout = () => {
       {/* Main Content Area */}
       <div className="admin-main-container">
 
-        {/* Topbar (Hidden on Requests and Settings to match Figma design) */}
+        {/* Topbar */}
         {!hideTopbar && (
           <header className="admin-topbar">
-            <div 
-              className="topbar-search" 
+            <div
+              className="topbar-search"
               onClick={() => setShowSearchOverlay(true)}
               style={{ cursor: 'pointer' }}
             >
@@ -35,15 +47,15 @@ const AdminLayout = () => {
             </div>
 
             <div className="topbar-actions">
-              {/* Notification Bell wrapped in a link to Notifications page */}
-              <Link to={ROUTES.LANDLORD.NOTIFICATIONS} className="topbar-icon-btn">
+              {/* Notification Bell */}
+              <Link to={notificationsPath} className="topbar-icon-btn">
                 <Bell size={20} />
                 <span className="badge-dot"></span>
               </Link>
 
-              {/* Chat Icon - highlighted if active */}
-              <Link 
-                to={ROUTES.LANDLORD.MESSAGES} 
+              {/* Chat Icon */}
+              <Link
+                to={messagesPath}
                 className={`topbar-icon-btn ${isMessagesActive ? 'active-chat-icon' : ''}`}
               >
                 <MessageSquare size={20} />
@@ -51,18 +63,18 @@ const AdminLayout = () => {
 
               <div className="divider-vertical"></div>
 
-              {/* Support Text link */}
-              <Link to={ROUTES.LANDLORD.HELP} className="btn-support">Support</Link>
-              
-              {/* Outline Quick Action button with Chevron */}
+              {/* Support link */}
+              <Link to={helpPath} className="btn-support">Support</Link>
+
+              {/* Quick Action button */}
               <button className="btn-quick-action">
                 <span>Quick Action</span>
                 <ChevronDown size={14} />
               </button>
 
-              {/* Avatar on far right */}
+              {/* Avatar */}
               <div className="user-avatar-container">
-                <img src="https://i.pravatar.cc/150?img=11" alt="Admin Avatar" className="admin-avatar-img" />
+                <img src="https://i.pravatar.cc/150?img=11" alt="User Avatar" className="admin-avatar-img" />
               </div>
             </div>
           </header>
@@ -75,10 +87,10 @@ const AdminLayout = () => {
       </div>
 
       {showSearchOverlay && (
-        <SearchOverlay 
-          onClose={() => setShowSearchOverlay(false)} 
+        <SearchOverlay
+          onClose={() => setShowSearchOverlay(false)}
           onSearchSubmit={(query) => {
-            console.log('Admin search submitted query:', query);
+            console.log('Search submitted:', query);
           }}
         />
       )}

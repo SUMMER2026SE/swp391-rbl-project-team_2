@@ -92,7 +92,6 @@ const AppRoutes = () => {
       <Route path={ROUTES.TENANT.PAYMENT} element={<DepositPaymentPage />} />
       <Route path={ROUTES.VERIFICATION} element={<VerificationPage />} />
       <Route path={ROUTES.TERMS} element={<TermsPage />} />
-      <Route path={ROUTES.LANDLORD.TERMS} element={<TermsPage />} />
       <Route path={ROUTES.SEARCH} element={<GlobalSearchPage />} />
 
       {/* ===== LANDLORD ROUTES ===== */}
@@ -109,7 +108,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.PROFILE} element={<LandlordProfilePage />} />
         <Route path={ROUTES.LANDLORD.MESSAGES} element={<MessagesPage />} />
         <Route path={ROUTES.LANDLORD.NOTIFICATIONS} element={<LandlordNotificationsPage />} />
-        <Route path={ROUTES.LANDLORD.HELP} element={<HelpCenterPage />} />
+        <Route path={ROUTES.LANDLORD.TERMS} element={<TermsPage />} />
       </Route>
 
       {/* ===== ADMIN ROUTES ===== */}
