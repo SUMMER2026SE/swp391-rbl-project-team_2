@@ -4,7 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Home, ArrowRight } from 'lucide-react';
-import { supabase } from '../../../config/supabase';
+import { GoogleLogin } from '@react-oauth/google';
+import useAuthStore from '../../../store/useAuthStore';
+import { authService } from '../services/authService';
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import Input from '../../../components/common/Input';
@@ -23,6 +25,7 @@ const registerSchema = z.object({
 const RegisterPage = () => {
   const [role, setRole] = useState('TENANT');
   const navigate = useNavigate();
+  const login = useAuthStore(state => state.login);
   
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(registerSchema),
@@ -31,25 +34,51 @@ const RegisterPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      const { data: authData, error } = await supabase.auth.signUp({
+      const response = await authService.register({
+        fullName: data.fullName,
         email: data.email,
+        phone: data.phone,
         password: data.password,
-        options: {
-          data: {
-            fullName: data.fullName,
-            phone: data.phone,
-            role: role
-          }
-        }
+        role: role,
       });
 
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.message);
+      }
       
-      navigate(ROUTES.VERIFY_OTP, { state: { email: data.email, type: 'signup' } });
+      navigate(ROUTES.VERIFY_OTP, { state: { email: data.email, type: 'verify_email' } });
     } catch (error) {
-      console.error(error);
-      alert(error.message || 'Registration failed');
+      const msg = error.response?.data?.message || error.message || 'Registration failed';
+      alert(msg);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const response = await authService.googleLogin(credentialResponse.credential);
+      
+      if (!response.success) {
+        throw new Error(response.message);
+      }
+
+      login(response.data.user, response.data.token);
+      
+      const userRole = response.data.user.role || 'TENANT';
+      if (userRole === 'LANDLORD') {
+        navigate(ROUTES.LANDLORD.DASHBOARD);
+      } else if (userRole === 'ADMIN') {
+        navigate(ROUTES.ADMIN.DASHBOARD);
+      } else {
+        navigate(ROUTES.HOME);
+      }
+    } catch (error) {
+      const msg = error.response?.data?.message || error.message || 'Google signup failed';
+      alert(msg);
+    }
+  };
+
+  const handleGoogleError = () => {
+    alert('Google Signup Failed');
   };
 
   return (
@@ -129,6 +158,23 @@ const RegisterPage = () => {
           <ArrowRight size={18} />
         </Button>
       </form>
+
+      <div className="divider">
+        <span>OR CONTINUE WITH</span>
+      </div>
+
+      <div className="social-login" style={{ display: 'flex', justifyContent: 'center' }}>
+        <GoogleLogin
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          useOneTap
+          theme="outline"
+          size="large"
+          text="continue_with"
+          shape="rectangular"
+          width="100%"
+        />
+      </div>
 
       <div className="register-footer">
         <p>Already have an account? <Link to={ROUTES.LOGIN}>Log In</Link></p>
