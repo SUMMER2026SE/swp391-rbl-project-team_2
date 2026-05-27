@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, X } from 'lucide-react';
-import { supabase } from '../../../config/supabase';
-import useAuthStore from '../../../store/useAuthStore';
+import { authService } from '../services/authService';
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import Input from '../../../components/common/Input';
@@ -15,7 +14,6 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   
-  const { user } = useAuthStore();
   const navigate = useNavigate();
 
   if (!isOpen) return null;
@@ -42,24 +40,12 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      // 1. Verify old password by attempting to sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: oldPassword,
+      const response = await authService.changePassword({
+        oldPassword,
+        newPassword,
       });
 
-      if (signInError) {
-        throw new Error('Incorrect old password');
-      }
-
-      // 2. Update to new password
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (updateError) {
-        throw updateError;
-      }
+      if (!response.success) throw new Error(response.message);
 
       alert('Password updated successfully!');
       onClose();
@@ -69,7 +55,8 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      setError(err.message || 'Failed to update password');
+      const msg = err.response?.data?.message || err.message || 'Failed to update password';
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }

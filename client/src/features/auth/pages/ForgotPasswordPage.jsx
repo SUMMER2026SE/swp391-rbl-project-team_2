@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RotateCcw, Mail, ArrowRight, ArrowLeft } from 'lucide-react';
-import { supabase } from '../../../config/supabase';
+import { authService } from '../services/authService';
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import Input from '../../../components/common/Input';
@@ -29,12 +29,13 @@ const ForgotPasswordPage = () => {
     setIsSubmitting(true);
 
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
-      if (resetError) throw resetError;
+      const response = await authService.forgotPassword(email);
+      if (!response.success) throw new Error(response.message);
 
-      navigate(ROUTES.VERIFY_OTP, { state: { email, type: 'recovery' } });
+      navigate(ROUTES.VERIFY_OTP, { state: { email, type: 'forgot_password' } });
     } catch (err) {
-      setError(err.message || 'Failed to send reset link');
+      const msg = err.response?.data?.message || err.message || 'Failed to send reset link';
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -49,7 +50,7 @@ const ForgotPasswordPage = () => {
         <h1>Forgot Password</h1>
         <p>
           Enter your email to reset your password.<br />
-          We'll send you a secure link to create a new one.
+          We'll send you a secure OTP code to create a new one.
         </p>
       </div>
 

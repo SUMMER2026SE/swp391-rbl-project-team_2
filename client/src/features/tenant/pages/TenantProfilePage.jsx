@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Calendar, ShieldCheck, Star, Edit, Edit3, Lock, Bell, 
   CreditCard, ChevronRight, Wrench, ThermometerSnowflake, 
-  CheckCircle2, Clock, ArrowRight, Plus, Save, X
+  CheckCircle2, Clock, ArrowRight, Plus, Save, X, Camera
 } from 'lucide-react';
 import useAuthStore from '../../../store/useAuthStore';
-import { supabase } from '../../../config/supabase';
+import { authService } from '../../auth/services/authService';
+import { API_URL } from '../../../config';
 import ChangePasswordModal from '../../auth/components/ChangePasswordModal';
 import './TenantProfilePage.css';
 
@@ -39,12 +40,13 @@ const TenantProfilePage = () => {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (user) {
       setFormData({
-        fullName: user.user_metadata?.fullName || '',
-        phone: user.user_metadata?.phone || ''
+        fullName: user.fullName || '',
+        phone: user.phone || ''
       });
     }
   }, [user]);
@@ -52,25 +54,59 @@ const TenantProfilePage = () => {
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      const { data, error } = await supabase.auth.updateUser({
-        data: {
-          fullName: formData.fullName,
-          phone: formData.phone
-        }
+      const response = await authService.updateProfile({
+        fullName: formData.fullName,
+        phone: formData.phone,
       });
-      if (error) throw error;
-      updateUser(data.user);
+      if (!response.success) throw new Error(response.message);
+      updateUser(response.data);
       setIsEditing(false);
     } catch (error) {
-      alert(error.message || 'Error updating profile');
+      const msg = error.response?.data?.message || error.message || 'Error updating profile';
+      alert(msg);
     } finally {
       setIsSaving(false);
     }
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const response = await authService.uploadAvatar(formData);
+      if (!response.success) throw new Error(response.message);
+      updateUser({ avatarUrl: response.data.avatarUrl });
+      alert('Avatar updated successfully!');
+    } catch (error) {
+      const msg = error.response?.data?.message || error.message || 'Error uploading avatar';
+      alert(msg);
+    }
+  };
+
+  const getAvatarUrl = () => {
+    if (user?.avatarUrl) {
+      // If it's a relative path from our server
+      if (user.avatarUrl.startsWith('/uploads')) {
+        const baseUrl = API_URL.replace('/api', '');
+        return `${baseUrl}${user.avatarUrl}`;
+      }
+      // If it's a full URL (e.g., from Google)
+      return user.avatarUrl;
+    }
+    return `https://ui-avatars.com/api/?name=${user?.fullName || 'User'}&background=random&size=150`;
+  };
+
   const getJoinDate = () => {
-    if (!user?.created_at) return 'Member';
-    const date = new Date(user.created_at);
+    if (!user?.createdAt) return 'Member';
+    const date = new Date(user.createdAt);
     return `Member since ${date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
   };
 
@@ -81,13 +117,30 @@ const TenantProfilePage = () => {
         {/* Profile Header */}
         <div className="profile-header-card">
           <div className="profile-header-info">
-            <img 
-              src={`https://ui-avatars.com/api/?name=${user?.user_metadata?.fullName || 'User'}&background=random&size=150`}
-              alt="Profile" 
-              className="profile-avatar" 
-            />
+            <div style={{ position: 'relative', cursor: 'pointer' }} onClick={handleAvatarClick}>
+              <img 
+                src={getAvatarUrl()}
+                alt="Profile" 
+                className="profile-avatar" 
+              />
+              <div style={{
+                position: 'absolute', bottom: '4px', right: '4px',
+                background: '#667eea', borderRadius: '50%', padding: '6px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }}>
+                <Camera size={14} color="white" />
+              </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleAvatarChange}
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                style={{ display: 'none' }}
+              />
+            </div>
             <div className="profile-details">
-              <h1 className="profile-name">{user?.user_metadata?.fullName || 'User Name'}</h1>
+              <h1 className="profile-name">{user?.fullName || 'User Name'}</h1>
               <p className="profile-member-since">
                 <Calendar size={16} />
                 <span>{getJoinDate()}</span>
@@ -151,7 +204,7 @@ const TenantProfilePage = () => {
                       style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd', width: '100%' }}
                     />
                   ) : (
-                    <span className="info-value">{user?.user_metadata?.fullName || 'Not provided'}</span>
+                    <span className="info-value">{user?.fullName || 'Not provided'}</span>
                   )}
                 </div>
                 <div className="info-item">
@@ -169,12 +222,12 @@ const TenantProfilePage = () => {
                       style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd', width: '100%' }}
                     />
                   ) : (
-                    <span className="info-value">{user?.user_metadata?.phone || 'Not provided'}</span>
+                    <span className="info-value">{user?.phone || 'Not provided'}</span>
                   )}
                 </div>
                 <div className="info-item">
                   <span className="info-label">Role</span>
-                  <span className="info-value" style={{ textTransform: 'capitalize' }}>{user?.user_metadata?.role || 'Tenant'}</span>
+                  <span className="info-value" style={{ textTransform: 'capitalize' }}>{user?.role || 'Tenant'}</span>
                 </div>
               </div>
             </div>

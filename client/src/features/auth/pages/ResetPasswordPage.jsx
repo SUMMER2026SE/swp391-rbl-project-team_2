@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, ArrowRight } from 'lucide-react';
-import { supabase } from '../../../config/supabase';
+import { authService } from '../services/authService';
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import Input from '../../../components/common/Input';
@@ -13,18 +13,24 @@ const ResetPasswordPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email || '';
+  const otp = location.state?.otp || '';
 
-  useEffect(() => {
-    // Check if user is authenticated (session exists after recovery verification)
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // Redirect to login if they try to access this page directly without an active recovery session
-        navigate(ROUTES.LOGIN);
-      }
-    };
-    checkSession();
-  }, [navigate]);
+  // Redirect if no email/otp in state
+  if (!email || !otp) {
+    return (
+      <div className="forgot-password-page">
+        <div className="forgot-password-header">
+          <h1>Invalid Access</h1>
+          <p>Please start the password reset process from the beginning.</p>
+          <Button variant="primary" onClick={() => navigate(ROUTES.FORGOT_PASSWORD)}>
+            Go to Forgot Password
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,18 +51,19 @@ const ResetPasswordPage = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
+      const response = await authService.resetPassword({
+        email,
+        otp,
+        newPassword: password,
       });
 
-      if (error) throw error;
+      if (!response.success) throw new Error(response.message);
       
-      // Successfully updated password
       alert('Password updated successfully! Please login with your new password.');
-      await supabase.auth.signOut();
       navigate(ROUTES.LOGIN);
     } catch (err) {
-      setError(err.message || 'Failed to update password');
+      const msg = err.response?.data?.message || err.message || 'Failed to update password';
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
