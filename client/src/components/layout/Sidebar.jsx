@@ -19,6 +19,7 @@ import {
 import { ROUTES } from '../../constants';
 import useAuthStore from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
+import { API_URL } from '../../config';
 import './Sidebar.css';
 
 // ── Menu configs per role ──
@@ -50,6 +51,17 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
 
+  const getAvatarUrl = () => {
+    if (user?.avatarUrl) {
+      if (user.avatarUrl.startsWith('/uploads')) {
+        const baseUrl = API_URL.replace('/api', '');
+        return `${baseUrl}${user.avatarUrl}`;
+      }
+      return user.avatarUrl;
+    }
+    return `https://ui-avatars.com/api/?name=${user?.fullName || 'User'}&background=random`;
+  };
+
   const handleLogout = async (e) => {
     e.preventDefault();
     try {
@@ -79,7 +91,7 @@ const Sidebar = () => {
       <Link to={profilePath} className="sidebar-brand-profile-link">
         <div className="sidebar-brand-profile">
           <img
-            src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&auto=format&fit=crop&q=80"
+            src={getAvatarUrl()}
             alt="User"
             className="sidebar-brand-avatar"
           />

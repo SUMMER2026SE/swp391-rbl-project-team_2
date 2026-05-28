@@ -4,6 +4,7 @@ import { Search, Menu, Bell } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
 import { ROUTES } from '../../constants';
+import { API_URL } from '../../config';
 import './Header.css';
 
 const Header = () => {
@@ -12,6 +13,19 @@ const Header = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
 
   const isNotificationsPage = location.pathname === ROUTES.TENANT.NOTIFICATIONS;
+
+  const getAvatarUrl = () => {
+    if (user?.avatarUrl) {
+      // If it's a relative path from our server
+      if (user.avatarUrl.startsWith('/uploads')) {
+        const baseUrl = API_URL.replace('/api', '');
+        return `${baseUrl}${user.avatarUrl}`;
+      }
+      // If it's a full URL (e.g., from Google)
+      return user.avatarUrl;
+    }
+    return `https://ui-avatars.com/api/?name=${user?.fullName || 'User'}&background=random`;
+  };
 
   const handleLogout = async () => {
     try {
@@ -59,7 +73,7 @@ const Header = () => {
             <div className="user-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <Link to={ROUTES.TENANT.PROFILE}>
                 <div className="header-avatar" title="Profile">
-                  <img src={`https://ui-avatars.com/api/?name=${user?.user_metadata?.fullName || 'User'}&background=random`} alt="Avatar" />
+                  <img src={getAvatarUrl()} alt="Avatar" />
                 </div>
               </Link>
               <button
