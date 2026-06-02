@@ -7,10 +7,12 @@ export const useComplaints = (params = {}) => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
 
+  const paramsString = JSON.stringify(params);
+
   const fetchComplaints = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await landlordService.getComplaints(params);
+      const data = await landlordService.getComplaints(JSON.parse(paramsString));
       setComplaints(data.complaints || data);
       if (data.pagination) {
         setPagination(data.pagination);
@@ -22,7 +24,7 @@ export const useComplaints = (params = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [params]);
+  }, [paramsString]);
 
   useEffect(() => {
     fetchComplaints();

@@ -7,10 +7,12 @@ export const useContracts = (params = {}) => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
 
+  const paramsString = JSON.stringify(params);
+
   const fetchContracts = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await landlordService.getContracts(params);
+      const data = await landlordService.getContracts(JSON.parse(paramsString));
       setContracts(data.contracts || data);
       if (data.pagination) {
         setPagination(data.pagination);
@@ -22,7 +24,7 @@ export const useContracts = (params = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [params]);
+  }, [paramsString]);
 
   useEffect(() => {
     fetchContracts();
