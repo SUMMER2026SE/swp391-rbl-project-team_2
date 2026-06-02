@@ -18,16 +18,16 @@ const seedDatabase = async () => {
       EXEC sp_MSforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all";
 
       -- Xóa tất cả các bảng giao dịch
-      TRUNCATE TABLE [notifications];
-      TRUNCATE TABLE [complaints];
-      TRUNCATE TABLE [viewing_schedules];
-      TRUNCATE TABLE [payments];
-      TRUNCATE TABLE [contracts];
-      TRUNCATE TABLE [rental_requests];
-      TRUNCATE TABLE [room_images];
-      TRUNCATE TABLE [facilities];
-      TRUNCATE TABLE [messages];
-      TRUNCATE TABLE [conversations];
+      DELETE FROM [notifications];
+      DELETE FROM [complaints];
+      DELETE FROM [viewing_schedules];
+      DELETE FROM [payments];
+      DELETE FROM [contracts];
+      DELETE FROM [rental_requests];
+      DELETE FROM [room_images];
+      DELETE FROM [facilities];
+      DELETE FROM [messages];
+      DELETE FROM [conversations];
       DELETE FROM [rooms];
       DELETE FROM [users];
       DELETE FROM [roles];

@@ -84,7 +84,7 @@ const updateLandlordProfile = async (req, res, next) => {
       updateFields.push('phone = :phone');
       replacements.phone = phone;
     }
-    updateFields.push('updated_at = GETDATE()');
+    updateFields.push('updated_at = SYSDATETIMEOFFSET()');
 
     await sequelize.query(
       `UPDATE users SET ${updateFields.join(', ')} WHERE user_id = :userId`,
@@ -142,7 +142,7 @@ const updateAvatar = async (req, res, next) => {
 
     const avatarUrl = `/uploads/${req.file.filename}`;
     await sequelize.query(
-      `UPDATE users SET avatar_url = :avatarUrl, updated_at = GETDATE() WHERE user_id = :userId`,
+      `UPDATE users SET avatar_url = :avatarUrl, updated_at = SYSDATETIMEOFFSET() WHERE user_id = :userId`,
       {
         replacements: { avatarUrl, userId: landlordId },
         type: sequelize.QueryTypes.UPDATE
@@ -218,7 +218,7 @@ const changePassword = async (req, res, next) => {
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
     await sequelize.query(
-      `UPDATE users SET password_hash = :passwordHash, updated_at = GETDATE() WHERE user_id = :userId`,
+      `UPDATE users SET password_hash = :passwordHash, updated_at = SYSDATETIMEOFFSET() WHERE user_id = :userId`,
       {
         replacements: { passwordHash: hashedPassword, userId: landlordId },
         type: sequelize.QueryTypes.UPDATE

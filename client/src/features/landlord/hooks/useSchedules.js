@@ -7,10 +7,12 @@ export const useSchedules = (params = {}) => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
 
+  const paramsString = JSON.stringify(params);
+
   const fetchSchedules = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await landlordService.getSchedules(params);
+      const data = await landlordService.getSchedules(JSON.parse(paramsString));
       setSchedules(data.schedules || data);
       if (data.pagination) {
         setPagination(data.pagination);
@@ -22,7 +24,7 @@ export const useSchedules = (params = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [params]);
+  }, [paramsString]);
 
   useEffect(() => {
     fetchSchedules();
