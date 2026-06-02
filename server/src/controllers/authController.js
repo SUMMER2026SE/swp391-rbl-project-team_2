@@ -120,7 +120,7 @@ const verifyEmail = async (req, res, next) => {
         is_used: false,
         expired_at: { [Op.gt]: sequelize.literal('GETDATE()') },
       },
-      order: [['created_at', 'DESC']],
+      order: [['otp_id', 'DESC']],
     });
 
     if (!otpRecord) {
@@ -409,7 +409,7 @@ const resetPassword = async (req, res, next) => {
         is_used: false,
         expired_at: { [Op.gt]: sequelize.literal('GETDATE()') },
       },
-      order: [['created_at', 'DESC']],
+      order: [['otp_id', 'DESC']],
     });
 
     if (!otpRecord) {

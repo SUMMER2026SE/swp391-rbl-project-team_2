@@ -13,6 +13,7 @@ const sequelize = new Sequelize(
       options: {
         encrypt: false,
         trustServerCertificate: true,
+        useUTC: false, // Use local time instead of UTC
       },
     },
     logging: false,
@@ -22,6 +23,7 @@ const sequelize = new Sequelize(
       acquire: 30000,
       idle: 10000,
     },
+    timezone: '+07:00', // Vietnam timezone
   }
 );
 
