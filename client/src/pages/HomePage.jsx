@@ -12,11 +12,21 @@ import {
 } from 'lucide-react';
 import { ROUTES } from '../constants';
 import Button from '../components/common/Button';
+import useAuthStore from '../store/useAuthStore';
 import './HomePage.css';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { user, isAuthenticated } = useAuthStore();
+
+  React.useEffect(() => {
+    if (isAuthenticated && user?.role === 'LANDLORD') {
+      navigate('/landlord/dashboard', { replace: true });
+    } else if (isAuthenticated && user?.role === 'ADMIN') {
+      navigate(ROUTES.ADMIN.DASHBOARD, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSearch = () => {
     navigate(ROUTES.ROOMS);
