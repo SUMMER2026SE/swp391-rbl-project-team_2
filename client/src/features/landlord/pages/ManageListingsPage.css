@@ -627,3 +627,50 @@
   from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 } */
+
+/* Database Loading & Error States */
+.manage-listings__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background-color: white;
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.02);
+  gap: 1rem;
+}
+
+.spinner-loader {
+  width: 40px;
+  height: 40px;
+  border: 3.5px solid #EFF6FF;
+  border-top-color: #2563EB;
+  border-radius: 50%;
+  animation: spinner 0.8s linear infinite;
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.manage-listings__loading p {
+  color: #64748B;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.manage-listings__error {
+  padding: 1rem 1.5rem;
+  background-color: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  border-radius: 12px;
+  color: #DC2626;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+}

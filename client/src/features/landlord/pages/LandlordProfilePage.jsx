@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
@@ -9,42 +9,73 @@ import {
   Landmark, 
   Info, 
   Star,
-  Award
+  Award,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  AlertCircle,
+  Loader
 } from 'lucide-react';
 import { ROUTES } from '../../../constants';
 import useAuthStore from '../../../store/useAuthStore';
+import { landlordService } from '../services/landlordService';
 import './LandlordProfilePage.css';
 
 const LandlordProfilePage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await landlordService.getProfile();
+        const profileData = response.data || response;
+        setProfile(profileData);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        setError(err.message || 'Failed to load profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleEditProfileClick = () => {
     navigate(ROUTES.LANDLORD.SETTINGS);
   };
 
-  const properties = [
-    {
-      id: 1,
-      name: 'Oakwood Smart Residences',
-      units: '12 Units',
-      location: 'Downtown',
-      image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=120&auto=format&fit=crop&q=80'
-    },
-    {
-      id: 2,
-      name: 'The Metro Lofts',
-      units: '8 Units',
-      location: 'Westside',
-      image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=120&auto=format&fit=crop&q=80'
-    }
-  ];
+  if (loading) {
+    return (
+      <div className="landlord-profile loading-state">
+        <Loader size={32} className="spinner" />
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="landlord-profile error-state">
+        <AlertCircle size={32} />
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  const displayProfile = profile || user || {};
 
   const verificationItems = [
-    { label: 'Government ID', status: 'Verified', type: 'success' },
-    { label: 'Email Address', status: 'Verified', type: 'success' },
-    { label: 'Phone Number', status: 'Verified', type: 'success' },
-    { label: 'Background Check', status: 'Cleared (2023)', type: 'info' }
+    { label: 'Email Address', status: displayProfile.email ? 'Verified' : 'Pending', type: displayProfile.email ? 'success' : 'warning' },
+    { label: 'Phone Number', status: displayProfile.phone ? 'Verified' : 'Pending', type: displayProfile.phone ? 'success' : 'warning' },
+    { label: 'Account Status', status: displayProfile.isActive ? 'Active' : 'Inactive', type: displayProfile.isActive ? 'success' : 'warning' },
   ];
 
   return (
@@ -54,8 +85,8 @@ const LandlordProfilePage = () => {
         <div className="header-card-avatar-section">
           <div className="profile-large-avatar-wrapper">
             <img 
-              src={`https://ui-avatars.com/api/?name=${user?.user_metadata?.fullName || 'User'}&background=random&size=150`}
-              alt={user?.user_metadata?.fullName || 'Landlord'}
+              src={displayProfile.avatarUrl || `https://ui-avatars.com/api/?name=${displayProfile.fullName || 'User'}&background=random&size=150`}
+              alt={displayProfile.fullName || 'Landlord'}
               className="profile-large-avatar"
             />
             <div className="profile-avatar-badge">
@@ -66,7 +97,7 @@ const LandlordProfilePage = () => {
 
         <div className="header-card-info-section">
           <div className="profile-name-row">
-            <h1 className="profile-full-name">{user?.user_metadata?.fullName || 'Landlord Name'}</h1>
+            <h1 className="profile-full-name">{displayProfile.fullName || 'Landlord Name'}</h1>
             <span className="premium-host-badge">
               <Star size={12} fill="currentColor" />
               <span>Premium Host</span>
@@ -81,6 +112,7 @@ const LandlordProfilePage = () => {
 
           <div className="profile-action-buttons">
             <button className="btn-edit-profile-action" onClick={handleEditProfileClick}>
+              <Pencil size={16} />
               Edit Profile
             </button>
             <button className="btn-view-public-action">
@@ -101,44 +133,23 @@ const LandlordProfilePage = () => {
                 <Home size={20} className="header-icon-blue" />
                 <h2 className="section-card-title">Portfolio Overview</h2>
               </div>
-              <a href="#" className="header-action-link">View All Properties</a>
             </div>
 
             <div className="section-card-body">
               {/* Stats Box Row */}
               <div className="stats-box-row">
                 <div className="stat-box-item">
-                  <span className="stat-label">Total Units</span>
-                  <span className="stat-value">24</span>
+                  <span className="stat-label">Member Since</span>
+                  <span className="stat-value">
+                    {displayProfile.createdAt ? new Date(displayProfile.createdAt).getFullYear() : 'N/A'}
+                  </span>
                 </div>
                 <div className="stat-box-item">
-                  <span className="stat-label">Active Tenants</span>
-                  <span className="stat-value">22</span>
+                  <span className="stat-label">Account Status</span>
+                  <span className="stat-value highlight-occupancy">
+                    {displayProfile.isActive ? 'Active' : 'Inactive'}
+                  </span>
                 </div>
-                <div className="stat-box-item">
-                  <span className="stat-label">Occupancy Rate</span>
-                  <span className="stat-value highlight-occupancy">91%</span>
-                </div>
-                <div className="stat-box-item">
-                  <span className="stat-label">Avg. Stay</span>
-                  <span className="stat-value">18mo</span>
-                </div>
-              </div>
-
-              {/* Property list */}
-              <div className="portfolio-properties-list">
-                {properties.map(prop => (
-                  <div key={prop.id} className="portfolio-property-row">
-                    <div className="property-row-left">
-                      <img src={prop.image} alt={prop.name} className="property-row-thumb" />
-                      <div className="property-row-details">
-                        <h4 className="property-row-name">{prop.name}</h4>
-                        <span className="property-row-caption">{prop.units} • {prop.location}</span>
-                      </div>
-                    </div>
-                    <ChevronRight size={18} className="property-row-arrow" />
-                  </div>
-                ))}
               </div>
             </div>
           </div>
@@ -146,80 +157,39 @@ const LandlordProfilePage = () => {
           {/* Account Settings Header Title */}
           <h3 className="profile-subsection-title">Account Settings</h3>
 
-          {/* Contact Details and Payout Methods Side-by-Side */}
-          <div className="account-settings-row-grid">
-            {/* Contact Details */}
-            <div className="profile-section-card mini-card">
-              <div className="section-card-header">
-                <h2 className="section-card-title">Contact Details</h2>
-                <button className="btn-icon-action" onClick={handleEditProfileClick}>
-                  <Pencil size={16} />
-                </button>
-              </div>
-
-              <div className="section-card-body pt-1">
-                <div className="contact-info-list">
-                  <div className="contact-info-item">
-                    <span className="contact-label">Primary Email</span>
-                    <span className="contact-val">{user?.email || 'Not provided'}</span>
-                  </div>
-                  <div className="contact-info-item">
-                    <span className="contact-label">Phone Number</span>
-                    <span className="contact-val">{user?.user_metadata?.phone || 'Not provided'}</span>
-                  </div>
-                  <div className="contact-info-item">
-                    <span className="contact-label">Mailing Address</span>
-                    <span className="contact-val address-multiline">
-                      100 Corporate Plaza, Suite 400<br />
-                      San Francisco, CA 94105
-                    </span>
-                  </div>
-                </div>
-              </div>
+          {/* Contact Details */}
+          <div className="profile-section-card">
+            <div className="section-card-header">
+              <h2 className="section-card-title">Contact Details</h2>
+              <button className="btn-icon-action" onClick={handleEditProfileClick}>
+                <Pencil size={16} />
+              </button>
             </div>
 
-            {/* Payout Methods */}
-            <div className="profile-section-card mini-card">
-              <div className="section-card-header">
-                <h2 className="section-card-title">Payout Methods</h2>
-                <button className="btn-icon-action">
-                  <Plus size={18} className="icon-blue-action" />
-                </button>
-              </div>
-
-              <div className="section-card-body pt-1">
-                <div className="payout-methods-list">
-                  <div className="payout-row-item">
-                    <div className="payout-item-left">
-                      <div className="payout-bank-icon-box">
-                        <Landmark size={18} />
-                      </div>
-                      <div className="payout-details">
-                        <h4 className="payout-bank-title">Chase Bank Checking</h4>
-                        <span className="payout-number">**** **** **** 8821</span>
-                      </div>
-                    </div>
-                    <span className="default-payout-badge">Default</span>
-                  </div>
-
-                  <div className="payout-row-item">
-                    <div className="payout-item-left">
-                      <div className="payout-bank-icon-box">
-                        <Landmark size={18} />
-                      </div>
-                      <div className="payout-details">
-                        <h4 className="payout-bank-title">Wells Fargo Savings</h4>
-                        <span className="payout-number">**** **** **** 4490</span>
-                      </div>
-                    </div>
+            <div className="section-card-body pt-1">
+              <div className="contact-info-list">
+                <div className="contact-info-item">
+                  <Mail size={16} className="contact-icon" />
+                  <div>
+                    <span className="contact-label">Email</span>
+                    <span className="contact-val">{displayProfile.email || 'Not provided'}</span>
                   </div>
                 </div>
-
-                <div className="payout-footer-info">
-                  <Info size={14} className="info-icon" />
-                  <p className="payout-info-text">
-                    Payouts are processed on the 1st of every month automatically to your default account.
-                  </p>
+                <div className="contact-info-item">
+                  <Phone size={16} className="contact-icon" />
+                  <div>
+                    <span className="contact-label">Phone</span>
+                    <span className="contact-val">{displayProfile.phone || 'Not provided'}</span>
+                  </div>
+                </div>
+                <div className="contact-info-item">
+                  <Calendar size={16} className="contact-icon" />
+                  <div>
+                    <span className="contact-label">Member Since</span>
+                    <span className="contact-val">
+                      {displayProfile.createdAt ? new Date(displayProfile.createdAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -244,9 +214,9 @@ const LandlordProfilePage = () => {
                   <ShieldCheck size={18} />
                 </div>
                 <div className="banner-content">
-                  <h4 className="banner-title">Fully Verified Host</h4>
+                  <h4 className="banner-title">Account Status</h4>
                   <p className="banner-desc">
-                    All identity and background checks are current and approved.
+                    {displayProfile.isActive ? 'Your account is active and verified.' : 'Your account is pending verification.'}
                   </p>
                 </div>
               </div>
