@@ -15,6 +15,7 @@ const sequelize = new Sequelize(
         trustServerCertificate: true,
         useUTC: false, // Use local time instead of UTC
         dateFirst: 1, // Set first day of week to Monday to align with ymd format defaults
+        language: 'us_english' // Force US English language for the SQL Server connection to avoid date parsing errors
       },
     },
     logging: false,
@@ -25,14 +26,6 @@ const sequelize = new Sequelize(
       idle: 10000,
     },
     timezone: '+07:00', // Vietnam timezone
-    hooks: {
-      afterConnect: async (connection) => {
-        // Force SQL Server to use Year-Month-Day format and US English for this connection
-        // This prevents "Conversion failed when converting date and/or time from character string"
-        const request = new connection.Request();
-        await request.query("SET DATEFORMAT ymd; SET LANGUAGE us_english;");
-      }
-    }
   }
 );
 
