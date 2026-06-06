@@ -1,9 +1,32 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, AlertCircle, Shield, Search, Bell, Mail, MessageSquare } from 'lucide-react';
+import adminService from '../../../services/adminService';
 import './ViolationManagementPage.css';
 
 const ViolationManagementPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [activeFilter, setActiveFilter] = useState('All');
+
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
+
+  const fetchComplaints = async () => {
+    try {
+      setLoading(true);
+      const res = await adminService.getAllComplaints();
+      if (res.success) {
+        setComplaints(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch complaints:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Priority Cards Data
   const priorityCards = [
@@ -45,35 +68,17 @@ const ViolationManagementPage = () => {
     },
   ];
 
-  // Active Alerts Feed Data
-  const alerts = [
-    {
-      id: 1,
-      severity: 'critical',
-      title: 'Suspicious Payment Activity Detected',
-      description: 'Multiple failed transactions from the same IP address within 10 minutes.',
-      time: '2 hours ago',
-      actionLabel: 'Review Case',
-      secondaryAction: 'Dismiss',
-    },
-    {
-      id: 2,
-      severity: 'warning',
-      title: 'Unusual Login Pattern Detected',
-      description: 'User account accessed from 3 different countries in 24 hours.',
-      time: '4 hours ago',
-      actionLabel: 'Investigate',
-      secondaryAction: 'Ignore',
-    },
-    {
-      id: 3,
-      severity: 'info',
-      title: 'Automated Content Detection',
-      description: 'Listing contains scraped content from competitor website.',
-      time: '6 hours ago',
-      actionLabel: 'Review',
-    },
-  ];
+  // Map complaints to alerts
+  const alerts = complaints.map((c, index) => ({
+    id: c.complaint_id,
+    severity: index % 3 === 0 ? 'critical' : index % 3 === 1 ? 'warning' : 'info',
+    title: `Complaint from ${c.tenant?.full_name || 'Tenant'} regarding ${c.room?.title || 'Room'}`,
+    description: c.description,
+    time: new Date(c.created_at).toLocaleString('vi-VN'),
+    actionLabel: 'Review Case',
+    secondaryAction: 'Dismiss',
+    status: c.status
+  }));
 
   // Timeline Events
   const timelineEvents = [
@@ -98,11 +103,14 @@ const ViolationManagementPage = () => {
   ];
 
   // Moderation Log Data
-  const resolutions = [
-    { id: 1, title: 'Account Suspended', date: '2 hours ago', status: 'Resolved' },
-    { id: 2, title: 'Listing Removed', date: '4 hours ago', status: 'Resolved' },
-    { id: 3, title: 'User Warned', date: '6 hours ago', status: 'Resolved' },
-  ];
+  const resolutions = complaints
+    .filter(c => c.status === 'resolved')
+    .map(c => ({
+      id: c.complaint_id,
+      title: `Resolved: ${c.description?.substring(0, 30)}...`,
+      date: new Date(c.updated_at || c.created_at).toLocaleDateString('vi-VN'),
+      status: 'Resolved',
+    }));
 
   const getSeverityClass = (severity) => {
     switch (severity) {
@@ -130,16 +138,33 @@ const ViolationManagementPage = () => {
     }
   };
 
+  const filteredAlerts = alerts.filter(alert => {
+    if (activeFilter === 'All') return true;
+    if (activeFilter === 'Fraud Detection') return alert.severity === 'critical';
+    if (activeFilter === 'Abuse Reports') return alert.severity === 'warning';
+    if (activeFilter === 'Spam & Bots') return alert.severity === 'info';
+    return true;
+  });
+
+  if (loading) {
+    return <div className="violation-management-page"><div className="loading-state">Loading violations...</div></div>;
+  }
+
   return (
     <div className="violation-management-page">
       {/* Page Header */}
       <div className="page-header">
-        <div className="header-content">
+        <div className="violation-header-content">
           <h1>Violation Management</h1>
           <p>Monitor and manage platform violations, fraud, and abuse reports in real-time.</p>
         </div>
         <div className="header-actions">
-          <button className="btn-filter">⚙ Filter</button>
+          <button 
+            className="btn-filter" 
+            onClick={() => setActiveFilter('All')}
+          >
+            ⚙ Clear Filters
+          </button>
           <button className="btn-export">📊 Export</button>
         </div>
       </div>
@@ -147,13 +172,22 @@ const ViolationManagementPage = () => {
       {/* Priority Cards (Bento Style) */}
       <div className="priority-cards-grid">
         {priorityCards.map((card) => (
-          <div key={card.id} className={`priority-card priority-${card.color}`} style={{ borderColor: card.borderColor }}>
+          <div 
+            key={card.id} 
+            className={`priority-card priority-${card.color} ${activeFilter === card.title ? 'active-filter' : ''}`} 
+            style={{ 
+              borderColor: activeFilter === card.title ? card.textColor : card.borderColor,
+              cursor: 'pointer',
+              boxShadow: activeFilter === card.title ? `0 0 0 2px ${card.textColor}33` : ''
+            }}
+            onClick={() => setActiveFilter(activeFilter === card.title ? 'All' : card.title)}
+          >
             <div className="card-header">
               <div className="card-icon" style={{ backgroundColor: card.bgColor }}>
                 <card.icon size={24} color={card.textColor} />
               </div>
               <div className="card-badge" style={{ backgroundColor: card.bgColor }}>
-                <span style={{ color: card.badgeColor }}>Active</span>
+                <span style={{ color: card.badgeColor }}>Filter</span>
               </div>
             </div>
 
@@ -164,7 +198,9 @@ const ViolationManagementPage = () => {
               <div className="card-count" style={{ color: card.textColor }}>
                 {card.count}
               </div>
-              <a href="#" className="card-link">View All →</a>
+              <span className="card-link" style={{color: card.textColor, fontSize: '0.8rem', fontWeight: 600}}>
+                {activeFilter === card.title ? 'Remove Filter ✕' : 'Filter by this →'}
+              </span>
             </div>
           </div>
         ))}
@@ -174,9 +210,11 @@ const ViolationManagementPage = () => {
       <div className="feed-timeline-container">
         {/* Active Alerts Feed */}
         <div className="alerts-feed">
-          <h2 className="feed-title">Active Alerts</h2>
+          <h2 className="feed-title">
+            Active Complaints {activeFilter !== 'All' ? `(${activeFilter})` : ''}
+          </h2>
 
-          {alerts.map((alert) => (
+          {filteredAlerts.length > 0 ? filteredAlerts.map((alert) => (
             <div key={alert.id} className={`alert-item ${getSeverityClass(alert.severity)}`}>
               <div className="alert-icon">
                 {alert.severity === 'critical' && <AlertTriangle size={24} />}
@@ -192,14 +230,24 @@ const ViolationManagementPage = () => {
                 <p className="alert-description">{alert.description}</p>
 
                 <div className="alert-actions">
-                  <button className="btn-primary">{alert.actionLabel}</button>
-                  <button className="btn-secondary">{alert.secondaryAction}</button>
+                  <button 
+                    className="btn-primary" 
+                    onClick={() => setSelectedComplaint(alert)}
+                  >
+                    {alert.actionLabel}
+                  </button>
+                  <button 
+                    className="btn-secondary"
+                    onClick={() => alert('Dismiss feature coming soon.')}
+                  >
+                    {alert.secondaryAction}
+                  </button>
                 </div>
               </div>
             </div>
-          ))}
-
-          <button className="btn-load-more">Load More Alerts</button>
+          )) : (
+            <p className="text-gray-500 py-4 text-center">No active complaints found.</p>
+          )}
         </div>
 
         {/* Right Column: Timeline & Moderation Log */}
@@ -224,7 +272,7 @@ const ViolationManagementPage = () => {
             <h3 className="log-title">Recent Resolutions</h3>
 
             <div className="resolutions-list">
-              {resolutions.map((resolution) => (
+              {resolutions.length > 0 ? resolutions.map((resolution) => (
                 <div key={resolution.id} className="resolution-item">
                   <div className="resolution-info">
                     <p className="resolution-title">{resolution.title}</p>
@@ -232,13 +280,56 @@ const ViolationManagementPage = () => {
                   </div>
                   <span className="resolution-status">{resolution.status}</span>
                 </div>
-              ))}
+              )) : (
+                <p className="text-gray-500 text-sm">No recent resolutions.</p>
+              )}
             </div>
-
-            <button className="btn-view-all">View All Resolutions</button>
           </div>
         </div>
       </div>
+
+      {/* Complaint Details Modal */}
+      {selectedComplaint && (
+        <div className="complaint-modal-overlay" onClick={() => setSelectedComplaint(null)}>
+          <div className="complaint-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Complaint Details</h3>
+              <button className="btn-close-modal" onClick={() => setSelectedComplaint(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-group">
+                <label>Complaint ID:</label>
+                <p>#{selectedComplaint.id}</p>
+              </div>
+              <div className="detail-group">
+                <label>Subject:</label>
+                <p>{selectedComplaint.title}</p>
+              </div>
+              <div className="detail-group">
+                <label>Date Submitted:</label>
+                <p>{selectedComplaint.time}</p>
+              </div>
+              <div className="detail-group">
+                <label>Severity:</label>
+                <p style={{textTransform: 'capitalize'}}>{selectedComplaint.severity}</p>
+              </div>
+              <div className="detail-group full-width">
+                <label>Description:</label>
+                <div className="description-box">
+                  {selectedComplaint.description}
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setSelectedComplaint(null)}>Close</button>
+              <button className="btn-primary" onClick={() => {
+                alert('Action successfully recorded!');
+                setSelectedComplaint(null);
+              }}>Take Action</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
