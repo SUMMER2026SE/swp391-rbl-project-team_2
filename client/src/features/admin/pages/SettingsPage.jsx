@@ -5,6 +5,16 @@ import './SettingsPage.css';
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('general');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = () => {
+    setIsSaving(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsSaving(false);
+      alert('Settings saved successfully!');
+    }, 800);
+  };
 
   const tabs = [
     { id: 'general', label: 'General', icon: <Globe size={18} /> },
@@ -132,9 +142,9 @@ const SettingsPage = () => {
           )}
 
           <div className="settings-actions">
-            <Button variant="primary">
+            <Button variant="primary" onClick={handleSave} disabled={isSaving}>
               <Save size={16} />
-              Save Changes
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </div>

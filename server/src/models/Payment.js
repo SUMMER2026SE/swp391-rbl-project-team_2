@@ -55,6 +55,22 @@ const Payment = sequelize.define('Payment', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  platform_fee: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+  },
+  net_amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+  },
+  payout_status: {
+    type: DataTypes.ENUM('pending', 'processing', 'completed'),
+    defaultValue: 'pending',
+  },
+  payout_date: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
   created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,

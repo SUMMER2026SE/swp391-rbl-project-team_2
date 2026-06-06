@@ -17,6 +17,7 @@ const userRoutes = require('./routes/userRoutes');
 const landlordRoutes = require('./routes/landlordRoutes');
 const listingRoutes = require('./routes/listingRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -89,6 +90,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/landlord', landlordRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/admin', adminRoutes);
 
 // =========================================================
 // ERROR HANDLER

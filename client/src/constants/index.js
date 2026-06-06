@@ -59,6 +59,7 @@ export const ROUTES = {
     HELP: '/admin/help',
     NOTIFICATIONS: '/admin/notifications',
     MESSAGES: '/admin/messages',
+    PAYOUTS: '/admin/payouts',
   },
 
   PRIVACY: '/privacy',

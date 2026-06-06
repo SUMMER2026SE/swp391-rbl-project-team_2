@@ -176,6 +176,10 @@ CREATE TABLE payments (
     due_date DATETIME NULL,
     paid_date DATETIME NULL,
     notes NVARCHAR(MAX) NULL,
+    platform_fee DECIMAL(10,2) DEFAULT 0,     -- Admin commission fee
+    net_amount DECIMAL(10,2) DEFAULT 0,       -- Amount to be paid to landlord
+    payout_status VARCHAR(15) DEFAULT 'pending', -- 'pending', 'processing', 'completed'
+    payout_date DATETIME NULL,                -- When admin sent money to landlord
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE(),
 

@@ -121,18 +121,29 @@
   padding: 0.35rem 1rem;
   border-radius: 9999px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
+  opacity: 0.4;
+  border: 1px solid transparent;
 }
 
 .severity-pill:hover {
-  opacity: 0.8;
+  opacity: 0.7;
+}
+
+.severity-pill.active {
+  opacity: 1;
 }
 
 .severity-pill.info { background: #f3f4f6; color: #4b5563; }
+.severity-pill.info.active { border-color: #9ca3af; }
+
 .severity-pill.warning { background: #fef3c7; color: #d97706; }
+.severity-pill.warning.active { border-color: #f59e0b; }
+
 .severity-pill.critical { background: #fee2e2; color: #ef4444; }
+.severity-pill.critical.active { border-color: #ef4444; }
 
 .filter-date {
   display: flex;

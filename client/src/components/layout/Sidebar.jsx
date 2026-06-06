@@ -15,6 +15,7 @@ import {
   Bell,
   UserCircle,
   FileText,
+  Wallet,
 } from 'lucide-react';
 import { ROUTES } from '../../constants';
 import useAuthStore from '../../store/useAuthStore';
@@ -42,6 +43,7 @@ const ADMIN_NAV = [
   { icon: <ShieldCheck size={20} />, label: 'Moderation', path: ROUTES.ADMIN.MODERATION },
   { icon: <BarChart3 size={20} />, label: 'Analytics', path: ROUTES.ADMIN.ANALYTICS },
   { icon: <Receipt size={20} />, label: 'Transactions', path: ROUTES.ADMIN.TRANSACTIONS },
+  { icon: <Wallet size={20} />, label: 'Payouts', path: ROUTES.ADMIN.PAYOUTS },
   { icon: <FileText size={20} />, label: 'System Logs', path: ROUTES.ADMIN.LOGS },
   { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.ADMIN.SETTINGS },
 ];
