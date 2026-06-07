@@ -9,6 +9,7 @@ const ListingsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'pending'
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,6 +46,8 @@ const ListingsPage = () => {
   };
 
   const filteredListings = listings.filter((item) => {
+    if (activeTab === 'pending' && item.status.toLowerCase() !== 'pending') return false;
+
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           item.id.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -81,6 +84,56 @@ const ListingsPage = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="listings-tabs-container" style={{ display: 'flex', gap: '20px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0' }}>
+        <button 
+          className={`listing-tab ${activeTab === 'all' ? 'active' : ''}`}
+          onClick={() => setActiveTab('all')}
+          style={{ 
+            padding: '10px 4px', 
+            background: 'none', 
+            border: 'none', 
+            borderBottom: activeTab === 'all' ? '2px solid #4f46e5' : '2px solid transparent',
+            color: activeTab === 'all' ? '#4f46e5' : '#64748b',
+            fontWeight: activeTab === 'all' ? '600' : '500',
+            cursor: 'pointer',
+            fontSize: '0.95rem'
+          }}
+        >
+          All Properties
+        </button>
+        <button 
+          className={`listing-tab ${activeTab === 'pending' ? 'active' : ''}`}
+          onClick={() => setActiveTab('pending')}
+          style={{ 
+            padding: '10px 4px', 
+            background: 'none', 
+            border: 'none', 
+            borderBottom: activeTab === 'pending' ? '2px solid #4f46e5' : '2px solid transparent',
+            color: activeTab === 'pending' ? '#4f46e5' : '#64748b',
+            fontWeight: activeTab === 'pending' ? '600' : '500',
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          Pending Approvals
+          {listings.filter(l => l.status.toLowerCase() === 'pending').length > 0 && (
+            <span style={{ 
+              background: '#ef4444', 
+              color: 'white', 
+              fontSize: '0.75rem', 
+              padding: '2px 8px', 
+              borderRadius: '999px',
+              fontWeight: '600'
+            }}>
+              {listings.filter(l => l.status.toLowerCase() === 'pending').length}
+            </span>
+          )}
+        </button>
       </div>
 
       <div className="listings-content-area">

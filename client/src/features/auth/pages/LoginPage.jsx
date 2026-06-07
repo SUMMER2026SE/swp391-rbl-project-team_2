@@ -65,6 +65,10 @@ const LoginPage = () => {
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Login failed';
       alert(msg);
+      
+      if (msg === 'Please verify your email before logging in.') {
+        navigate(ROUTES.VERIFY_OTP, { state: { email: data.email, type: 'verify_email' } });
+      }
     }
   };
 

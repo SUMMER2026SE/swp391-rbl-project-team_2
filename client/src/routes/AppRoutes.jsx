@@ -55,6 +55,7 @@ import {
   SettingsPage as AdminSettingsPage,
   ViolationManagementPage,
   PayoutsPage,
+  AdminNotificationsPage,
 } from '../features/admin';
 
 // Rental feature
@@ -152,6 +153,8 @@ const AppRoutes = () => {
         <Route path={ROUTES.ADMIN.MODERATION} element={<ViolationManagementPage />} />
         <Route path={ROUTES.ADMIN.SETTINGS} element={<AdminSettingsPage />} />
         <Route path={ROUTES.ADMIN.HELP} element={<HelpCenterPage />} />
+        <Route path={ROUTES.ADMIN.NOTIFICATIONS} element={<AdminNotificationsPage />} />
+        <Route path={ROUTES.ADMIN.MESSAGES} element={<MessagesPage />} />
       </Route>
 
       {/* ===== 404 FALLBACK ===== */}

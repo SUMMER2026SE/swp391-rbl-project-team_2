@@ -141,7 +141,7 @@ const seedDatabase = async () => {
           4, 2, N'Modern Minimalist Room - Renovations Underway', 
           N'Minimalist style apartment with modern light fixtures. Room is currently undergoing minor wall repainting and light fixtures upgrades. Available for move-in next week.',
           N'88 Le Van Viet Street, Hiep Phu Ward', N'Ho Chi Minh City', N'District 9', N'Hiep Phu Ward',
-          320.00, 28.00, 'single', 1, 'maintenance',
+          320.00, 28.00, 'single', 1, 'pending',
           'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=600&h=400&q=80',
           0, GETDATE(), GETDATE()
       );

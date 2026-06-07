@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -26,6 +27,7 @@ import { ROUTES } from '../../constants';
 import useAuthStore from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
 import { API_URL } from '../../config';
+import adminService from '../../services/adminService';
 import './Sidebar.css';
 
 // ── Menu configs per role ──
@@ -68,6 +70,22 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Detect role context from current URL
+  const isLandlord = location.pathname.startsWith('/landlord');
+  const isAdmin = location.pathname.startsWith('/admin');
+  const isTenant = !isLandlord && !isAdmin;
+
+  useEffect(() => {
+    if (isAdmin) {
+      adminService.getDashboardStats().then(res => {
+        if (res.success && res.data.pendingListings) {
+          setPendingCount(res.data.pendingListings);
+        }
+      }).catch(err => console.error('Failed to fetch pending count for sidebar', err));
+    }
+  }, [isAdmin, location.pathname]); // refetch occasionally when path changes
 
   const getAvatarUrl = () => {
     if (user?.avatarUrl) {
@@ -90,11 +108,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       console.error(error);
     }
   };
-
-  // Detect role context from current URL
-  const isLandlord = location.pathname.startsWith('/landlord');
-  const isAdmin = location.pathname.startsWith('/admin');
-  const isTenant = !isLandlord && !isAdmin;
 
   const navLinks = isLandlord ? LANDLORD_NAV : isAdmin ? ADMIN_NAV : TENANT_NAV;
 
@@ -136,7 +149,16 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 title={isCollapsed ? link.label : ''}
               >
                 {link.icon}
-                {!isCollapsed && <span>{link.label}</span>}
+                {!isCollapsed && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+                    <span>{link.label}</span>
+                    {isAdmin && link.label === 'Listings' && pendingCount > 0 && (
+                      <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
+                        {pendingCount}
+                      </span>
+                    )}
+                  </div>
+                )}
               </Link>
             </li>
           ))}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Users, Home, TrendingUp } from 'lucide-react';
+import { DollarSign, Users, Home, TrendingUp, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import StatCard from '../components/StatCard';
 import { formatCurrency } from '../../../utils/format';
@@ -11,6 +11,7 @@ const DashboardPage = () => {
     totalRevenue: 0,
     activeTenants: 0,
     totalListings: 0,
+    pendingListings: 0,
     occupancyRate: '0%',
   });
   const [revenueData, setRevenueData] = useState([]);
@@ -73,6 +74,13 @@ const DashboardPage = () => {
           icon={<Home size={24} />}
           trend="up"
           trendValue="2"
+        />
+        <StatCard
+          title="Pending Approvals"
+          value={stats.pendingListings}
+          icon={<Clock size={24} color="#e11d48" />}
+          trend={stats.pendingListings > 0 ? "up" : "none"}
+          trendValue={stats.pendingListings > 0 ? "Action needed" : "All clear"}
         />
         <StatCard
           title="Occupancy Rate"

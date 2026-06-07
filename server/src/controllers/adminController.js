@@ -101,6 +101,9 @@ const getDashboardStats = async (req, res, next) => {
     // Total Listings
     const totalListings = await Room.count({ where: { is_deleted: false } });
 
+    // Pending Listings
+    const pendingListings = await Room.count({ where: { status: 'pending', is_deleted: false } });
+
     // Occupancy Rate
     const rentedRooms = await Room.count({ where: { status: 'rented', is_deleted: false } });
     const occupancyRate = totalListings > 0 ? Math.round((rentedRooms / totalListings) * 100) : 0;
@@ -111,6 +114,7 @@ const getDashboardStats = async (req, res, next) => {
         totalRevenue,
         activeTenants,
         totalListings,
+        pendingListings,
         occupancyRate: `${occupancyRate}%`
       }
     });

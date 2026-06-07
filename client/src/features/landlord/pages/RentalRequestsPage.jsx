@@ -68,7 +68,7 @@ const RentalRequestsPage = () => {
 
     try {
       setIsSubmitting(true);
-      await reject(selectedRequest.booking_id, rejectReason);
+      await reject(selectedRequest.requestId, rejectReason);
       setShowRejectModal(false);
       setShowDetailModal(false);
       setSelectedRequest(null);
@@ -169,7 +169,7 @@ const RentalRequestsPage = () => {
             </thead>
             <tbody>
               {filteredRequests.map(request => (
-                <tr key={request.booking_id} className="request-row">
+                <tr key={request.requestId} className="request-row">
                   <td>
                     <div className="tenant-info">
                       <div className="tenant-avatar">
@@ -332,7 +332,7 @@ const RentalRequestsPage = () => {
                 </Button>
                 <Button
                   variant="primary"
-                  onClick={() => handleApprove(selectedRequest.booking_id)}
+                  onClick={() => handleApprove(selectedRequest.requestId)}
                   disabled={isSubmitting}
                 >
                   <Check size={16} />

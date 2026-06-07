@@ -1,5 +1,5 @@
 import React from 'react';
-import { EyeOff, CheckCircle, ExternalLink, MapPin, Eye, MessageSquare, MoreVertical, ShieldCheck, AlertCircle } from 'lucide-react';
+import { EyeOff, CheckCircle, ExternalLink, MapPin, Eye, MessageSquare, MoreVertical, ShieldCheck, AlertCircle, XCircle } from 'lucide-react';
 import { formatCurrency } from '../../../utils/format';
 import './ListingGrid.css';
 
@@ -14,6 +14,10 @@ const ListingGrid = ({ listings, onUpdateStatus }) => {
         return <span className="grid-status-badge occupied">Occupied</span>;
       case 'hidden':
         return <span className="grid-status-badge hidden">Hidden</span>;
+      case 'pending':
+        return <span className="grid-status-badge" style={{ backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>Pending</span>;
+      case 'rejected':
+        return <span className="grid-status-badge" style={{ backgroundColor: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3' }}>Rejected</span>;
       default:
         return <span className="grid-status-badge">{status}</span>;
     }
@@ -46,7 +50,26 @@ const ListingGrid = ({ listings, onUpdateStatus }) => {
               <button className="grid-icon-btn" title="View Details">
                 <ExternalLink size={16} />
               </button>
-              {listing.status.toLowerCase() !== 'hidden' ? (
+              {listing.status.toLowerCase() === 'pending' ? (
+                <>
+                  <button 
+                    className="grid-icon-btn" 
+                    title="Approve Listing"
+                    style={{ color: '#059669', borderColor: '#a7f3d0', backgroundColor: '#ecfdf5' }}
+                    onClick={() => onUpdateStatus(listing.rawId, 'available')}
+                  >
+                    <CheckCircle size={16} />
+                  </button>
+                  <button 
+                    className="grid-icon-btn" 
+                    title="Reject Listing"
+                    style={{ color: '#e11d48', borderColor: '#fecdd3', backgroundColor: '#fff1f2' }}
+                    onClick={() => onUpdateStatus(listing.rawId, 'rejected')}
+                  >
+                    <XCircle size={16} />
+                  </button>
+                </>
+              ) : listing.status.toLowerCase() !== 'hidden' ? (
                 <button 
                   className="grid-icon-btn" 
                   title="Hide Listing"
