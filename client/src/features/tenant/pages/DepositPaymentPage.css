@@ -1,6 +1,6 @@
 .payment-page {
   min-height: 100vh;
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
   display: flex;
   flex-direction: column;
 }
@@ -95,7 +95,7 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background-color: white;
+  background-color: var(--bg-card);
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-full);
   display: flex;
@@ -171,7 +171,7 @@
   align-items: flex-start;
   gap: 1rem;
   padding: 1.25rem;
-  background-color: #F1F5F9;
+  background-color: var(--primary-light);
   border-radius: var(--radius-lg);
 }
 

@@ -7,8 +7,11 @@ export { default as AIChatPage } from './pages/AIChatPage';
 export { default as RoomDetailPage } from './pages/RoomDetailPage';
 export { default as TenantNotificationsPage } from './pages/TenantNotificationsPage';
 export { default as RentalRequestPage } from './pages/RentalRequestPage';
+export { default as TenantRequestsPage } from './pages/TenantRequestsPage';
 export { default as DepositHistoryPage } from './pages/DepositHistoryPage';
 export { default as TenantProfilePage } from './pages/TenantProfilePage';
+export { default as TenantSettingsPage } from './pages/TenantSettingsPage';
+export { default as TenantDashboardPage } from './pages/TenantDashboardPage';
 
 // Components
 export { default as RoomCard } from './components/RoomCard';

@@ -18,6 +18,8 @@ const landlordRoutes = require('./routes/landlordRoutes');
 const listingRoutes = require('./routes/listingRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const tenantRoutes = require('./routes/tenantRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -89,8 +91,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/landlord', landlordRoutes);
 app.use('/api/listings', listingRoutes);
+app.use('/api/rooms', listingRoutes);  // Alias: /api/rooms -> same as /api/listings
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/tenant', tenantRoutes);
+app.use('/api/chat', chatRoutes);
 
 // =========================================================
 // ERROR HANDLER

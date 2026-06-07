@@ -10,7 +10,7 @@
 
 .empty-state-icon {
   margin-bottom: 1rem;
-  color: #CBD5E1;
+  color: var(--border-light);
 }
 
 .empty-state-title {

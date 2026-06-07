@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, Bell } from 'lucide-react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Search, Menu, Bell, MessageSquare } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
 import { ROUTES } from '../../constants';
@@ -8,10 +8,17 @@ import ThemeToggle from '../ui/ThemeToggle';
 import { API_URL } from '../../config';
 import './Header.css';
 
-const Header = () => {
+const Header = ({ toggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const [searchParams] = useSearchParams();
+  const keywordParam = searchParams.get('keyword') || '';
+  const [quickSearch, setQuickSearch] = React.useState(keywordParam);
+
+  React.useEffect(() => {
+    setQuickSearch(keywordParam);
+  }, [keywordParam]);
 
   const isNotificationsPage = location.pathname === ROUTES.TENANT.NOTIFICATIONS;
 
@@ -42,13 +49,32 @@ const Header = () => {
     <header className="header">
       <div className="header-content">
         <div className="header-left">
+          {isAuthenticated && (
+            <button className="sidebar-toggle-btn" onClick={toggleSidebar} style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Menu size={22} />
+            </button>
+          )}
           <Link to={ROUTES.HOME} className="logo">
             RentalRoom
           </Link>
           {!isNotificationsPage && (
             <div className="header-search-bar">
               <Search size={16} className="search-icon" />
-              <input type="text" placeholder="Quick search..." />
+              <input 
+                type="text" 
+                placeholder="Quick search..." 
+                value={quickSearch}
+                onChange={(e) => setQuickSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (quickSearch.trim()) {
+                      navigate(`${ROUTES.ROOMS}?keyword=${encodeURIComponent(quickSearch.trim())}`);
+                    } else {
+                      navigate(ROUTES.ROOMS);
+                    }
+                  }
+                }}
+              />
             </div>
           )}
         </div>
@@ -62,23 +88,37 @@ const Header = () => {
             </>
           ) : (
             <>
+              <Link to={ROUTES.HOME} className={`tab-link ${location.pathname === ROUTES.HOME ? 'active' : ''}`}>Home</Link>
               <Link to={ROUTES.ROOMS} className={`tab-link ${location.pathname === ROUTES.ROOMS ? 'active' : ''}`}>Explore</Link>
-              <Link to={ROUTES.TENANT.FAVORITES} className={`tab-link ${location.pathname === ROUTES.TENANT.FAVORITES ? 'active' : ''}`}>Favorites</Link>
-              <Link to={ROUTES.TENANT.RENTAL_REQUEST || '#'} className={`tab-link ${location.pathname === ROUTES.TENANT.RENTAL_REQUEST ? 'active' : ''}`}>Requests</Link>
+              {isAuthenticated && user?.role !== 'ADMIN' && (
+                <>
+                  <Link to={ROUTES.TENANT.FAVORITES} className={`tab-link ${location.pathname === ROUTES.TENANT.FAVORITES ? 'active' : ''}`}>Favorites</Link>
+                  <Link to="/tenant/requests" className={`tab-link ${location.pathname === '/tenant/requests' ? 'active' : ''}`}>Requests</Link>
+                </>
+              )}
             </>
           )}
         </nav>
 
         <div className="header-right">
           <ThemeToggle />
-          {/* Notification Bell */}
-          <Link
-            to={ROUTES.TENANT.NOTIFICATIONS}
-            className={`header-bell-btn ${isNotificationsPage ? 'active' : ''}`}
-          >
-            <Bell size={20} />
-            <span className="bell-badge-dot"></span>
-          </Link>
+          {isAuthenticated && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Link
+                to={ROUTES.TENANT.NOTIFICATIONS}
+                className={`header-bell-btn ${isNotificationsPage ? 'active' : ''}`}
+              >
+                <Bell size={20} />
+                <span className="bell-badge-dot"></span>
+              </Link>
+              <Link
+                to="/messages"
+                className={`header-bell-btn ${location.pathname.startsWith('/messages') ? 'active' : ''}`}
+              >
+                <MessageSquare size={20} />
+              </Link>
+            </div>
+          )}
           {!isAuthenticated ? (
             <Link to={ROUTES.LOGIN} className="sign-in-btn">Sign In</Link>
           ) : (
@@ -106,7 +146,7 @@ const Header = () => {
               </button>
             </div>
           )}
-          <button className="mobile-menu-btn">
+          <button className="mobile-menu-btn" onClick={toggleSidebar}>
             <Menu size={22} />
           </button>
         </div>

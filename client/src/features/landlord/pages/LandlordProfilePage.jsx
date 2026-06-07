@@ -17,12 +17,15 @@ import {
   AlertCircle,
   Loader,
   X,
-  Check
+  Check,
+  Camera
 } from 'lucide-react';
 import { ROUTES } from '../../../constants';
 import useAuthStore from '../../../store/useAuthStore';
 import { landlordService } from '../services/landlordService';
+import { authService } from '../../auth/services/authService';
 import httpClient from '../../../services/httpClient';
+import { API_URL } from '../../../config';
 import './LandlordProfilePage.css';
 
 const LandlordProfilePage = () => {
@@ -38,6 +41,42 @@ const LandlordProfilePage = () => {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
+  const fileInputRef = React.useRef(null);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const response = await authService.uploadAvatar(formData);
+      if (!response.success) throw new Error(response.message);
+      updateUser({ avatarUrl: response.data.avatarUrl });
+      setProfile(prev => ({ ...prev, avatarUrl: response.data.avatarUrl }));
+      alert('Avatar updated successfully!');
+    } catch (error) {
+      const msg = error.response?.data?.message || error.message || 'Error uploading avatar';
+      alert(msg);
+    }
+  };
+
+  const getAvatarUrl = () => {
+    const displayProfile = profile || user || {};
+    if (displayProfile.avatarUrl) {
+      if (displayProfile.avatarUrl.startsWith('/uploads')) {
+        const baseUrl = API_URL.replace('/api', '');
+        return `${baseUrl}${displayProfile.avatarUrl}`;
+      }
+      return displayProfile.avatarUrl;
+    }
+    return `https://ui-avatars.com/api/?name=${displayProfile.fullName || 'User'}&background=random&size=150`;
+  };
 
   const fetchProfile = async () => {
     try {
@@ -133,15 +172,34 @@ const LandlordProfilePage = () => {
       {/* Top Profile Card Header */}
       <div className="landlord-profile-header-card">
         <div className="header-card-avatar-section">
-          <div className="profile-large-avatar-wrapper">
+          <div 
+            className="profile-large-avatar-wrapper" 
+            style={{ position: 'relative', cursor: 'pointer' }}
+            onClick={handleAvatarClick}
+          >
             <img 
-              src={displayProfile.avatarUrl || `https://ui-avatars.com/api/?name=${displayProfile.fullName || 'User'}&background=random&size=150`}
+              src={getAvatarUrl()}
               alt={displayProfile.fullName || 'Landlord'}
               className="profile-large-avatar"
             />
-            <div className="profile-avatar-badge">
+            <div className="profile-avatar-badge" style={{ display: 'none' }}>
               <ShieldCheck size={16} className="badge-check-icon" />
             </div>
+            <div style={{
+              position: 'absolute', bottom: '4px', right: '4px',
+              background: '#667eea', borderRadius: '50%', padding: '8px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }}>
+              <Camera size={16} color="white" />
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleAvatarChange}
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style={{ display: 'none' }}
+            />
           </div>
         </div>
 

@@ -1,0 +1,85 @@
+.tenant-dashboard-page {
+  padding: 2rem 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-header p {
+  color: var(--text-muted);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border-color: var(--primary);
+}
+
+.stat-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+}
+
+.stat-icon-wrapper.requests {
+  background: #EFF6FF;
+  color: #3B82F6;
+}
+
+.stat-icon-wrapper.favorites {
+  background: #FEF2F2;
+  color: #EF4444;
+}
+
+.stat-icon-wrapper.messages {
+  background: #F0FDF4;
+  color: #22C55E;
+}
+
+.stat-icon-wrapper.explore {
+  background: #F3E8FF;
+  color: #9333EA;
+}
+
+.stat-info h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.stat-info p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}

@@ -16,13 +16,13 @@
 .login-header h1 {
   font-size: 1.75rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   margin-bottom: 0.4rem;
   letter-spacing: -0.5px;
 }
 
 .login-header p {
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.9rem;
   line-height: 1.6;
 }
@@ -36,12 +36,12 @@
 
 /* Glass-style inputs on light bg */
 .login-form .input-field {
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
   border-radius: 12px;
   padding: 0.8rem 0.9rem;
   font-size: 0.875rem;
-  color: #0f172a;
+  color: var(--text-main);
   transition: all 0.25s;
 }
 
@@ -50,7 +50,7 @@
 }
 
 .login-form .input-field::placeholder {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .login-form .input-field:focus {
@@ -59,17 +59,17 @@
 }
 
 .login-form .input-label {
-  color: #334155;
+  color: var(--text-main);
   font-weight: 600;
   font-size: 0.85rem;
 }
 
 .login-form .input-icon-left {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .login-form .input-icon-right {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 /* ======================== Form Options ======================== */
@@ -87,20 +87,20 @@
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.84rem;
   transition: color 0.2s;
 }
 
 .remember-me:hover {
-  color: #334155;
+  color: var(--text-main);
 }
 
 .remember-me input[type="checkbox"] {
   width: 1rem;
   height: 1rem;
   border-radius: 5px;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--border-light);
   cursor: pointer;
   accent-color: #3b82f6;
   transition: all 0.2s;
@@ -175,7 +175,7 @@
   display: flex;
   align-items: center;
   text-align: center;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -186,7 +186,7 @@
 .divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .divider span {
@@ -205,9 +205,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  color: #334155;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  color: var(--text-main);
   font-weight: 600;
   padding: 0.75rem;
   border-radius: 12px;
@@ -237,9 +237,9 @@
   margin-top: 1.75rem;
   text-align: center;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--text-muted);
   padding-top: 1.25rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-light);
 }
 
 .login-footer a {

@@ -7,7 +7,6 @@ import {
 import useAuthStore from '../../../store/useAuthStore';
 import { authService } from '../../auth/services/authService';
 import { API_URL } from '../../../config';
-import ChangePasswordModal from '../../auth/components/ChangePasswordModal';
 import './TenantProfilePage.css';
 
 const MOCK_REQUESTS = [
@@ -39,7 +38,6 @@ const TenantProfilePage = () => {
     phone: ''
   });
   const [isSaving, setIsSaving] = useState(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -232,43 +230,7 @@ const TenantProfilePage = () => {
               </div>
             </div>
 
-            {/* Account Settings */}
-            <div className="profile-card settings-card">
-              <div className="card-header">
-                <h2>Account Settings</h2>
-              </div>
-              <div className="settings-menu">
-                <button className="settings-item" onClick={() => setIsPasswordModalOpen(true)}>
-                  <div className="settings-item-left">
-                    <div className="settings-icon-wrapper">
-                      <Lock size={18} />
-                    </div>
-                    <span>Password &amp; Security</span>
-                  </div>
-                  <ChevronRight size={20} className="chevron-icon" />
-                </button>
-                
-                <button className="settings-item">
-                  <div className="settings-item-left">
-                    <div className="settings-icon-wrapper">
-                      <Bell size={18} />
-                    </div>
-                    <span>Notifications</span>
-                  </div>
-                  <ChevronRight size={20} className="chevron-icon" />
-                </button>
 
-                <button className="settings-item">
-                  <div className="settings-item-left">
-                    <div className="settings-icon-wrapper">
-                      <CreditCard size={18} />
-                    </div>
-                    <span>Payment Methods</span>
-                  </div>
-                  <ChevronRight size={20} className="chevron-icon" />
-                </button>
-              </div>
-            </div>
 
           </aside>
 
@@ -326,12 +288,6 @@ const TenantProfilePage = () => {
 
         </div>
       </div>
-      
-      {/* Change Password Modal */}
-      <ChangePasswordModal 
-        isOpen={isPasswordModalOpen} 
-        onClose={() => setIsPasswordModalOpen(false)} 
-      />
     </div>
   );
 };

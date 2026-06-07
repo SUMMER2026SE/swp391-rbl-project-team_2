@@ -29,7 +29,8 @@ const HomePage = () => {
   }, [isAuthenticated, user, navigate]);
 
   const handleSearch = () => {
-    navigate(ROUTES.ROOMS);
+    const params = searchQuery ? `?keyword=${encodeURIComponent(searchQuery)}` : '';
+    navigate(`${ROUTES.ROOMS}${params}`);
   };
 
   const handleCustomSearch = () => {
@@ -69,6 +70,12 @@ const HomePage = () => {
                   type="text" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSearch();
+                    }
+                  }}
                   placeholder='Ask our AI: "I need a room under 4M near District 1"' 
                   className="ai-search-input"
                 />

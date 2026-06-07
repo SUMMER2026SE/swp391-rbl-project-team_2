@@ -13,9 +13,14 @@ import {
   Receipt,
   MessageSquare,
   Bell,
-  UserCircle,
   FileText,
   Wallet,
+  Heart,
+  ChevronLeft,
+  ChevronRight,
+  UserCircle,
+  Compass,
+  Home,
 } from 'lucide-react';
 import { ROUTES } from '../../constants';
 import useAuthStore from '../../store/useAuthStore';
@@ -48,7 +53,18 @@ const ADMIN_NAV = [
   { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.ADMIN.SETTINGS },
 ];
 
-const Sidebar = () => {
+const TENANT_NAV = [
+  { icon: <Home size={20} />, label: 'Home', path: ROUTES.HOME },
+  { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.TENANT.DASHBOARD },
+  { icon: <Compass size={20} />, label: 'Explore', path: ROUTES.ROOMS },
+  { icon: <ClipboardList size={20} />, label: 'Requests', path: '/tenant/requests' },
+  { icon: <Heart size={20} />, label: 'Favorites', path: ROUTES.TENANT.FAVORITES },
+  { icon: <MessageSquare size={20} />, label: 'Messages', path: '/messages' },
+  { icon: <UserCircle size={20} />, label: 'Profile', path: ROUTES.TENANT.PROFILE },
+  { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.TENANT.SETTINGS },
+];
+
+const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
@@ -77,18 +93,21 @@ const Sidebar = () => {
 
   // Detect role context from current URL
   const isLandlord = location.pathname.startsWith('/landlord');
-  const navLinks = isLandlord ? LANDLORD_NAV : ADMIN_NAV;
+  const isAdmin = location.pathname.startsWith('/admin');
+  const isTenant = !isLandlord && !isAdmin;
 
-  const helpPath = isLandlord ? ROUTES.LANDLORD.HELP : ROUTES.ADMIN.HELP;
-  const profilePath = isLandlord ? ROUTES.LANDLORD.PROFILE : ROUTES.ADMIN.SETTINGS;
+  const navLinks = isLandlord ? LANDLORD_NAV : isAdmin ? ADMIN_NAV : TENANT_NAV;
 
-  const brandTitle = isLandlord ? 'Landlord Portal' : 'Admin Portal';
-  const brandSubtitle = isLandlord ? 'Room Management' : 'System Management';
+  const helpPath = isLandlord ? ROUTES.LANDLORD.HELP : isAdmin ? ROUTES.ADMIN.HELP : ROUTES.HELP;
+  const profilePath = isLandlord ? ROUTES.LANDLORD.PROFILE : isAdmin ? ROUTES.ADMIN.SETTINGS : ROUTES.TENANT.PROFILE;
+
+  const brandTitle = isLandlord ? 'Landlord Portal' : isAdmin ? 'Admin Portal' : 'Tenant Portal';
+  const brandSubtitle = isLandlord ? 'Room Management' : isAdmin ? 'System Management' : 'My Account';
 
   const isActive = (path) => location.pathname === path;
 
   return (
-    <aside className="admin-sidebar">
+    <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       {/* Brand Header */}
       <Link to={profilePath} className="sidebar-brand-profile-link">
         <div className="sidebar-brand-profile">
@@ -97,10 +116,12 @@ const Sidebar = () => {
             alt="User"
             className="sidebar-brand-avatar"
           />
-          <div className="profile-info">
-            <span className="profile-title">{brandTitle}</span>
-            <span className="profile-subtitle">{brandSubtitle}</span>
-          </div>
+          {!isCollapsed && (
+            <div className="profile-info">
+              <span className="profile-title">{brandTitle}</span>
+              <span className="profile-subtitle">{brandSubtitle}</span>
+            </div>
+          )}
         </div>
       </Link>
 
@@ -112,9 +133,10 @@ const Sidebar = () => {
               <Link
                 to={link.path}
                 className={`sidebar-link ${isActive(link.path) ? 'active' : ''}`}
+                title={isCollapsed ? link.label : ''}
               >
                 {link.icon}
-                <span>{link.label}</span>
+                {!isCollapsed && <span>{link.label}</span>}
               </Link>
             </li>
           ))}
@@ -125,35 +147,39 @@ const Sidebar = () => {
       <div className="sidebar-footer">
         <ul className="footer-links">
           <li>
-            <Link
-              to="/"
-              className="sidebar-link"
-            >
-              <LogOut size={20} style={{ transform: 'rotate(180deg)' }} />
-              <span>Back to Home</span>
-            </Link>
+              <Link
+                to="/"
+                className="sidebar-link"
+                title={isCollapsed ? "Back to Home" : ""}
+              >
+                <LogOut size={20} style={{ transform: 'rotate(180deg)' }} />
+                {!isCollapsed && <span>Back to Home</span>}
+              </Link>
           </li>
           <li>
-            <Link
-              to={helpPath}
-              className={`sidebar-link ${isActive(helpPath) ? 'active' : ''}`}
-            >
-              <HelpCircle size={20} />
-              <span>Help</span>
-            </Link>
+              <Link
+                to={helpPath}
+                className={`sidebar-link ${isActive(helpPath) ? 'active' : ''}`}
+                title={isCollapsed ? "Help" : ""}
+              >
+                <HelpCircle size={20} />
+                {!isCollapsed && <span>Help</span>}
+              </Link>
           </li>
           <li>
-            <a href="#" onClick={handleLogout} className="sidebar-link logout-link">
+            <a href="#" onClick={handleLogout} className="sidebar-link logout-link" title={isCollapsed ? "Sign Out" : ""}>
               <LogOut size={20} />
-              <span>Sign Out</span>
+              {!isCollapsed && <span>Sign Out</span>}
             </a>
           </li>
         </ul>
-        <div className="support-btn-container" style={{ marginTop: '0.75rem' }}>
-          <Link to={helpPath} className="btn-support-center">
-            Support Center
-          </Link>
-        </div>
+        {!isCollapsed && (
+          <div className="support-btn-container" style={{ marginTop: '0.75rem' }}>
+            <Link to={helpPath} className="btn-support-center">
+              Support Center
+            </Link>
+          </div>
+        )}
       </div>
     </aside>
   );

@@ -2,41 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import './ThemeToggle.css';
 
-const MODES = ['light', 'dark', 'system'];
-const MODE_LABELS = { light: 'Light', dark: 'Dark', system: 'System' };
+const MODES = ['light', 'dark'];
+const MODE_LABELS = { light: 'Light', dark: 'Dark' };
 
 const ThemeToggle = () => {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
   useEffect(() => {
-    const applyTheme = (resolvedTheme) => {
-      if (resolvedTheme === 'dark') {
-        document.body.classList.add('dark');
-        document.body.classList.remove('light');
-      } else {
-        document.body.classList.add('light');
-        document.body.classList.remove('dark');
-      }
-    };
-
-    let resolved = theme;
+    // Sanitize in case they had 'system' stored previously
     if (theme === 'system') {
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      resolved = systemDark ? 'dark' : 'light';
+      setTheme('dark');
+      return;
     }
-    applyTheme(resolved);
+
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+      document.body.classList.remove('light');
+    } else {
+      document.body.classList.add('light');
+      document.body.classList.remove('dark');
+    }
+
     localStorage.setItem('theme', theme);
-
-    // Listen for OS changes when in system mode
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const listener = (e) => applyTheme(e.matches ? 'dark' : 'light');
-      mediaQuery.addEventListener('change', listener);
-      return () => mediaQuery.removeEventListener('change', listener);
-    }
   }, [theme]);
 
-  // Listen for changes from SettingsPage (they write to localStorage)
+  // Listen for changes from other tabs or settings
   useEffect(() => {
     const handleStorage = (e) => {
       if (e.key === 'theme' && e.newValue) {
@@ -55,7 +45,6 @@ const ThemeToggle = () => {
 
   const getIcon = () => {
     if (theme === 'dark') return <Sun size={20} />;
-    if (theme === 'system') return <Monitor size={20} />;
     return <Moon size={20} />;
   };
 

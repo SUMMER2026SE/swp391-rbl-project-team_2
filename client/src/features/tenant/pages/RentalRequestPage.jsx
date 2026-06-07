@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { MapPin, ShieldCheck, Wifi, Waves, Dumbbell, Lock } from 'lucide-react';
 import './RentalRequestPage.css';
 
@@ -18,12 +18,20 @@ const MOCK_PROPERTY = {
 
 const RentalRequestPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  
+  const initialMoveIn = searchParams.get('moveIn') || '';
+  const initialMoveOut = searchParams.get('moveOut') || '';
+  const initialGuests = searchParams.get('guests') || '1 Adult';
+
   // const { id } = useParams(); // For when we switch to dynamic route
   const property = MOCK_PROPERTY;
 
   const [formData, setFormData] = useState({
-    moveInDate: '',
-    occupants: '1 Adult',
+    moveInDate: initialMoveIn,
+    moveOutDate: initialMoveOut,
+    occupants: initialGuests,
     message: '',
     agreeToTerms: false
   });
@@ -113,12 +121,21 @@ const RentalRequestPage = () => {
               <form onSubmit={handleSubmit}>
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="moveInDate">Desired Move-in Date</label>
+                    <label>Move-in Date</label>
                     <input 
                       type="date" 
-                      id="moveInDate"
-                      name="moveInDate" 
+                      name="moveInDate"
                       value={formData.moveInDate}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Move-out Date</label>
+                    <input 
+                      type="date" 
+                      name="moveOutDate"
+                      value={formData.moveOutDate}
                       onChange={handleChange}
                       required
                     />

@@ -1,6 +1,6 @@
 .ai-monitor-container {
   padding: 2rem;
-  background-color: #f8f9fa;
+  background-color: var(--bg-main);
   min-height: 100vh;
 }
 
@@ -29,11 +29,11 @@
 }
 
 .ai-stat-card {
-  background: white;
+  background: var(--bg-card);
   padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-light);
   position: relative;
   overflow: hidden;
 }
@@ -41,7 +41,7 @@
 .ai-stat-card-title {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-muted);
   text-transform: uppercase;
   margin-bottom: 1rem;
 }
@@ -56,7 +56,7 @@
 .ai-stat-card-value {
   font-size: 2rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-main);
 }
 
 .trend-badge {
@@ -77,7 +77,7 @@
 
 .ai-stat-card-sub {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--text-muted);
   line-height: 1.4;
 }
 
@@ -98,11 +98,11 @@
 }
 
 .ai-chart-card {
-  background: white;
+  background: var(--bg-card);
   padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-light);
 }
 
 .ai-chart-header {
@@ -115,14 +115,14 @@
 .ai-chart-header h3 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-main);
 }
 
 .ai-chart-legend {
   display: flex;
   gap: 1rem;
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .legend-item {
@@ -159,7 +159,7 @@
   flex-direction: column;
   justify-content: space-between;
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   width: 20px;
 }
 
@@ -181,7 +181,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   position: absolute;
   bottom: 0;
   left: 0;
@@ -226,16 +226,16 @@
 .efficiency-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-main);
   margin-bottom: 0.5rem;
 }
 
 .ai-metric-card {
-  background: white;
+  background: var(--bg-card);
   padding: 1.25rem 1.5rem;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-light);
 }
 
 .metric-card-header {
@@ -248,7 +248,7 @@
 .metric-card-title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--text-muted);
 }
 
 .metric-icon {
@@ -258,7 +258,7 @@
 .metric-card-value {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-main);
 }
 
 .metric-progress-wrap {
@@ -279,9 +279,9 @@
 }
 
 .btn-adjust-params {
-  background: white;
+  background: var(--bg-card);
   color: #3b82f6;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-light);
   padding: 1rem;
   border-radius: 8px;
   font-size: 0.95rem;
@@ -296,15 +296,15 @@
 }
 
 .btn-adjust-params:hover {
-  background: #f9fafb;
+  background: var(--bg-main);
 }
 
 /* Failed Requests Log Table */
 .ai-table-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-light);
   overflow: hidden;
 }
 
@@ -313,38 +313,38 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .table-header-info h2 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-main);
   margin-bottom: 0.25rem;
 }
 
 .table-header-info p {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .btn-export {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #4b5563;
+  color: var(--text-muted);
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .btn-export:hover {
-  background: #f9fafb;
+  background: var(--bg-main);
 }
 
 .ai-table {
@@ -357,28 +357,28 @@
   padding: 1rem 1.5rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-muted);
   text-transform: uppercase;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .ai-table td {
   padding: 1rem 1.5rem;
   font-size: 0.85rem;
-  color: #374151;
-  border-bottom: 1px solid #e5e7eb;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-light);
   vertical-align: middle;
 }
 
 .ai-table td.fragment {
   font-style: italic;
-  color: #4b5563;
+  color: var(--text-muted);
 }
 
 .intent-pill {
   display: inline-block;
   background: #f3f4f6;
-  color: #4b5563;
+  color: var(--text-muted);
   padding: 0.25rem 0.6rem;
   border-radius: 6px;
   font-size: 0.75rem;

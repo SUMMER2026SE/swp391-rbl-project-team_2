@@ -15,14 +15,14 @@
 .notifications-main-title {
   font-size: 2.25rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   letter-spacing: -0.03em;
   line-height: 1.1;
 }
 
 .notifications-main-subtitle {
   font-size: 0.95rem;
-  color: #64748b;
+  color: var(--text-muted);
   margin-top: 0.4rem;
   font-weight: 500;
 }
@@ -51,8 +51,8 @@
 .filter-pill-btn {
   border: none;
   outline: none;
-  background-color: #e2e8f0;
-  color: #475569;
+  background-color: var(--border-light);
+  color: var(--text-muted);
   border-radius: 9999px;
   padding: 0.5rem 1.25rem;
   font-size: 0.875rem;
@@ -62,8 +62,8 @@
 }
 
 .filter-pill-btn:hover {
-  background-color: #cbd5e1;
-  color: #0f172a;
+  background-color: var(--border-light);
+  color: var(--text-main);
 }
 
 .filter-pill-btn.active {
@@ -73,8 +73,8 @@
 
 /* List Wrapper Card */
 .notifications-wrapper-card {
-  background-color: white;
-  border: 1px solid #e2e8f0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   overflow: hidden;
@@ -99,11 +99,11 @@
 }
 
 .notification-row-item.read {
-  background-color: white;
+  background-color: var(--bg-card);
 }
 
 .notification-row-item:hover {
-  background-color: #f8fafc;
+  background-color: var(--bg-main);
 }
 
 .notification-row-item.unread:hover {
@@ -142,8 +142,8 @@
 }
 
 .notification-icon-circle.grey {
-  background-color: #f1f5f9;
-  color: #64748b;
+  background-color: var(--primary-light);
+  color: var(--text-muted);
 }
 
 /* Title and description text column */
@@ -155,13 +155,13 @@
 .notification-row-title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin-bottom: 0.25rem;
 }
 
 .notification-row-desc {
   font-size: 0.9rem;
-  color: #475569;
+  color: var(--text-muted);
   line-height: 1.45;
 }
 
@@ -176,7 +176,7 @@
 
 .notification-row-time {
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
@@ -197,11 +197,11 @@
 .notifications-empty-state {
   text-align: center;
   padding: 4.5rem 2rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .empty-state-sparkles {
-  color: #94a3b8;
+  color: var(--text-muted);
   margin-bottom: 1.25rem;
   animation: floatEffect 3s ease-in-out infinite;
 }
@@ -209,13 +209,13 @@
 .empty-state-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin-bottom: 0.5rem;
 }
 
 .empty-state-desc {
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--text-muted);
   max-width: 320px;
   margin: 0 auto;
 }

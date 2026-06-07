@@ -20,6 +20,9 @@ import {
   RentalRequestPage,
   DepositHistoryPage,
   TenantProfilePage,
+  TenantSettingsPage,
+  TenantDashboardPage,
+  TenantRequestsPage,
   ListingsPage as TenantListingsPage,
 } from '../features/tenant';
 
@@ -73,21 +76,26 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* ===== PUBLIC / TENANT ROUTES ===== */}
-      <Route element={<MainLayout />}>
+            <Route element={<MainLayout />}>
         <Route path={ROUTES.HOME} element={<HomePage />} />
         <Route path={ROUTES.ROOMS} element={<SearchPage />} />
         <Route path="/listings" element={<TenantListingsPage />} />
         <Route path="/listings/:id" element={<RoomDetailPage />} />
         <Route path={ROUTES.ROOM_DETAIL} element={<RoomDetailPage />} />
-        <Route path={ROUTES.TENANT.FAVORITES} element={<FavoritesPage />} />
         <Route path={ROUTES.TENANT.CHAT} element={<AIChatPage />} />
-        <Route path={ROUTES.TENANT.NOTIFICATIONS} element={<TenantNotificationsPage />} />
         <Route path={ROUTES.TENANT.RENTAL_REQUEST} element={<RentalRequestPage />} />
+        <Route path={ROUTES.HELP} element={<HelpCenterPage />} />
+        
+        {/* Tenant Portal Routes */}
+        <Route path={ROUTES.TENANT.DASHBOARD} element={<TenantDashboardPage />} />
+        <Route path={ROUTES.TENANT.FAVORITES} element={<FavoritesPage />} />
+        <Route path={ROUTES.TENANT.NOTIFICATIONS} element={<TenantNotificationsPage />} />
+        <Route path="/tenant/requests" element={<TenantRequestsPage />} />
         <Route path={ROUTES.TENANT.DEPOSIT_HISTORY} element={<DepositHistoryPage />} />
         <Route path={ROUTES.TENANT.PROFILE} element={<TenantProfilePage />} />
+        <Route path={ROUTES.TENANT.SETTINGS} element={<TenantSettingsPage />} />
         <Route path={ROUTES.TENANT.CHAT_LANDLORD} element={<MessagesPage />} />
         <Route path="/messages" element={<MessagesPage />} />
-        <Route path={ROUTES.HELP} element={<HelpCenterPage />} />
       </Route>
 
       {/* ===== AUTH ROUTES ===== */}
@@ -107,6 +115,7 @@ const AppRoutes = () => {
 
       {/* ===== LANDLORD ROUTES ===== */}
       <Route element={<AdminLayout />}>
+
         <Route path={ROUTES.LANDLORD.DASHBOARD} element={<LandlordDashboard />} />
         <Route path="/landlord" element={<LandlordDashboard />} />
         <Route path="/landlord/dashboard" element={<LandlordDashboard />} />
@@ -127,6 +136,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.CONTRACTS} element={<ContractsPage />} />
         <Route path={ROUTES.LANDLORD.COMPLAINTS} element={<ComplaintsPage />} />
         <Route path={ROUTES.LANDLORD.TERMS} element={<TermsPage />} />
+      
       </Route>
 
       {/* ===== ADMIN ROUTES ===== */}
@@ -138,6 +148,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.ADMIN.PAYOUTS} element={<PayoutsPage />} />
         <Route path={ROUTES.ADMIN.LISTINGS} element={<ListingsPage />} />
         <Route path={ROUTES.ADMIN.USERS} element={<UsersPage />} />
+        <Route path={ROUTES.ADMIN.REQUESTS} element={<RequestsPage />} />
         <Route path={ROUTES.ADMIN.MODERATION} element={<ViolationManagementPage />} />
         <Route path={ROUTES.ADMIN.SETTINGS} element={<AdminSettingsPage />} />
         <Route path={ROUTES.ADMIN.HELP} element={<HelpCenterPage />} />

@@ -17,14 +17,14 @@
 .sys-settings-title {
   font-size: 1.75rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   letter-spacing: -0.02em;
   margin: 0;
 }
 
 .sys-settings-subtitle {
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--text-muted);
   margin-top: 0.35rem;
   font-weight: 500;
 }
@@ -43,8 +43,8 @@
 .sys-settings-nav {
   width: 220px;
   flex-shrink: 0;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 0.6rem;
   display: flex;
@@ -61,7 +61,7 @@
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -72,8 +72,8 @@
 }
 
 .sys-nav-item:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--primary-light);
+  color: var(--text-main);
 }
 
 .sys-nav-item.active {
@@ -106,8 +106,8 @@
 
 /* Section Card */
 .sys-section-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: 14px;
   padding: 1.5rem 1.75rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
@@ -129,13 +129,13 @@
 .sys-section-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0 0 0.2rem;
 }
 
 .sys-section-desc {
   font-size: 0.825rem;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
   margin: 0;
 }
@@ -151,7 +151,7 @@
 }
 
 .sys-theme-card {
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border-light);
   border-radius: 12px;
   padding: 0.85rem;
   cursor: pointer;
@@ -161,11 +161,11 @@
   align-items: center;
   gap: 0.6rem;
   position: relative;
-  background: #fafafa;
+  background: var(--bg-main);
 }
 
 .sys-theme-card:hover {
-  border-color: #cbd5e1;
+  border-color: var(--border-light);
 }
 
 .sys-theme-card.selected {
@@ -185,8 +185,8 @@
 }
 
 .light-preview {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-main);
+  border: 1px solid var(--border-light);
 }
 
 .dark-preview {
@@ -196,19 +196,19 @@
 
 .system-preview {
   background: linear-gradient(135deg, #f8fafc 50%, #1e293b 50%);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-light);
   align-items: center;
   justify-content: center;
 }
 
 .system-preview-icon {
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .preview-bar {
   height: 8px;
   border-radius: 3px;
-  background: #e2e8f0;
+  background: var(--border-light);
   width: 70%;
 }
 
@@ -219,7 +219,7 @@
 .preview-line {
   height: 5px;
   border-radius: 2px;
-  background: #e2e8f0;
+  background: var(--border-light);
   width: 100%;
 }
 
@@ -234,12 +234,12 @@
 .sys-theme-label {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-main);
 }
 
 .sys-theme-sublabel {
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 500;
   margin-top: -0.4rem;
 }
@@ -277,17 +277,17 @@
 .sys-form-label {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #334155;
+  color: var(--text-main);
 }
 
 .sys-select {
   padding: 0.65rem 2rem 0.65rem 0.85rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #0f172a;
-  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 0.75rem center;
+  color: var(--text-main);
+  background: var(--bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 0.75rem center;
   -webkit-appearance: none;
   appearance: none;
   outline: none;
@@ -302,11 +302,11 @@
 
 .sys-input {
   padding: 0.65rem 0.85rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #0f172a;
+  color: var(--text-main);
   outline: none;
   transition: border-color 0.2s;
   font-family: inherit;
@@ -355,12 +355,12 @@
 .sys-toggle-name {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-main);
 }
 
 .sys-toggle-desc {
   font-size: 0.775rem;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -384,14 +384,14 @@
 }
 
 .sys-toggle-btn.off {
-  background: #cbd5e1;
+  background: var(--border-light);
   justify-content: flex-start;
 }
 
 .sys-toggle-thumb {
   width: 20px;
   height: 20px;
-  background: white;
+  background: var(--bg-card);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -460,12 +460,12 @@
 .sys-range-value {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #334155;
+  color: var(--text-main);
 }
 
 .sys-range-desc {
   font-size: 0.775rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 500;
   margin-top: 0.35rem;
 }
@@ -483,19 +483,19 @@
 
 .sys-btn-discard {
   padding: 0.65rem 1.25rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-card);
   font-size: 0.875rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .sys-btn-discard:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--bg-main);
+  border-color: var(--border-light);
 }
 
 .sys-btn-save {
@@ -520,7 +520,7 @@
 
 /* Placeholder for empty sections */
 .sys-placeholder-text {
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.875rem;
   font-weight: 500;
   padding: 2rem 0;

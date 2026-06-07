@@ -1,6 +1,6 @@
 .payments {
   padding: 2rem;
-  background: #f8f9fa;
+  background: var(--bg-main);
   min-height: 100vh;
 }
 
@@ -11,13 +11,13 @@
 .payments__title {
   font-size: 1.75rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-main);
   margin: 0;
 }
 
 .payments__subtitle {
   font-size: 0.95rem;
-  color: #666;
+  color: var(--text-muted);
   margin: 0.5rem 0 0 0;
 }
 
@@ -30,7 +30,7 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -52,14 +52,14 @@
 .stat-card__header h4 {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #666;
+  color: var(--text-muted);
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .stat-icon {
-  color: #2563eb;
+  color: var(--primary);
   flex-shrink: 0;
 }
 
@@ -78,13 +78,13 @@
 .stat-card__value {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-main);
   margin-bottom: 0.5rem;
 }
 
 .stat-card__subtitle {
   font-size: 0.85rem;
-  color: #999;
+  color: var(--text-muted);
 }
 
 /* Filter Bar */
@@ -92,7 +92,7 @@
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
-  background: white;
+  background: var(--bg-card);
   padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -104,13 +104,13 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: #f5f5f5;
+  background: var(--bg-main);
   border-radius: 6px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-light);
 }
 
 .filter-search svg {
-  color: #999;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -131,8 +131,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.95rem;
@@ -140,16 +140,16 @@
 }
 
 .filter-dropdown-btn:hover {
-  border-color: #2563eb;
-  color: #2563eb;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .filter-dropdown-menu {
   position: absolute;
   top: 100%;
   left: 0;
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 10;
@@ -170,18 +170,18 @@
 }
 
 .filter-dropdown-item:hover {
-  background: #f5f5f5;
+  background: var(--bg-main);
 }
 
 .filter-dropdown-item.active {
-  background: #e3f2fd;
-  color: #2563eb;
+  background: var(--primary-light);
+  color: var(--primary);
   font-weight: 500;
 }
 
 /* Table */
 .payments__table-container {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -193,33 +193,33 @@
 }
 
 .payments__table thead {
-  background: #f8f9fa;
-  border-bottom: 2px solid #e0e0e0;
+  background: var(--bg-main);
+  border-bottom: 2px solid var(--border-light);
 }
 
 .payments__table th {
   padding: 1rem;
   text-align: left;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-main);
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .payments__table tbody tr {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-light);
   transition: background 0.2s;
 }
 
 .payments__table tbody tr:hover {
-  background: #f8f9fa;
+  background: var(--bg-main);
 }
 
 .payments__table td {
   padding: 1rem;
   font-size: 0.95rem;
-  color: #1a1a1a;
+  color: var(--text-main);
 }
 
 .payment-row {
@@ -237,12 +237,12 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #e3f2fd;
+  background: var(--primary-light);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: #2563eb;
+  color: var(--primary);
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -255,12 +255,12 @@
 
 .tenant-name {
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--text-main);
 }
 
 .tenant-email {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 /* Room Info */
@@ -272,7 +272,7 @@
 
 .room-title {
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--text-main);
 }
 
 /* Amount Info */
@@ -281,7 +281,7 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: #2563eb;
+  color: var(--primary);
 }
 
 .amount-info svg {
@@ -293,12 +293,12 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .date-info svg {
   flex-shrink: 0;
-  color: #2563eb;
+  color: var(--primary);
 }
 
 /* View Button */
@@ -307,9 +307,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: #e3f2fd;
-  color: #2563eb;
-  border: 1px solid #2563eb;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: var(--primary);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.85rem;
@@ -318,7 +318,7 @@
 }
 
 .view-btn:hover {
-  background: #2563eb;
+  background: var(--primary);
   color: white;
 }
 
@@ -353,7 +353,7 @@
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-card);
   border-radius: 8px;
   max-width: 600px;
   width: 90%;
@@ -367,13 +367,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .modal-header h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -381,7 +381,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #999;
+  color: var(--text-muted);
   padding: 0.25rem;
   display: flex;
   align-items: center;
@@ -390,7 +390,7 @@
 }
 
 .modal-close-btn:hover {
-  color: #1a1a1a;
+  color: var(--text-main);
 }
 
 .modal-body {
@@ -401,7 +401,7 @@
   display: flex;
   gap: 1rem;
   padding: 1.5rem;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-light);
   justify-content: flex-end;
 }
 
@@ -419,10 +419,10 @@
 .section-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-main);
   margin: 0 0 1rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--border-light);
 }
 
 .detail-grid {
@@ -439,7 +439,7 @@
 .detail-item label {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #666;
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -450,22 +450,22 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.95rem;
-  color: #1a1a1a;
+  color: var(--text-main);
   font-weight: 500;
 }
 
 .detail-value svg {
   flex-shrink: 0;
-  color: #2563eb;
+  color: var(--primary);
 }
 
 /* Notes Box */
 .notes-box {
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--bg-main);
   border-radius: 6px;
   border-left: 4px solid #2563eb;
-  color: #1a1a1a;
+  color: var(--text-main);
   line-height: 1.6;
 }
 

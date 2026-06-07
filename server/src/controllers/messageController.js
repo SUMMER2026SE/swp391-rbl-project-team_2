@@ -169,11 +169,13 @@ const getConversationMessages = async (req, res, next) => {
         messageId: msg.message_id,
         conversationId: msg.conversation_id,
         senderId: msg.sender_id,
+        sender_id: msg.sender_id,
         content: msg.content,
         isRead: msg.is_read,
         readAt: msg.read_at,
         sender: msg.sender,
         createdAt: msg.created_at,
+        created_at: msg.created_at,
       })),
       pagination: {
         total: count,
@@ -251,8 +253,10 @@ const sendMessage = async (req, res, next) => {
       messageId: message.message_id,
       conversationId: message.conversation_id,
       senderId: message.sender_id,
+      sender_id: message.sender_id,
       content: message.content,
       createdAt: message.created_at,
+      created_at: message.created_at,
       sender: sender
     };
 

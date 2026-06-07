@@ -5,6 +5,7 @@ import {
   MessageSquare,
   Search,
   LogOut,
+  Menu,
 } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
 import SearchOverlay from '../components/ui/SearchOverlay';
@@ -19,11 +20,12 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
   
-  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
-
-  // Detect role context from current URL
   const isLandlord = location.pathname.startsWith('/landlord');
   const isAdmin = location.pathname.startsWith('/admin');
+  const isTenant = !isLandlord && !isAdmin;
+
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(isTenant);
 
   // Route Protection: Keep users in their proper role area
   useEffect(() => {
@@ -59,18 +61,14 @@ const AdminLayout = () => {
   if (isAdmin && userRole !== 'ADMIN') return null;
 
   // Dynamic route references based on role
-  const notificationsPath = isLandlord ? ROUTES.LANDLORD.NOTIFICATIONS : ROUTES.ADMIN.NOTIFICATIONS;
-  const messagesPath = isLandlord ? ROUTES.LANDLORD.MESSAGES : ROUTES.ADMIN.MESSAGES;
-  const helpPath = isLandlord ? ROUTES.LANDLORD.HELP : ROUTES.ADMIN.HELP;
+  const notificationsPath = isLandlord ? ROUTES.LANDLORD.NOTIFICATIONS : isAdmin ? ROUTES.ADMIN.NOTIFICATIONS : ROUTES.TENANT.NOTIFICATIONS;
+  const messagesPath = isLandlord ? ROUTES.LANDLORD.MESSAGES : isAdmin ? ROUTES.ADMIN.MESSAGES : '/messages';
+  const helpPath = isLandlord ? ROUTES.LANDLORD.HELP : isAdmin ? ROUTES.ADMIN.HELP : ROUTES.HELP;
+  const profilePath = isLandlord ? ROUTES.LANDLORD.PROFILE : isAdmin ? ROUTES.ADMIN.SETTINGS : ROUTES.TENANT.PROFILE;
 
   const isMessagesActive = location.pathname === messagesPath;
 
-  // Hide topbar on specific pages
-  const hideTopbar =
-    location.pathname === ROUTES.LANDLORD.REQUESTS ||
-    location.pathname === ROUTES.LANDLORD.SETTINGS ||
-    location.pathname === ROUTES.ADMIN.SETTINGS;
-
+  // Remove hideTopbar completely so all pages get the Topbar and the hamburger menu
   const getAvatarUrl = () => {
     if (user?.avatarUrl) {
       if (user.avatarUrl.startsWith('/uploads')) {
@@ -83,23 +81,27 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="admin-layout">
+    <div className={`admin-layout ${isCollapsed ? 'collapsed' : ''}`}>
       {/* Left Sidebar */}
-      <Sidebar />
+      <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
 
       {/* Main Content Area */}
       <div className="admin-main-container">
 
         {/* Topbar */}
-        {!hideTopbar && (
-          <header className="admin-topbar">
-            <div
-              className="topbar-search"
-              onClick={() => setShowSearchOverlay(true)}
-              style={{ cursor: 'pointer' }}
-            >
-              <Search size={18} className="search-icon" />
-              <input type="text" placeholder="Search..." readOnly style={{ cursor: 'pointer' }} />
+        <header className="admin-topbar">
+            <div className="topbar-left-actions">
+              <button className="sidebar-toggle-btn" onClick={() => setIsCollapsed(!isCollapsed)}>
+                <Menu size={20} />
+              </button>
+              <div
+                className="topbar-search"
+                onClick={() => setShowSearchOverlay(true)}
+                style={{ cursor: 'pointer' }}
+              >
+                <Search size={18} className="search-icon" />
+                <input type="text" placeholder="Search..." readOnly style={{ cursor: 'pointer' }} />
+              </div>
             </div>
 
             <div className="topbar-actions">
@@ -133,12 +135,11 @@ const AdminLayout = () => {
               </button>
 
               {/* Dynamic Avatar */}
-              <div className="user-avatar-container" onClick={() => navigate(isLandlord ? ROUTES.LANDLORD.PROFILE : ROUTES.ADMIN.SETTINGS)}>
+              <div className="user-avatar-container" onClick={() => navigate(profilePath)}>
                 <img src={getAvatarUrl()} alt="User Avatar" className="admin-avatar-img" />
               </div>
             </div>
           </header>
-        )}
 
         {/* Dynamic Route Content */}
         <main className="admin-main-content">

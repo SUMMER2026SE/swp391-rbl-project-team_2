@@ -14,6 +14,7 @@ const Conversation = require('./Conversation');
 const Message = require('./Message');
 const Notification = require('./Notification');
 const Booking = require('./Booking');
+const Favorite = require('./Favorite');
 
 // =========================================================
 // ASSOCIATIONS - Only define if not already defined
@@ -141,6 +142,14 @@ const defineAssociations = () => {
   // Notification <-> User
   User.hasMany(Notification, { foreignKey: 'user_id', as: 'notifications' });
   Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  // Favorite <-> User (Tenant)
+  User.hasMany(Favorite, { foreignKey: 'tenant_id', as: 'favorites' });
+  Favorite.belongsTo(User, { foreignKey: 'tenant_id', as: 'tenant' });
+
+  // Favorite <-> Room
+  Room.hasMany(Favorite, { foreignKey: 'room_id', as: 'favorites' });
+  Favorite.belongsTo(Room, { foreignKey: 'room_id', as: 'room' });
 };
 
 module.exports = {
@@ -160,5 +169,6 @@ module.exports = {
   Message,
   Notification,
   Booking,
+  Favorite,
   defineAssociations,
 };

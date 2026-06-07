@@ -1,5 +1,5 @@
 import React from 'react';
-import { MoreVertical, Lock, AlertCircle, Edit, ExternalLink, Activity, EyeOff, CheckCircle } from 'lucide-react';
+import { MoreVertical, Lock, AlertCircle, Edit, ExternalLink, Activity, EyeOff, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { formatCurrency } from '../../../utils/format';
 import './ListingTable.css';
 
@@ -18,6 +18,18 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
         );
       case 'hidden':
         return <span className="status-badge status-hidden">Hidden (System)</span>;
+      case 'pending':
+        return (
+          <span className="status-badge" style={{ backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>
+            <Clock size={12} /> Pending Approval
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className="status-badge" style={{ backgroundColor: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3' }}>
+            <XCircle size={12} /> Rejected
+          </span>
+        );
       default:
         return <span className="status-badge">{status}</span>;
     }
@@ -89,7 +101,29 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
                 </div>
               </td>
               <td className="listing-actions">
-                {listing.alert ? (
+                {listing.status.toLowerCase() === 'pending' ? (
+                  <div className="action-buttons">
+                    <button 
+                      className="btn-action-icon" 
+                      style={{ color: '#059669', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0' }}
+                      title="Approve Listing"
+                      onClick={() => onUpdateStatus(listing.rawId, 'available')}
+                    >
+                      <CheckCircle size={18} />
+                    </button>
+                    <button 
+                      className="btn-action-icon" 
+                      style={{ color: '#e11d48', backgroundColor: '#fff1f2', border: '1px solid #fecdd3' }}
+                      title="Reject Listing"
+                      onClick={() => onUpdateStatus(listing.rawId, 'rejected')}
+                    >
+                      <XCircle size={18} />
+                    </button>
+                    <button className="btn-action-icon" title="View Details">
+                      <ExternalLink size={18} />
+                    </button>
+                  </div>
+                ) : listing.alert ? (
                   <button className="btn-review-violation">Review Violation</button>
                 ) : (
                   <div className="action-buttons">

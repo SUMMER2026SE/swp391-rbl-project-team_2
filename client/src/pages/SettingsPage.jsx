@@ -23,11 +23,7 @@ const SettingsPage = () => {
   useEffect(() => {
     const handleThemeChange = () => {
       let activeTheme = appearance;
-      if (appearance === 'system') {
-        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        activeTheme = systemDark ? 'dark' : 'light';
-      }
-      
+      // Removed system mode logic
       if (activeTheme === 'dark') {
         document.body.classList.add('dark');
         document.body.classList.remove('light');
@@ -40,23 +36,6 @@ const SettingsPage = () => {
     };
 
     handleThemeChange();
-
-    // Listen for OS theme changes if on system sync
-    if (appearance === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const listener = (e) => {
-        const systemDark = e.matches;
-        if (systemDark) {
-          document.body.classList.add('dark');
-          document.body.classList.remove('light');
-        } else {
-          document.body.classList.add('light');
-          document.body.classList.remove('dark');
-        }
-      };
-      mediaQuery.addEventListener('change', listener);
-      return () => mediaQuery.removeEventListener('change', listener);
-    }
   }, [appearance]);
 
   // Language & Region
@@ -155,17 +134,6 @@ const SettingsPage = () => {
                     {appearance === 'dark' && <div className="sys-theme-check"><Check size={12} /></div>}
                   </div>
 
-                  <div
-                    className={`sys-theme-card ${appearance === 'system' ? 'selected' : ''}`}
-                    onClick={() => setAppearance('system')}
-                  >
-                    <div className="sys-theme-preview system-preview">
-                      <Monitor size={28} className="system-preview-icon" />
-                    </div>
-                    <span className="sys-theme-label">System Sync</span>
-                    <span className="sys-theme-sublabel">Follows OS setting</span>
-                    {appearance === 'system' && <div className="sys-theme-check"><Check size={12} /></div>}
-                  </div>
                 </div>
               </div>
 

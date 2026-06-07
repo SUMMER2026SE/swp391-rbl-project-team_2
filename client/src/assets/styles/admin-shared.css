@@ -164,7 +164,7 @@
 }
 
 .btn-action-icon:hover {
-  background-color: #F1F5F9;
+  background-color: var(--primary-light);
   color: var(--text-main);
 }
 

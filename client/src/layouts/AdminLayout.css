@@ -1,7 +1,7 @@
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
 }
 
 .admin-main-container {
@@ -10,12 +10,17 @@
   display: flex;
   flex-direction: column;
   min-width: 0; /* Prevent overflow */
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-layout.collapsed .admin-main-container {
+  margin-left: 0;
 }
 
 /* Topbar Styles */
 .admin-topbar {
   height: 70px;
-  background-color: #FFFFFF !important;
+  background-color: var(--bg-card) !important;
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
@@ -25,6 +30,30 @@
   top: 0;
   z-index: 100; /* High z-index to stay above content */
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+}
+
+.topbar-left-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sidebar-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: var(--bg-main);
+  color: var(--text-main);
 }
 
 .topbar-search {
@@ -46,13 +75,13 @@
 }
 
 .topbar-search input::placeholder {
-  color: #94A3B8;
+  color: var(--text-muted);
 }
 
 .topbar-search .search-icon {
   position: absolute;
   left: 0.25rem;
-  color: #94A3B8;
+  color: var(--text-muted);
 }
 
 .topbar-actions {
@@ -63,7 +92,7 @@
 
 .topbar-icon-btn {
   position: relative;
-  color: #64748B;
+  color: var(--text-muted);
   padding: 0.35rem;
   border-radius: var(--radius-full);
   display: flex;
@@ -74,13 +103,13 @@
 }
 
 .topbar-icon-btn:hover {
-  background-color: #F1F5F9;
-  color: #2563EB;
+  background-color: var(--bg-main);
+  color: var(--primary);
 }
 
 .topbar-icon-btn.active-chat-icon {
-  background-color: #EFF6FF;
-  color: #2563EB;
+  background-color: var(--primary-light);
+  color: var(--primary);
 }
 
 .badge-dot {
@@ -96,14 +125,14 @@
 .divider-vertical {
   width: 1px;
   height: 20px;
-  background-color: #E2E8F0;
+  background-color: var(--border-light);
   margin: 0 0.25rem;
 }
 
 .btn-support {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   transition: color 0.2s;
   padding: 0.5rem;
   text-decoration: none;
@@ -156,7 +185,7 @@
 .admin-main-content {
   padding: 2rem 2.5rem;
   flex: 1;
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
 }
 
 @media (max-width: 1024px) {

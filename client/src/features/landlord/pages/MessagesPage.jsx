@@ -173,12 +173,12 @@ const MessagesPage = () => {
                 currentConversation.messages.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={`message-bubble ${msg.sender_id === currentConversation.userId ? 'sent' : 'received'}`}
+                    className={`message-bubble ${(msg.sender_id || msg.senderId) === currentConversation.userId ? 'sent' : 'received'}`}
                   >
                     <div className="message-content">
                       <p className="message-text">{msg.content}</p>
                       <span className="message-time">
-                        {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                        {(msg.created_at || msg.createdAt) ? new Date(msg.created_at || msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
                       </span>
                     </div>
                   </div>

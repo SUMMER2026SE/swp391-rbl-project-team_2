@@ -2,22 +2,54 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, MapPin, Heart, BedDouble, Bath, Maximize } from 'lucide-react';
 import { clsx } from 'clsx';
+import { favoriteService } from '../services/favoriteService';
+import useAuthStore from '../../../store/useAuthStore';
 import './RoomCard.css';
 
-const RoomCard = ({ room, variant = 'standard' }) => {
+const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
   const navigate = useNavigate();
-  const { id, title, price, rating, location, distance, tags = [], imageTags = [], specs = [], isFavorite, image } = room;
+  const { isAuthenticated } = useAuthStore();
+  const { id, title, price, rating, location, distance, tags = [], imageTags = [], specs = [], isFavorite: initialFavorite, image } = room;
+  
+  const [isFavorite, setIsFavorite] = React.useState(initialFavorite);
 
   const handleClick = () => {
-    if (variant === 'standard') {
-      navigate(`/rooms/${id}`);
+    if (variant === 'standard' || variant === 'favorite') {
+      navigate(`/listings/${id}`);
+    }
+  };
+
+  const handleFavoriteClick = async (e) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      alert("Please login to save favorites");
+      return;
+    }
+    
+    try {
+      if (isFavorite) {
+        await favoriteService.removeFavorite(id);
+        setIsFavorite(false);
+        if (onFavoriteToggle) onFavoriteToggle(id, false);
+      } else {
+        await favoriteService.addFavorite(id);
+        setIsFavorite(true);
+        if (onFavoriteToggle) onFavoriteToggle(id, true);
+      }
+    } catch (err) {
+      alert("Failed to toggle favorite");
     }
   };
 
   return (
     <div className={clsx("room-card", `room-card-${variant}`)} onClick={handleClick}>
       <div className="room-card-image-wrapper">
-        <img src={image} alt={title} className="room-card-image" />
+        <img 
+          src={image} 
+          alt={title} 
+          className="room-card-image" 
+          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60'; }}
+        />
         
         {/* Floating tags on the image (For Favorite/Chat variant) */}
         {(variant === 'favorite' || variant === 'chat') && imageTags.length > 0 && (
@@ -43,7 +75,7 @@ const RoomCard = ({ room, variant = 'standard' }) => {
         )}
 
         {variant !== 'chat' && (
-          <button className="favorite-btn">
+          <button className="favorite-btn" onClick={handleFavoriteClick}>
             <Heart size={18} className={clsx('heart-icon', isFavorite && 'filled')} />
           </button>
         )}

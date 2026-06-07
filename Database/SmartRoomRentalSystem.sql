@@ -74,7 +74,8 @@ CREATE TABLE rooms (
     ward NVARCHAR(100) NULL,
     price_per_month DECIMAL(10,2) NOT NULL,
     area_sqm DECIMAL(8,2) NULL,
-    room_type VARCHAR(10) DEFAULT 'single',   -- 'single', 'double', 'shared'
+    room_type VARCHAR(15) DEFAULT 'single',   -- 'single', 'double', 'shared', 'apartment', 'house'
+    bedrooms INT DEFAULT 1,
     max_occupants INT DEFAULT 1,
     status VARCHAR(15) DEFAULT 'available',   -- 'available', 'rented', 'maintenance', 'inactive'
     thumbnail_url NVARCHAR(500) NULL,
@@ -301,6 +302,20 @@ CREATE TABLE bookings (
 );
 
 -- =========================================================
+-- 16. FAVORITES
+-- =========================================================
+CREATE TABLE favorites (
+    favorite_id INT IDENTITY PRIMARY KEY,
+    tenant_id INT NOT NULL,
+    room_id INT NOT NULL,
+    created_at DATETIME DEFAULT GETDATE(),
+
+    FOREIGN KEY (tenant_id) REFERENCES users(user_id),
+    FOREIGN KEY (room_id) REFERENCES rooms(room_id),
+    CONSTRAINT UQ_favorites_tenant_room UNIQUE (tenant_id, room_id)
+);
+
+-- =========================================================
 -- 16. INDEXES (PERFORMANCE)
 -- =========================================================
 CREATE INDEX idx_users_email ON users(email);
@@ -336,6 +351,8 @@ CREATE INDEX idx_notifications_user ON notifications(user_id);
 CREATE INDEX idx_notifications_read ON notifications(is_read);
 CREATE INDEX idx_facilities_room ON facilities(room_id);
 CREATE INDEX idx_room_images_room ON room_images(room_id);
+CREATE INDEX idx_favorites_tenant ON favorites(tenant_id);
+CREATE INDEX idx_favorites_room ON favorites(room_id);
 
 -- =========================================================
 -- 17. SEED DATA

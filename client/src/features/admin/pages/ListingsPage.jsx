@@ -7,6 +7,7 @@ import './ListingsPage.css';
 
 const ListingsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,8 +45,15 @@ const ListingsPage = () => {
   };
 
   const filteredListings = listings.filter((item) => {
-    return item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           item.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          item.id.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesStatus = true;
+    if (statusFilter !== 'All') {
+      matchesStatus = item.status.toLowerCase() === statusFilter.toLowerCase();
+    }
+    
+    return matchesSearch && matchesStatus;
   });
 
   return (
@@ -109,11 +117,17 @@ const ListingsPage = () => {
             </div>
 
             <div className="filter-dropdown-wrapper">
-              <select className="filter-select">
-                <option>All Statuses</option>
-                <option>Active</option>
-                <option>Occupied</option>
-                <option>Hidden</option>
+              <select 
+                className="filter-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="All">All Statuses</option>
+                <option value="available">Active / Available</option>
+                <option value="pending">Pending Approval</option>
+                <option value="rented">Occupied</option>
+                <option value="rejected">Rejected</option>
+                <option value="hidden">Hidden</option>
               </select>
               <ChevronDown size={14} className="dropdown-icon" />
             </div>

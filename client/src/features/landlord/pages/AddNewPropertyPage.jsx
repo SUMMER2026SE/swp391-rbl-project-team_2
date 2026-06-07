@@ -33,6 +33,7 @@ const AddNewPropertyPage = () => {
     description: '',
     category: '',
     size: '',
+    bedrooms: '',
 
     // Step 2: Location & Price
     address: '',
@@ -102,6 +103,7 @@ const AddNewPropertyPage = () => {
       if (!formData.title.trim()) errors.title = 'Listing Title is required';
       if (!formData.description.trim()) errors.description = 'Property Description is required';
       if (!formData.category) errors.category = 'Property Category is required';
+      if (!formData.bedrooms || Number(formData.bedrooms) <= 0) errors.bedrooms = 'Please specify the number of bedrooms';
     } else if (step === 2) {
       if (!formData.address.trim()) errors.address = 'Street Address is required';
       if (!formData.city.trim()) errors.city = 'City is required';
@@ -137,6 +139,7 @@ const AddNewPropertyPage = () => {
       fd.append('district', formData.district);
       fd.append('pricePerMonth', Number(formData.rent));
       fd.append('areaSqm', Number(formData.size) || 0);
+      fd.append('bedrooms', Number(formData.bedrooms) || 1);
       fd.append('roomType', roomType);
       fd.append('maxOccupants', 2);
 
@@ -295,6 +298,19 @@ const AddNewPropertyPage = () => {
                   className="form-input-text"
                   placeholder="e.g. 45"
                 />
+              </div>
+
+              <div className="form-group-field">
+                <label className="form-input-label">Bedrooms <span className="text-danger">*</span></label>
+                <input
+                  type="number"
+                  name="bedrooms"
+                  value={formData.bedrooms}
+                  onChange={handleInputChange}
+                  className={`form-input-text ${formErrors.bedrooms ? 'error' : ''}`}
+                  placeholder="e.g. 2"
+                />
+                {formErrors.bedrooms && <span className="form-field-error-msg">{formErrors.bedrooms}</span>}
               </div>
             </div>
           </div>

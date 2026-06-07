@@ -1,6 +1,6 @@
 .payouts-page {
   padding: 2rem;
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
   min-height: 100vh;
 }
 
@@ -14,12 +14,12 @@
 .header-titles h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--text-main);
   margin: 0 0 0.5rem;
 }
 
 .header-titles p {
-  color: #64748B;
+  color: var(--text-muted);
   margin: 0;
   font-size: 0.95rem;
 }
@@ -33,14 +33,14 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1.25rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--border-light);
 }
 
 .stat-card-icon {
@@ -55,30 +55,30 @@
 
 .stat-card-info p {
   margin: 0 0 0.25rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-size: 0.875rem;
   font-weight: 500;
 }
 
 .stat-card-info h3 {
   margin: 0;
-  color: #0F172A;
+  color: var(--text-main);
   font-size: 1.5rem;
   font-weight: 700;
 }
 
 /* Table Content */
 .payouts-content {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--border-light);
   overflow: hidden;
 }
 
 .table-controls {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--border-light);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -88,7 +88,7 @@
 .search-bar {
   display: flex;
   align-items: center;
-  background: #F1F5F9;
+  background: var(--primary-light);
   border-radius: 8px;
   padding: 0.5rem 1rem;
   width: 350px;
@@ -104,16 +104,16 @@
 }
 
 .search-bar svg {
-  color: #64748B;
+  color: var(--text-muted);
 }
 
 .status-filter {
   padding: 0.6rem 1rem;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
-  background: white;
+  background: var(--bg-card);
   font-size: 0.9rem;
-  color: #0F172A;
+  color: var(--text-main);
   outline: none;
   cursor: pointer;
 }
@@ -130,25 +130,25 @@
 }
 
 .payouts-table th {
-  background: #F8FAFC;
+  background: var(--bg-main);
   padding: 1rem 1.5rem;
   text-align: left;
   font-size: 0.8rem;
   text-transform: uppercase;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 600;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--border-light);
   white-space: nowrap;
 }
 
 .payouts-table td {
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--border-light);
   vertical-align: middle;
 }
 
 .payouts-table tr:hover td {
-  background: #F8FAFC;
+  background: var(--bg-main);
 }
 
 .id-col, .user-col, .room-col {
@@ -159,29 +159,29 @@
 
 .payout-id {
   font-weight: 600;
-  color: #0F172A;
+  color: var(--text-main);
   font-size: 0.9rem;
 }
 
 .payout-date {
   font-size: 0.8rem;
-  color: #64748B;
+  color: var(--text-muted);
 }
 
 .user-name, .room-title {
   font-weight: 600;
-  color: #0F172A;
+  color: var(--text-main);
   font-size: 0.9rem;
 }
 
 .user-contact, .tenant-name {
   font-size: 0.8rem;
-  color: #64748B;
+  color: var(--text-muted);
 }
 
 .amount-total {
   font-weight: 700;
-  color: #0F172A;
+  color: var(--text-main);
 }
 
 .amount-fee {
@@ -237,9 +237,9 @@
 
 .btn-view-receipt {
   padding: 0.5rem 1rem;
-  background: white;
-  color: #475569;
-  border: 1px solid #E2E8F0;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-light);
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -248,14 +248,14 @@
 }
 
 .btn-view-receipt:hover {
-  background: #F1F5F9;
-  border-color: #CBD5E1;
+  background: var(--primary-light);
+  border-color: var(--border-light);
 }
 
 .empty-state {
   text-align: center;
   padding: 3rem !important;
-  color: #64748B;
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -276,7 +276,7 @@
 }
 
 .payout-modal {
-  background: white;
+  background: var(--bg-card);
   width: 100%;
   max-width: 500px;
   border-radius: 12px;
@@ -286,7 +286,7 @@
 
 .modal-header {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--border-light);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -295,14 +295,14 @@
 .modal-header h3 {
   margin: 0;
   font-size: 1.25rem;
-  color: #0F172A;
+  color: var(--text-main);
 }
 
 .btn-close {
   background: transparent;
   border: none;
   font-size: 1.5rem;
-  color: #64748B;
+  color: var(--text-muted);
   cursor: pointer;
 }
 
@@ -314,8 +314,8 @@
 }
 
 .payout-summary-card {
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
+  background: var(--bg-main);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   padding: 1rem;
   display: flex;
@@ -327,32 +327,32 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.9rem;
-  color: #475569;
+  color: var(--text-muted);
 }
 
 .summary-row.highlight {
   margin-top: 0.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #E2E8F0;
+  border-top: 1px solid var(--border-light);
   font-size: 1rem;
-  color: #0F172A;
+  color: var(--text-main);
 }
 
 .commission-input-group label {
   display: block;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
 }
 
 .input-with-icon {
   display: flex;
   align-items: center;
-  border: 1px solid #CBD5E1;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   padding: 0 0.75rem;
-  background: white;
+  background: var(--bg-card);
   transition: all 0.2s;
 }
 
@@ -362,7 +362,7 @@
 }
 
 .input-with-icon svg {
-  color: #94A3B8;
+  color: var(--text-muted);
 }
 
 .input-with-icon input {
@@ -377,11 +377,11 @@
 .helper-text {
   margin: 0.5rem 0 0;
   font-size: 0.8rem;
-  color: #64748B;
+  color: var(--text-muted);
 }
 
 .payout-calculation {
-  background: #F1F5F9;
+  background: var(--primary-light);
   padding: 1.25rem;
   border-radius: 8px;
   display: flex;
@@ -401,7 +401,7 @@
 
 .calc-divider {
   height: 1px;
-  background: #CBD5E1;
+  background: var(--border-light);
   margin: 0.5rem 0;
 }
 
@@ -413,7 +413,7 @@
 .manual-transfer-notice {
   display: flex;
   gap: 0.75rem;
-  background: #FFFBEB;
+  background: var(--bg-card)BEB;
   border: 1px solid #FEF3C7;
   padding: 1rem;
   border-radius: 8px;
@@ -432,25 +432,25 @@
 
 .modal-footer {
   padding: 1.25rem 1.5rem;
-  border-top: 1px solid #E2E8F0;
+  border-top: 1px solid var(--border-light);
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  background: #F8FAFC;
+  background: var(--bg-main);
 }
 
 .btn-secondary {
   padding: 0.6rem 1.25rem;
-  background: white;
-  border: 1px solid #CBD5E1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: 6px;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   cursor: pointer;
 }
 
 .btn-secondary:hover {
-  background: #F1F5F9;
+  background: var(--primary-light);
 }
 
 .btn-primary {

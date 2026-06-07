@@ -5,6 +5,9 @@ import {
   MapPin, Star, Share2, Heart, Wifi, Snowflake, Key, 
   Coffee, Compass, Dumbbell, Grid, ChevronDown, ChevronLeft, MessageSquare, CheckCircle 
 } from 'lucide-react';
+import { favoriteService } from '../services/favoriteService';
+import { rentalRequestService } from '../services/rentalRequestService';
+import { ROUTES } from '../../../constants';
 import './RoomDetailPage.css';
 
 const RoomDetailPage = () => {
@@ -17,9 +20,13 @@ const RoomDetailPage = () => {
   const [showMoreAbout, setShowMoreAbout] = useState(false);
   
   // Booking Card States
+  const [bookingMode, setBookingMode] = useState('viewing'); // 'viewing' | 'renting'
+  const [viewingDate, setViewingDate] = useState('');
   const [moveIn, setMoveIn] = useState('');
   const [moveOut, setMoveOut] = useState('');
-  const [guests, setGuests] = useState('1 Guest');
+  const [guests, setGuests] = useState('1 Adult');
+
+  const todayDate = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -27,6 +34,12 @@ const RoomDetailPage = () => {
         const response = await axios.get(`http://localhost:5000/api/listings/${id}`);
         if (response.data.success) {
           setRoomData(response.data.data);
+        }
+        
+        // Fetch favorite status if logged in
+        if (getToken()) {
+          const isFav = await favoriteService.checkFavoriteStatus(id);
+          setIsFavorite(isFav);
         }
       } catch (err) {
         setError('Failed to load listing details');
@@ -37,29 +50,96 @@ const RoomDetailPage = () => {
     fetchListing();
   }, [id]);
 
-  const getToken = () => {
-    try {
-      const authStorage = JSON.parse(localStorage.getItem('auth-storage'));
-      return authStorage?.state?.token || null;
-    } catch { return null; }
-  };
-
-  const handleBookingRequest = async (type) => {
+  const toggleFavorite = async () => {
     try {
       const token = getToken();
       if (!token) {
         navigate('/login');
         return;
       }
-      const response = await axios.post('http://localhost:5000/api/bookings', {
-        listing_id: parseInt(id),
-        type: type // 'view' or 'rent'
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.data.success) {
-        alert(type === 'rent' ? 'Deposit request sent!' : 'Viewing request sent!');
-        if (type === 'rent') navigate('/payment');
+      
+      if (isFavorite) {
+        await favoriteService.removeFavorite(id);
+        setIsFavorite(false);
+      } else {
+        await favoriteService.addFavorite(id);
+        setIsFavorite(true);
+      }
+    } catch (err) {
+      alert('Failed to update favorite status');
+    }
+  };
+
+  const getToken = () => {
+    try {
+      const authStorage = JSON.parse(sessionStorage.getItem('auth-storage'));
+      return authStorage?.state?.token || null;
+    } catch { return null; }
+  };
+
+  const handleBookingRequest = async () => {
+    try {
+      const token = getToken();
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      if (bookingMode === 'viewing') {
+        if (!viewingDate) {
+          alert('Please select a viewing date.');
+          return;
+        }
+        if (viewingDate < todayDate) {
+          alert('Viewing date must be today or a future date.');
+          return;
+        }
+
+        const response = await rentalRequestService.createRequest({
+          roomId: parseInt(id, 10),
+          message: `Viewing request for ${viewingDate} at 10:00. Requested from room detail page.`,
+          requestedMoveInDate: viewingDate,
+        });
+        if (response.success) {
+          alert('Viewing request sent!');
+        }
+      } else {
+        // renting mode
+        if (!moveIn) {
+          alert('Please select a move in date.');
+          return;
+        }
+        if (!moveOut) {
+          alert('Please select a move out date.');
+          return;
+        }
+        if (moveIn < todayDate) {
+          alert('Move in date must be today or a future date.');
+          return;
+        }
+        if (moveOut <= moveIn) {
+          alert('Move out date must be after Move in date.');
+          return;
+        }
+
+        // Validate 1 month minimum
+        const mIn = new Date(moveIn);
+        const mOut = new Date(moveOut);
+        
+        // Add 1 month to move in date
+        const minMoveOut = new Date(mIn);
+        minMoveOut.setMonth(minMoveOut.getMonth() + 1);
+
+        // Reset times to compare dates properly
+        minMoveOut.setHours(0, 0, 0, 0);
+        mOut.setHours(0, 0, 0, 0);
+
+        if (mOut < minMoveOut) {
+          alert('Minimum rental duration is 1 month. Please select a valid move out date.');
+          return;
+        }
+
+        navigate(`${ROUTES.TENANT.RENTAL_REQUEST}?roomId=${id}&moveIn=${moveIn}&moveOut=${moveOut}&guests=${encodeURIComponent(guests)}`);
       }
     } catch (err) {
       alert('Failed to send request. ' + (err.response?.data?.message || err.message));
@@ -74,9 +154,14 @@ const RoomDetailPage = () => {
         return;
       }
       // First, get or create conversation
-      const response = await axios.post('http://localhost:5000/api/landlord/conversations', {
-        participantId: roomData.landlord_id,
-        roomId: roomData.room_id
+      const landlordId = roomData.landlordId ?? roomData.landlord?.user_id;
+      if (!landlordId) {
+        alert('Failed to start chat. Landlord information is unavailable.');
+        return;
+      }
+      const response = await axios.post('http://localhost:5000/api/chat/conversations', {
+        participantId: landlordId,
+        roomId: roomData.roomId ?? parseInt(id, 10),
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -141,7 +226,7 @@ const RoomDetailPage = () => {
                 </button>
                 <button 
                   className={`circle-action-btn ${isFavorite ? 'favorite-active' : ''}`} 
-                  onClick={() => setIsFavorite(!isFavorite)}
+                  onClick={toggleFavorite}
                   title="Save"
                 >
                   <Heart size={18} fill={isFavorite ? "#EF4444" : "none"} />
@@ -171,7 +256,7 @@ const RoomDetailPage = () => {
           {/* Host Card Section */}
           <section className="host-card">
             <div className="host-info">
-              <img src={roomData.landlord?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'} alt={roomData.landlord?.full_name} className="host-avatar" />
+              <img src={roomData.landlord?.avatar_url ? (roomData.landlord.avatar_url.startsWith('http') ? roomData.landlord.avatar_url : `http://localhost:5000${roomData.landlord.avatar_url}`) : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'} alt={roomData.landlord?.full_name || 'Landlord'} className="host-avatar" />
               <div className="host-text">
                 <h3>Managed by {roomData.landlord?.full_name || 'Landlord'}</h3>
                 <p>Phone: {roomData.landlord?.phone || 'N/A'}</p>
@@ -219,45 +304,85 @@ const RoomDetailPage = () => {
         {/* Right Side: Booking Card */}
         <aside className="detail-sidebar">
           <div className="booking-card">
-            <div className="booking-price-row">
+            <div className="booking-mode-tabs">
+              <button 
+                className={`booking-tab ${bookingMode === 'viewing' ? 'active' : ''}`}
+                onClick={() => setBookingMode('viewing')}
+              >
+                View Room
+              </button>
+              <button 
+                className={`booking-tab ${bookingMode === 'renting' ? 'active' : ''}`}
+                onClick={() => setBookingMode('renting')}
+              >
+                Rent Room
+              </button>
+            </div>
+
+            <div className="booking-price-row mt-4">
               <span className="booking-price">${roomData.pricePerMonth?.toLocaleString() || 0}</span>
               <span className="booking-period">/ month</span>
             </div>
 
-            <div className="booking-form-box">
-              <div className="date-fields-row">
-                <div className="date-field">
-                  <label>MOVE IN</label>
-                  <input 
-                    type="date" 
-                    value={moveIn} 
-                    onChange={(e) => setMoveIn(e.target.value)} 
-                  />
-                </div>
-                <div className="date-field border-left">
-                  <label>MOVE OUT</label>
-                  <input 
-                    type="date" 
-                    value={moveOut} 
-                    onChange={(e) => setMoveOut(e.target.value)} 
-                  />
+            {bookingMode === 'viewing' ? (
+              <div className="booking-form-box">
+                <div className="date-fields-row">
+                  <div className="date-field" style={{ width: '100%' }}>
+                    <label>VIEWING DATE</label>
+                    <input 
+                      type="date" 
+                      value={viewingDate} 
+                      min={todayDate}
+                      onChange={(e) => setViewingDate(e.target.value)} 
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="guests-field">
-                <label>GUESTS</label>
-                <div className="guests-dropdown">
-                  <span>{guests}</span>
-                  <ChevronDown size={16} />
+            ) : (
+              <div className="booking-form-box">
+                <div className="date-fields-row">
+                  <div className="date-field">
+                    <label>MOVE IN</label>
+                    <input 
+                      type="date" 
+                      value={moveIn} 
+                      min={todayDate}
+                      onChange={(e) => setMoveIn(e.target.value)} 
+                    />
+                  </div>
+                  <div className="date-field border-left">
+                    <label>MOVE OUT</label>
+                    <input 
+                      type="date" 
+                      value={moveOut} 
+                      min={moveIn || todayDate}
+                      onChange={(e) => setMoveOut(e.target.value)} 
+                    />
+                  </div>
+                </div>
+                <div className="guests-field">
+                  <label>GUESTS</label>
+                  <div className="guests-dropdown" style={{ position: 'relative' }}>
+                    <select 
+                      value={guests}
+                      onChange={(e) => setGuests(e.target.value)}
+                      style={{ width: '100%', border: 'none', outline: 'none', appearance: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500, padding: '0.25rem 0' }}
+                    >
+                      <option value="1 Adult">1 Adult</option>
+                      <option value="2 Adults">2 Adults</option>
+                      <option value="1 Adult, 1 Child">1 Adult, 1 Child</option>
+                      <option value="2 Adults, 1 Child">2 Adults, 1 Child</option>
+                      <option value="3+ Guests">3+ Guests</option>
+                    </select>
+                    <ChevronDown size={16} style={{ position: 'absolute', right: 0, pointerEvents: 'none' }} />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="flex flex-col gap-3 mt-4">
-              <button className="send-request-btn" onClick={() => handleBookingRequest('view')}>
-                [Request Viewing]
-              </button>
-              <button className="border border-primary text-primary font-bold py-3 rounded-lg hover:bg-primary/5 transition" onClick={() => handleBookingRequest('rent')}>
-                [Request Rent / Deposit]
+              <button className="send-request-btn" onClick={handleBookingRequest}>
+                {bookingMode === 'viewing' ? '[Request Viewing]' : '[Request Rent / Deposit]'}
               </button>
             </div>
             

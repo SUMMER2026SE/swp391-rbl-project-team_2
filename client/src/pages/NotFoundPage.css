@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: #fff;
+  background-color: var(--bg-card);
   padding: 2rem;
 }
 
@@ -28,7 +28,7 @@
 
 .notfound-desc {
   font-size: 1rem;
-  color: #888;
+  color: var(--text-muted);
   margin: 1rem 0 2rem;
 }
 

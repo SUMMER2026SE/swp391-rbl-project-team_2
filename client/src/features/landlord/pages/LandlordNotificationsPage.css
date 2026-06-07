@@ -18,13 +18,13 @@
 .notifications-title {
   font-size: 2rem;
   font-weight: 750;
-  color: #0F172A; /* Slate 900 */
+  color: var(--text-main); /* Slate 900 */
   letter-spacing: -0.03em;
 }
 
 .notifications-subtitle {
   font-size: 0.9rem;
-  color: #64748B;
+  color: var(--text-muted);
   margin-top: 0.25rem;
 }
 
@@ -32,7 +32,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #2563EB;
+  color: var(--primary);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -57,20 +57,20 @@
   padding: 0.5rem 1.25rem;
   font-size: 0.85rem;
   font-weight: 600;
-  background-color: #E2E8F0; /* Grey Inactive */
-  color: #475569;
+  background-color: var(--border-light); /* Grey Inactive */
+  color: var(--text-muted);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   cursor: pointer;
 }
 
 .tab-pill:hover {
-  background-color: #CBD5E1;
-  color: #1E293B;
+  background-color: var(--border-light);
+  color: var(--text-main);
 }
 
 .tab-pill.active {
-  background-color: #2563EB; /* Blue Active */
+  background-color: var(--primary); /* Blue Active */
   color: white;
 }
 
@@ -128,7 +128,7 @@
 
 .icon-info {
   background-color: #EBF3FF;
-  color: #2563EB;
+  color: var(--primary);
 }
 
 .icon-warning {
@@ -162,7 +162,7 @@
 }
 
 .text-info {
-  color: #2563EB;
+  color: var(--primary);
 }
 
 .text-warning {
@@ -174,24 +174,24 @@
 }
 
 .meta-bullet {
-  color: #CBD5E1;
+  color: var(--border-light);
 }
 
 .notification-time {
-  color: #94A3B8;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .notification-card-title {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--text-main);
   letter-spacing: -0.02em;
 }
 
 .notification-card-desc {
   font-size: 0.875rem;
-  color: #475569;
+  color: var(--text-muted);
   line-height: 1.5;
   font-weight: 450;
 }
@@ -204,7 +204,7 @@
 }
 
 .btn-solid-action {
-  background-color: #2563EB !important;
+  background-color: var(--primary) !important;
   color: white !important;
   font-size: 0.8rem !important;
   font-weight: 600 !important;
@@ -219,8 +219,8 @@
 
 .btn-outline-action {
   background-color: transparent !important;
-  color: #475569 !important;
-  border: 1.5px solid #E2E8F0 !important;
+  color: var(--text-muted) !important;
+  border: 1.5px solid var(--border-light) !important;
   font-size: 0.8rem !important;
   font-weight: 600 !important;
   padding: 0.55rem 1.15rem !important;
@@ -228,8 +228,8 @@
 }
 
 .btn-outline-action:hover {
-  background-color: #F8FAFC !important;
-  border-color: #CBD5E1 !important;
+  background-color: var(--bg-main) !important;
+  border-color: var(--border-light) !important;
 }
 
 /* Insight Link */
@@ -259,7 +259,7 @@
 .unread-dot {
   width: 8px;
   height: 8px;
-  background-color: #2563EB;
+  background-color: var(--primary);
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -273,14 +273,14 @@
   gap: 0.75rem;
   padding: 5rem 2rem;
   text-align: center;
-  color: #64748B;
+  color: var(--text-muted);
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 .empty-icon {
-  color: #CBD5E1;
+  color: var(--border-light);
   margin-bottom: 0.5rem;
 }
 

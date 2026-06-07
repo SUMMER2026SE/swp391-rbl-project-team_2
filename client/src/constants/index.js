@@ -15,6 +15,7 @@ export const ROUTES = {
   VERIFICATION: '/verification',
   SEARCH: '/search',
   TENANT: {
+    DASHBOARD: '/tenant/dashboard',
     PROFILE: '/profile',
     FAVORITES: '/favorites',
     DEPOSIT_HISTORY: '/deposit-history',
@@ -23,6 +24,7 @@ export const ROUTES = {
     CHAT: '/chat',
     CHAT_LANDLORD: '/messages',
     NOTIFICATIONS: '/notifications',
+    SETTINGS: '/settings',
   },
 
   LANDLORD: {
