@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../../../components/common/Button';
 import RoomCard from '../components/RoomCard';
 import { favoriteService } from '../services/favoriteService';
+import { Heart } from 'lucide-react';
 import './FavoritesPage.css';
 
 const FavoritesPage = () => {
@@ -24,10 +25,10 @@ const FavoritesPage = () => {
             id: room.room_id,
             title: room.title,
             price: room.price_per_month,
-            location: room.address,
+            location: [room.address, room.district, room.city].filter(Boolean).join(', '),
             specs: [
-              { icon: 'bed', text: room.room_type },
-              { icon: 'square', text: `${room.area_sqm || 0} sqft` }
+              { icon: 'bed', text: `${room.bedrooms || 1} Beds` },
+              { icon: 'square', text: `${room.area_sqm || 0} m²` }
             ],
             imageTags: room.status === 'available' ? [{ text: 'Available', type: 'primary' }] : [],
             isFavorite: true,
@@ -37,7 +38,7 @@ const FavoritesPage = () => {
         setFavorites(mappedFavorites);
       } catch (err) {
         console.error(err);
-        setError('Failed to load favorites. ' + (err.response?.data?.message || ''));
+        setFavorites([]); // Empty state on error
       } finally {
         setLoading(false);
       }
@@ -58,28 +59,34 @@ const FavoritesPage = () => {
       <div className="favorites-grid">
         {favorites.length > 0 ? (
           favorites.map(room => (
-            <RoomCard 
-              key={room.id} 
-              room={room} 
-              variant="favorite" 
+            <RoomCard
+              key={room.id}
+              room={room}
+              variant="favorite"
               onFavoriteToggle={(id, status) => {
                 if (!status) {
                   setFavorites(prev => prev.filter(f => f.id !== id));
                 }
-              }} 
+              }}
             />
           ))
         ) : (
           <div className="empty-state">
-            <p>You haven't saved any rooms yet.</p>
-            <Button onClick={() => navigate('/listings')} className="mt-4">Browse Rooms</Button>
+            <div className="empty-icon-wrapper">
+              <Heart size={40} />
+            </div>
+            <h3>No favorites yet</h3>
+            <p>
+              You haven't saved any rooms yet. Browse our available rooms and save your favorites to review later.
+            </p>
+            <Button onClick={() => { navigate('/rooms'); }} className="btn-browse">
+              Browse Rooms
+            </Button>
           </div>
         )}
       </div>
 
-      <div className="favorites-footer">
-        <Button variant="outline" size="lg">Load More</Button>
-      </div>
+      
     </div>
   );
 };

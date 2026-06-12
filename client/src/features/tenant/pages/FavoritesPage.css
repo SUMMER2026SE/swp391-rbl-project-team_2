@@ -55,3 +55,53 @@
   justify-content: center;
   margin-top: 3rem;
 }
+
+/* Empty State */
+.empty-state {
+  background: var(--bg-card);
+  border-radius: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+  padding: 60px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  grid-column: 1 / -1; /* Make it span all columns */
+}
+
+.empty-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  background: rgba(239, 68, 68, 0.05); /* slightly red for heart */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  color: rgba(239, 68, 68, 0.6);
+}
+
+.empty-state h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  max-width: 400px;
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.btn-browse {
+  padding: 12px 32px;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+  transition: transform 0.2s;
+}
+.btn-browse:hover {
+  transform: translateY(-2px);
+}
