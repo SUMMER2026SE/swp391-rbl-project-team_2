@@ -116,7 +116,7 @@ const uploadAvatar = async (req, res, next) => {
     }
 
     // Build avatar URL
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const avatarUrl = req.file.path;
     await user.update({ avatar_url: avatarUrl, updated_at: new Date() });
 
     return res.status(200).json({

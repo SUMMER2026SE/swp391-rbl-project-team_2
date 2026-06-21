@@ -67,5 +67,5 @@
 
 .btn-filter-date:hover,
 .btn-export:hover {
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
 }

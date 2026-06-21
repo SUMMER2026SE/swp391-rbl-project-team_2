@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
@@ -64,15 +65,20 @@ const MessagesPage = () => {
       await sendMessage(selectedConversationId, messageText);
       setMessageText('');
     } catch (err) {
-      alert(err.message || 'Failed to send message');
+      toast.error(err.message || 'Failed to send message');
     } finally {
       setIsSending(false);
     }
   };
 
   const filteredConversations = conversations.filter(conv => {
-    const participantName = conv.participant1?.full_name || conv.participant2?.full_name || '';
-    return participantName.toLowerCase().includes(searchTerm.toLowerCase());
+    const otherParticipant = conv.participant_1_id === conv.userId 
+      ? conv.participant2 
+      : conv.participant1;
+    const participantName = (otherParticipant?.full_name || '').toLowerCase();
+    const lastMessage = (conv.lastMessage || '').toLowerCase();
+    const search = searchTerm.toLowerCase();
+    return participantName.includes(search) || lastMessage.includes(search);
   });
 
   if (loading && conversations.length === 0) {
@@ -173,12 +179,12 @@ const MessagesPage = () => {
                 currentConversation.messages.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={`message-bubble ${msg.sender_id === currentConversation.userId ? 'sent' : 'received'}`}
+                    className={`message-bubble ${(msg.sender_id || msg.senderId) === currentConversation.userId ? 'sent' : 'received'}`}
                   >
                     <div className="message-content">
                       <p className="message-text">{msg.content}</p>
                       <span className="message-time">
-                        {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                        {(msg.created_at || msg.createdAt) ? new Date(msg.created_at || msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
                       </span>
                     </div>
                   </div>
@@ -193,12 +199,6 @@ const MessagesPage = () => {
 
             {/* Input Form at Bottom */}
             <form className="message-input-form" onSubmit={handleSendMessage}>
-              <button type="button" className="btn-attach" title="Attach file">
-                <Paperclip size={18} />
-              </button>
-              <button type="button" className="btn-attach" title="Attach image">
-                <ImageIcon size={18} />
-              </button>
               <input
                 type="text"
                 className="message-input"

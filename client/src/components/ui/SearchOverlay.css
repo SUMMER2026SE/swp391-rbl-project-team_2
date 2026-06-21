@@ -14,7 +14,7 @@
 .search-overlay-modal {
   width: 100%;
   max-width: 800px;
-  background-color: white;
+  background-color: var(--bg-card);
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
@@ -28,7 +28,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .search-input-capsule {
@@ -39,7 +39,7 @@
 }
 
 .search-input-icon {
-  color: #94A3B8;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -48,13 +48,13 @@
   border: none;
   outline: none;
   font-size: 0.95rem;
-  color: #1E293B;
+  color: var(--text-main);
   font-weight: 500;
   font-family: inherit;
 }
 
 .search-overlay-input-field::placeholder {
-  color: #94A3B8;
+  color: var(--text-muted);
 }
 
 .search-header-actions-right {
@@ -67,9 +67,9 @@
 .esc-key-badge {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #64748B;
-  background-color: #F1F5F9;
-  border: 1px solid #CBD5E1;
+  color: var(--text-muted);
+  background-color: var(--primary-light);
+  border: 1px solid var(--border-light);
   padding: 0.2rem 0.45rem;
   border-radius: var(--radius-sm);
   font-family: monospace;
@@ -78,7 +78,7 @@
 .btn-close-search {
   background: transparent;
   border: none;
-  color: #64748B;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0.25rem;
   border-radius: var(--radius-sm);
@@ -87,8 +87,8 @@
 }
 
 .btn-close-search:hover {
-  background-color: #F1F5F9;
-  color: #0F172A;
+  background-color: var(--primary-light);
+  color: var(--text-main);
 }
 
 /* Body Split Columns */
@@ -96,7 +96,7 @@
   display: flex;
   gap: 2rem;
   padding: 1.75rem;
-  background-color: #FAFAFA;
+  background-color: var(--bg-main);
 }
 
 .search-body-left-pane {
@@ -124,7 +124,7 @@
 .search-section-label {
   font-size: 0.75rem;
   font-weight: 800;
-  color: #64748B;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -137,8 +137,8 @@
 }
 
 .suggestion-card {
-  background-color: white;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1rem;
   display: flex;
@@ -190,13 +190,13 @@
 .suggestion-meta h5 {
   font-size: 0.8rem;
   font-weight: 750;
-  color: #1E293B;
+  color: var(--text-main);
   margin: 0;
 }
 
 .suggestion-meta p {
   font-size: 0.7rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 500;
   line-height: 1.35;
   margin: 0;
@@ -220,16 +220,16 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.65rem 0.85rem;
-  background-color: white;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .recent-search-row:hover {
-  border-color: #CBD5E1;
-  background-color: #F8FAFC;
+  border-color: var(--border-light);
+  background-color: var(--bg-main);
 }
 
 .recent-search-row.keyboard-focused {
@@ -239,14 +239,14 @@
 }
 
 .recent-clock-icon {
-  color: #94A3B8;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
 .recent-query-text {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
 }
 
 /* Right Panel: Trending Locations */
@@ -293,7 +293,7 @@
 
 .trending-meta-text span {
   font-size: 0.675rem;
-  color: #E2E8F0;
+  color: var(--border-light);
   font-weight: 550;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
@@ -306,9 +306,9 @@
 }
 
 .category-pill-chip {
-  background-color: white;
-  border: 1px solid #E2E8F0;
-  color: #475569;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
   font-size: 0.775rem;
   font-weight: 750;
   padding: 0.35rem 0.85rem;
@@ -318,8 +318,8 @@
 }
 
 .category-pill-chip:hover {
-  border-color: #CBD5E1;
-  background-color: #F8FAFC;
+  border-color: var(--border-light);
+  background-color: var(--bg-main);
 }
 
 .category-pill-chip.active {
@@ -335,8 +335,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.75rem;
-  border-top: 1px solid #E2E8F0;
-  background-color: white;
+  border-top: 1px solid var(--border-light);
+  background-color: var(--bg-card);
 }
 
 .keyboard-navigation-guide {
@@ -354,9 +354,9 @@
 .kbd-icon-badge {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #64748B;
-  background-color: #F1F5F9;
-  border: 1px solid #CBD5E1;
+  color: var(--text-muted);
+  background-color: var(--primary-light);
+  border: 1px solid var(--border-light);
   padding: 0.15rem 0.35rem;
   border-radius: var(--radius-sm);
   font-family: monospace;
@@ -364,7 +364,7 @@
 
 .kbd-label-text {
   font-size: 0.75rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 550;
 }
 

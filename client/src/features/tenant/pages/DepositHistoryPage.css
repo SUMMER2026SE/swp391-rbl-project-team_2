@@ -1,6 +1,6 @@
 .deposit-history-page {
   padding: 3rem 0 5rem 0;
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
   min-height: calc(100vh - 64px);
 }
 
@@ -46,7 +46,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-muted);
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
   text-transform: capitalize;
 }
 
@@ -55,7 +55,7 @@
 }
 
 .deposit-table tbody tr:hover {
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
 }
 
 .col-date {

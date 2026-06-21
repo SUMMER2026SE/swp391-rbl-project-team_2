@@ -1,26 +1,50 @@
-import { DollarSign, Users, Home, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { DollarSign, Users, Home, TrendingUp, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import StatCard from '../components/StatCard';
 import { formatCurrency } from '../../../utils/format';
+import adminService from '../../../services/adminService';
 import './DashboardPage.css';
 
-const revenueData = [
-  { month: 'Jan', revenue: 45000000 },
-  { month: 'Feb', revenue: 52000000 },
-  { month: 'Mar', revenue: 48000000 },
-  { month: 'Apr', revenue: 61000000 },
-  { month: 'May', revenue: 59000000 },
-  { month: 'Jun', revenue: 75000000 },
-];
-
-const recentActivity = [
-  { id: 1, type: 'New Tenant', message: 'Nguyen Van A signed a lease for Room 101', time: '2 min ago' },
-  { id: 2, type: 'Payment', message: 'Tran Thi B paid rent for Room 205', time: '15 min ago' },
-  { id: 3, type: 'Request', message: 'Le Van C submitted a maintenance request', time: '1 hr ago' },
-  { id: 4, type: 'New Listing', message: 'Room 302 at Sunrise Tower was published', time: '3 hr ago' },
-];
-
 const DashboardPage = () => {
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    activeTenants: 0,
+    totalListings: 0,
+    pendingListings: 0,
+    occupancyRate: '0%',
+  });
+  const [revenueData, setRevenueData] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [statsRes, chartRes, activityRes] = await Promise.all([
+        adminService.getDashboardStats(),
+        adminService.getRevenueChart(),
+        adminService.getRecentActivities(),
+      ]);
+
+      if (statsRes.success) setStats(statsRes.data);
+      if (chartRes.success) setRevenueData(chartRes.data);
+      if (activityRes.success) setRecentActivity(activityRes.data);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="admin-page-container"><div className="loading-state">Loading dashboard...</div></div>;
+  }
+
   return (
     <div className="admin-page-container">
       <div className="admin-page-header">
@@ -31,7 +55,7 @@ const DashboardPage = () => {
       <div className="stats-grid">
         <StatCard
           title="Total Revenue (This Month)"
-          value={formatCurrency(75000000)}
+          value={formatCurrency(stats.totalRevenue)}
           icon={<DollarSign size={24} />}
           trend="up"
           trendValue="12.5%"
@@ -39,21 +63,28 @@ const DashboardPage = () => {
         />
         <StatCard
           title="Active Tenants"
-          value={124}
+          value={stats.activeTenants}
           icon={<Users size={24} />}
           trend="up"
           trendValue="4.2%"
         />
         <StatCard
           title="Total Listings"
-          value={45}
+          value={stats.totalListings}
           icon={<Home size={24} />}
           trend="up"
           trendValue="2"
         />
         <StatCard
+          title="Pending Approvals"
+          value={stats.pendingListings}
+          icon={<Clock size={24} color="#e11d48" />}
+          trend={stats.pendingListings > 0 ? "up" : "none"}
+          trendValue={stats.pendingListings > 0 ? "Action needed" : "All clear"}
+        />
+        <StatCard
           title="Occupancy Rate"
-          value="95%"
+          value={stats.occupancyRate}
           icon={<TrendingUp size={24} />}
           trend="up"
           trendValue="5%"
@@ -66,7 +97,6 @@ const DashboardPage = () => {
           <div className="chart-header">
             <h3>Revenue Overview</h3>
             <select className="chart-filter">
-              <option>Last 6 Months</option>
               <option>This Year</option>
             </select>
           </div>
@@ -93,16 +123,20 @@ const DashboardPage = () => {
             <h3>Recent Activity</h3>
           </div>
           <ul className="activity-list">
-            {recentActivity.map((item) => (
-              <li key={item.id} className="activity-item">
-                <div className="activity-dot" />
-                <div className="activity-content">
-                  <span className="activity-type">{item.type}</span>
-                  <p className="activity-message">{item.message}</p>
-                  <span className="activity-time">{item.time}</span>
-                </div>
-              </li>
-            ))}
+            {recentActivity.length > 0 ? (
+              recentActivity.map((item) => (
+                <li key={item.id} className="activity-item">
+                  <div className="activity-dot" />
+                  <div className="activity-content">
+                    <span className="activity-type">{item.type}</span>
+                    <p className="activity-message">{item.message}</p>
+                    <span className="activity-time">{item.time}</span>
+                  </div>
+                </li>
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm py-4 text-center">No recent activity.</p>
+            )}
           </ul>
         </div>
       </div>

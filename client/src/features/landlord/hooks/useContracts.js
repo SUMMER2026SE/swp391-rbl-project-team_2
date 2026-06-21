@@ -13,7 +13,28 @@ export const useContracts = (params = {}) => {
     try {
       setLoading(true);
       const data = await landlordService.getContracts(JSON.parse(paramsString));
-      setContracts(data.contracts || data);
+      const rawContracts = data.data || data.contracts || data;
+      
+      const mappedContracts = (Array.isArray(rawContracts) ? rawContracts : []).map(c => ({
+        id: c.contractId,
+        contractNumber: c.contractNumber,
+        roomId: c.roomId,
+        roomTitle: c.room?.title || 'Unknown Room',
+        tenantId: c.tenantId,
+        tenantName: c.tenant?.full_name || 'Unknown Tenant',
+        tenantEmail: c.tenant?.email,
+        tenantPhone: c.tenant?.phone,
+        startDate: c.startDate,
+        endDate: c.endDate,
+        monthlyRent: c.monthlyRent,
+        depositAmount: c.depositAmount,
+        status: (c.status || '').toUpperCase(),
+        terms: c.termsAndConditions,
+        duration: Math.round((new Date(c.endDate) - new Date(c.startDate)) / (1000 * 60 * 60 * 24 * 30)) || 0,
+        ...c
+      }));
+      
+      setContracts(mappedContracts);
       if (data.pagination) {
         setPagination(data.pagination);
       }

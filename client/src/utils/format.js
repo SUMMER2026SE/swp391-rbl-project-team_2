@@ -64,3 +64,21 @@ export const truncateString = (str, maxLength = 50) => {
   if (!str) return '';
   return str.length > maxLength ? `${str.substring(0, maxLength)}...` : str;
 };
+
+/**
+ * Gets a valid avatar URL or falls back to UI Avatars
+ * @param {string} fullName - User's full name
+ * @param {string} avatarUrl - User's existing avatar URL
+ * @param {number} size - Avatar size (default 150)
+ * @returns {string} Formatted avatar URL
+ */
+export const getAvatarUrl = (fullName, avatarUrl, size = 150) => {
+  if (avatarUrl) {
+    if (avatarUrl.startsWith('/uploads')) {
+      const baseUrl = 'http://localhost:5000'; // Fallback backend URL
+      return `${baseUrl}${avatarUrl}`;
+    }
+    return avatarUrl;
+  }
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || 'User')}&background=random&size=${size}`;
+};

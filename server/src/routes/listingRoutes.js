@@ -7,20 +7,15 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const isLandlord = require('../middlewares/isLandlord');
 
 // Configure Multer for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../uploads'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'listing-' + uniqueSuffix + path.extname(file.originalname));
-  },
-});
+const { storage } = require('../config/cloudinary');
 const upload = multer({ storage });
 
 // PUBLIC ROUTES (No Token Required)
 // GET /api/listings -> get all active public rooms
 router.get('/', roomController.getAllPublicRooms);
+
+// GET /api/listings/search -> search rooms
+router.get('/search', roomController.searchRooms);
 
 // GET /api/listings/:roomId -> get single public room details
 router.get('/:roomId', roomController.getPublicRoomDetails);

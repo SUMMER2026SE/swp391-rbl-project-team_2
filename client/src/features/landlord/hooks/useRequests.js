@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { landlordService } from '../services/landlordService';
 
 export const useRequests = (params = {}) => {
@@ -7,70 +7,61 @@ export const useRequests = (params = {}) => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
 
-  useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        setLoading(true);
-        const response = await landlordService.getRequests(params);
-        
-        // Handle both array and object responses
-        if (Array.isArray(response)) {
-          setRequests(response);
-        } else if (response.data) {
-          setRequests(response.data);
-          if (response.pagination) {
-            setPagination(response.pagination);
-          }
-        } else {
-          setRequests([]);
+  const fetchRequests = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await landlordService.getRequests(params);
+      
+      // response is { success, data: [...], pagination: {...} }
+      // httpClient interceptor already unwrapped axios response.data
+      if (response && response.data) {
+        setRequests(Array.isArray(response.data) ? response.data : []);
+        if (response.pagination) {
+          setPagination(response.pagination);
         }
-        setError(null);
-      } catch (err) {
-        setError(err.message || 'Failed to fetch requests');
+      } else if (Array.isArray(response)) {
+        setRequests(response);
+      } else {
         setRequests([]);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchRequests();
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to fetch requests');
+      setRequests([]);
+    } finally {
+      setLoading(false);
+    }
   }, [JSON.stringify(params)]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   const approve = async (id) => {
     try {
-      const updated = await landlordService.approveRequest(id);
+      await landlordService.approveRequest(id);
       // Refresh requests after approval
-      const response = await landlordService.getRequests(params);
-      if (Array.isArray(response)) {
-        setRequests(response);
-      } else if (response.data) {
-        setRequests(response.data);
-      }
-      return updated;
+      await fetchRequests();
     } catch (err) {
-      setError(err.message || 'Failed to approve request');
-      throw err;
+      const msg = err.response?.data?.message || err.message || 'Failed to approve request';
+      setError(msg);
+      throw new Error(msg);
     }
   };
 
   const reject = async (id, reason) => {
     try {
-      const updated = await landlordService.rejectRequest(id, reason);
+      await landlordService.rejectRequest(id, reason);
       // Refresh requests after rejection
-      const response = await landlordService.getRequests(params);
-      if (Array.isArray(response)) {
-        setRequests(response);
-      } else if (response.data) {
-        setRequests(response.data);
-      }
-      return updated;
+      await fetchRequests();
     } catch (err) {
-      setError(err.message || 'Failed to reject request');
-      throw err;
+      const msg = err.response?.data?.message || err.message || 'Failed to reject request';
+      setError(msg);
+      throw new Error(msg);
     }
   };
 
-  return { requests, loading, error, pagination, approve, reject };
+  return { requests, loading, error, pagination, approve, reject, refetch: fetchRequests };
 };
 
 export default useRequests;

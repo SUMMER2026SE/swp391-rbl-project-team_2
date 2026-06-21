@@ -6,7 +6,7 @@
 
 /* Header Profile Card */
 .landlord-profile-header-card {
-  background-color: white;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 2rem 2.5rem;
@@ -43,7 +43,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: #2563eb;
+  background-color: var(--primary);
   color: white;
   display: flex;
   align-items: center;
@@ -69,7 +69,7 @@
 .profile-full-name {
   font-size: 1.75rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   letter-spacing: -0.03em;
 }
 
@@ -87,7 +87,7 @@
 
 .profile-bio-text {
   font-size: 0.925rem;
-  color: #475569;
+  color: var(--text-muted);
   line-height: 1.55;
   margin-bottom: 1.25rem;
   max-width: 800px;
@@ -99,7 +99,7 @@
 }
 
 .btn-edit-profile-action {
-  background-color: #2563eb;
+  background-color: var(--primary);
   color: white;
   border: none;
   font-size: 0.85rem;
@@ -115,9 +115,9 @@
 }
 
 .btn-view-public-action {
-  background-color: white;
-  color: #334155;
-  border: 1px solid #cbd5e1;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
   font-size: 0.85rem;
   font-weight: 600;
   padding: 0.6rem 1.25rem;
@@ -127,8 +127,8 @@
 }
 
 .btn-view-public-action:hover {
-  background-color: #f8fafc;
-  border-color: #94a3b8;
+  background-color: var(--bg-main);
+  border-color: var(--text-muted);
 }
 
 /* Layout Workspace Grid */
@@ -153,7 +153,7 @@
 
 /* Card Structures */
 .profile-section-card {
-  background-color: white;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 1.5rem;
@@ -175,19 +175,19 @@
 }
 
 .header-icon-blue {
-  color: #2563eb;
+  color: var(--primary);
 }
 
 .section-card-title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .header-action-link {
   font-size: 0.825rem;
   font-weight: 700;
-  color: #2563eb;
+  color: var(--primary);
   text-decoration: none;
 }
 
@@ -204,8 +204,8 @@
 }
 
 .stat-box-item {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   padding: 1rem 0.5rem;
   display: flex;
@@ -217,7 +217,7 @@
 .stat-label {
   font-size: 0.725rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin-bottom: 0.25rem;
@@ -226,11 +226,11 @@
 .stat-value {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .stat-value.highlight-occupancy {
-  color: #2563eb;
+  color: var(--primary);
 }
 
 /* Portfolio Properties list */
@@ -245,14 +245,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.85rem 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
 }
 
 .portfolio-property-row:hover {
-  border-color: #cbd5e1;
-  background-color: #f8fafc;
+  border-color: var(--border-light);
+  background-color: var(--bg-main);
 }
 
 .property-row-left {
@@ -277,24 +277,24 @@
 .property-row-name {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .property-row-caption {
   font-size: 0.775rem;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .property-row-arrow {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 /* Account Settings Cards (bottom grid row) */
 .profile-subsection-title {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   letter-spacing: -0.02em;
   margin: 1rem 0 1rem;
 }
@@ -316,7 +316,7 @@
 .btn-icon-action {
   border: none;
   background: transparent;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -327,12 +327,12 @@
 }
 
 .btn-icon-action:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: var(--primary-light);
+  color: var(--text-main);
 }
 
 .icon-blue-action {
-  color: #2563eb;
+  color: var(--primary);
 }
 
 /* Contact List */
@@ -351,7 +351,7 @@
 .contact-label {
   font-size: 0.775rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
@@ -359,7 +359,7 @@
 .contact-val {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
 }
 
 .address-multiline {
@@ -378,7 +378,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 0.85rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
 }
 
@@ -392,8 +392,8 @@
   width: 36px;
   height: 36px;
   border-radius: 6px;
-  background-color: #f1f5f9;
-  color: #475569;
+  background-color: var(--primary-light);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -408,18 +408,18 @@
 .payout-bank-title {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .payout-number {
   font-size: 0.775rem;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .default-payout-badge {
   background-color: #eff6ff;
-  color: #2563eb;
+  color: var(--primary);
   font-size: 0.725rem;
   font-weight: 700;
   padding: 0.2rem 0.5rem;
@@ -436,14 +436,14 @@
 }
 
 .payout-footer-info .info-icon {
-  color: #94a3b8;
+  color: var(--text-muted);
   flex-shrink: 0;
   margin-top: 0.15rem;
 }
 
 .payout-info-text {
   font-size: 0.775rem;
-  color: #64748b;
+  color: var(--text-muted);
   line-height: 1.4;
   font-weight: 500;
 }
@@ -464,7 +464,7 @@
   height: 32px;
   border-radius: 50%;
   background-color: #dbeafe;
-  color: #2563eb;
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -483,7 +483,7 @@
 
 .banner-desc {
   font-size: 0.775rem;
-  color: #2563eb;
+  color: var(--primary);
   line-height: 1.35;
   margin-top: 0.15rem;
   font-weight: 500;
@@ -511,7 +511,7 @@
 .trust-item-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
 }
 
 .trust-status-badge {
@@ -527,8 +527,8 @@
 }
 
 .trust-status-badge.info {
-  background-color: #f1f5f9;
-  color: #2563eb;
+  background-color: var(--primary-light);
+  color: var(--primary);
 }
 
 /* Responsive Grid columns */
@@ -542,4 +542,216 @@
     grid-template-columns: 1fr;
     gap: 1.25rem;
   }
+}
+
+/* ============================================= */
+/* Edit Profile Modal                            */
+/* ============================================= */
+.edit-profile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.edit-profile-modal {
+  background: var(--bg-card);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.edit-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.edit-modal-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.edit-modal-close {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.edit-modal-close:hover {
+  background: var(--primary-light);
+  color: var(--text-main);
+}
+
+.edit-modal-form {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.edit-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.edit-form-group label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.edit-form-group input {
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.edit-form-group input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.edit-input-disabled {
+  background-color: var(--bg-main) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+}
+
+.edit-field-hint {
+  font-size: 0.725rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.edit-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.edit-msg-error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.edit-msg-success {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.edit-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.edit-btn-cancel {
+  padding: 0.55rem 1.15rem;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-btn-cancel:hover {
+  background: var(--bg-main);
+}
+
+.edit-btn-save {
+  padding: 0.55rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  background: var(--primary);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.edit-btn-save:hover {
+  background: #1d4ed8;
+}
+
+.edit-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Dark mode for modal */
+body.dark .edit-profile-modal {
+  background: #1e293b;
+}
+
+body.dark .edit-modal-header {
+  border-bottom-color: var(--text-main);
+}
+
+body.dark .edit-modal-header h2 {
+  color: #f1f5f9;
+}
+
+body.dark .edit-form-group label {
+  color: var(--text-muted);
+}
+
+body.dark .edit-form-group input {
+  background: #0f172a;
+  border-color: var(--text-main);
+  color: #f1f5f9;
+}
+
+body.dark .edit-form-group input:focus {
+  border-color: #3b82f6;
+}
+
+body.dark .edit-btn-cancel {
+  background: #334155;
+  border-color: var(--text-muted);
+  color: var(--border-light);
+}
+
+body.dark .edit-modal-actions {
+  border-top-color: var(--text-main);
 }

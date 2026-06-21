@@ -8,16 +8,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 // =========================================================
 // Multer config for avatar upload
 // =========================================================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../uploads/avatars'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `avatar-${uniqueSuffix}${ext}`);
-  },
-});
+const { storage } = require('../config/cloudinary');
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];

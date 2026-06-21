@@ -24,11 +24,11 @@
   transition: background-color 0.2s;
 }
 
-.btn-bulk-action:hover { background-color: #F8FAFC; }
+.btn-bulk-action:hover { background-color: var(--bg-main); }
 
 .view-mode-toggle {
   display: flex;
-  background-color: #F1F5F9;
+  background-color: var(--primary-light);
   border-radius: var(--radius-md);
   padding: 4px;
 }
@@ -89,7 +89,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
   border: 1px solid var(--border-light);
   color: var(--text-muted);
   padding: 0.5rem 1rem;
@@ -106,4 +106,169 @@
   border: 1px dashed var(--border-light);
   border-radius: var(--radius-lg);
   margin: 1.5rem;
+}
+
+/* Custom Confirm Modal Styling */
+.custom-confirm-modal .modal-content {
+  border: none;
+  border-radius: 20px;
+  background-color: var(--bg-card, #ffffff);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.confirm-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 1rem 1rem 1rem !important;
+}
+
+.confirm-modal-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50px;
+  background-color: #FEF3C7; /* Soft orange bg for warning */
+  color: #D97706; /* Dark orange icon color */
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.1), 0 2px 4px -1px rgba(217, 119, 6, 0.06);
+  animation: pulse-light 2s infinite;
+}
+
+@keyframes pulse-light {
+  0% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(217, 119, 6, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
+  }
+}
+
+.confirm-modal-icon {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+
+.confirm-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main, #1f2937);
+  margin-bottom: 0.75rem;
+  font-family: inherit;
+}
+
+.confirm-modal-text {
+  font-size: 0.95rem;
+  color: var(--text-muted, #4b5563);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 320px;
+}
+
+.status-badge-inline {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  border-radius: 6px;
+  margin: 0 4px;
+}
+
+.status-badge-inline.status-available {
+  background-color: #DEF7EC;
+  color: #03543F;
+}
+
+.status-badge-inline.status-pending {
+  background-color: #E1EFFE;
+  color: #1E429F;
+}
+
+.status-badge-inline.status-rented,
+.status-badge-inline.status-occupied {
+  background-color: #EDEBFE;
+  color: #5521B5;
+}
+
+.status-badge-inline.status-maintenance {
+  background-color: #FDF2F8;
+  color: #99104E;
+}
+
+.status-badge-inline.status-hidden,
+.status-badge-inline.status-inactive {
+  background-color: #F3F4F6;
+  color: #374151;
+}
+
+.status-badge-inline.status-rejected {
+  background-color: #FDE8E8;
+  color: #9B1C1C;
+}
+
+.confirm-modal-footer {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  border: none !important;
+  padding: 0 1rem 1rem 1rem !important;
+}
+
+.btn-confirm-cancel {
+  flex: 1;
+  max-width: 140px;
+  background-color: var(--bg-main, #f3f4f6);
+  border: 1px solid var(--border-light, #e5e7eb);
+  color: var(--text-muted, #4b5563);
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-confirm-cancel:hover {
+  background-color: var(--border-light, #e5e7eb);
+  color: var(--text-main, #1f2937);
+  transform: translateY(-1px);
+}
+
+.btn-confirm-submit {
+  flex: 1;
+  max-width: 140px;
+  background: linear-gradient(135deg, var(--primary, #6C63FF) 0%, #4F46E5 100%);
+  border: none;
+  color: #ffffff;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-confirm-submit:hover {
+  background: linear-gradient(135deg, var(--primary-hover, #7C74FF) 0%, #4338CA 100%);
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-confirm-submit:active, .btn-confirm-cancel:active {
+  transform: translateY(0);
 }

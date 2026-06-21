@@ -65,12 +65,12 @@ exports.getBookings = async (req, res, next) => {
         {
           model: Room,
           as: 'room',
-          attributes: ['room_id', 'title', 'price', 'address']
+          attributes: ['room_id', 'title', 'price_per_month', 'address']
         },
         {
           model: User,
           as: roleId === 2 ? 'tenant' : 'landlordBooking',
-          attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar']
+          attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url']
         }
       ],
       order: [['created_at', 'DESC']]

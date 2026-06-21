@@ -30,13 +30,13 @@
 .register-header h1 {
   font-size: 1.75rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   margin-bottom: 0.4rem;
   letter-spacing: -0.5px;
 }
 
 .register-header p {
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.9rem;
   line-height: 1.6;
 }
@@ -45,13 +45,13 @@
 .role-selector {
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .role-label {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted);
   margin-bottom: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -71,9 +71,9 @@
   gap: 0.5rem;
   padding: 1rem 0.5rem;
   border-radius: 12px;
-  border: 1.5px solid #e2e8f0;
-  background-color: #ffffff;
-  color: #64748b;
+  border: 1.5px solid var(--border-light);
+  background-color: var(--bg-card);
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 0.85rem;
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
@@ -113,12 +113,12 @@
 
 /* Glass-style inputs on light bg */
 .register-form .input-field {
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
   border-radius: 12px;
   padding: 0.8rem 0.9rem;
   font-size: 0.875rem;
-  color: #0f172a;
+  color: var(--text-main);
   transition: all 0.25s;
 }
 
@@ -127,7 +127,7 @@
 }
 
 .register-form .input-field::placeholder {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .register-form .input-field:focus {
@@ -136,17 +136,17 @@
 }
 
 .register-form .input-label {
-  color: #334155;
+  color: var(--text-main);
   font-weight: 600;
   font-size: 0.85rem;
 }
 
 .register-form .input-icon-left {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .register-form .input-icon-right {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 /* ======================== Checkbox ======================== */
@@ -160,7 +160,7 @@
   align-items: flex-start;
   gap: 0.6rem;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   line-height: 1.4;
 }
@@ -171,7 +171,7 @@
   height: 1rem;
   min-width: 1rem;
   border-radius: 5px;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--border-light);
   cursor: pointer;
   accent-color: #3b82f6;
   transition: all 0.2s;
@@ -247,9 +247,9 @@
   margin-top: 1.75rem;
   text-align: center;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--text-muted);
   padding-top: 1.25rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-light);
 }
 
 .register-footer a {

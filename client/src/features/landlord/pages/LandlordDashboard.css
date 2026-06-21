@@ -19,14 +19,14 @@
 .dashboard-main-title {
   font-size: 1.875rem;
   font-weight: 700;
-  color: #1E293B;
+  color: var(--text-main);
   letter-spacing: -0.025em;
   margin-bottom: 0.25rem;
 }
 
 .dashboard-sub-title {
   font-size: 0.95rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -46,25 +46,25 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 0.6rem 1rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
 }
 
 .dashboard-filter-btn:hover {
-  background-color: #F8FAFC;
-  border-color: #CBD5E1;
-  color: #1E293B;
+  background-color: var(--bg-main);
+  border-color: var(--border-light);
+  color: var(--text-main);
 }
 
 .dashboard-filter-btn svg {
-  color: #64748B;
+  color: var(--text-muted);
 }
 
 /* Dropdown Menu Overlay */
@@ -73,8 +73,8 @@
   top: 105%;
   right: 0;
   z-index: 50;
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   min-width: 150px;
@@ -89,19 +89,19 @@
   padding: 8px 12px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-muted);
   border-radius: var(--radius-sm);
   transition: background-color 0.15s ease;
 }
 
 .dropdown-menu-item:hover {
-  background-color: #F1F5F9;
-  color: #1E293B;
+  background-color: var(--primary-light);
+  color: var(--text-main);
 }
 
 .dropdown-menu-item.active {
   background-color: #EFF6FF;
-  color: #2563EB;
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -114,8 +114,8 @@
 }
 
 .dashboard-stat-card {
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1.25rem 1.5rem;
   box-shadow: var(--shadow-sm);
@@ -150,7 +150,7 @@
 
 .dashboard-stat-icon--blue {
   background-color: #EFF6FF;
-  color: #2563EB;
+  color: var(--primary);
 }
 
 .dashboard-stat-icon--purple {
@@ -164,7 +164,7 @@
 }
 
 .dashboard-stat-icon--orange {
-  background-color: #FFF7ED;
+  background-color: var(--bg-card)7ED;
   color: #F97316;
 }
 
@@ -201,7 +201,7 @@
 
 .dashboard-stat-label {
   font-size: 0.85rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 600;
   margin-bottom: 2px;
 }
@@ -209,7 +209,7 @@
 .dashboard-stat-value {
   font-size: 2rem;
   font-weight: 800;
-  color: #1E293B;
+  color: var(--text-main);
   line-height: 1.1;
   letter-spacing: -0.015em;
 }
@@ -224,8 +224,8 @@
 
 /* Revenue Summary Card */
 .dashboard-chart-card {
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
@@ -243,26 +243,26 @@
 .chart-card-title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #1E293B;
+  color: var(--text-main);
   margin-bottom: 2px;
 }
 
 .chart-card-subtitle {
   font-size: 0.825rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .chart-option-btn {
-  color: #94A3B8;
+  color: var(--text-muted);
   padding: 4px;
   border-radius: 4px;
   transition: all 0.15s ease;
 }
 
 .chart-option-btn:hover {
-  color: #475569;
-  background-color: #F1F5F9;
+  color: var(--text-muted);
+  background-color: var(--primary-light);
 }
 
 /* Tooltip metrics text displays */
@@ -276,20 +276,20 @@
 .tooltip-month-indicator {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #64748B;
+  color: var(--text-muted);
 }
 
 .tooltip-value-indicator {
   font-size: 1.125rem;
   font-weight: 800;
-  color: #1E293B;
+  color: var(--text-main);
 }
 
 .tooltip-actual-tag {
   font-size: 0.7rem;
   font-weight: 700;
   background-color: #EFF6FF;
-  color: #2563EB;
+  color: var(--primary);
   padding: 2px 6px;
   border-radius: 4px;
   text-transform: uppercase;
@@ -298,7 +298,7 @@
 .tooltip-projected-tag {
   font-size: 0.7rem;
   font-weight: 700;
-  background-color: #FFF7ED;
+  background-color: var(--bg-card)7ED;
   color: #F97316;
   padding: 2px 6px;
   border-radius: 4px;
@@ -362,7 +362,7 @@
 
 /* Indicator line shown on active coordinate hover */
 .chart-active-indicator {
-  stroke: #E2E8F0;
+  stroke: var(--border-light);
   stroke-width: 1.5;
   stroke-dasharray: 4 4;
   pointer-events: none;
@@ -403,7 +403,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #2563EB;
+  background-color: var(--primary);
 }
 
 .legend-line--dashed {
@@ -414,14 +414,14 @@
 
 .legend-label {
   font-size: 0.8rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
 /* Recent Activity Card */
 .dashboard-activity-card {
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
@@ -439,12 +439,12 @@
 .activity-card-title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #1E293B;
+  color: var(--text-main);
 }
 
 .activity-view-all-link {
   font-size: 0.85rem;
-  color: #2563EB;
+  color: var(--primary);
   font-weight: 700;
   transition: color 0.15s ease;
 }
@@ -484,7 +484,7 @@
   height: 36px;
   border-radius: 50%;
   overflow: hidden;
-  border: 1.5px solid #E2E8F0;
+  border: 1.5px solid var(--border-light);
 }
 
 .activity-avatar-img-container img {
@@ -503,13 +503,13 @@
 }
 
 .activity-icon-container--orange {
-  background-color: #FFF7ED;
+  background-color: var(--bg-card)7ED;
   color: #EA580C;
 }
 
 .activity-icon-container--blue {
   background-color: #EFF6FF;
-  color: #2563EB;
+  color: var(--primary);
 }
 
 .activity-icon-container--red {
@@ -525,14 +525,14 @@
 .activity-text-message {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
   line-height: 1.4;
   margin-bottom: 2px;
 }
 
 .activity-time-stamp {
   font-size: 0.75rem;
-  color: #94A3B8;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -554,7 +554,7 @@
 .quick-access-title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #1E293B;
+  color: var(--text-main);
   margin-bottom: 1.25rem;
   letter-spacing: -0.015em;
   display: flex;
@@ -572,8 +572,8 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 1rem 1.25rem;
   text-decoration: none !important;
@@ -607,7 +607,7 @@
 
 .shortcut-icon-wrapper.blue {
   background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
-  color: #2563EB;
+  color: var(--primary);
 }
 
 .shortcut-icon-wrapper.green {
@@ -635,18 +635,18 @@
 .shortcut-label {
   font-size: 0.925rem;
   font-weight: 700;
-  color: #1E293B;
+  color: var(--text-main);
   margin-bottom: 2px;
   transition: color 0.2s ease;
 }
 
 .shortcut-card:hover .shortcut-label {
-  color: #2563EB;
+  color: var(--primary);
 }
 
 .shortcut-desc {
   font-size: 0.775rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -654,7 +654,7 @@
 }
 
 .shortcut-arrow {
-  color: #CBD5E1;
+  color: var(--border-light);
   font-size: 1.1rem;
   font-weight: bold;
   transition: all 0.2s ease;
@@ -662,7 +662,7 @@
 }
 
 .shortcut-card:hover .shortcut-arrow {
-  color: #2563EB;
+  color: var(--primary);
   transform: translateX(4px);
 }
 

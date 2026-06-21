@@ -1,23 +1,56 @@
+import toast from 'react-hot-toast';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, MapPin, Heart, BedDouble, Bath, Maximize } from 'lucide-react';
 import { clsx } from 'clsx';
+import { favoriteService } from '../services/favoriteService';
+import useAuthStore from '../../../store/useAuthStore';
 import './RoomCard.css';
 
-const RoomCard = ({ room, variant = 'standard' }) => {
+const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
   const navigate = useNavigate();
-  const { id, title, price, rating, location, distance, tags = [], imageTags = [], specs = [], isFavorite, image } = room;
+  const { isAuthenticated } = useAuthStore();
+  const { id, title, price, rating, location, distance, tags = [], imageTags = [], specs = [], isFavorite: initialFavorite, image } = room;
+  
+  const [isFavorite, setIsFavorite] = React.useState(initialFavorite);
 
   const handleClick = () => {
-    if (variant === 'standard') {
-      navigate(`/rooms/${id}`);
+    if (variant === 'standard' || variant === 'favorite') {
+      navigate(`/listings/${id}`);
+    }
+  };
+
+  const handleFavoriteClick = async (e) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      toast.error("Please login to save favorites");
+      return;
+    }
+    
+    try {
+      if (isFavorite) {
+        await favoriteService.removeFavorite(id);
+        setIsFavorite(false);
+        if (onFavoriteToggle) onFavoriteToggle(id, false);
+      } else {
+        await favoriteService.addFavorite(id);
+        setIsFavorite(true);
+        if (onFavoriteToggle) onFavoriteToggle(id, true);
+      }
+    } catch (err) {
+      toast.error("Failed to toggle favorite");
     }
   };
 
   return (
     <div className={clsx("room-card", `room-card-${variant}`)} onClick={handleClick}>
       <div className="room-card-image-wrapper">
-        <img src={image} alt={title} className="room-card-image" />
+        <img 
+          src={image} 
+          alt={title} 
+          className="room-card-image" 
+          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60'; }}
+        />
         
         {/* Floating tags on the image (For Favorite/Chat variant) */}
         {(variant === 'favorite' || variant === 'chat') && imageTags.length > 0 && (
@@ -38,12 +71,12 @@ const RoomCard = ({ room, variant = 'standard' }) => {
         {/* Floating price for chat and standard variants */}
         {(variant === 'chat' || variant === 'standard') && (
           <div className="chat-floating-price">
-            ${price.toLocaleString()}/mo
+            {price.toLocaleString('vi-VN')} vnđ/mo
           </div>
         )}
 
         {variant !== 'chat' && (
-          <button className="favorite-btn">
+          <button className="favorite-btn" onClick={handleFavoriteClick}>
             <Heart size={18} className={clsx('heart-icon', isFavorite && 'filled')} />
           </button>
         )}
@@ -66,6 +99,18 @@ const RoomCard = ({ room, variant = 'standard' }) => {
               <MapPin size={14} />
               <span>{location} {distance ? `• ${distance}` : ''}</span>
             </div>
+            {specs && specs.length > 0 && (
+              <div className="room-card-specs" style={{ margin: '0 0 0.75rem 0' }}>
+                {specs.map((spec, index) => (
+                  <div key={index} className="spec-item">
+                    {spec.icon === 'bed' && <BedDouble size={14} />}
+                    {spec.icon === 'bath' && <Bath size={14} />}
+                    {spec.icon === 'square' && <Maximize size={14} />}
+                    <span>{spec.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="room-card-tags">
               {tags.map((tag, index) => (
                 <span key={index} className="room-card-tag">{tag}</span>
@@ -78,7 +123,7 @@ const RoomCard = ({ room, variant = 'standard' }) => {
             <div className="room-card-header favorite-header">
               <h3 className="room-card-title">{title}</h3>
               <p className="room-card-price">
-                <span>${price}</span><span className="price-period">/mo</span>
+                <span>{price.toLocaleString('vi-VN')} vnđ</span><span className="price-period">/mo</span>
               </p>
             </div>
             <div className="room-card-location">

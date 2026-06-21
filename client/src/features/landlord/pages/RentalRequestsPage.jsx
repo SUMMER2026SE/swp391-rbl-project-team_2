@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import {
   Check,
@@ -51,9 +52,9 @@ const RentalRequestsPage = () => {
         await approve(requestId);
         setShowDetailModal(false);
         setSelectedRequest(null);
-        alert('Request approved successfully!');
+        toast.success('Request approved successfully!');
       } catch (err) {
-        alert(err.message || 'Failed to approve request');
+        toast.error(err.message || 'Failed to approve request');
       } finally {
         setIsSubmitting(false);
       }
@@ -62,20 +63,20 @@ const RentalRequestsPage = () => {
 
   const handleRejectSubmit = async () => {
     if (!rejectReason.trim()) {
-      alert('Please provide a reason for rejection');
+      toast.error('Please provide a reason for rejection');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      await reject(selectedRequest.booking_id, rejectReason);
+      await reject(selectedRequest.requestId, rejectReason);
       setShowRejectModal(false);
       setShowDetailModal(false);
       setSelectedRequest(null);
       setRejectReason('');
-      alert('Request rejected successfully!');
+      toast.success('Request rejected successfully!');
     } catch (err) {
-      alert(err.message || 'Failed to reject request');
+      toast.error(err.message || 'Failed to reject request');
     } finally {
       setIsSubmitting(false);
     }
@@ -169,7 +170,7 @@ const RentalRequestsPage = () => {
             </thead>
             <tbody>
               {filteredRequests.map(request => (
-                <tr key={request.booking_id} className="request-row">
+                <tr key={request.requestId} className="request-row">
                   <td>
                     <div className="tenant-info">
                       <div className="tenant-avatar">
@@ -188,7 +189,7 @@ const RentalRequestsPage = () => {
                   <td>
                     <div className="room-info">
                       <div className="room-title">{request.room?.title || 'N/A'}</div>
-                      <div className="room-price">${request.room?.price || 0}/month</div>
+                      <div className="room-price">{request.room?.price_per_month || 0} đ/month</div>
                     </div>
                   </td>
                   <td>
@@ -290,7 +291,7 @@ const RentalRequestsPage = () => {
                   </div>
                   <div className="detail-item">
                     <label>Monthly Rent</label>
-                    <div className="detail-value">${selectedRequest.room?.price || 0}</div>
+                    <div className="detail-value">{selectedRequest.room?.price_per_month || 0} VNĐ/month</div>
                   </div>
                   <div className="detail-item">
                     <label>Request Type</label>
@@ -332,7 +333,7 @@ const RentalRequestsPage = () => {
                 </Button>
                 <Button
                   variant="primary"
-                  onClick={() => handleApprove(selectedRequest.booking_id)}
+                  onClick={() => handleApprove(selectedRequest.requestId)}
                   disabled={isSubmitting}
                 >
                   <Check size={16} />

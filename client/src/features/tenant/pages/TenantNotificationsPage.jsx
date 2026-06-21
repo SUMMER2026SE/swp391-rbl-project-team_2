@@ -2,48 +2,8 @@ import React, { useState } from 'react';
 import { Home, CreditCard, Wrench, Clipboard, CheckCircle, Bell, Sparkles } from 'lucide-react';
 import './TenantNotificationsPage.css';
 
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    category: 'Requests',
-    title: 'New Viewing Request',
-    description: "Sarah Jenkins has requested a viewing for 'The Metro Loft' on Oct 24th.",
-    time: 'Just now',
-    isUnread: true,
-    icon: <Home size={20} />,
-    iconType: 'blue'
-  },
-  {
-    id: 2,
-    category: 'Payments',
-    title: 'Payment Successful',
-    description: 'Your rent payment of $1,250 for October has been processed successfully.',
-    time: '2 hours ago',
-    isUnread: true,
-    icon: <CreditCard size={20} />,
-    iconType: 'gold'
-  },
-  {
-    id: 3,
-    category: 'System',
-    title: 'Maintenance Update',
-    description: 'The scheduled HVAC maintenance for your building is complete.',
-    time: 'Yesterday',
-    isUnread: false,
-    icon: <Wrench size={20} />,
-    iconType: 'grey'
-  },
-  {
-    id: 4,
-    category: 'Requests',
-    title: 'Application Status Changed',
-    description: "Your application for 'Sunnyvale Studio' has been approved.",
-    time: 'Oct 12',
-    isUnread: false,
-    icon: <Clipboard size={20} />,
-    iconType: 'grey'
-  }
-];
+const INITIAL_NOTIFICATIONS = [];
+
 
 const TenantNotificationsPage = () => {
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);

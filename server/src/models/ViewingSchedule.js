@@ -24,8 +24,24 @@ const ViewingSchedule = sequelize.define('ViewingSchedule', {
     allowNull: false,
   },
   status: {
-    type: DataTypes.ENUM('scheduled', 'completed', 'cancelled', 'no_show'),
-    defaultValue: 'scheduled',
+    type: DataTypes.STRING(50),
+    defaultValue: 'pending_payment',
+  },
+  deposit_amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+  },
+  tenant_decision: {
+    type: DataTypes.STRING(50),
+    defaultValue: 'pending',
+  },
+  payment_deadline: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  dispute_reason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
   },
   notes: {
     type: DataTypes.TEXT,

@@ -1,8 +1,16 @@
 import httpClient from '../../../services/httpClient';
 
 export const roomService = {
-  getRooms: (params) => httpClient.get('/rooms', { params }),
-  getRoomById: (id) => httpClient.get(`/rooms/${id}`),
-  getFavorites: () => httpClient.get('/rooms/favorites'),
-  toggleFavorite: (id) => httpClient.post(`/rooms/${id}/favorite`),
+  getRooms: async (params) => {
+    const response = await httpClient.get('/listings', { params });
+    return response;
+  },
+  getRoomById: async (id) => {
+    const response = await httpClient.get(`/listings/${id}`);
+    return response;
+  },
+  searchRooms: async (params) => {
+    const response = await httpClient.get('/listings/search', { params });
+    return response;
+  }
 };

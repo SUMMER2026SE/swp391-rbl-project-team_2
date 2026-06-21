@@ -1,18 +1,20 @@
-const errorHandler = (err, req, res, next) => {
-  console.error('❌ ========== ERROR HANDLER ==========');
-  console.error('❌ Error Message:', err.message);
-  console.error('❌ Error Name:', err.name);
-  console.error('❌ Error Code:', err.code);
-  console.error('❌ Status Code:', err.statusCode || 500);
-  console.error('❌ Stack Trace:', err.stack);
-  console.error('❌ Full Error Object:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
-  console.error('❌ Request URL:', req.originalUrl);
-  console.error('❌ Request Method:', req.method);
-  console.error('❌ Request User:', req.user);
-  console.error('❌ ====================================');
+const fs = require('fs');
+const path = require('path');
+const logStream = fs.createWriteStream(path.join(__dirname, '../../logs/server.log'), { flags: 'a' });
 
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+const errorHandler = (err, req, res, next) => {
+  const errLog = `❌ [${new Date().toISOString()}] ERROR: ${err.message}\nStack: ${err.stack}\n`;
+  console.error(errLog);
+  logStream.write(errLog);
+
+
+  let statusCode = err.statusCode || 500;
+  let message = err.message || 'Internal Server Error';
+
+  if (err.name === 'MulterError' && err.message === 'File too large') {
+    statusCode = 413;
+    message = 'File is too large. Please upload an image smaller than 5MB.';
+  }
 
   res.status(statusCode).json({
     success: false,

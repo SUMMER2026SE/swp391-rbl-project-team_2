@@ -12,10 +12,12 @@ export const useRooms = (params = {}) => {
   const fetchRooms = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await landlordService.getRooms(JSON.parse(paramsString));
-      setRooms(data.rooms || data.data || data);
-      if (data.pagination) {
-        setPagination(data.pagination);
+      const response = await landlordService.getRooms(JSON.parse(paramsString));
+      // response is { success, data: [...], pagination } from httpClient
+      const roomsData = response?.data || response || [];
+      setRooms(Array.isArray(roomsData) ? roomsData : []);
+      if (response?.pagination) {
+        setPagination(response.pagination);
       }
       setError(null);
     } catch (err) {

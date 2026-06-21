@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { landlordService } from '../services/landlordService';
 import { io } from 'socket.io-client';
 
@@ -19,14 +19,16 @@ export const useConversations = (params = {}) => {
   const fetchConversations = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await landlordService.getConversations(JSON.parse(paramsString));
-      setConversations(data.conversations || data.data || data);
-      if (data.pagination) {
-        setPagination(data.pagination);
+      const response = await landlordService.getConversations(JSON.parse(paramsString));
+      // response is { success, data: [...], pagination } from httpClient interceptor
+      const convData = response?.data || response || [];
+      setConversations(Array.isArray(convData) ? convData : []);
+      if (response?.pagination) {
+        setPagination(response.pagination);
       }
       setError(null);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
       setConversations([]);
     } finally {
       setLoading(false);
@@ -36,12 +38,14 @@ export const useConversations = (params = {}) => {
   const fetchConversationById = useCallback(async (id) => {
     try {
       setLoading(true);
-      const data = await landlordService.getConversationById(id);
-      setCurrentConversation(data);
+      const response = await landlordService.getConversationById(id);
+      // response is { success, data: { conversationId, messages, ... } }
+      const convData = response?.data || response;
+      setCurrentConversation(convData);
       setError(null);
-      return data;
+      return convData;
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
       throw err;
     } finally {
       setLoading(false);
@@ -61,9 +65,9 @@ export const useConversations = (params = {}) => {
     const handleReceiveMessage = (message) => {
       // If we're currently viewing this conversation, add it to the messages
       setCurrentConversation(prev => {
-        if (prev && prev.id === message.conversationId) {
+        if (prev && (prev.conversationId == message.conversationId || prev.id == message.conversationId)) {
           // Avoid duplicate messages
-          if (prev.messages?.find(m => m.messageId === message.messageId)) return prev;
+          if (prev.messages?.find(m => m.messageId == message.messageId)) return prev;
           
           return {
             ...prev,
@@ -75,7 +79,7 @@ export const useConversations = (params = {}) => {
 
       // Update conversations list latest message
       setConversations(prev => prev.map(conv => {
-        if (conv.conversation_id === message.conversationId) {
+        if (conv.conversation_id == message.conversationId || conv.conversationId == message.conversationId) {
           return {
             ...conv,
             lastMessage: message.content,
@@ -95,26 +99,32 @@ export const useConversations = (params = {}) => {
 
   // Join socket room when current conversation changes
   useEffect(() => {
-    if (currentConversation && currentConversation.id) {
-      socket.emit('join_conversation', currentConversation.id);
+    const convId = currentConversation?.conversationId || currentConversation?.id;
+    if (convId) {
+      const roomStr = convId.toString();
+      socket.emit('join_conversation', roomStr);
       return () => {
-        socket.emit('leave_conversation', currentConversation.id);
+        socket.emit('leave_conversation', roomStr);
       };
     }
-  }, [currentConversation?.id]);
+  }, [currentConversation?.conversationId, currentConversation?.id]);
 
   const sendMessage = async (conversationId, content) => {
     try {
-      const message = await landlordService.sendMessage(conversationId, content);
-      if (currentConversation && currentConversation.id === conversationId) {
-        setCurrentConversation({
-          ...currentConversation,
-          messages: [...(currentConversation.messages || []), message],
+      const response = await landlordService.sendMessage(conversationId, content);
+      const message = response?.data || response;
+      if (currentConversation && (currentConversation.conversationId == conversationId || currentConversation.id == conversationId)) {
+        setCurrentConversation(prev => {
+          if (prev.messages?.find(m => m.messageId == message.messageId)) return prev;
+          return {
+            ...prev,
+            messages: [...(prev.messages || []), message],
+          };
         });
       }
       return message;
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
       throw err;
     }
   };

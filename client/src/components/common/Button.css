@@ -32,7 +32,7 @@
 }
 
 .btn-secondary:not(:disabled):hover {
-  background-color: #E2E8F0;
+  background-color: var(--border-light);
 }
 
 .btn-outline {

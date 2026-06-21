@@ -20,11 +20,7 @@ const Footer = () => {
         </div>
 
         <div className="footer-right">
-<<<<<<< Updated upstream
-          &copy; 2024 RentalRoom. Modern housing for modern people.
-=======
           &copy; 2026 RentWise. Modern housing for modern people.
->>>>>>> Stashed changes
         </div>
       </div>
     </footer>

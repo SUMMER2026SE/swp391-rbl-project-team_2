@@ -41,7 +41,7 @@
   display: flex;
   align-items: center;
   width: 200px;
-  background-color: #F1F5F9;
+  background-color: var(--primary-light);
   border-radius: var(--radius-full);
   padding: 0.45rem 0.75rem 0.45rem 2.25rem;
   flex-shrink: 0;
@@ -58,13 +58,13 @@
 }
 
 .header-search-bar input::placeholder {
-  color: #94A3B8;
+  color: var(--text-muted);
 }
 
 .header-search-bar .search-icon {
   position: absolute;
   left: 0.75rem;
-  color: #94A3B8;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -85,7 +85,7 @@
 .tab-link {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   text-decoration: none;
   transition: color 0.2s;
   padding: 0.5rem 0;
@@ -142,7 +142,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #475569;
+  color: var(--text-muted);
   text-decoration: none;
   padding: 0.5rem;
   border-radius: 50%;
@@ -150,12 +150,12 @@
 }
 
 .header-bell-btn:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: var(--primary-light);
+  color: var(--text-main);
 }
 
 .header-bell-btn.active {
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .bell-badge-dot {
@@ -193,7 +193,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #475569;
+  color: var(--text-muted);
   padding: 0.25rem;
   border-radius: var(--radius-sm);
 }

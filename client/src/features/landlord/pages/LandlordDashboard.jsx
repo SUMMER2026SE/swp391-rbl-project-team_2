@@ -14,7 +14,6 @@ import {
   Key,
   Bed,
   Hourglass,
-  MessageSquare,
 } from 'lucide-react';
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
@@ -330,33 +329,7 @@ const LandlordDashboard = () => {
         </div>
       </div>
 
-      {/* Quick Access Shortcut Action Buttons (Required by User Request) */}
-      <div className="dashboard-quick-actions-bar" style={{ display: 'flex', gap: '1rem', marginBottom: '2.25rem', flexWrap: 'wrap' }}>
-        <button 
-          onClick={() => navigate(ROUTES.LANDLORD.LISTINGS)} 
-          className="btn-quick-action-solid"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', background: '#2563EB', color: 'white', padding: '0.65rem 1.25rem', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(37,99,235,0.2)' }}
-        >
-          <Building2 size={16} />
-          <span>Manage Listings</span>
-        </button>
-        <button 
-          onClick={() => navigate(ROUTES.LANDLORD.MESSAGES)} 
-          className="btn-quick-action-solid"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', background: '#475569', color: 'white', padding: '0.65rem 1.25rem', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(71,85,105,0.2)' }}
-        >
-          <MessageSquare size={16} />
-          <span>Open Messages</span>
-        </button>
-        <button 
-          onClick={() => navigate('/landlord/bookings')} 
-          className="btn-quick-action-solid"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', background: '#10B981', color: 'white', padding: '0.65rem 1.25rem', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(16,185,129,0.2)' }}
-        >
-          <ClipboardList size={16} />
-          <span>View Bookings</span>
-        </button>
-      </div>
+
 
       {/* 4 Stat Cards */}
       <div className="dashboard-stats-grid">
@@ -376,55 +349,7 @@ const LandlordDashboard = () => {
         ))}
       </div>
 
-      {/* Quick Access Shortcuts */}
-      <div className="quick-access-section">
-        <h3 className="quick-access-title">Quick Actions &bull; Phím tắt Quản lý</h3>
-        <div className="quick-access-grid">
-          <Link to={ROUTES.LANDLORD.LISTINGS} className="shortcut-card">
-            <div className="shortcut-icon-wrapper blue">
-              <Building2 size={22} />
-            </div>
-            <div className="shortcut-info">
-              <span className="shortcut-label">Manage Listings</span>
-              <span className="shortcut-desc">Xem &amp; cập nhật tin đăng phòng</span>
-            </div>
-            <span className="shortcut-arrow">&rarr;</span>
-          </Link>
 
-          <Link to={ROUTES.LANDLORD.CONTRACTS} className="shortcut-card">
-            <div className="shortcut-icon-wrapper green">
-              <ClipboardList size={22} />
-            </div>
-            <div className="shortcut-info">
-              <span className="shortcut-label">Lease Contracts</span>
-              <span className="shortcut-desc">Xem &amp; ký hợp đồng thuê phòng</span>
-            </div>
-            <span className="shortcut-arrow">&rarr;</span>
-          </Link>
-
-          <Link to={ROUTES.LANDLORD.REQUESTS} className="shortcut-card">
-            <div className="shortcut-icon-wrapper orange">
-              <Hourglass size={22} />
-            </div>
-            <div className="shortcut-info">
-              <span className="shortcut-label">Rental Requests</span>
-              <span className="shortcut-desc">Duyệt yêu cầu thuê phòng mới</span>
-            </div>
-            <span className="shortcut-arrow">&rarr;</span>
-          </Link>
-
-          <Link to={ROUTES.LANDLORD.ANALYTICS} className="shortcut-card">
-            <div className="shortcut-icon-wrapper purple">
-              <TrendingUp size={22} />
-            </div>
-            <div className="shortcut-info">
-              <span className="shortcut-label">Revenue &amp; Stats</span>
-              <span className="shortcut-desc">Xem phân tích doanh thu chi tiết</span>
-            </div>
-            <span className="shortcut-arrow">&rarr;</span>
-          </Link>
-        </div>
-      </div>
 
       {/* Main Charts & Activity Row */}
       <div className="dashboard-main-layout-row">

@@ -1,50 +1,82 @@
-import React, { useState } from 'react';
-import { Search, ChevronDown, List, Grid, MoreHorizontal } from 'lucide-react';
+import toast from 'react-hot-toast';
+import React, { useState, useEffect } from 'react';
+import { Search, ChevronDown, List, Grid, MoreHorizontal, AlertTriangle } from 'lucide-react';
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
 import ListingTable from '../components/ListingTable';
+import ListingGrid from '../components/ListingGrid';
+import adminService from '../../../services/adminService';
 import './ListingsPage.css';
-
-// Mock Data
-const MOCK_LISTINGS = [
-  {
-    id: 'PRP-9021',
-    title: 'Luxury Studio in D1',
-    location: 'District 1, HCMC',
-    price: 15000000,
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=200&h=200',
-    landlord: { name: 'Nguyen Van A', type: 'Verified Host' },
-    status: 'Active',
-    performance: { views: 1250, inquiries: 45 }
-  },
-  {
-    id: 'PRP-9020',
-    title: 'Cozy 2BR Apartment',
-    location: 'Binh Thanh District, HCMC',
-    price: 12000000,
-    image: 'https://images.unsplash.com/photo-1502672260266-1c1c29408447?auto=format&fit=crop&q=80&w=200&h=200',
-    landlord: { name: 'Tran Thi B', type: 'New Host' },
-    status: 'Occupied',
-    performance: { views: 890, inquiries: 12 }
-  },
-  {
-    id: 'PRP-9019',
-    title: 'Modern Room near University',
-    location: 'District 7, HCMC',
-    price: 5000000,
-    image: 'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&q=80&w=200&h=200',
-    landlord: { name: 'Le Van C', type: null },
-    status: 'Hidden',
-    alert: 'Multiple user reports',
-    performance: { views: 3400, inquiries: 112 }
-  }
-];
 
 const ListingsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'pending'
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Confirmation Modal State
+  const [confirmDialog, setConfirmDialog] = useState({
+    show: false,
+    roomId: null,
+    status: null
+  });
 
-  const filteredListings = MOCK_LISTINGS.filter((item) => {
-    return item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           item.id.toLowerCase().includes(searchTerm.toLowerCase());
+  useEffect(() => {
+    fetchListings();
+  }, []);
+
+  const fetchListings = async () => {
+    try {
+      setLoading(true);
+      const res = await adminService.getAllRooms();
+      if (res.success) {
+        setListings(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch listings:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = (roomId, status) => {
+    setConfirmDialog({ show: true, roomId, status });
+  };
+
+  const executeStatusUpdate = async () => {
+    const { roomId, status } = confirmDialog;
+    setConfirmDialog({ show: false, roomId: null, status: null });
+    
+    try {
+      const res = await adminService.updateRoomStatus(roomId, status);
+      if (res.success) {
+        toast.success('Room status updated successfully!');
+        fetchListings();
+      }
+    } catch (err) {
+      toast.error('Failed to update room status.');
+      console.error(err);
+    }
+  };
+
+  const closeConfirmDialog = () => {
+    setConfirmDialog({ show: false, roomId: null, status: null });
+  };
+
+  const filteredListings = listings.filter((item) => {
+    if (activeTab === 'pending' && item.status.toLowerCase() !== 'pending') return false;
+
+    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          item.id.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesStatus = true;
+    if (statusFilter !== 'All') {
+      matchesStatus = item.status.toLowerCase() === statusFilter.toLowerCase();
+    }
+    
+    return matchesSearch && matchesStatus;
   });
 
   return (
@@ -72,6 +104,56 @@ const ListingsPage = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="listings-tabs-container" style={{ display: 'flex', gap: '20px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0' }}>
+        <button 
+          className={`listing-tab ${activeTab === 'all' ? 'active' : ''}`}
+          onClick={() => setActiveTab('all')}
+          style={{ 
+            padding: '10px 4px', 
+            background: 'none', 
+            border: 'none', 
+            borderBottom: activeTab === 'all' ? '2px solid #4f46e5' : '2px solid transparent',
+            color: activeTab === 'all' ? '#4f46e5' : '#64748b',
+            fontWeight: activeTab === 'all' ? '600' : '500',
+            cursor: 'pointer',
+            fontSize: '0.95rem'
+          }}
+        >
+          All Properties
+        </button>
+        <button 
+          className={`listing-tab ${activeTab === 'pending' ? 'active' : ''}`}
+          onClick={() => setActiveTab('pending')}
+          style={{ 
+            padding: '10px 4px', 
+            background: 'none', 
+            border: 'none', 
+            borderBottom: activeTab === 'pending' ? '2px solid #4f46e5' : '2px solid transparent',
+            color: activeTab === 'pending' ? '#4f46e5' : '#64748b',
+            fontWeight: activeTab === 'pending' ? '600' : '500',
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          Pending Approvals
+          {listings.filter(l => l.status.toLowerCase() === 'pending').length > 0 && (
+            <span style={{ 
+              background: '#ef4444', 
+              color: 'white', 
+              fontSize: '0.75rem', 
+              padding: '2px 8px', 
+              borderRadius: '999px',
+              fontWeight: '600'
+            }}>
+              {listings.filter(l => l.status.toLowerCase() === 'pending').length}
+            </span>
+          )}
+        </button>
       </div>
 
       <div className="listings-content-area">
@@ -108,11 +190,17 @@ const ListingsPage = () => {
             </div>
 
             <div className="filter-dropdown-wrapper">
-              <select className="filter-select">
-                <option>All Statuses</option>
-                <option>Active</option>
-                <option>Occupied</option>
-                <option>Hidden</option>
+              <select 
+                className="filter-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="All">All Statuses</option>
+                <option value="available">Active / Available</option>
+                <option value="pending">Pending Approval</option>
+                <option value="rented">Occupied</option>
+                <option value="rejected">Rejected</option>
+                <option value="hidden">Hidden</option>
               </select>
               <ChevronDown size={14} className="dropdown-icon" />
             </div>
@@ -125,17 +213,17 @@ const ListingsPage = () => {
         </div>
 
         {/* Table Content */}
-        {viewMode === 'list' ? (
-          <ListingTable listings={filteredListings} />
+        {loading ? (
+          <div className="loading-state">Loading listings...</div>
+        ) : viewMode === 'list' ? (
+          <ListingTable listings={filteredListings} onUpdateStatus={handleUpdateStatus} />
         ) : (
-          <div className="grid-placeholder">
-            <p>Grid view is under construction. Please use list view.</p>
-          </div>
+          <ListingGrid listings={filteredListings} onUpdateStatus={handleUpdateStatus} />
         )}
 
         {/* Pagination */}
         <div className="pagination-container">
-          <span className="pagination-info">Showing 1 to {filteredListings.length} of {MOCK_LISTINGS.length} properties</span>
+          <span className="pagination-info">Showing {filteredListings.length} of {listings.length} properties</span>
           <div className="pagination-controls">
             <button className="btn-page" disabled>Previous</button>
             <button className="btn-page active">1</button>
@@ -143,6 +231,34 @@ const ListingsPage = () => {
           </div>
         </div>
       </div>
+
+      <Modal 
+        show={confirmDialog.show} 
+        onHide={closeConfirmDialog} 
+        centered
+        dialogClassName="custom-confirm-modal"
+      >
+        <Modal.Body className="confirm-modal-body">
+          <div className="confirm-modal-icon-wrapper">
+            <AlertTriangle className="confirm-modal-icon" size={30} />
+          </div>
+          <h3 className="confirm-modal-title">Confirm Status Change</h3>
+          <p className="confirm-modal-text">
+            Are you sure you want to change this listing's status to 
+            <span className={`status-badge-inline status-${confirmDialog.status?.toLowerCase()}`}>
+              {confirmDialog.status}
+            </span>?
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="confirm-modal-footer">
+          <button className="btn-confirm-cancel" onClick={closeConfirmDialog}>
+            Cancel
+          </button>
+          <button className="btn-confirm-submit" onClick={executeStatusUpdate}>
+            Confirm
+          </button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

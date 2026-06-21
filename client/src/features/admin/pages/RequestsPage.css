@@ -23,7 +23,7 @@
 }
 
 .requests-table thead tr {
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -45,7 +45,7 @@
 }
 
 .requests-table tbody tr:last-child td { border-bottom: none; }
-.requests-table tbody tr:hover { background-color: #FAFAFA; }
+.requests-table tbody tr:hover { background-color: var(--bg-main); }
 
 .request-type-badge {
   display: inline-flex;
@@ -56,7 +56,7 @@
 }
 
 .type-maintenance { background: #FEF3C7; color: #D97706; }
-.type-booking     { background: #EFF6FF; color: #2563EB; }
+.type-booking     { background: #EFF6FF; color: var(--primary); }
 .type-complaint   { background: #FEE2E2; color: #EF4444; }
 .type-inquiry     { background: #F0FDF4; color: #16A34A; }
 

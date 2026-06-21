@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,11 +16,15 @@ import './RegisterPage.css';
 const registerSchema = z.object({
   fullName: z.string().min(2, { message: 'Full name is required' }),
   email: z.string().email({ message: 'Invalid email address' }),
-  phone: z.string().min(10, { message: 'Valid phone number is required' }),
+  phone: z.string().regex(/^(0|\+84)(3|5|7|8|9)[0-9]{8}$/, { message: 'Must be a valid Vietnamese phone number' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  confirmPassword: z.string(),
   terms: z.literal(true, {
     errorMap: () => ({ message: 'You must accept the terms' }),
   }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
 const RegisterPage = () => {
@@ -29,7 +34,8 @@ const RegisterPage = () => {
   
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(registerSchema),
-    defaultValues: { terms: false }
+    defaultValues: { terms: false },
+    mode: 'onChange'
   });
 
   const onSubmit = async (data) => {
@@ -49,7 +55,7 @@ const RegisterPage = () => {
       navigate(ROUTES.VERIFY_OTP, { state: { email: data.email, type: 'verify_email' } });
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Registration failed';
-      alert(msg);
+      toast(msg);
     }
   };
 
@@ -73,12 +79,12 @@ const RegisterPage = () => {
       }
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Google signup failed';
-      alert(msg);
+      toast(msg);
     }
   };
 
   const handleGoogleError = () => {
-    alert('Google Signup Failed');
+    toast.error('Google Signup Failed');
   };
 
   return (
@@ -130,7 +136,7 @@ const RegisterPage = () => {
         <Input 
           label="Phone Number" 
           type="tel" 
-          placeholder="+1 (555) 000-0000"
+          placeholder="0912345678"
           error={errors.phone?.message}
           {...register('phone')} 
         />
@@ -141,6 +147,14 @@ const RegisterPage = () => {
           placeholder="••••••••"
           error={errors.password?.message}
           {...register('password')} 
+        />
+
+        <Input 
+          label="Confirm Password" 
+          type="password" 
+          placeholder="••••••••"
+          error={errors.confirmPassword?.message}
+          {...register('confirmPassword')} 
         />
 
         <div className="terms-checkbox">

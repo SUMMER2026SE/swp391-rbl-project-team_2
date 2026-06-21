@@ -1,62 +1,54 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../../components/common/Button';
 import RoomCard from '../components/RoomCard';
+import { favoriteService } from '../services/favoriteService';
+import { Heart } from 'lucide-react';
 import './FavoritesPage.css';
 
-const FAVORITE_ROOMS = [
-  {
-    id: 1,
-    title: 'The Urban Loft',
-    price: 1200,
-    location: 'Downtown District',
-    specs: [
-      { icon: 'bed', text: '1 Bed' },
-      { icon: 'bath', text: '1 Bath' },
-      { icon: 'square', text: '450 sqft' }
-    ],
-    imageTags: [
-      { text: 'Smart Lock', type: 'primary' },
-      { text: 'Wi-Fi', type: 'secondary' }
-    ],
-    isFavorite: true,
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600'
-  },
-  {
-    id: 2,
-    title: 'Sunny Studio Retreat',
-    price: 1450,
-    location: 'Arts District',
-    specs: [
-      { icon: 'bed', text: 'Studio' },
-      { icon: 'bath', text: '1 Bath' },
-      { icon: 'square', text: '520 sqft' }
-    ],
-    imageTags: [
-      { text: 'Pet Friendly', type: 'primary' }
-    ],
-    isFavorite: true,
-    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=600'
-  },
-  {
-    id: 3,
-    title: 'Executive Suite',
-    price: 2100,
-    location: 'Financial Center',
-    specs: [
-      { icon: 'bed', text: '2 Bed' },
-      { icon: 'bath', text: '2 Bath' },
-      { icon: 'square', text: '850 sqft' }
-    ],
-    imageTags: [
-      { text: 'Gym Access', type: 'primary' },
-      { text: 'Parking', type: 'secondary' }
-    ],
-    isFavorite: true,
-    image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=600'
-  }
-];
-
 const FavoritesPage = () => {
+  const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        setLoading(true);
+        const data = await favoriteService.getFavorites();
+        // The API returns an array of Favorite objects which contain the Room object
+        // Map it to match RoomCard expected structure if necessary
+        const mappedFavorites = (data.data || data).map(fav => {
+          const room = fav.room;
+          return {
+            id: room.room_id,
+            title: room.title,
+            price: room.price_per_month,
+            location: [room.address, room.district, room.city].filter(Boolean).join(', '),
+            specs: [
+              { icon: 'bed', text: `${room.bedrooms || 1} Beds` },
+              { icon: 'square', text: `${room.area_sqm || 0} m²` }
+            ],
+            imageTags: room.status === 'available' ? [{ text: 'Available', type: 'primary' }] : [],
+            isFavorite: true,
+            image: room.thumbnail_url ? (room.thumbnail_url && room.thumbnail_url.startsWith('http') ? room.thumbnail_url : `http://localhost:5000${room.thumbnail_url}`) : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600'
+          };
+        });
+        setFavorites(mappedFavorites);
+      } catch (err) {
+        console.error(err);
+        setFavorites([]); // Empty state on error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFavorites();
+  }, []);
+
+  if (loading) return <div className="p-8 text-center">Loading favorites...</div>;
+  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+
   return (
     <div className="favorites-page container">
       <div className="favorites-header">
@@ -65,14 +57,36 @@ const FavoritesPage = () => {
       </div>
 
       <div className="favorites-grid">
-        {FAVORITE_ROOMS.map(room => (
-          <RoomCard key={room.id} room={room} variant="favorite" />
-        ))}
+        {favorites.length > 0 ? (
+          favorites.map(room => (
+            <RoomCard
+              key={room.id}
+              room={room}
+              variant="favorite"
+              onFavoriteToggle={(id, status) => {
+                if (!status) {
+                  setFavorites(prev => prev.filter(f => f.id !== id));
+                }
+              }}
+            />
+          ))
+        ) : (
+          <div className="empty-state">
+            <div className="empty-icon-wrapper">
+              <Heart size={40} />
+            </div>
+            <h3>No favorites yet</h3>
+            <p>
+              You haven't saved any rooms yet. Browse our available rooms and save your favorites to review later.
+            </p>
+            <Button onClick={() => { navigate('/rooms'); }} className="btn-browse">
+              Browse Rooms
+            </Button>
+          </div>
+        )}
       </div>
 
-      <div className="favorites-footer">
-        <Button variant="outline" size="lg">Load More</Button>
-      </div>
+      
     </div>
   );
 };

@@ -1,3 +1,5 @@
+import toast from 'react-hot-toast';
+import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -15,41 +17,130 @@ import {
   MapPin,
   Calendar,
   AlertCircle,
-  Loader
+  Loader,
+  X,
+  Check,
+  Camera
 } from 'lucide-react';
 import { ROUTES } from '../../../constants';
 import useAuthStore from '../../../store/useAuthStore';
 import { landlordService } from '../services/landlordService';
+import { authService } from '../../auth/services/authService';
+import httpClient from '../../../services/httpClient';
+import { API_URL } from '../../../config';
 import './LandlordProfilePage.css';
 
 const LandlordProfilePage = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setLoading(true);
-        const response = await landlordService.getProfile();
-        const profileData = response.data || response;
-        setProfile(profileData);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-        setError(err.message || 'Failed to load profile');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({ fullName: '', phone: '' });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [editSuccess, setEditSuccess] = useState('');
+  const fileInputRef = React.useRef(null);
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const response = await authService.uploadAvatar(formData);
+      if (!response.success) throw new Error(response.message);
+      updateUser({ avatarUrl: response.data.avatarUrl });
+      setProfile(prev => ({ ...prev, avatarUrl: response.data.avatarUrl }));
+      toast.success('Avatar updated successfully!');
+    } catch (error) {
+      const msg = error.response?.data?.message || error.message || 'Error uploading avatar';
+      toast(msg);
+    }
+  };
+
+  const getAvatarUrl = () => {
+    const displayProfile = profile || user || {};
+    if (displayProfile.avatarUrl) {
+      if (displayProfile.avatarUrl.startsWith('/uploads')) {
+        const baseUrl = API_URL.replace('/api', '');
+        return `${baseUrl}${displayProfile.avatarUrl}`;
+      }
+      return displayProfile.avatarUrl;
+    }
+    return `https://ui-avatars.com/api/?name=${displayProfile.fullName || 'User'}&background=random&size=150`;
+  };
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await landlordService.getProfile();
+      const profileData = response.data || response;
+      setProfile(profileData);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setError(err.message || 'Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
   }, []);
 
   const handleEditProfileClick = () => {
-    navigate(ROUTES.LANDLORD.SETTINGS);
+    const displayProfile = profile || user || {};
+    setEditForm({
+      fullName: displayProfile.fullName || displayProfile.full_name || '',
+      phone: displayProfile.phone || '',
+    });
+    setEditError('');
+    setEditSuccess('');
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+    setEditError('');
+    setEditSuccess('');
+
+    try {
+      const response = await httpClient.put('/user/profile', {
+        fullName: editForm.fullName,
+        phone: editForm.phone,
+      });
+
+      const updatedData = response.data || response;
+      setProfile(updatedData);
+      
+      // Also update Zustand store so Header etc. reflect the change
+      updateUser({
+        fullName: updatedData.fullName,
+        phone: updatedData.phone,
+      });
+
+      setEditSuccess('Profile updated successfully!');
+      setTimeout(() => {
+        setShowEditModal(false);
+        setEditSuccess('');
+      }, 1500);
+    } catch (err) {
+      setEditError(err.response?.data?.message || err.message || 'Failed to update profile');
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   if (loading) {
@@ -83,15 +174,34 @@ const LandlordProfilePage = () => {
       {/* Top Profile Card Header */}
       <div className="landlord-profile-header-card">
         <div className="header-card-avatar-section">
-          <div className="profile-large-avatar-wrapper">
+          <div 
+            className="profile-large-avatar-wrapper" 
+            style={{ position: 'relative', cursor: 'pointer' }}
+            onClick={handleAvatarClick}
+          >
             <img 
-              src={displayProfile.avatarUrl || `https://ui-avatars.com/api/?name=${displayProfile.fullName || 'User'}&background=random&size=150`}
+              src={getGlobalAvatar(displayProfile.fullName, displayProfile.avatarUrl, 150)}
               alt={displayProfile.fullName || 'Landlord'}
               className="profile-large-avatar"
             />
-            <div className="profile-avatar-badge">
+            <div className="profile-avatar-badge" style={{ display: 'none' }}>
               <ShieldCheck size={16} className="badge-check-icon" />
             </div>
+            <div style={{
+              position: 'absolute', bottom: '4px', right: '4px',
+              background: '#667eea', borderRadius: '50%', padding: '8px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }}>
+              <Camera size={16} color="white" />
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleAvatarChange}
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style={{ display: 'none' }}
+            />
           </div>
         </div>
 
@@ -236,6 +346,77 @@ const LandlordProfilePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div className="edit-profile-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="edit-profile-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="edit-modal-header">
+              <h2>Edit Profile</h2>
+              <button className="edit-modal-close" onClick={() => setShowEditModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="edit-modal-form">
+              <div className="edit-form-group">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  value={editForm.fullName}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, fullName: e.target.value }))}
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+
+              <div className="edit-form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={displayProfile.email || ''}
+                  disabled
+                  className="edit-input-disabled"
+                />
+                <span className="edit-field-hint">Email cannot be changed</span>
+              </div>
+
+              <div className="edit-form-group">
+                <label>Phone Number</label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="Enter your phone number"
+                />
+              </div>
+
+              {editError && (
+                <div className="edit-msg edit-msg-error">
+                  <AlertCircle size={16} />
+                  <span>{editError}</span>
+                </div>
+              )}
+
+              {editSuccess && (
+                <div className="edit-msg edit-msg-success">
+                  <Check size={16} />
+                  <span>{editSuccess}</span>
+                </div>
+              )}
+
+              <div className="edit-modal-actions">
+                <button type="button" className="edit-btn-cancel" onClick={() => setShowEditModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="edit-btn-save" disabled={editLoading}>
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

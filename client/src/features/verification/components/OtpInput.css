@@ -20,7 +20,7 @@
 }
 
 .otp-input-box::placeholder {
-  color: #CBD5E1;
+  color: var(--border-light);
 }
 
 .otp-input-box:focus {

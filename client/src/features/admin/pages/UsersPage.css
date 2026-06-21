@@ -25,7 +25,7 @@
 }
 
 .users-table thead tr {
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -51,7 +51,7 @@
 }
 
 .users-table tbody tr:hover {
-  background-color: #FAFAFA;
+  background-color: var(--bg-main);
 }
 
 .user-cell {
@@ -96,7 +96,7 @@
   font-weight: 600;
 }
 
-.role-tenant   { background: #EFF6FF; color: #2563EB; }
+.role-tenant   { background: #EFF6FF; color: var(--primary); }
 .role-landlord { background: #F0FDF4; color: #16A34A; }
 .role-admin    { background: #FEF3C7; color: #D97706; }
 

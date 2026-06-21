@@ -283,7 +283,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8fafc;
+  background: var(--bg-main);
   position: relative;
   overflow: hidden;
 }
@@ -319,12 +319,13 @@
   padding: 2rem 2.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   min-height: 100vh;
 }
 
 .auth-card {
   width: 100%;
+  margin-top: auto;
+  margin-bottom: auto;
   animation: formSlideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -341,14 +342,13 @@
 
 /* Footer */
 .auth-footer {
-  margin-top: 2rem;
   padding-top: 1.25rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: 0.72rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .auth-footer-links {
@@ -357,7 +357,7 @@
 }
 
 .auth-footer-links a {
-  color: #94a3b8;
+  color: var(--text-muted);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s;

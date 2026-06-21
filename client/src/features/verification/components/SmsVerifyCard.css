@@ -59,7 +59,7 @@
 
 .sms-verify-card__btn:hover {
   background: var(--bg-main);
-  border-color: #CBD5E1;
+  border-color: var(--border-light);
 }
 
 .sms-verify-card__btn:active {

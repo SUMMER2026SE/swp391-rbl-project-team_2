@@ -27,7 +27,7 @@
   font-weight: 700;
   font-size: 24px;
   line-height: 32px;
-  color: #1E293B;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -36,7 +36,7 @@
   font-weight: 400;
   font-size: 14px;
   line-height: 20px;
-  color: #64748B;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -50,21 +50,21 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background-color: #FFFFFF;
-  border: 1px solid #CBD5E1;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 600;
   font-size: 14px;
-  color: #1E293B;
+  color: var(--text-main);
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   transition: all 0.2s;
 }
 
 .btn-outline:hover {
-  background-color: #F8FAFC;
-  border-color: #94A3B8;
+  background-color: var(--bg-main);
+  border-color: var(--text-muted);
 }
 
 .btn-primary {
@@ -72,7 +72,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background-color: #0F172A;
+  background-color: var(--text-main);
   border: none;
   border-radius: 8px;
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -85,7 +85,7 @@
 }
 
 .btn-primary:hover {
-  background-color: #1E293B;
+  background-color: var(--text-main);
 }
 
 /* KPI Grid */
@@ -96,8 +96,8 @@
 }
 
 .kpi-card {
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 24px;
   display: flex;
@@ -132,7 +132,7 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 500;
   font-size: 14px;
-  color: #64748B;
+  color: var(--text-muted);
 }
 
 .kpi-value {
@@ -140,7 +140,7 @@
   font-weight: 700;
   font-size: 24px;
   line-height: 32px;
-  color: #0F172A;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -153,8 +153,8 @@
 
 /* Transactions Section */
 .transactions-section {
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -165,8 +165,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  border-bottom: 1px solid #E2E8F0;
-  background-color: #F8FAFC;
+  border-bottom: 1px solid var(--border-light);
+  background-color: var(--bg-main);
 }
 
 .search-wrapper {
@@ -179,17 +179,17 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94A3B8;
+  color: var(--text-muted);
 }
 
 .search-input {
   width: 100%;
   padding: 10px 12px 10px 40px;
-  border: 1px solid #CBD5E1;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 14px;
-  color: #1E293B;
+  color: var(--text-main);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -200,7 +200,7 @@
 }
 
 .search-input::placeholder {
-  color: #94A3B8;
+  color: var(--text-muted);
 }
 
 .filter-actions {
@@ -219,14 +219,14 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 500;
   font-size: 14px;
-  color: #475569;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-filter:hover {
-  background-color: #F1F5F9;
-  color: #0F172A;
+  background-color: var(--primary-light);
+  color: var(--text-main);
 }
 
 .table-container {
@@ -244,22 +244,22 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 500;
   font-size: 13px;
-  color: #64748B;
-  border-bottom: 1px solid #E2E8F0;
-  background-color: #FFFFFF;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-light);
+  background-color: var(--bg-card);
 }
 
 .transactions-table td {
   padding: 16px 24px;
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 14px;
-  color: #1E293B;
+  color: var(--text-main);
   border-bottom: 1px solid #F1F5F9;
   vertical-align: middle;
 }
 
 .transactions-table tbody tr:hover {
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
 }
 
 .transactions-table tbody tr:last-child td {
@@ -267,7 +267,7 @@
 }
 
 .text-muted {
-  color: #64748B;
+  color: var(--text-muted);
 }
 
 .font-semibold {
@@ -311,7 +311,7 @@
 .action-btn {
   background: none;
   border: none;
-  color: #94A3B8;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -322,8 +322,8 @@
 }
 
 .action-btn:hover {
-  background-color: #F1F5F9;
-  color: #0F172A;
+  background-color: var(--primary-light);
+  color: var(--text-main);
 }
 
 /* Responsive */

@@ -1,14 +1,18 @@
 import React from 'react';
-import { MoreVertical, Lock, AlertCircle, Edit, ExternalLink, Activity } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { MoreVertical, Lock, AlertCircle, ExternalLink, EyeOff, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { formatCurrency } from '../../../utils/format';
 import './ListingTable.css';
 
-const ListingTable = ({ listings }) => {
+const ListingTable = ({ listings, onUpdateStatus }) => {
+  const navigate = useNavigate();
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case 'active':
+      case 'available':
         return <span className="status-badge status-active">Active</span>;
       case 'occupied':
+      case 'rented':
         return (
           <span className="status-badge status-occupied">
             <Lock size={12} /> Occupied
@@ -16,6 +20,18 @@ const ListingTable = ({ listings }) => {
         );
       case 'hidden':
         return <span className="status-badge status-hidden">Hidden (System)</span>;
+      case 'pending':
+        return (
+          <span className="status-badge" style={{ backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>
+            <Clock size={12} /> Pending Approval
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className="status-badge" style={{ backgroundColor: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3' }}>
+            <XCircle size={12} /> Rejected
+          </span>
+        );
       default:
         return <span className="status-badge">{status}</span>;
     }
@@ -39,7 +55,6 @@ const ListingTable = ({ listings }) => {
             <th>Property</th>
             <th>Landlord</th>
             <th>Status</th>
-            <th>Performance</th>
             <th className="th-actions">Actions</th>
           </tr>
         </thead>
@@ -50,7 +65,7 @@ const ListingTable = ({ listings }) => {
                 <div className="property-info-cell">
                   <img src={listing.image} alt={listing.title} className="property-thumbnail" />
                   <div className="property-details">
-                    <span className="property-id">#{listing.id}</span>
+                    <span className="property-id">{listing.id}</span>
                     <span className="property-title">{listing.title}</span>
                     <span className="property-location">{listing.location}</span>
                     <span className="property-price">{formatCurrency(listing.price)}/mo</span>
@@ -59,8 +74,8 @@ const ListingTable = ({ listings }) => {
               </td>
               <td className="listing-landlord">
                 <div className="landlord-info-cell">
-                  <span className="landlord-name">{listing.landlord.name}</span>
-                  {getLandlordBadge(listing.landlord.type)}
+                  <span className="landlord-name">{listing.landlord?.name || 'Unknown'}</span>
+                  {getLandlordBadge(listing.landlord?.type)}
                 </div>
               </td>
               <td className="listing-status">
@@ -74,33 +89,46 @@ const ListingTable = ({ listings }) => {
                   )}
                 </div>
               </td>
-              <td className="listing-performance">
-                <div className="performance-cell">
-                  <div className="perf-item">
-                    <span className="perf-label">Views:</span>
-                    <span className="perf-value">{listing.performance.views.toLocaleString()}</span>
-                  </div>
-                  <div className="perf-item">
-                    <span className="perf-label">Inquiries:</span>
-                    <span className="perf-value">{listing.performance.inquiries}</span>
-                  </div>
-                </div>
-              </td>
               <td className="listing-actions">
-                {listing.alert ? (
-                  <button className="btn-review-violation">Review Violation</button>
+                {listing.status.toLowerCase() === 'pending' ? (
+                  <div className="action-buttons">
+                    <button
+                      className="btn-action-icon"
+                      title="Xem và duyệt phòng"
+                      onClick={() => navigate(`/admin/listings/${listing.rawId}/review`)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#d97706', fontWeight: 600 }}
+                    >
+                      <ExternalLink size={16} />
+                      <span style={{ fontSize: '13px' }}>Duyệt phòng</span>
+                    </button>
+                  </div>
                 ) : (
                   <div className="action-buttons">
-                    <button className="btn-action-icon" title="View Details">
+                    <button
+                      className="btn-action-icon"
+                      title="Xem chi tiết"
+                      onClick={() => navigate(`/admin/listings/${listing.rawId}/review`)}
+                    >
                       <ExternalLink size={18} />
                     </button>
-                    <button className="btn-action-icon" title="Edit Listing">
-                      <Edit size={18} />
-                    </button>
-                    <button className="btn-action-icon" title="Analytics">
-                      <Activity size={18} />
-                    </button>
-                    <button className="btn-action-icon" title="More Options">
+                    {listing.status.toLowerCase() !== 'hidden' ? (
+                      <button
+                        className="btn-action-icon"
+                        title="Ẩn phòng"
+                        onClick={() => onUpdateStatus(listing.rawId, 'hidden')}
+                      >
+                        <EyeOff size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        className="btn-action-icon"
+                        title="Khôi phục phòng"
+                        onClick={() => onUpdateStatus(listing.rawId, 'available')}
+                      >
+                        <CheckCircle size={18} />
+                      </button>
+                    )}
+                    <button className="btn-action-icon" title="Thêm tùy chọn">
                       <MoreVertical size={18} />
                     </button>
                   </div>
@@ -108,6 +136,11 @@ const ListingTable = ({ listings }) => {
               </td>
             </tr>
           ))}
+          {listings.length === 0 && (
+            <tr>
+              <td colSpan="5" className="text-center py-4">No listings found</td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

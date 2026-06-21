@@ -7,6 +7,8 @@ export { default as UsersPage } from './pages/UsersPage';
 export { default as RequestsPage } from './pages/RequestsPage';
 export { default as SettingsPage } from './pages/SettingsPage';
 export { default as ViolationManagementPage } from './pages/ViolationManagementPage';
+export { default as PayoutsPage } from './pages/PayoutsPage';
+export { default as AdminNotificationsPage } from './pages/AdminNotificationsPage';
 
 // Components
 export { default as StatCard } from './components/StatCard';

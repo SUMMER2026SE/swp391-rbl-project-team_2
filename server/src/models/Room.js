@@ -44,15 +44,19 @@ const Room = sequelize.define('Room', {
     allowNull: true,
   },
   room_type: {
-    type: DataTypes.ENUM('single', 'double', 'shared'),
+    type: DataTypes.STRING(15),
     defaultValue: 'single',
+  },
+  bedrooms: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1,
   },
   max_occupants: {
     type: DataTypes.INTEGER,
     defaultValue: 1,
   },
   status: {
-    type: DataTypes.ENUM('available', 'rented', 'maintenance', 'inactive'),
+    type: DataTypes.STRING(15),
     defaultValue: 'available',
   },
   thumbnail_url: {

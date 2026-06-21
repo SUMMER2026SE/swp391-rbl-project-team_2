@@ -10,6 +10,7 @@ const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
 const initDatabase = require('./config/initDatabase');
 const initSocket = require('./config/socket');
+const initCronJobs = require('./cron/refundJobs');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -17,6 +18,10 @@ const userRoutes = require('./routes/userRoutes');
 const landlordRoutes = require('./routes/landlordRoutes');
 const listingRoutes = require('./routes/listingRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const tenantRoutes = require('./routes/tenantRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -88,7 +93,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/landlord', landlordRoutes);
 app.use('/api/listings', listingRoutes);
+app.use('/api/rooms', listingRoutes);  // Alias: /api/rooms -> same as /api/listings
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/tenant', tenantRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/ai', aiRoutes);
 
 // =========================================================
 // ERROR HANDLER
@@ -102,6 +112,9 @@ const startServer = async () => {
   try {
     // Initialize database with proper table creation order
     await initDatabase();
+
+    // Initialize Cron Jobs
+    initCronJobs();
 
     // Test database connection
     await sequelize.authenticate();

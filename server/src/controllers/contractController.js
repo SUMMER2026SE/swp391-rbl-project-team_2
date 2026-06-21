@@ -116,7 +116,7 @@ const getLandlordContracts = async (req, res, next) => {
     const { count, rows } = await Contract.findAndCountAll({
       where,
       include: [
-        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address'] },
+        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'room_type', 'bedrooms', 'max_occupants', 'area_sqm'] },
         { model: User, as: 'tenant', attributes: ['user_id', 'full_name', 'email', 'phone'] },
       ],
       offset,
@@ -165,7 +165,7 @@ const getContractDetails = async (req, res, next) => {
     const contract = await Contract.findOne({
       where: { contract_id: contractId, landlord_id: landlordId },
       include: [
-        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'price_per_month'] },
+        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'room_type', 'bedrooms', 'max_occupants', 'area_sqm', 'price_per_month'] },
         { model: User, as: 'tenant', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
       ],
     });

@@ -17,14 +17,14 @@
 .deposit-main-title {
   font-size: 1.875rem;
   font-weight: 800;
-  color: #1E293B;
+  color: var(--text-main);
   letter-spacing: -0.025em;
   margin-bottom: 0.25rem;
 }
 
 .deposit-sub-title {
   font-size: 0.95rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -41,18 +41,18 @@
   padding: 0.65rem 1.25rem;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #334155;
-  background-color: #FFFFFF;
-  border: 1.5px solid #E2E8F0;
+  color: var(--text-main);
+  background-color: var(--bg-card);
+  border: 1.5px solid var(--border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   transition: all 0.15s ease;
 }
 
 .btn-export-csv:hover {
-  background-color: #F8FAFC;
-  border-color: #CBD5E1;
-  color: #0F172A;
+  background-color: var(--bg-main);
+  border-color: var(--border-light);
+  color: var(--text-main);
 }
 
 .btn-manual-entry {
@@ -63,7 +63,7 @@
   font-size: 0.875rem;
   font-weight: 700;
   color: #FFFFFF;
-  background-color: #2563EB;
+  background-color: var(--primary);
   border: none;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
@@ -83,8 +83,8 @@
 }
 
 .deposit-stat-card {
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
@@ -99,14 +99,14 @@
 .deposit-stat-label {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #64748B;
+  color: var(--text-muted);
   letter-spacing: 0.05em;
 }
 
 .deposit-stat-value {
   font-size: 1.75rem;
   font-weight: 800;
-  color: #1E293B;
+  color: var(--text-main);
   margin-top: 0.35rem;
   margin-bottom: 0.5rem;
 }
@@ -122,7 +122,7 @@
 
 .deposit-stat-icon-box.landmark-blue {
   background-color: #EFF6FF;
-  color: #2563EB;
+  color: var(--primary);
 }
 
 .deposit-stat-icon-box.clock-gold {
@@ -146,13 +146,13 @@
   align-items: center;
   gap: 4px;
   font-size: 0.8rem;
-  color: #2563EB;
+  color: var(--primary);
   font-weight: 700;
 }
 
 .stat-normal-desc {
   font-size: 0.8rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
@@ -162,8 +162,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
   box-shadow: var(--shadow-sm);
@@ -179,7 +179,7 @@
   left: 0.85rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #94A3B8;
+  color: var(--text-muted);
   pointer-events: none;
 }
 
@@ -188,18 +188,18 @@
   height: 40px;
   padding-left: 2.5rem;
   padding-right: 1rem;
-  border: 1.5px solid #E2E8F0;
-  background-color: #F8FAFC;
+  border: 1.5px solid var(--border-light);
+  background-color: var(--bg-main);
   border-radius: var(--radius-md);
   font-size: 0.875rem;
-  color: #1E293B;
+  color: var(--text-main);
   font-weight: 550;
   transition: all 0.15s ease;
 }
 
 .deposit-search-box input:focus {
-  border-color: #2563EB;
-  background-color: #FFFFFF;
+  border-color: var(--primary);
+  background-color: var(--bg-card);
   outline: none;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
@@ -215,18 +215,18 @@
   padding: 0.5rem 1.25rem;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #64748B;
-  background-color: #FFFFFF;
-  border: 1.5px solid #E2E8F0;
+  color: var(--text-muted);
+  background-color: var(--bg-card);
+  border: 1.5px solid var(--border-light);
   border-radius: 9999px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .deposit-tab-item:hover {
-  background-color: #F8FAFC;
-  color: #1E293B;
-  border-color: #CBD5E1;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  border-color: var(--border-light);
 }
 
 /* Active State matches Figma's Blue capsule */
@@ -244,8 +244,8 @@
 
 /* Data Table Grid container */
 .deposit-table-wrapper {
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
@@ -258,14 +258,14 @@
 }
 
 .deposit-data-table th {
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
   padding: 1rem 1.5rem;
   font-size: 0.775rem;
   font-weight: 700;
-  color: #475569;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1.5px solid #E2E8F0;
+  border-bottom: 1.5px solid var(--border-light);
 }
 
 .deposit-table-row {
@@ -274,7 +274,7 @@
 }
 
 .deposit-table-row:hover {
-  background-color: #F8FAFC;
+  background-color: var(--bg-main);
 }
 
 .deposit-data-table td {
@@ -291,13 +291,13 @@
 .date-main-part {
   display: block;
   font-weight: 700;
-  color: #1E293B;
+  color: var(--text-main);
 }
 
 .date-year-part {
   display: block;
   font-size: 0.775rem;
-  color: #94A3B8;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
@@ -308,25 +308,25 @@
 .tenant-display-name {
   display: block;
   font-weight: 700;
-  color: #1E293B;
+  color: var(--text-main);
 }
 
 .tenant-id-sub {
   display: block;
   font-size: 0.775rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 600;
   margin-top: 2px;
 }
 
 .deposit-property-cell {
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
 }
 
 .deposit-amount-cell {
   font-weight: 700;
-  color: #1E293B;
+  color: var(--text-main);
 }
 
 /* Status Badges colors */
@@ -341,19 +341,19 @@
   line-height: 1;
 }
 
-.badge-pending-refund {
-  background-color: #FEF3C7; /* figma soft tan gold */
+.badge-pending {
+  background-color: #FEF3C7; /* soft tan gold */
   color: #92400E;
 }
 
-.badge-confirmed {
-  background-color: #EFF6FF; /* figma soft blue */
+.badge-processing {
+  background-color: #EFF6FF; /* soft blue */
   color: #1D4ED8;
 }
 
-.badge-refunded {
-  background-color: #F1F5F9; /* figma neutral gray */
-  color: #475569;
+.badge-completed {
+  background-color: #D1FAE5; /* green */
+  color: #065F46;
 }
 
 /* Action Trigger Buttons inside Table */
@@ -379,9 +379,9 @@
   padding: 0.4rem 0.85rem;
   font-size: 0.775rem;
   font-weight: 700;
-  color: #475569;
-  background-color: #FFFFFF;
-  border: 1.5px solid #E2E8F0;
+  color: var(--text-muted);
+  background-color: var(--bg-card);
+  border: 1.5px solid var(--border-light);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -409,15 +409,15 @@
   align-items: center;
   margin-top: 1.5rem;
   padding: 1rem 1.25rem;
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
 }
 
 .pagination-entries-count {
   font-size: 0.85rem;
-  color: #64748B;
+  color: var(--text-muted);
   font-weight: 550;
 }
 
@@ -434,9 +434,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid #E2E8F0;
-  background-color: #FFFFFF;
-  color: #475569;
+  border: 1.5px solid var(--border-light);
+  background-color: var(--bg-card);
+  color: var(--text-muted);
   font-size: 0.85rem;
   font-weight: 700;
   border-radius: var(--radius-md);
@@ -446,9 +446,9 @@
 
 .pagination-num-btn:hover,
 .pagination-arrow-btn:hover:not(:disabled) {
-  background-color: #F8FAFC;
-  color: #1E293B;
-  border-color: #CBD5E1;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  border-color: var(--border-light);
 }
 
 .pagination-num-btn.active {
@@ -476,13 +476,13 @@
 .table-empty-row-state h3 {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #334155;
+  color: var(--text-main);
   margin-bottom: 0.25rem;
 }
 
 .table-empty-row-state p {
   font-size: 0.875rem;
-  color: #64748B;
+  color: var(--text-muted);
 }
 
 /* Modal Form Adjustment size for deposits */

@@ -9,7 +9,7 @@ const Payment = sequelize.define('Payment', {
   },
   contract_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
   },
   tenant_id: {
     type: DataTypes.INTEGER,
@@ -23,20 +23,24 @@ const Payment = sequelize.define('Payment', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  viewing_schedule_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   amount: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
   },
   payment_type: {
-    type: DataTypes.ENUM('rent', 'deposit', 'utility', 'maintenance', 'other'),
+    type: DataTypes.STRING(50),
     defaultValue: 'rent',
   },
   status: {
-    type: DataTypes.ENUM('pending', 'completed', 'failed', 'cancelled'),
+    type: DataTypes.STRING(50),
     defaultValue: 'pending',
   },
   payment_method: {
-    type: DataTypes.ENUM('bank_transfer', 'cash', 'credit_card', 'e_wallet'),
+    type: DataTypes.ENUM('bank_transfer', 'cash', 'credit_card', 'e_wallet', 'vnpay'),
     allowNull: true,
   },
   transaction_id: {
@@ -53,6 +57,26 @@ const Payment = sequelize.define('Payment', {
   },
   notes: {
     type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  platform_fee: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+  },
+  refund_amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+  },
+  net_amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+  },
+  payout_status: {
+    type: DataTypes.ENUM('pending', 'processing', 'completed'),
+    defaultValue: 'pending',
+  },
+  payout_date: {
+    type: DataTypes.DATE,
     allowNull: true,
   },
   created_at: {

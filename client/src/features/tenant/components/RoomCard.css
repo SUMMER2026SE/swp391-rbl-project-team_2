@@ -18,7 +18,7 @@
   position: relative;
   width: 100%;
   aspect-ratio: 4/3;
-  background-color: #E2E8F0;
+  background-color: var(--border-light);
 }
 
 .room-card-image {
@@ -31,7 +31,7 @@
   position: absolute;
   top: 0.75rem;
   left: 0.75rem;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: var(--bg-card);
   border-radius: var(--radius-full);
   width: 32px;
   height: 32px;
@@ -47,11 +47,11 @@
 
 .favorite-btn:hover {
   transform: scale(1.05);
-  background-color: white;
+  background-color: var(--bg-card);
 }
 
 .heart-icon {
-  color: #4B5563; /* Slate 600 */
+  color: var(--text-muted); /* Slate 600 */
   transition: color 0.2s, fill 0.2s;
 }
 
@@ -79,17 +79,17 @@
 }
 
 .primary-tag {
-  background-color: #007BFF; /* Bright blue */
-  color: white;
+  background-color: var(--primary); /* Bright blue */
+  color: var(--text-main);
 }
 
 .match-tag {
   background-color: #6366F1; /* Indigo / Purple */
-  color: white;
+  color: var(--text-main);
 }
 
 .secondary-tag {
-  background-color: white;
+  background-color: var(--bg-card);
   color: var(--text-main);
 }
 
@@ -149,7 +149,7 @@
 .room-card-price span:first-child {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #007BFF; /* Bright blue */
+  color: var(--primary); /* Bright blue */
 }
 
 .favorite-header .room-card-price {
@@ -188,7 +188,7 @@
 }
 
 .room-card-standard .chat-floating-price {
-  color: #111827; /* Dark text for Explore Rooms */
+  color: var(--text-main); /* Dark text for Explore Rooms */
 }
 
 /* Specs */
@@ -227,7 +227,7 @@
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
-  background-color: white;
+  background-color: var(--bg-card);
   color: #1E40AF; /* Bold Blue matching Figma */
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-full);
@@ -264,7 +264,7 @@
 .view-details-link {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #007BFF;
+  color: var(--primary);
   text-decoration: none;
 }
 
@@ -277,8 +277,8 @@
 }
 
 .chat-tag {
-  background-color: #F1F5F9; /* Slate 100 */
-  color: #475569; /* Slate 600 */
+  background-color: var(--primary-light); /* Slate 100 */
+  color: var(--text-muted); /* Slate 600 */
   font-size: 0.75rem;
   font-weight: 500;
   padding: 0.25rem 0.75rem;

@@ -14,7 +14,7 @@ httpClient.interceptors.request.use(
   (config) => {
     // Get token from Zustand persisted storage
     try {
-      const authStorage = JSON.parse(localStorage.getItem('auth-storage'));
+      const authStorage = JSON.parse(sessionStorage.getItem('auth-storage'));
       const token = authStorage?.state?.token;
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -38,7 +38,7 @@ httpClient.interceptors.response.use(
     // Handle global errors here
     if (error.response?.status === 401) {
       // Token expired - clear auth storage and redirect to login
-      localStorage.removeItem('auth-storage');
+      sessionStorage.removeItem('auth-storage');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

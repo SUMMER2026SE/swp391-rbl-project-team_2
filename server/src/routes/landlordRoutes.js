@@ -21,15 +21,7 @@ const landlordProfileController = require('../controllers/landlordProfileControl
 // =========================================================
 // MULTER CONFIGURATION
 // =========================================================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../uploads'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  },
-});
+const { storage } = require('../config/cloudinary');
 
 const upload = multer({
   storage,
@@ -127,12 +119,18 @@ router.post('/viewing-schedules', viewingScheduleController.createViewingSchedul
 router.get('/viewing-schedules', viewingScheduleController.getLandlordViewingSchedules);
 router.get('/viewing-schedules/:scheduleId', viewingScheduleController.getViewingScheduleDetails);
 router.put('/viewing-schedules/:scheduleId', viewingScheduleController.updateViewingSchedule);
+router.put('/viewing-schedules/:scheduleId/confirm-viewing', viewingScheduleController.confirmViewing);
+router.put('/viewing-schedules/:scheduleId/no-show', viewingScheduleController.markNoShow);
+router.post('/viewing-schedules/:scheduleId/create-contract', viewingScheduleController.createContractFromViewing);
 router.delete('/viewing-schedules/:scheduleId', viewingScheduleController.deleteViewingSchedule);
 
 router.post('/schedules', viewingScheduleController.createViewingSchedule);
 router.get('/schedules', viewingScheduleController.getLandlordViewingSchedules);
 router.get('/schedules/:scheduleId', viewingScheduleController.getViewingScheduleDetails);
 router.put('/schedules/:scheduleId', viewingScheduleController.updateViewingSchedule);
+router.put('/schedules/:scheduleId/confirm-viewing', viewingScheduleController.confirmViewing);
+router.put('/schedules/:scheduleId/no-show', viewingScheduleController.markNoShow);
+router.post('/schedules/:scheduleId/create-contract', viewingScheduleController.createContractFromViewing);
 router.delete('/schedules/:scheduleId', viewingScheduleController.deleteViewingSchedule);
 
 // =========================================================

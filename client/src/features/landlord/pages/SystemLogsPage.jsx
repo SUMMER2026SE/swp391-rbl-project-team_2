@@ -1,66 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutGrid, AlertTriangle, Search, Calendar, ChevronDown, 
-  Shield, ShieldAlert, User, Database, Info, Settings 
+  Shield, ShieldAlert, User, Database, Info, Settings, X 
 } from 'lucide-react';
 import './SystemLogsPage.css';
 
+const MOCK_LOGS = [
+  { id: 1, time: '10:45:02 UTC', severity: 'CRITICAL', user: 'System Root', action: 'Multiple failed SSH authentication attempts detected.', ip: '192.168.1.105' },
+  { id: 2, time: '10:42:15 UTC', severity: 'WARN', user: 'j.doe@smartstay.com', action: 'Modified global pricing multiplier (+5%).', ip: '10.0.0.52' },
+  { id: 3, time: '10:30:00 UTC', severity: 'INFO', user: 'Automated CRON', action: 'Daily database snapshot created successfully.', ip: 'localhost' },
+  { id: 4, time: '10:15:22 UTC', severity: 'INFO', user: 'm.smith@smartstay.com', action: "Approved new property listing 'Downtown Loft'.", ip: '172.16.0.4' },
+  { id: 5, time: '09:55:10 UTC', severity: 'WARN', user: 'System Process', action: 'High memory utilization (85%) detected on node worker-3.', ip: '10.0.1.12' },
+  { id: 6, time: '08:20:00 UTC', severity: 'INFO', user: 'admin@smartstay.com', action: 'User account "bob123" suspended manually.', ip: '192.168.1.5' },
+  { id: 7, time: '07:15:33 UTC', severity: 'CRITICAL', user: 'Unknown', action: 'SQL Injection payload detected in login form.', ip: '45.33.22.1' },
+];
+
 const SystemLogsPage = () => {
-  const logs = [
-    {
-      id: 1,
-      time: '10:45:02 UTC',
-      severity: 'CRITICAL',
-      user: 'System Root',
-      action: 'Multiple failed SSH authentication attempts detected.',
-      ip: '192.168.1.105'
-    },
-    {
-      id: 2,
-      time: '10:42:15 UTC',
-      severity: 'WARN',
-      user: 'j.doe@smartstay.com',
-      action: 'Modified global pricing multiplier (+5%).',
-      ip: '10.0.0.52'
-    },
-    {
-      id: 3,
-      time: '10:30:00 UTC',
-      severity: 'INFO',
-      user: 'Automated CRON',
-      action: 'Daily database snapshot created successfully.',
-      ip: 'localhost'
-    },
-    {
-      id: 4,
-      time: '10:15:22 UTC',
-      severity: 'INFO',
-      user: 'm.smith@smartstay.com',
-      action: "Approved new property listing 'Downtown Loft'.",
-      ip: '172.16.0.4'
-    },
-    {
-      id: 5,
-      time: '09:55:10 UTC',
-      severity: 'WARN',
-      user: 'System Process',
-      action: 'High memory utilization (85%) detected on node worker-3.',
-      ip: '10.0.1.12'
-    }
-  ];
+  const [searchQuery, setSearchQuery] = useState('');
+  const [severityFilter, setSeverityFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const renderBadge = (severity) => {
     switch (severity) {
-      case 'CRITICAL':
-        return <span className="badge critical"><AlertTriangle size={12}/> CRITICAL</span>;
-      case 'WARN':
-        return <span className="badge warn"><AlertTriangle size={12}/> WARN</span>;
-      case 'INFO':
-        return <span className="badge info"><Info size={12}/> INFO</span>;
-      default:
-        return <span className="badge info">{severity}</span>;
+      case 'CRITICAL': return <span className="badge critical"><AlertTriangle size={12}/> CRITICAL</span>;
+      case 'WARN': return <span className="badge warn"><AlertTriangle size={12}/> WARN</span>;
+      case 'INFO': return <span className="badge info"><Info size={12}/> INFO</span>;
+      default: return <span className="badge info">{severity}</span>;
     }
   };
+
+  const toggleSeverity = (sev) => {
+    if (severityFilter === sev) setSeverityFilter('ALL');
+    else setSeverityFilter(sev);
+    setCurrentPage(1); // reset to page 1 on filter
+  };
+
+  const filteredLogs = MOCK_LOGS.filter(log => {
+    const matchesSearch = log.ip.includes(searchQuery) || 
+                          log.user.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          log.action.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSeverity = severityFilter === 'ALL' || log.severity === severityFilter;
+    return matchesSearch && matchesSeverity;
+  });
+
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const currentLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="system-logs-container">
@@ -97,13 +82,27 @@ const SystemLogsPage = () => {
         <div className="filter-left">
           <div className="filter-search">
             <Search size={18} />
-            <input type="text" placeholder="Search by IP, User, or Action" />
+            <input 
+              type="text" 
+              placeholder="Search by IP, User, or Action" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <div className="filter-severity">
             <span>Severity:</span>
-            <span className="severity-pill info">Info</span>
-            <span className="severity-pill warning">Warning</span>
-            <span className="severity-pill critical">Critical</span>
+            <span 
+              className={`severity-pill info ${severityFilter === 'INFO' ? 'active' : ''}`}
+              onClick={() => toggleSeverity('INFO')}
+            >Info</span>
+            <span 
+              className={`severity-pill warning ${severityFilter === 'WARN' ? 'active' : ''}`}
+              onClick={() => toggleSeverity('WARN')}
+            >Warning</span>
+            <span 
+              className={`severity-pill critical ${severityFilter === 'CRITICAL' ? 'active' : ''}`}
+              onClick={() => toggleSeverity('CRITICAL')}
+            >Critical</span>
           </div>
         </div>
         <div className="filter-right">
@@ -112,7 +111,9 @@ const SystemLogsPage = () => {
             <span>Last 24 Hours</span>
             <ChevronDown size={16} />
           </div>
-          <button className="btn-filter">Filter Logs</button>
+          <button className="btn-filter" onClick={() => { setSearchQuery(''); setSeverityFilter('ALL'); setCurrentPage(1); }}>
+            Clear Filters
+          </button>
         </div>
       </div>
 
@@ -140,7 +141,7 @@ const SystemLogsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {logs.map(log => (
+              {currentLogs.length > 0 ? currentLogs.map(log => (
                 <tr key={log.id}>
                   <td>{log.time}</td>
                   <td>{renderBadge(log.severity)}</td>
@@ -148,15 +149,27 @@ const SystemLogsPage = () => {
                   <td>{log.action}</td>
                   <td className="font-mono">{log.ip}</td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                    No logs match the current filters.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
 
           <div className="logs-table-footer">
-            <span>Showing 1 to 5 of 14,208 entries</span>
+            <span>Showing {(currentPage - 1) * itemsPerPage + (currentLogs.length > 0 ? 1 : 0)} to {Math.min(currentPage * itemsPerPage, filteredLogs.length)} of {filteredLogs.length} entries</span>
             <div className="pagination">
-              <button>Prev</button>
-              <button>Next</button>
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >Prev</button>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages || totalPages === 0}
+              >Next</button>
             </div>
           </div>
         </div>
