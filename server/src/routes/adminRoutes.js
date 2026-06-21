@@ -22,10 +22,13 @@ router.get('/rooms', adminController.getAllRooms);
 router.put('/rooms/:id/status', adminController.updateRoomStatus);
 
 // Transactions, Complaints, Payouts
-router.get('/transactions', authMiddleware, isAdmin, adminController.getAllTransactions);
+router.get('/transactions', adminController.getAllTransactions);
 router.get('/complaints', adminController.getAllComplaints);
 
 router.get('/payouts', adminController.getPayouts);
 router.put('/payouts/:id/process', adminController.processPayout);
+
+router.get('/disputes', adminController.getAllDisputes);
+router.post('/disputes/:scheduleId/resolve', adminController.resolveDispute);
 
 module.exports = router;
