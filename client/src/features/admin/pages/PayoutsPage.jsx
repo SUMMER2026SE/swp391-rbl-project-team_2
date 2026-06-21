@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { CreditCard, DollarSign, ArrowUpRight, Search, CheckCircle, Clock, Percent } from 'lucide-react';
 import adminService from '../../../services/adminService';
@@ -45,11 +46,11 @@ const PayoutsPage = () => {
             : p
         ));
         setSelectedPayout(null);
-        alert('Payout processed successfully!');
+        toast.success('Payout processed successfully!');
       }
     } catch (error) {
       console.error('Failed to process payout:', error);
-      alert('Failed to process payout: ' + (error.response?.data?.message || error.message));
+      toast.error('Failed to process payout: ' + (error.response?.data?.message || error.message));
     } finally {
       setProcessing(false);
     }
