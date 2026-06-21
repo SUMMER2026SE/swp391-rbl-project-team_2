@@ -5,6 +5,7 @@ const OtpVerification = require('./OtpVerification');
 const Room = require('./Room');
 const RoomImage = require('./RoomImage');
 const Facility = require('./Facility');
+const RoomFacility = require('./RoomFacility');
 const RentalRequest = require('./RentalRequest');
 const Payment = require('./Payment');
 const Contract = require('./Contract');
@@ -39,9 +40,9 @@ const defineAssociations = () => {
   Room.hasMany(RoomImage, { foreignKey: 'room_id', as: 'images' });
   RoomImage.belongsTo(Room, { foreignKey: 'room_id', as: 'room' });
 
-  // Room <-> Facility
-  Room.hasMany(Facility, { foreignKey: 'room_id', as: 'facilities' });
-  Facility.belongsTo(Room, { foreignKey: 'room_id', as: 'room' });
+  // Room <-> Facility (Many-to-Many)
+  Room.belongsToMany(Facility, { through: RoomFacility, foreignKey: 'room_id', otherKey: 'facility_id', as: 'facilities' });
+  Facility.belongsToMany(Room, { through: RoomFacility, foreignKey: 'facility_id', otherKey: 'room_id', as: 'rooms' });
 
   // Room <-> RentalRequest
   Room.hasMany(RentalRequest, { foreignKey: 'room_id', as: 'rentalRequests' });
@@ -107,6 +108,10 @@ const defineAssociations = () => {
   User.hasMany(ViewingSchedule, { foreignKey: 'landlord_id', as: 'viewingSchedulesAsLandlord' });
   ViewingSchedule.belongsTo(User, { foreignKey: 'landlord_id', as: 'landlordSchedule' });
 
+  // Payment <-> ViewingSchedule
+  ViewingSchedule.hasMany(Payment, { foreignKey: 'viewing_schedule_id', as: 'payments' });
+  Payment.belongsTo(ViewingSchedule, { foreignKey: 'viewing_schedule_id', as: 'viewingSchedule' });
+
   // Complaint <-> Room
   Room.hasMany(Complaint, { foreignKey: 'room_id', as: 'complaints' });
   Complaint.belongsTo(Room, { foreignKey: 'room_id', as: 'room' });
@@ -160,6 +165,7 @@ module.exports = {
   Room,
   RoomImage,
   Facility,
+  RoomFacility,
   RentalRequest,
   Payment,
   Contract,
