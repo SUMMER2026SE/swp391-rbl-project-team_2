@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { Save, Bell, Shield, Globe, Palette } from 'lucide-react';
 import Button from '../../../components/common/Button';
@@ -12,7 +13,7 @@ const SettingsPage = () => {
     // Simulate API call
     setTimeout(() => {
       setIsSaving(false);
-      alert('Settings saved successfully!');
+      toast.success('Settings saved successfully!');
     }, 800);
   };
 

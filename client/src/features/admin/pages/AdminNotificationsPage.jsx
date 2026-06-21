@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -80,7 +81,7 @@ const AdminNotificationsPage = () => {
   const handleActionClick = (act) => {
     if (act.text === 'View Metrics') navigate(ROUTES.ADMIN.ANALYTICS);
     else if (act.text === 'Review Identity') navigate(ROUTES.ADMIN.USERS);
-    else alert(`Action triggered: ${act.text}`);
+    else toast(`Action triggered: ${act.text}`);
   };
 
   const handleMarkAllRead = () => {

@@ -1,5 +1,8 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown, List, Grid, MoreHorizontal } from 'lucide-react';
+import { Search, ChevronDown, List, Grid, MoreHorizontal, AlertTriangle } from 'lucide-react';
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
 import ListingTable from '../components/ListingTable';
 import ListingGrid from '../components/ListingGrid';
 import adminService from '../../../services/adminService';
@@ -12,6 +15,13 @@ const ListingsPage = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'pending'
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Confirmation Modal State
+  const [confirmDialog, setConfirmDialog] = useState({
+    show: false,
+    roomId: null,
+    status: null
+  });
 
   useEffect(() => {
     fetchListings();
@@ -31,18 +41,28 @@ const ListingsPage = () => {
     }
   };
 
-  const handleUpdateStatus = async (roomId, status) => {
-    if (!window.confirm(`Are you sure you want to change status to ${status}?`)) return;
+  const handleUpdateStatus = (roomId, status) => {
+    setConfirmDialog({ show: true, roomId, status });
+  };
+
+  const executeStatusUpdate = async () => {
+    const { roomId, status } = confirmDialog;
+    setConfirmDialog({ show: false, roomId: null, status: null });
+    
     try {
       const res = await adminService.updateRoomStatus(roomId, status);
       if (res.success) {
-        alert('Room status updated successfully!');
+        toast.success('Room status updated successfully!');
         fetchListings();
       }
     } catch (err) {
-      alert('Failed to update room status.');
+      toast.error('Failed to update room status.');
       console.error(err);
     }
+  };
+
+  const closeConfirmDialog = () => {
+    setConfirmDialog({ show: false, roomId: null, status: null });
   };
 
   const filteredListings = listings.filter((item) => {
@@ -211,6 +231,34 @@ const ListingsPage = () => {
           </div>
         </div>
       </div>
+
+      <Modal 
+        show={confirmDialog.show} 
+        onHide={closeConfirmDialog} 
+        centered
+        dialogClassName="custom-confirm-modal"
+      >
+        <Modal.Body className="confirm-modal-body">
+          <div className="confirm-modal-icon-wrapper">
+            <AlertTriangle className="confirm-modal-icon" size={30} />
+          </div>
+          <h3 className="confirm-modal-title">Confirm Status Change</h3>
+          <p className="confirm-modal-text">
+            Are you sure you want to change this listing's status to 
+            <span className={`status-badge-inline status-${confirmDialog.status?.toLowerCase()}`}>
+              {confirmDialog.status}
+            </span>?
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="confirm-modal-footer">
+          <button className="btn-confirm-cancel" onClick={closeConfirmDialog}>
+            Cancel
+          </button>
+          <button className="btn-confirm-submit" onClick={executeStatusUpdate}>
+            Confirm
+          </button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
