@@ -323,6 +323,10 @@
 /* Detail Sections */
 .detail-section {
   margin-bottom: 1.5rem;
+  background: var(--bg-main);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
 }
 
 .contract-header-display {
@@ -331,8 +335,9 @@
   align-items: flex-start;
   gap: 1rem;
   padding: 1rem;
-  background: var(--bg-main);
+  background: var(--bg-card);
   border-radius: 6px;
+  border: 1px solid var(--border-light);
 }
 
 .contract-header-display h4 {
@@ -349,28 +354,38 @@
 }
 
 .section-title {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  color: var(--text-main);
-  margin: 0 0 1rem 0;
+  color: var(--primary);
+  margin: 0 0 1.25rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
 }
 
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
+}
+
+@media (max-width: 480px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .detail-item {
   display: flex;
   flex-direction: column;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed var(--border-light);
 }
 
 .detail-item label {
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 0.5rem;
   text-transform: uppercase;
@@ -381,7 +396,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--text-main);
   font-weight: 500;
 }

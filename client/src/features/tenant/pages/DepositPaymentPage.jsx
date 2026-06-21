@@ -1,8 +1,10 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X, Star, MapPin, CreditCard, Landmark, Wallet, ShieldCheck, Lock, Info, Loader } from 'lucide-react';
 import { roomService } from '../services/roomService';
 import Button from '../../../components/common/Button';
+import api from '../../../services/api';
 import './DepositPaymentPage.css';
 
 const DepositPaymentPage = () => {
@@ -10,7 +12,7 @@ const DepositPaymentPage = () => {
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get('roomId');
   
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentMethod, setPaymentMethod] = useState('vnpay');
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,8 +27,8 @@ const DepositPaymentPage = () => {
     const fetchRoom = async () => {
       try {
         const response = await roomService.getRoomById(roomId);
-        if (response.data.success) {
-          setRoom(response.data.data);
+        if (response.success) {
+          setRoom(response.data);
         } else {
           setError("Failed to load room details.");
         }
@@ -44,9 +46,24 @@ const DepositPaymentPage = () => {
     navigate(-1); // Go back
   };
 
-  const handlePayment = () => {
-    alert("Payment successful! This is a mock implementation.");
-    navigate('/tenant/requests');
+  const handlePayment = async () => {
+    try {
+      const response = await api.post('/tenant/payments/create_payment_url', {
+        amount: Math.round(totalAmount), // VNPay needs integer amount in VND
+        roomId: roomId,
+        bankCode: 'NCB', // Default for sandbox
+        language: 'vn'
+      });
+      if (response.success && response.url) {
+        window.location.href = response.url;
+        return;
+      } else {
+        toast.error('Failed to generate VNPay URL: ' + response.message);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Payment initialization failed: ' + (err?.response?.data?.message || err.message));
+    }
   };
 
   if (loading) {
@@ -74,13 +91,11 @@ const DepositPaymentPage = () => {
   const basePrice = parseFloat(room.pricePerMonth) || 0;
   // Usually deposit is 1 month rent
   const securityDeposit = basePrice;
-  const serviceFee = 45.00;
-  const taxes = 12.50;
-  const totalAmount = securityDeposit + serviceFee + taxes;
+  const totalAmount = securityDeposit;
 
   const roomImage = room.images?.length > 0 
-    ? `http://localhost:5000${room.images[0].image_url}` 
-    : (room.thumbnailUrl ? `http://localhost:5000${room.thumbnailUrl}` : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80');
+    ? (room.images[0].image_url && room.images[0].image_url.startsWith('http') ? room.images[0].image_url : `http://localhost:5000${room.images[0].image_url}`) 
+    : (room.thumbnailUrl ? (room.thumbnailUrl && room.thumbnailUrl.startsWith('http') ? room.thumbnailUrl : `http://localhost:5000${room.thumbnailUrl}`) : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80');
 
   return (
     <div className="payment-page">
@@ -127,21 +142,13 @@ const DepositPaymentPage = () => {
                 <div className="summary-breakdown">
                   <div className="breakdown-row">
                     <span>Security Deposit (1 Month)</span>
-                    <span>${securityDeposit.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-                  </div>
-                  <div className="breakdown-row">
-                    <span>Service Fee</span>
-                    <span>${serviceFee.toFixed(2)}</span>
-                  </div>
-                  <div className="breakdown-row">
-                    <span>Taxes</span>
-                    <span>${taxes.toFixed(2)}</span>
+                    <span>{securityDeposit.toLocaleString('vi-VN')} VNĐ</span>
                   </div>
                 </div>
 
                 <div className="summary-total">
                   <span>Total Due Now</span>
-                  <span className="total-amount">${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                  <span className="total-amount">{totalAmount.toLocaleString('vi-VN')} VNĐ</span>
                 </div>
               </div>
             </div>
@@ -164,65 +171,21 @@ const DepositPaymentPage = () => {
               
               <div className="payment-methods">
                 <button 
-                  className={`method-tab ${paymentMethod === 'card' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('card')}
+                  className={`method-tab ${paymentMethod === 'vnpay' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('vnpay')}
+                  style={{ fontWeight: paymentMethod === 'vnpay' ? 'bold' : 'normal' }}
                 >
-                  <CreditCard size={20} />
-                  <span>Credit / Debit</span>
-                </button>
-                <button 
-                  className={`method-tab ${paymentMethod === 'bank' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('bank')}
-                >
-                  <Landmark size={20} />
-                  <span>Bank Transfer</span>
-                </button>
-                <button 
-                  className={`method-tab ${paymentMethod === 'wallet' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('wallet')}
-                >
-                  <Wallet size={20} />
-                  <span>E-Wallet</span>
+                  <img src="https://vnpay.vn/s1/statics.vnpay.vn/2023/6/oxqpsemggw1z1686814746087.png" alt="VNPay" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                  <span>VNPay (Sandbox)</span>
                 </button>
               </div>
-
-              {paymentMethod === 'card' && (
-                <div className="card-form">
-                  <div className="form-group">
-                    <label>Name on Card</label>
-                    <input type="text" placeholder="e.g. Jane Doe" />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Card Number</label>
-                    <div className="input-with-icon">
-                      <input type="text" placeholder="0000 0000 0000 0000" />
-                      <CreditCard size={18} className="input-icon" />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group half">
-                      <label>Expiration Date</label>
-                      <input type="text" placeholder="MM/YY" />
-                    </div>
-                    <div className="form-group half">
-                      <label>CVV</label>
-                      <div className="input-with-icon">
-                        <input type="text" placeholder="123" />
-                        <Info size={16} className="input-icon" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div className="payment-terms">
                 By selecting 'Pay Now', you agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
               </div>
 
               <Button variant="primary" fullWidth size="lg" className="btn-pay" onClick={handlePayment}>
-                <Lock size={16} /> Pay ${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                <Lock size={16} /> Pay {totalAmount.toLocaleString('vi-VN')} VNĐ
               </Button>
             </div>
           </div>

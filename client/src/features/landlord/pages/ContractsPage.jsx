@@ -11,6 +11,10 @@ import {
   FileText,
   AlertCircle,
   Download,
+  CheckCircle2,
+  Clock,
+  Ban,
+  Timer
 } from 'lucide-react';
 import { useContracts } from '../hooks/useContracts';
 import Button from '../../../components/common/Button';
@@ -33,26 +37,28 @@ const ContractsPage = () => {
   const { contracts, loading, error, renewContract, terminateContract } = useContracts();
 
   const filteredContracts = contracts.filter(contract => {
-    const matchesSearch =
-      contract.tenantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contract.roomTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contract.contractNumber?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || contract.status === statusFilter;
+    const searchLower = (searchTerm || '').toLowerCase();
+    const matchesSearch = !searchLower ||
+      (contract.tenantName || '').toLowerCase().includes(searchLower) ||
+      (contract.roomTitle || '').toLowerCase().includes(searchLower) ||
+      (contract.contractNumber || '').toLowerCase().includes(searchLower);
+    const matchesStatus = statusFilter === 'All' || (contract.status || '').toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status) => {
-    switch (status) {
+  const getStatusDisplay = (status) => {
+    const s = (status || '').toUpperCase();
+    switch (s) {
       case 'ACTIVE':
-        return 'success';
+        return { icon: <CheckCircle2 size={16} />, color: '#059669', bg: '#d1fae5', label: 'Active' };
       case 'PENDING':
-        return 'warning';
+        return { icon: <Clock size={16} />, color: '#b45309', bg: '#fef3c7', label: 'Pending' };
       case 'EXPIRED':
-        return 'danger';
+        return { icon: <Timer size={16} />, color: '#64748b', bg: '#f1f5f9', label: 'Expired' };
       case 'TERMINATED':
-        return 'info';
+        return { icon: <Ban size={16} />, color: '#dc2626', bg: '#fee2e2', label: 'Terminated' };
       default:
-        return 'default';
+        return { icon: null, color: '#64748b', bg: '#f1f5f9', label: status };
     }
   };
 
@@ -136,7 +142,7 @@ const ContractsPage = () => {
           </button>
           {showStatusDropdown && (
             <div className="filter-dropdown-menu">
-              {['All', 'ACTIVE', 'PENDING', 'EXPIRED', 'TERMINATED'].map(status => (
+              {['All', 'active', 'pending', 'expired', 'terminated'].map(status => (
                 <button
                   key={status}
                   className={`filter-dropdown-item ${statusFilter === status ? 'active' : ''}`}
@@ -163,9 +169,19 @@ const ContractsPage = () => {
                   <h3 className="contract-card__title">{contract.contractNumber}</h3>
                   <p className="contract-card__subtitle">{contract.roomTitle}</p>
                 </div>
-                <Badge variant={getStatusColor(contract.status)}>
-                  {contract.status}
-                </Badge>
+                <div 
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: '4px 10px', borderRadius: '9999px',
+                    backgroundColor: getStatusDisplay(contract.status).bg,
+                    color: getStatusDisplay(contract.status).color,
+                    fontWeight: '600', fontSize: '0.75rem',
+                    border: `1px solid ${getStatusDisplay(contract.status).color}33`
+                  }}
+                >
+                  {getStatusDisplay(contract.status).icon}
+                  {getStatusDisplay(contract.status).label}
+                </div>
               </div>
 
               <div className="contract-card__content">
@@ -175,7 +191,7 @@ const ContractsPage = () => {
                 </div>
                 <div className="contract-info-row">
                   <span className="label">Monthly Rent</span>
-                  <span className="value">${contract.monthlyRent?.toLocaleString()}</span>
+                  <span className="value">{contract.monthlyRent?.toLocaleString()} đ</span>
                 </div>
                 <div className="contract-info-row">
                   <span className="label">Start Date</span>
@@ -200,13 +216,10 @@ const ContractsPage = () => {
                     setSelectedContract(contract);
                     setShowDetailModal(true);
                   }}
+                  style={{ width: '100%' }}
                 >
                   <Eye size={16} />
-                  View
-                </button>
-                <button className="action-btn action-btn--download">
-                  <Download size={16} />
-                  Download
+                  View Details
                 </button>
               </div>
             </div>
@@ -242,11 +255,54 @@ const ContractsPage = () => {
                     <h4>{selectedContract.contractNumber}</h4>
                     <p>{selectedContract.roomTitle}</p>
                   </div>
-                  <Badge variant={getStatusColor(selectedContract.status)}>
-                    {selectedContract.status}
-                  </Badge>
+                  <div 
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '6px 12px', borderRadius: '9999px',
+                      backgroundColor: getStatusDisplay(selectedContract.status).bg,
+                      color: getStatusDisplay(selectedContract.status).color,
+                      fontWeight: '700', fontSize: '0.85rem',
+                      border: `1px solid ${getStatusDisplay(selectedContract.status).color}33`
+                    }}
+                  >
+                    {getStatusDisplay(selectedContract.status).icon}
+                    {getStatusDisplay(selectedContract.status).label}
+                  </div>
                 </div>
               </div>
+
+              {/* Room Info */}
+              {selectedContract.room && (
+                <div className="detail-section">
+                  <h4 className="section-title">Room Information</h4>
+                  <div className="detail-grid">
+                    <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                      <label>Address</label>
+                      <div className="detail-value" style={{ fontSize: '0.9rem' }}>
+                        {[selectedContract.room.address, selectedContract.room.ward, selectedContract.room.district, selectedContract.room.city].filter(Boolean).join(', ')}
+                      </div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Room Type</label>
+                      <div className="detail-value" style={{ textTransform: 'capitalize' }}>
+                        {selectedContract.room.room_type?.replace('_', ' ')}
+                      </div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Bedrooms</label>
+                      <div className="detail-value">{selectedContract.room.bedrooms}</div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Max Occupants</label>
+                      <div className="detail-value">{selectedContract.room.max_occupants}</div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Area</label>
+                      <div className="detail-value">{selectedContract.room.area_sqm} m²</div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Tenant Info */}
               <div className="detail-section">
@@ -291,7 +347,7 @@ const ContractsPage = () => {
                   </div>
                   <div className="detail-item">
                     <label>Monthly Rent</label>
-                    <div className="detail-value">${selectedContract.monthlyRent?.toLocaleString()}</div>
+                    <div className="detail-value">{selectedContract.monthlyRent?.toLocaleString()} đ</div>
                   </div>
                 </div>
               </div>
@@ -306,7 +362,7 @@ const ContractsPage = () => {
             </div>
 
             {/* Modal Footer with Actions */}
-            {selectedContract.status === 'ACTIVE' && (
+            {(selectedContract.status || '').toUpperCase() === 'ACTIVE' && (
               <div className="modal-footer">
                 <Button
                   variant="secondary"

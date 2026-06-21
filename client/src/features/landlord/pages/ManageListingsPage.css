@@ -505,6 +505,13 @@
   transition: all 0.2s;
 }
 
+.disabled-input {
+  background-color: var(--border-light) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
 .form-group input:focus,
 .form-group select:focus {
   border-color: #3B82F6;
