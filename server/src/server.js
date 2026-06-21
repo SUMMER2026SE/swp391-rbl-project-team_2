@@ -10,6 +10,7 @@ const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
 const initDatabase = require('./config/initDatabase');
 const initSocket = require('./config/socket');
+const initCronJobs = require('./cron/refundJobs');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -20,6 +21,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const tenantRoutes = require('./routes/tenantRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -96,6 +98,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tenant', tenantRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/ai', aiRoutes);
 
 // =========================================================
 // ERROR HANDLER
@@ -109,6 +112,9 @@ const startServer = async () => {
   try {
     // Initialize database with proper table creation order
     await initDatabase();
+
+    // Initialize Cron Jobs
+    initCronJobs();
 
     // Test database connection
     await sequelize.authenticate();

@@ -1,4 +1,4 @@
-const { User, Role, Room, Payment, RentalRequest, Complaint, Contract } = require('../models');
+const { User, Role, Room, Payment, RentalRequest, Complaint, Contract, ViewingSchedule } = require('../models');
 const { Op } = require('sequelize');
 
 // =========================================================
@@ -395,6 +395,94 @@ const processPayout = async (req, res, next) => {
   }
 };
 
+// =========================================================
+// GET /api/admin/disputes
+// Fetch all disputed viewing schedules
+// =========================================================
+const getAllDisputes = async (req, res, next) => {
+  try {
+    const disputes = await ViewingSchedule.findAll({
+      where: {
+        status: {
+          [Op.in]: ['disputed', 'dispute_resolved']
+        }
+      },
+      include: [
+        { model: User, as: 'tenant', attributes: ['full_name', 'email'] },
+        { model: User, as: 'landlordSchedule', attributes: ['full_name', 'email'] },
+        { model: Room, as: 'room', attributes: ['title'] }
+      ],
+      order: [['updated_at', 'DESC']]
+    });
+
+    return res.status(200).json({ success: true, data: disputes });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================================
+// POST /api/admin/disputes/:scheduleId/resolve
+// Case 6: Resolve Dispute
+// =========================================================
+const resolveDispute = async (req, res, next) => {
+  try {
+    const { scheduleId } = req.params;
+    const { outcome } = req.body; // 'A' (Landlord wrong), 'B' (Tenant wrong), 'C' (Shared fault)
+
+    const schedule = await ViewingSchedule.findByPk(scheduleId);
+    if (!schedule) {
+      return res.status(404).json({ success: false, message: 'Viewing schedule not found' });
+    }
+
+    const payment = await Payment.findOne({
+      where: { viewing_schedule_id: schedule.schedule_id, status: 'completed' }
+    });
+
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Completed payment not found' });
+    }
+
+    const total = parseFloat(payment.amount);
+
+    if (outcome === 'A') {
+      // 100% refund to tenant
+      payment.refund_amount = total;
+      payment.net_amount = 0;
+      payment.platform_fee = 0;
+      payment.status = 'refunded';
+    } else if (outcome === 'B') {
+      // 0% refund, Landlord 95%, Platform 5%
+      payment.refund_amount = 0;
+      payment.net_amount = total * 0.95;
+      payment.platform_fee = total * 0.05;
+      payment.payout_status = 'pending'; // To be paid to landlord
+    } else if (outcome === 'C') {
+      // 50% refund, Landlord 45%, Platform 5%
+      payment.refund_amount = total * 0.50;
+      payment.net_amount = total * 0.45;
+      payment.platform_fee = total * 0.05;
+      payment.status = 'refunded'; // Partial refund
+      payment.payout_status = 'pending';
+    } else {
+      return res.status(400).json({ success: false, message: 'Invalid outcome' });
+    }
+
+    await payment.save();
+    schedule.status = 'dispute_resolved';
+    await schedule.save();
+
+    // Unlock the room since the viewing schedule process has ended
+    if (schedule.room_id) {
+      await Room.update({ status: 'available' }, { where: { room_id: schedule.room_id } });
+    }
+
+    return res.status(200).json({ success: true, message: `Dispute resolved with outcome ${outcome}` });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllUsers,
   updateUserStatus,
@@ -406,5 +494,7 @@ module.exports = {
   getAllTransactions,
   getAllComplaints,
   getPayouts,
-  processPayout
+  processPayout,
+  getAllDisputes,
+  resolveDispute
 };

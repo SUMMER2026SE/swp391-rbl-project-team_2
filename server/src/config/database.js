@@ -24,6 +24,7 @@ const sequelize = new Sequelize(
         language: 'us_english' // Force US English language for the SQL Server connection to avoid date parsing errors
       },
     },
+    timezone: '+07:00',
     logging: false,
     pool: {
       max: 10,
