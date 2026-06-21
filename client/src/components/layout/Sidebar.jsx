@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import {
   LayoutDashboard,
   Building2,
@@ -22,6 +23,7 @@ import {
   UserCircle,
   Compass,
   Home,
+  Calendar,
 } from 'lucide-react';
 import { ROUTES } from '../../constants';
 import useAuthStore from '../../store/useAuthStore';
@@ -35,10 +37,9 @@ const LANDLORD_NAV = [
   { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.LANDLORD.DASHBOARD },
   { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
   { icon: <CreditCard size={20} />, label: 'Deposits', path: ROUTES.LANDLORD.DEPOSITS },
-  { icon: <ClipboardList size={20} />, label: 'Requests', path: ROUTES.LANDLORD.REQUESTS },
-  { icon: <BarChart3 size={20} />, label: 'Analytics', path: ROUTES.LANDLORD.ANALYTICS },
+  { icon: <FileText size={20} />, label: 'Contracts', path: ROUTES.LANDLORD.CONTRACTS },
+  { icon: <Calendar size={20} />, label: 'Viewing Schedules', path: ROUTES.LANDLORD.SCHEDULES },
   { icon: <MessageSquare size={20} />, label: 'Messages', path: ROUTES.LANDLORD.MESSAGES },
-  { icon: <Bell size={20} />, label: 'Notifications', path: ROUTES.LANDLORD.NOTIFICATIONS },
   { icon: <UserCircle size={20} />, label: 'Profile', path: ROUTES.LANDLORD.PROFILE },
   { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.LANDLORD.SETTINGS },
 ];
@@ -57,9 +58,9 @@ const ADMIN_NAV = [
 
 const TENANT_NAV = [
   { icon: <Home size={20} />, label: 'Home', path: ROUTES.HOME },
-  { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.TENANT.DASHBOARD },
   { icon: <Compass size={20} />, label: 'Explore', path: ROUTES.ROOMS },
   { icon: <ClipboardList size={20} />, label: 'Requests', path: '/tenant/requests' },
+  { icon: <CreditCard size={20} />, label: 'Deposit History', path: ROUTES.TENANT.DEPOSIT_HISTORY },
   { icon: <Heart size={20} />, label: 'Favorites', path: ROUTES.TENANT.FAVORITES },
   { icon: <MessageSquare size={20} />, label: 'Messages', path: '/messages' },
   { icon: <UserCircle size={20} />, label: 'Profile', path: ROUTES.TENANT.PROFILE },
@@ -71,6 +72,39 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
   const [pendingCount, setPendingCount] = useState(0);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+
+  // Listen for new messages
+  useEffect(() => {
+    if (!user) return;
+    
+    const socketUrl = API_URL.replace('/api', '');
+    const socket = io(socketUrl, {
+      withCredentials: true,
+      autoConnect: true
+    });
+
+    socket.emit('join_user', user.id || user.userId);
+
+    socket.on('new_message_notification', (message) => {
+      // If we receive a message and we are not on the messages page
+      if (location.pathname !== '/messages' && location.pathname !== ROUTES.LANDLORD.MESSAGES) {
+        setHasUnreadMessages(true);
+      }
+    });
+
+    return () => {
+      socket.off('new_message_notification');
+      socket.disconnect();
+    };
+  }, [user, location.pathname]);
+
+  // Clear unread dot when visiting messages
+  useEffect(() => {
+    if (location.pathname === '/messages' || location.pathname === ROUTES.LANDLORD.MESSAGES) {
+      setHasUnreadMessages(false);
+    }
+  }, [location.pathname]);
 
   // Detect role context from current URL
   const isLandlord = location.pathname.startsWith('/landlord');
@@ -157,6 +191,16 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                         {pendingCount}
                       </span>
                     )}
+                    {link.label === 'Messages' && hasUnreadMessages && (
+                      <span style={{ 
+                        width: '8px', 
+                        height: '8px', 
+                        backgroundColor: '#ef4444', 
+                        borderRadius: '50%',
+                        marginLeft: '8px',
+                        display: 'inline-block'
+                      }}></span>
+                    )}
                   </div>
                 )}
               </Link>
@@ -167,41 +211,18 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
       {/* Sidebar Footer */}
       <div className="sidebar-footer">
-        <ul className="footer-links">
-          <li>
-              <Link
-                to="/"
-                className="sidebar-link"
-                title={isCollapsed ? "Back to Home" : ""}
-              >
-                <LogOut size={20} style={{ transform: 'rotate(180deg)' }} />
-                {!isCollapsed && <span>Back to Home</span>}
-              </Link>
-          </li>
-          <li>
-              <Link
-                to={helpPath}
-                className={`sidebar-link ${isActive(helpPath) ? 'active' : ''}`}
-                title={isCollapsed ? "Help" : ""}
-              >
-                <HelpCircle size={20} />
-                {!isCollapsed && <span>Help</span>}
-              </Link>
-          </li>
-          <li>
-            <a href="#" onClick={handleLogout} className="sidebar-link logout-link" title={isCollapsed ? "Sign Out" : ""}>
-              <LogOut size={20} />
-              {!isCollapsed && <span>Sign Out</span>}
+        <div className="support-btn-container" style={{ marginTop: '0.75rem' }}>
+          {isCollapsed ? (
+            <a href="#" onClick={handleLogout} className="sidebar-link logout-link" title="Log Out" style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem' }}>
+              <LogOut size={20} style={{ transform: 'rotate(180deg)' }} />
             </a>
-          </li>
-        </ul>
-        {!isCollapsed && (
-          <div className="support-btn-container" style={{ marginTop: '0.75rem' }}>
-            <Link to={helpPath} className="btn-support-center">
-              Support Center
-            </Link>
-          </div>
-        )}
+          ) : (
+            <a href="#" onClick={handleLogout} className="btn-support-center" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}>
+              <LogOut size={18} style={{ transform: 'rotate(180deg)' }} />
+              Log Out
+            </a>
+          )}
+        </div>
       </div>
     </aside>
   );

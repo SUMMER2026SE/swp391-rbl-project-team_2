@@ -47,28 +47,18 @@ const ListingGrid = ({ listings, onUpdateStatus }) => {
               )}
             </div>
             <div className="grid-card-overlay-actions">
-              <button className="grid-icon-btn" title="View Details">
+              <button className="grid-icon-btn" title="View Details" onClick={() => window.open(`/admin/listings/${listing.rawId}/review`, '_blank')}>
                 <ExternalLink size={16} />
               </button>
               {listing.status.toLowerCase() === 'pending' ? (
-                <>
-                  <button 
-                    className="grid-icon-btn" 
-                    title="Approve Listing"
-                    style={{ color: '#059669', borderColor: '#a7f3d0', backgroundColor: '#ecfdf5' }}
-                    onClick={() => onUpdateStatus(listing.rawId, 'available')}
-                  >
-                    <CheckCircle size={16} />
-                  </button>
-                  <button 
-                    className="grid-icon-btn" 
-                    title="Reject Listing"
-                    style={{ color: '#e11d48', borderColor: '#fecdd3', backgroundColor: '#fff1f2' }}
-                    onClick={() => onUpdateStatus(listing.rawId, 'rejected')}
-                  >
-                    <XCircle size={16} />
-                  </button>
-                </>
+                <button 
+                  className="grid-icon-btn" 
+                  title="Review Listing"
+                  style={{ color: '#4f46e5', borderColor: '#c7d2fe', backgroundColor: '#eef2ff', padding: '0 8px', width: 'auto' }}
+                  onClick={() => window.open(`/admin/listings/${listing.rawId}/review`, '_blank')}
+                >
+                  <span style={{ fontSize: '12px', fontWeight: '500' }}>Review</span>
+                </button>
               ) : listing.status.toLowerCase() !== 'hidden' ? (
                 <button 
                   className="grid-icon-btn" 
@@ -118,16 +108,6 @@ const ListingGrid = ({ listings, onUpdateStatus }) => {
                 {listing.landlord?.type === 'Verified Host' && (
                   <span className="grid-verified-host"><ShieldCheck size={12} /> Verified</span>
                 )}
-              </div>
-            </div>
-            <div className="grid-performance-stats">
-              <div className="grid-stat" title="Views">
-                <Eye size={14} />
-                <span>{listing.performance?.views?.toLocaleString() || 0}</span>
-              </div>
-              <div className="grid-stat" title="Inquiries">
-                <MessageSquare size={14} />
-                <span>{listing.performance?.inquiries || 0}</span>
               </div>
             </div>
           </div>

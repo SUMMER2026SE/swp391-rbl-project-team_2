@@ -1,9 +1,11 @@
 import React from 'react';
-import { MoreVertical, Lock, AlertCircle, Edit, ExternalLink, Activity, EyeOff, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { MoreVertical, Lock, AlertCircle, ExternalLink, EyeOff, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { formatCurrency } from '../../../utils/format';
 import './ListingTable.css';
 
 const ListingTable = ({ listings, onUpdateStatus }) => {
+  const navigate = useNavigate();
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case 'active':
@@ -53,7 +55,6 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
             <th>Property</th>
             <th>Landlord</th>
             <th>Status</th>
-            <th>Performance</th>
             <th className="th-actions">Actions</th>
           </tr>
         </thead>
@@ -88,66 +89,46 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
                   )}
                 </div>
               </td>
-              <td className="listing-performance">
-                <div className="performance-cell">
-                  <div className="perf-item">
-                    <span className="perf-label">Views:</span>
-                    <span className="perf-value">{listing.performance?.views.toLocaleString() || 0}</span>
-                  </div>
-                  <div className="perf-item">
-                    <span className="perf-label">Inquiries:</span>
-                    <span className="perf-value">{listing.performance?.inquiries || 0}</span>
-                  </div>
-                </div>
-              </td>
               <td className="listing-actions">
                 {listing.status.toLowerCase() === 'pending' ? (
                   <div className="action-buttons">
-                    <button 
-                      className="btn-action-icon" 
-                      style={{ color: '#059669', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0' }}
-                      title="Approve Listing"
-                      onClick={() => onUpdateStatus(listing.rawId, 'available')}
+                    <button
+                      className="btn-action-icon"
+                      title="Xem và duyệt phòng"
+                      onClick={() => navigate(`/admin/listings/${listing.rawId}/review`)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#d97706', fontWeight: 600 }}
                     >
-                      <CheckCircle size={18} />
-                    </button>
-                    <button 
-                      className="btn-action-icon" 
-                      style={{ color: '#e11d48', backgroundColor: '#fff1f2', border: '1px solid #fecdd3' }}
-                      title="Reject Listing"
-                      onClick={() => onUpdateStatus(listing.rawId, 'rejected')}
-                    >
-                      <XCircle size={18} />
-                    </button>
-                    <button className="btn-action-icon" title="View Details">
-                      <ExternalLink size={18} />
+                      <ExternalLink size={16} />
+                      <span style={{ fontSize: '13px' }}>Duyệt phòng</span>
                     </button>
                   </div>
-                ) : listing.alert ? (
-                  <button className="btn-review-violation">Review Violation</button>
                 ) : (
                   <div className="action-buttons">
-                    <button className="btn-action-icon" title="View Details">
+                    <button
+                      className="btn-action-icon"
+                      title="Xem chi tiết"
+                      onClick={() => navigate(`/admin/listings/${listing.rawId}/review`)}
+                    >
                       <ExternalLink size={18} />
                     </button>
                     {listing.status.toLowerCase() !== 'hidden' ? (
-                      <button 
-                        className="btn-action-icon" 
-                        title="Hide Listing"
+                      <button
+                        className="btn-action-icon"
+                        title="Ẩn phòng"
                         onClick={() => onUpdateStatus(listing.rawId, 'hidden')}
                       >
                         <EyeOff size={18} />
                       </button>
                     ) : (
-                      <button 
-                        className="btn-action-icon" 
-                        title="Activate Listing"
+                      <button
+                        className="btn-action-icon"
+                        title="Khôi phục phòng"
                         onClick={() => onUpdateStatus(listing.rawId, 'available')}
                       >
                         <CheckCircle size={18} />
                       </button>
                     )}
-                    <button className="btn-action-icon" title="More Options">
+                    <button className="btn-action-icon" title="Thêm tùy chọn">
                       <MoreVertical size={18} />
                     </button>
                   </div>
