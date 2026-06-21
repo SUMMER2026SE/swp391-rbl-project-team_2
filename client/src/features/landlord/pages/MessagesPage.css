@@ -241,6 +241,7 @@
   padding: 0.75rem 1rem;
   border-radius: 12px;
   position: relative;
+  min-width: 80px;
 }
 
 .message-bubble.sent .message-content {
@@ -259,7 +260,8 @@
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.4;
-  word-break: break-word;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .message-time {

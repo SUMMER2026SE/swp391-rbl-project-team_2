@@ -12,12 +12,14 @@ import {
   Users,
   Wifi,
   AlertCircle,
+  Upload,
 } from 'lucide-react';
 import { useRooms } from '../hooks/useRooms';
 import Button from '../../../components/common/Button';
 import Loading from '../../../components/ui/Loading';
 import EmptyState from '../../../components/ui/EmptyState';
 import './RoomManagementPage.css';
+import './AddNewPropertyPage.css';
 
 const RoomManagementPage = () => {
   const navigate = useNavigate();
@@ -29,7 +31,11 @@ const RoomManagementPage = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [formError, setFormError] = useState('');
 
-  const { rooms, loading, error, createRoom, updateRoom, deleteRoom } = useRooms();
+  const { rooms, loading, error, createRoom, updateRoom, deleteRoom, uploadImage, deleteImage } = useRooms();
+
+  // Image upload state
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -87,6 +93,23 @@ const RoomManagementPage = () => {
       amenities: [],
     });
     setFormError('');
+    setSelectedFiles([]);
+    setPreviewImages([]);
+  };
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setPreviewImages(newPreviews);
+  };
+
+  const removeImage = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviewImages(prev => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const validateForm = () => {
@@ -122,7 +145,15 @@ const RoomManagementPage = () => {
         maxOccupants: Number(formData.bedrooms) || 1,
         status: formData.status.toLowerCase(),
       };
-      await createRoom(roomPayload);
+      const result = await createRoom(roomPayload);
+      const roomId = result?.roomId || result?.room_id || result?.id || result?.data?.roomId;
+
+      if (selectedFiles.length > 0 && roomId) {
+        for (let file of selectedFiles) {
+          try { await uploadImage(roomId, file); } catch (e) { console.error('Upload error:', e); }
+        }
+      }
+
       setShowAddModal(false);
       resetForm();
     } catch (err) {
@@ -165,6 +196,24 @@ const RoomManagementPage = () => {
         status: formData.status.toLowerCase(),
       };
       await updateRoom(roomId, roomPayload);
+
+      if (selectedFiles.length > 0) {
+        // Delete old images first
+        const oldImages = selectedRoom.images || [];
+        for (let oldImg of oldImages) {
+          try {
+            await deleteImage(roomId, oldImg.imageId || oldImg.image_id || oldImg.id || oldImg.url?.split('/').pop()?.split('.')[0]);
+          } catch (e) {
+            console.error('Failed to delete old image:', e);
+          }
+        }
+
+        // Upload new images
+        for (let file of selectedFiles) {
+          try { await uploadImage(roomId, file); } catch (e) { console.error('Upload error:', e); }
+        }
+      }
+
       setShowEditModal(false);
       setSelectedRoom(null);
       resetForm();
@@ -189,6 +238,13 @@ const RoomManagementPage = () => {
       ...prev,
       [name]: value,
     }));
+    if (['price', 'bedrooms', 'bathrooms'].includes(name) && value !== '' && !/^\d+$/.test(value)) {
+       setFormError('Please enter a valid positive number for ' + name);
+    } else if (name === 'area' && value !== '' && !/^\d+(\.\d+)?$/.test(value)) {
+       setFormError('Please enter a valid number for area');
+    } else {
+       setFormError('');
+    }
   };
 
   if (loading) return <Loading />;
@@ -390,9 +446,9 @@ const RoomManagementPage = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Monthly Price (USD) *</label>
+                    <label>Monthly Price (VNĐ) *</label>
                     <input
-                      type="number"
+                      type="text"
                       name="price"
                       placeholder="1200"
                       value={formData.price}
@@ -400,25 +456,13 @@ const RoomManagementPage = () => {
                       required
                     />
                   </div>
-                  <div className="form-group">
-                    <label>Status</label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                    >
-                      <option value="AVAILABLE">Available</option>
-                      <option value="OCCUPIED">Occupied</option>
-                      <option value="MAINTENANCE">Maintenance</option>
-                    </select>
-                  </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
                     <label>Bedrooms</label>
                     <input
-                      type="number"
+                      type="text"
                       name="bedrooms"
                       placeholder="1"
                       value={formData.bedrooms}
@@ -428,7 +472,7 @@ const RoomManagementPage = () => {
                   <div className="form-group">
                     <label>Bathrooms</label>
                     <input
-                      type="number"
+                      type="text"
                       name="bathrooms"
                       placeholder="1"
                       value={formData.bathrooms}
@@ -438,13 +482,58 @@ const RoomManagementPage = () => {
                   <div className="form-group">
                     <label>Area (m²)</label>
                     <input
-                      type="number"
+                      type="text"
                       name="area"
                       placeholder="50"
                       value={formData.area}
                       onChange={handleInputChange}
                     />
                   </div>
+                </div>
+
+                {/* Image Upload Section */}
+                <div className="form-group">
+                  <label>Room Images</label>
+                  <div className="media-drag-drop-zone">
+                    <input
+                      type="file"
+                      id="add-room-file-upload"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="add-room-file-upload" className="drag-drop-label-wrapper">
+                      <div className="drag-drop-cloud-icon">
+                        <Upload size={24} />
+                      </div>
+                      <div className="drag-drop-text-instructions">
+                        <span className="bold-instruction-text">Click to upload</span> or drag and drop
+                      </div>
+                      <span className="upload-limit-info">PNG, JPG, JPEG up to 10MB</span>
+                    </label>
+                  </div>
+
+                  {previewImages.length > 0 && (
+                    <div className="media-preview-container">
+                      <h4 className="preview-section-title">Selected Images ({previewImages.length})</h4>
+                      <div className="media-previews-grid">
+                        {previewImages.map((src, idx) => (
+                          <div className="preview-image-card" key={idx}>
+                            <img src={src} alt={`Preview ${idx}`} />
+                            <button
+                              type="button"
+                              className="remove-preview-image-btn"
+                              onClick={() => removeImage(idx)}
+                            >
+                              <X size={14} />
+                            </button>
+                            {idx === 0 && <span className="featured-image-tag">Cover</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -523,26 +612,14 @@ const RoomManagementPage = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Monthly Price (USD) *</label>
+                    <label>Monthly Price (VNĐ) *</label>
                     <input
-                      type="number"
+                      type="text"
                       name="price"
                       value={formData.price}
                       onChange={handleInputChange}
                       required
                     />
-                  </div>
-                  <div className="form-group">
-                    <label>Status</label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                    >
-                      <option value="AVAILABLE">Available</option>
-                      <option value="OCCUPIED">Occupied</option>
-                      <option value="MAINTENANCE">Maintenance</option>
-                    </select>
                   </div>
                 </div>
 
@@ -550,7 +627,7 @@ const RoomManagementPage = () => {
                   <div className="form-group">
                     <label>Bedrooms</label>
                     <input
-                      type="number"
+                      type="text"
                       name="bedrooms"
                       value={formData.bedrooms}
                       onChange={handleInputChange}
@@ -559,7 +636,7 @@ const RoomManagementPage = () => {
                   <div className="form-group">
                     <label>Bathrooms</label>
                     <input
-                      type="number"
+                      type="text"
                       name="bathrooms"
                       value={formData.bathrooms}
                       onChange={handleInputChange}
@@ -568,12 +645,71 @@ const RoomManagementPage = () => {
                   <div className="form-group">
                     <label>Area (m²)</label>
                     <input
-                      type="number"
+                      type="text"
                       name="area"
                       value={formData.area}
                       onChange={handleInputChange}
                     />
                   </div>
+                </div>
+
+                {/* Image Upload Section */}
+                <div className="form-group">
+                  <label>Update Images</label>
+
+                  {/* Existing images */}
+                  {selectedRoom?.images && selectedRoom.images.length > 0 && (
+                    <div className="media-preview-container" style={{ marginBottom: '1rem' }}>
+                      <h4 className="preview-section-title">Current Images ({selectedRoom.images.length})</h4>
+                      <div className="media-previews-grid">
+                        {selectedRoom.images.map((img, idx) => (
+                          <div className="preview-image-card" key={idx}>
+                            <img src={img.url || img.image_url} alt={`Current ${idx}`} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="media-drag-drop-zone">
+                    <input
+                      type="file"
+                      id="edit-room-file-upload"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="edit-room-file-upload" className="drag-drop-label-wrapper">
+                      <div className="drag-drop-cloud-icon">
+                        <Upload size={24} />
+                      </div>
+                      <div className="drag-drop-text-instructions">
+                        <span className="bold-instruction-text">Click to upload</span> new images
+                      </div>
+                      <span className="upload-limit-info">PNG, JPG, JPEG up to 10MB</span>
+                    </label>
+                  </div>
+
+                  {previewImages.length > 0 && (
+                    <div className="media-preview-container">
+                      <h4 className="preview-section-title">New Images ({previewImages.length})</h4>
+                      <div className="media-previews-grid">
+                        {previewImages.map((src, idx) => (
+                          <div className="preview-image-card" key={idx}>
+                            <img src={src} alt={`New ${idx}`} />
+                            <button
+                              type="button"
+                              className="remove-preview-image-btn"
+                              onClick={() => removeImage(idx)}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">

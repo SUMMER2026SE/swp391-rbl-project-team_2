@@ -14,6 +14,7 @@ import {
   SearchPage,
   FavoritesPage,
   DepositPaymentPage,
+  PaymentReturnPage,
   RoomDetailPage,
   AIChatPage,
   TenantNotificationsPage,
@@ -44,6 +45,8 @@ import {
   ComplaintsPage,
 } from '../features/landlord';
 
+import ViewingSchedulesPage from '../features/landlord/pages/ViewingSchedulesPage';
+
 // Admin feature
 import {
   DashboardPage,
@@ -57,6 +60,8 @@ import {
   PayoutsPage,
   AdminNotificationsPage,
 } from '../features/admin';
+
+import ReviewListingPage from '../features/admin/pages/ReviewListingPage';
 
 // Rental feature
 import { RentalRequestManagementPage } from '../features/rental';
@@ -92,6 +97,9 @@ const AppRoutes = () => {
         <Route path={ROUTES.TENANT.FAVORITES} element={<FavoritesPage />} />
         <Route path={ROUTES.TENANT.NOTIFICATIONS} element={<TenantNotificationsPage />} />
         <Route path="/tenant/requests" element={<TenantRequestsPage />} />
+        <Route path="/tenant/payment" element={<DepositPaymentPage />} />
+        <Route path="/tenant/payment/return" element={<PaymentReturnPage />} />
+        <Route path="/tenant/deposit-history" element={<DepositHistoryPage />} />
         <Route path={ROUTES.TENANT.DEPOSIT_HISTORY} element={<DepositHistoryPage />} />
         <Route path={ROUTES.TENANT.PROFILE} element={<TenantProfilePage />} />
         <Route path={ROUTES.TENANT.SETTINGS} element={<TenantSettingsPage />} />
@@ -135,6 +143,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.MANAGE_ROOMS} element={<RoomManagementPage />} />
         <Route path={ROUTES.LANDLORD.PAYMENTS} element={<PaymentsPage />} />
         <Route path={ROUTES.LANDLORD.CONTRACTS} element={<ContractsPage />} />
+        <Route path={ROUTES.LANDLORD.SCHEDULES} element={<ViewingSchedulesPage />} />
         <Route path={ROUTES.LANDLORD.COMPLAINTS} element={<ComplaintsPage />} />
         <Route path={ROUTES.LANDLORD.TERMS} element={<TermsPage />} />
       
@@ -148,6 +157,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.ADMIN.TRANSACTIONS} element={<TransactionsPage />} />
         <Route path={ROUTES.ADMIN.PAYOUTS} element={<PayoutsPage />} />
         <Route path={ROUTES.ADMIN.LISTINGS} element={<ListingsPage />} />
+        <Route path="/admin/listings/:id/review" element={<ReviewListingPage />} />
         <Route path={ROUTES.ADMIN.USERS} element={<UsersPage />} />
         <Route path={ROUTES.ADMIN.REQUESTS} element={<RequestsPage />} />
         <Route path={ROUTES.ADMIN.MODERATION} element={<ViolationManagementPage />} />

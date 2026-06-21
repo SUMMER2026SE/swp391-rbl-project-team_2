@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -64,7 +65,7 @@ const LoginPage = () => {
       }
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Login failed';
-      alert(msg);
+      toast(msg);
       
       if (msg === 'Please verify your email before logging in.') {
         navigate(ROUTES.VERIFY_OTP, { state: { email: data.email, type: 'verify_email' } });
@@ -92,12 +93,12 @@ const LoginPage = () => {
       }
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Google login failed';
-      alert(msg);
+      toast(msg);
     }
   };
 
   const handleGoogleError = () => {
-    alert('Google Login Failed');
+    toast.error('Google Login Failed');
   };
 
   return (

@@ -7,23 +7,16 @@ const Facility = sequelize.define('Facility', {
     primaryKey: true,
     autoIncrement: true,
   },
-  room_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
   facility_name: {
     type: DataTypes.STRING(100),
     allowNull: false,
   },
+  category: {
+    type: DataTypes.STRING(15),
+    defaultValue: 'room',
+  },
   facility_type: {
-    type: DataTypes.ENUM(
-      'furniture',
-      'appliance',
-      'utility',
-      'security',
-      'entertainment',
-      'other'
-    ),
+    type: DataTypes.STRING(50),
     defaultValue: 'other',
   },
   created_at: {
@@ -33,11 +26,6 @@ const Facility = sequelize.define('Facility', {
 }, {
   tableName: 'facilities',
   timestamps: false,
-  indexes: [
-    {
-      fields: ['room_id'],
-    },
-  ],
 });
 
 module.exports = Facility;

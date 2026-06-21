@@ -41,8 +41,12 @@ const Contract = sequelize.define('Contract', {
     allowNull: true,
   },
   status: {
-    type: DataTypes.ENUM('active', 'expired', 'terminated', 'renewed'),
-    defaultValue: 'active',
+    type: DataTypes.STRING(50),
+    defaultValue: 'pending',
+  },
+  tenant_agreed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
   terms_and_conditions: {
     type: DataTypes.TEXT,

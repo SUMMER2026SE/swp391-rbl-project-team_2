@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, X } from 'lucide-react';
@@ -47,7 +48,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
 
       if (!response.success) throw new Error(response.message);
 
-      alert('Password updated successfully!');
+      toast.success('Password updated successfully!');
       onClose();
       
       // Reset form

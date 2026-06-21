@@ -120,7 +120,7 @@ const getMyRentalRequests = async (req, res, next) => {
     const { count, rows } = await RentalRequest.findAndCountAll({
       where,
       include: [
-        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'price_per_month', 'thumbnail_url', 'status'] },
+        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month', 'thumbnail_url', 'status'] },
         { model: User, as: 'landlordRequest', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
       ],
       offset,

@@ -20,7 +20,7 @@ const Footer = () => {
         </div>
 
         <div className="footer-right">
-          &copy; 2024 RentalRoom. Modern housing for modern people.
+          &copy; 2026 RentalRoom. Modern housing for modern people.
         </div>
       </div>
     </footer>

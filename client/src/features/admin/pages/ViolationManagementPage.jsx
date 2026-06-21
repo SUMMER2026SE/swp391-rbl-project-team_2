@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, AlertCircle, Shield, Search, Bell, Mail, MessageSquare } from 'lucide-react';
 import adminService from '../../../services/adminService';
@@ -6,111 +7,74 @@ import './ViolationManagementPage.css';
 const ViolationManagementPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [complaints, setComplaints] = useState([]);
+  const [disputes, setDisputes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [selectedDispute, setSelectedDispute] = useState(null);
+  const [disputeOutcome, setDisputeOutcome] = useState('');
+  const [activeTab, setActiveTab] = useState('pending');
 
   useEffect(() => {
-    fetchComplaints();
+    fetchData();
   }, []);
 
-  const fetchComplaints = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await adminService.getAllComplaints();
-      if (res.success) {
-        setComplaints(res.data);
-      }
+      const [compRes, dispRes] = await Promise.all([
+        adminService.getAllComplaints(),
+        adminService.getAllDisputes()
+      ]);
+      if (compRes.success) setComplaints(compRes.data);
+      if (dispRes.success) setDisputes(dispRes.data);
     } catch (err) {
-      console.error('Failed to fetch complaints:', err);
+      console.error('Failed to fetch data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Priority Cards Data
-  const priorityCards = [
-    {
-      id: 'fraud',
-      title: 'Fraud Detection',
-      description: 'Suspicious payment activity and identity verification failures.',
-      count: 23,
-      color: 'fraud',
-      icon: AlertTriangle,
-      bgColor: '#FFDAD6',
-      borderColor: '#FFDAD6',
-      textColor: '#BA1A1A',
-      badgeColor: '#93000A',
-    },
-    {
-      id: 'abuse',
-      title: 'Abuse Reports',
-      description: 'Property damage, policy violations, and user conflicts.',
-      count: 18,
-      color: 'abuse',
-      icon: AlertCircle,
-      bgColor: '#FFDDB1',
-      borderColor: '#FFBA49',
-      textColor: '#785000',
-      badgeColor: '#291800',
-    },
-    {
-      id: 'spam',
-      title: 'Spam & Bots',
-      description: 'Fake listings, automated messaging, and scraped content.',
-      count: 42,
-      color: 'spam',
-      icon: Shield,
-      bgColor: '#E8E8E8',
-      borderColor: '#E2E2E2',
-      textColor: '#1A1C1C',
-      badgeColor: '#414754',
-    },
-  ];
-
-  // Map complaints to alerts
-  const alerts = complaints.map((c, index) => ({
+  // Map complaints and disputes to alerts
+  const complaintAlerts = complaints.map((c, index) => ({
     id: c.complaint_id,
+    type: 'complaint',
     severity: index % 3 === 0 ? 'critical' : index % 3 === 1 ? 'warning' : 'info',
     title: `Complaint from ${c.tenant?.full_name || 'Tenant'} regarding ${c.room?.title || 'Room'}`,
     description: c.description,
     time: new Date(c.created_at).toLocaleString('vi-VN'),
     actionLabel: 'Review Case',
     secondaryAction: 'Dismiss',
-    status: c.status
+    status: c.status,
+    raw: c
   }));
 
-  // Timeline Events
-  const timelineEvents = [
-    {
-      id: 1,
-      time: '10:42 AM',
-      title: 'Spike in failed login attempts from IP 192.168.x.x',
-      severity: 'critical',
-    },
-    {
-      id: 2,
-      time: '08:15 AM',
-      title: 'New admin device registered (Admin: Sarah J.)',
-      severity: 'warning',
-    },
-    {
-      id: 3,
-      time: 'Yesterday, 11:30 PM',
-      title: 'Automated database backup completed successfully.',
-      severity: 'info',
-    },
-  ];
+  const disputeAlerts = disputes.filter(d => d.status === 'disputed').map(d => ({
+    id: d.schedule_id,
+    type: 'dispute',
+    severity: 'critical',
+    title: `Dispute from ${d.tenant?.full_name} for room ${d.room?.title}`,
+    description: d.dispute_reason || d.notes,
+    time: new Date(d.updated_at).toLocaleString('vi-VN'),
+    actionLabel: 'Resolve Dispute',
+    secondaryAction: 'Ignore',
+    status: d.status,
+    raw: d
+  }));
 
-  // Moderation Log Data
-  const resolutions = complaints
-    .filter(c => c.status === 'resolved')
-    .map(c => ({
-      id: c.complaint_id,
-      title: `Resolved: ${c.description?.substring(0, 30)}...`,
-      date: new Date(c.updated_at || c.created_at).toLocaleDateString('vi-VN'),
-      status: 'Resolved',
-    }));
+  const alerts = [...complaintAlerts, ...disputeAlerts].sort((a, b) => new Date(b.time) - new Date(a.time));
+
+  // Resolved disputes history
+  const resolvedDisputes = disputes.filter(d => d.status === 'dispute_resolved').map(d => ({
+    id: d.schedule_id,
+    type: 'dispute',
+    title: `Resolved dispute for room ${d.room?.title || 'Unknown'}`,
+    description: `Tenant: ${d.tenant?.full_name} | Landlord: ${d.landlordSchedule?.full_name}`,
+    time: new Date(d.updated_at).toLocaleString('vi-VN'),
+    status: 'Resolved',
+    raw: d
+  }));
+
+  const history = [...resolvedDisputes].sort((a, b) => new Date(b.time) - new Date(a.time));
 
   const getSeverityClass = (severity) => {
     switch (severity) {
@@ -125,27 +89,6 @@ const ViolationManagementPage = () => {
     }
   };
 
-  const getTimelineColor = (severity) => {
-    switch (severity) {
-      case 'critical':
-        return '#BA1A1A';
-      case 'warning':
-        return '#FFBA49';
-      case 'info':
-        return '#C1C6D6';
-      default:
-        return '#414754';
-    }
-  };
-
-  const filteredAlerts = alerts.filter(alert => {
-    if (activeFilter === 'All') return true;
-    if (activeFilter === 'Fraud Detection') return alert.severity === 'critical';
-    if (activeFilter === 'Abuse Reports') return alert.severity === 'warning';
-    if (activeFilter === 'Spam & Bots') return alert.severity === 'info';
-    return true;
-  });
-
   if (loading) {
     return <div className="violation-management-page"><div className="loading-state">Loading violations...</div></div>;
   }
@@ -155,137 +98,142 @@ const ViolationManagementPage = () => {
       {/* Page Header */}
       <div className="page-header">
         <div className="violation-header-content">
-          <h1>Violation Management</h1>
-          <p>Monitor and manage platform violations, fraud, and abuse reports in real-time.</p>
+          <h1>Disputes Management</h1>
+          <p>Resolve disputes regarding room viewing issues and manage complaint history.</p>
         </div>
         <div className="header-actions">
-          <button 
-            className="btn-filter" 
-            onClick={() => setActiveFilter('All')}
-          >
-            ⚙ Clear Filters
-          </button>
           <button className="btn-export">📊 Export</button>
         </div>
       </div>
 
-      {/* Priority Cards (Bento Style) */}
-      <div className="priority-cards-grid">
-        {priorityCards.map((card) => (
-          <div 
-            key={card.id} 
-            className={`priority-card priority-${card.color} ${activeFilter === card.title ? 'active-filter' : ''}`} 
-            style={{ 
-              borderColor: activeFilter === card.title ? card.textColor : card.borderColor,
-              cursor: 'pointer',
-              boxShadow: activeFilter === card.title ? `0 0 0 2px ${card.textColor}33` : ''
-            }}
-            onClick={() => setActiveFilter(activeFilter === card.title ? 'All' : card.title)}
-          >
-            <div className="card-header">
-              <div className="card-icon" style={{ backgroundColor: card.bgColor }}>
-                <card.icon size={24} color={card.textColor} />
-              </div>
-              <div className="card-badge" style={{ backgroundColor: card.bgColor }}>
-                <span style={{ color: card.badgeColor }}>Filter</span>
-              </div>
-            </div>
-
-            <h3 className="card-title">{card.title}</h3>
-            <p className="card-description">{card.description}</p>
-
-            <div className="card-footer">
-              <div className="card-count" style={{ color: card.textColor }}>
-                {card.count}
-              </div>
-              <span className="card-link" style={{color: card.textColor, fontSize: '0.8rem', fontWeight: 600}}>
-                {activeFilter === card.title ? 'Remove Filter ✕' : 'Filter by this →'}
-              </span>
-            </div>
-          </div>
-        ))}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-light)', marginBottom: '2rem' }}>
+        <button 
+          style={{ 
+            padding: '0.75rem 1.5rem', 
+            background: 'transparent', 
+            border: 'none', 
+            borderBottom: activeTab === 'pending' ? '2px solid var(--primary)' : '2px solid transparent',
+            color: activeTab === 'pending' ? 'var(--primary)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'pending' ? '700' : '500',
+            cursor: 'pointer',
+            fontSize: '1rem'
+          }}
+          onClick={() => setActiveTab('pending')}
+        >
+          Pending Disputes
+        </button>
+        <button 
+          style={{ 
+            padding: '0.75rem 1.5rem', 
+            background: 'transparent', 
+            border: 'none', 
+            borderBottom: activeTab === 'history' ? '2px solid var(--primary)' : '2px solid transparent',
+            color: activeTab === 'history' ? 'var(--primary)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'history' ? '700' : '500',
+            cursor: 'pointer',
+            fontSize: '1rem'
+          }}
+          onClick={() => setActiveTab('history')}
+        >
+          Resolution History
+        </button>
       </div>
 
-      {/* Main Feed & Timeline Container */}
+      {/* Main Feed Container */}
       <div className="feed-timeline-container">
-        {/* Active Alerts Feed */}
-        <div className="alerts-feed">
-          <h2 className="feed-title">
-            Active Complaints {activeFilter !== 'All' ? `(${activeFilter})` : ''}
-          </h2>
+        
+        {activeTab === 'pending' && (
+          <div className="alerts-feed">
+            <h2 className="feed-title">
+              Active Disputes & Complaints
+            </h2>
 
-          {filteredAlerts.length > 0 ? filteredAlerts.map((alert) => (
-            <div key={alert.id} className={`alert-item ${getSeverityClass(alert.severity)}`}>
-              <div className="alert-icon">
-                {alert.severity === 'critical' && <AlertTriangle size={24} />}
-                {alert.severity === 'warning' && <AlertCircle size={24} />}
-                {alert.severity === 'info' && <Shield size={24} />}
-              </div>
-
-              <div className="alert-content">
-                <div className="alert-header">
-                  <h4 className="alert-title">{alert.title}</h4>
-                  <span className="alert-time">{alert.time}</span>
+            {alerts.length > 0 ? alerts.map((alert) => (
+              <div key={alert.id} className={`alert-item ${getSeverityClass(alert.severity)}`}>
+                <div className="alert-icon">
+                  {alert.severity === 'critical' && <AlertTriangle size={24} />}
+                  {alert.severity === 'warning' && <AlertCircle size={24} />}
+                  {alert.severity === 'info' && <Shield size={24} />}
                 </div>
-                <p className="alert-description">{alert.description}</p>
 
-                <div className="alert-actions">
-                  <button 
-                    className="btn-primary" 
-                    onClick={() => setSelectedComplaint(alert)}
-                  >
-                    {alert.actionLabel}
-                  </button>
-                  <button 
-                    className="btn-secondary"
-                    onClick={() => alert('Dismiss feature coming soon.')}
-                  >
-                    {alert.secondaryAction}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )) : (
-            <p className="text-gray-500 py-4 text-center">No active complaints found.</p>
-          )}
-        </div>
-
-        {/* Right Column: Timeline & Moderation Log */}
-        <div className="right-column">
-          {/* Security Timeline */}
-          <div className="security-timeline">
-            <h3 className="timeline-title">🔒 Security Timeline</h3>
-
-            <div className="timeline-events">
-              {timelineEvents.map((event) => (
-                <div key={event.id} className="timeline-item">
-                  <div className="timeline-time">{event.time}</div>
-                  <div className="timeline-dot" style={{ backgroundColor: getTimelineColor(event.severity) }} />
-                  <div className="timeline-content">{event.title}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Moderation Log */}
-          <div className="moderation-log">
-            <h3 className="log-title">Recent Resolutions</h3>
-
-            <div className="resolutions-list">
-              {resolutions.length > 0 ? resolutions.map((resolution) => (
-                <div key={resolution.id} className="resolution-item">
-                  <div className="resolution-info">
-                    <p className="resolution-title">{resolution.title}</p>
-                    <p className="resolution-date">{resolution.date}</p>
+                <div className="alert-content">
+                  <div className="alert-header">
+                    <h4 className="alert-title">{alert.title}</h4>
+                    <span className="alert-time">{alert.time}</span>
                   </div>
-                  <span className="resolution-status">{resolution.status}</span>
+                  <p className="alert-description">{alert.description}</p>
+
+                  <div className="alert-actions">
+                    <button 
+                      className="btn-primary" 
+                      onClick={() => {
+                        if (alert.type === 'dispute') {
+                          setSelectedDispute(alert.raw);
+                          setDisputeOutcome('');
+                        } else {
+                          setSelectedComplaint(alert);
+                        }
+                      }}
+                    >
+                      {alert.actionLabel}
+                    </button>
+                  </div>
                 </div>
-              )) : (
-                <p className="text-gray-500 text-sm">No recent resolutions.</p>
-              )}
-            </div>
+              </div>
+            )) : (
+              <p className="text-gray-500 py-4 text-center" style={{ color: '#6b7280', textAlign: 'center', padding: '1rem 0' }}>No active complaints found.</p>
+            )}
           </div>
-        </div>
+        )}
+
+        {activeTab === 'history' && (
+          <div className="alerts-feed">
+            <h2 className="feed-title">
+              Resolution History
+            </h2>
+
+            {history.length > 0 ? history.map((item) => (
+              <div key={item.id} className="alert-item" style={{ opacity: 0.9 }}>
+                <div className="alert-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981' }}>
+                  <Shield size={24} />
+                </div>
+
+                <div className="alert-content">
+                  <div className="alert-header">
+                    <h4 className="alert-title">{item.title}</h4>
+                    <span className="alert-time">{item.time}</span>
+                  </div>
+                  <p className="alert-description">{item.description}</p>
+                  
+                  <div className="alert-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <span className="resolution-status" style={{
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      color: '#10B981',
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '0.25rem'
+                    }}>
+                      {item.status}
+                    </span>
+                    <button 
+                      className="btn-secondary"
+                      onClick={() => {
+                        setSelectedDispute(item.raw);
+                      }}
+                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )) : (
+              <p className="text-gray-500 py-4 text-center" style={{ color: '#6b7280', textAlign: 'center', padding: '1rem 0' }}>No resolution history found.</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Complaint Details Modal */}
@@ -323,9 +271,98 @@ const ViolationManagementPage = () => {
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setSelectedComplaint(null)}>Close</button>
               <button className="btn-primary" onClick={() => {
-                alert('Action successfully recorded!');
+                toast.success('Action successfully recorded!');
                 setSelectedComplaint(null);
               }}>Take Action</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dispute Resolution Modal */}
+      {selectedDispute && (
+        <div className="complaint-modal-overlay" onClick={() => setSelectedDispute(null)}>
+          <div className="complaint-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>Resolve Room Dispute</h3>
+              <button className="btn-close-modal" onClick={() => setSelectedDispute(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-group">
+                <label>Schedule ID:</label>
+                <p>#{selectedDispute.schedule_id}</p>
+              </div>
+              <div className="detail-group">
+                <label>Room:</label>
+                <p>{selectedDispute.room?.title}</p>
+              </div>
+              <div className="detail-group">
+                <label>Tenant:</label>
+                <p>{selectedDispute.tenant?.full_name} ({selectedDispute.tenant?.email})</p>
+              </div>
+              <div className="detail-group">
+                <label>Landlord:</label>
+                <p>{selectedDispute.landlordSchedule?.full_name}</p>
+              </div>
+              <div className="detail-group full-width">
+                <label>Dispute Reason / Notes:</label>
+                <div className="description-box" style={{ whiteSpace: 'pre-wrap' }}>
+                  {selectedDispute.dispute_reason || selectedDispute.notes}
+                </div>
+              </div>
+
+              {selectedDispute.status === 'disputed' ? (
+                <div className="detail-group full-width" style={{ marginTop: '20px' }}>
+                  <label>Resolution Outcome:</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="radio" name="outcome" value="A" checked={disputeOutcome === 'A'} onChange={e => setDisputeOutcome(e.target.value)} />
+                      <div>
+                        <strong>Outcome A (Landlord Wrong)</strong> - 100% Refund to Tenant
+                      </div>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="radio" name="outcome" value="B" checked={disputeOutcome === 'B'} onChange={e => setDisputeOutcome(e.target.value)} />
+                      <div>
+                        <strong>Outcome B (Tenant Unreasonable)</strong> - 0% Refund. Landlord gets 95%, Platform 5%
+                      </div>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="radio" name="outcome" value="C" checked={disputeOutcome === 'C'} onChange={e => setDisputeOutcome(e.target.value)} />
+                      <div>
+                        <strong>Outcome C (Shared Fault)</strong> - 50% Refund to Tenant. Landlord 45%, Platform 5%
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <div className="detail-group full-width" style={{ marginTop: '20px' }}>
+                  <label>Status:</label>
+                  <p style={{ color: '#10B981', fontWeight: 'bold' }}>Resolved</p>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setSelectedDispute(null)}>Close</button>
+              {selectedDispute.status === 'disputed' && (
+                <button 
+                  className="btn-primary" 
+                  disabled={!disputeOutcome}
+                  style={{ opacity: !disputeOutcome ? 0.5 : 1 }}
+                  onClick={async () => {
+                    try {
+                      await adminService.resolveDispute(selectedDispute.schedule_id, disputeOutcome);
+                      toast.success('Dispute resolved successfully!');
+                      setSelectedDispute(null);
+                      fetchData();
+                    } catch (err) {
+                      toast.error('Failed to resolve dispute.');
+                    }
+                  }}
+                >
+                  Confirm Resolution
+                </button>
+              )}
             </div>
           </div>
         </div>

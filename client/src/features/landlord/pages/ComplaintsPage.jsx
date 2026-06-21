@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import {
   Search,
@@ -76,7 +77,7 @@ const ComplaintsPage = () => {
       setShowDetailModal(false);
       setNewStatus('');
     } catch (err) {
-      alert(err.message || 'Failed to update status');
+      toast.error(err.message || 'Failed to update status');
     }
   };
 
@@ -88,7 +89,7 @@ const ComplaintsPage = () => {
       setShowDetailModal(false);
       setNewPriority('');
     } catch (err) {
-      alert(err.message || 'Failed to update priority');
+      toast.error(err.message || 'Failed to update priority');
     }
   };
 

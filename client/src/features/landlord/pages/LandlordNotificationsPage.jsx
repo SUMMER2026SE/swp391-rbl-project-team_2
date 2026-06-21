@@ -1,73 +1,19 @@
 import React, { useState } from 'react';
-import { 
-  CheckCheck, 
-  AlertCircle, 
-  Wrench, 
-  Lightbulb, 
-  CheckCircle2, 
-  MessageSquare, 
+import {
+  CheckCheck,
+  AlertCircle,
+  Wrench,
+  Lightbulb,
+  CheckCircle2,
+  MessageSquare,
   ArrowRight,
   Sparkles
 } from 'lucide-react';
 import Button from '../../../components/common/Button';
 import './LandlordNotificationsPage.css';
 
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: 'Action Required',
-    category: 'Payments',
-    time: 'Just now',
-    title: 'Overdue Rent Payment – Unit 4B',
-    description: 'Sarah Jenkins has missed the payment deadline for Unit 4B. The automated reminder has been sent, but manual review is recommended.',
-    isUnread: true,
-    hasRedAccent: true,
-    icon: <AlertCircle size={20} />,
-    iconClass: 'icon-danger',
-    headerClass: 'text-danger',
-    actions: [
-      { text: 'Review Account', variant: 'primary', isSolid: true },
-      { text: 'Send Message', variant: 'secondary', isSolid: false }
-    ]
-  },
-  {
-    id: 2,
-    type: 'Maintenance Request',
-    category: 'Requests',
-    time: '2 hours ago',
-    title: 'HVAC Issue – Unit 12A',
-    description: 'Resident reported strange noise from the AC unit. Priority marked as medium.',
-    isUnread: true,
-    icon: <Wrench size={20} />,
-    iconClass: 'icon-info',
-    headerClass: 'text-info',
-  },
-  {
-    id: 3,
-    type: 'Smart Insight',
-    category: 'System',
-    time: 'Yesterday',
-    title: 'Price Adjustment Recommendation',
-    description: 'Based on local market trends, increasing rent for Unit 8C by 3% for the next renewal cycle is recommended to maximize yield.',
-    isUnread: false,
-    icon: <Lightbulb size={20} />,
-    iconClass: 'icon-warning',
-    headerClass: 'text-warning',
-    link: { text: 'View Analysis', href: '#' }
-  },
-  {
-    id: 4,
-    type: 'System Update',
-    category: 'System',
-    time: 'Oct 24, 2023',
-    title: 'RentalRoom v2.4 Deployed',
-    description: 'The platform has been updated with new reporting features and performance improvements.',
-    isUnread: false,
-    icon: <CheckCircle2 size={20} />,
-    iconClass: 'icon-success',
-    headerClass: 'text-success',
-  }
-];
+const MOCK_NOTIFICATIONS = [];
+
 
 const LandlordNotificationsPage = () => {
   const [activeTab, setActiveTab] = useState('All Alerts');
@@ -109,7 +55,7 @@ const LandlordNotificationsPage = () => {
       {/* Tabs / Pills Filter */}
       <div className="notifications-tabs">
         {tabs.map(tab => (
-          <button 
+          <button
             key={tab}
             className={`tab-pill ${activeTab === tab ? 'active' : ''}`}
             onClick={() => setActiveTab(tab)}
@@ -123,8 +69,8 @@ const LandlordNotificationsPage = () => {
       <div className="notifications-list">
         {filteredNotifications.length > 0 ? (
           filteredNotifications.map(item => (
-            <div 
-              key={item.id} 
+            <div
+              key={item.id}
               className={`notification-card ${item.hasRedAccent ? 'card-accent-red' : ''} ${item.isUnread ? 'unread' : ''}`}
               onClick={() => handleToggleRead(item.id)}
               style={{ cursor: 'pointer' }}
@@ -150,8 +96,8 @@ const LandlordNotificationsPage = () => {
                 {item.actions && (
                   <div className="notification-actions" onClick={e => e.stopPropagation()}>
                     {item.actions.map((act, index) => (
-                      <Button 
-                        key={index} 
+                      <Button
+                        key={index}
                         variant={act.variant}
                         className={act.isSolid ? 'btn-solid-action' : 'btn-outline-action'}
                       >
@@ -163,8 +109,8 @@ const LandlordNotificationsPage = () => {
 
                 {/* Optional Gold Insight Link */}
                 {item.link && (
-                  <a 
-                    href={item.link.href} 
+                  <a
+                    href={item.link.href}
                     className="insight-link"
                     onClick={e => {
                       e.stopPropagation();

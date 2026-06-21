@@ -140,7 +140,7 @@ const updateAvatar = async (req, res, next) => {
       });
     }
 
-    const avatarUrl = `/uploads/${req.file.filename}`;
+    const avatarUrl = req.file.path;
     await sequelize.query(
       `UPDATE users SET avatar_url = :avatarUrl, updated_at = SYSDATETIMEOFFSET() WHERE user_id = :userId`,
       {

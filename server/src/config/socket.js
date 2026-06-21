@@ -18,6 +18,12 @@ const initSocket = (server) => {
       console.log(`👤 Socket ${socket.id} joined conversation: ${conversationId}`);
     });
 
+    // Join a user-specific notification channel
+    socket.on('join_user', (userId) => {
+      socket.join(`user_${userId}`);
+      console.log(`👤 Socket ${socket.id} joined user channel: user_${userId}`);
+    });
+
     // Leave a conversation room
     socket.on('leave_conversation', (conversationId) => {
       socket.leave(conversationId);

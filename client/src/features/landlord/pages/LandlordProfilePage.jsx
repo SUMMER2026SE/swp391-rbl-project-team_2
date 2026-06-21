@@ -1,3 +1,5 @@
+import toast from 'react-hot-toast';
+import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -59,10 +61,10 @@ const LandlordProfilePage = () => {
       if (!response.success) throw new Error(response.message);
       updateUser({ avatarUrl: response.data.avatarUrl });
       setProfile(prev => ({ ...prev, avatarUrl: response.data.avatarUrl }));
-      alert('Avatar updated successfully!');
+      toast.success('Avatar updated successfully!');
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Error uploading avatar';
-      alert(msg);
+      toast(msg);
     }
   };
 
@@ -178,7 +180,7 @@ const LandlordProfilePage = () => {
             onClick={handleAvatarClick}
           >
             <img 
-              src={getAvatarUrl()}
+              src={getGlobalAvatar(displayProfile.fullName, displayProfile.avatarUrl, 150)}
               alt={displayProfile.fullName || 'Landlord'}
               className="profile-large-avatar"
             />

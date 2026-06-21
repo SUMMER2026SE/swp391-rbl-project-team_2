@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, ArrowRight } from 'lucide-react';
@@ -59,7 +60,7 @@ const ResetPasswordPage = () => {
 
       if (!response.success) throw new Error(response.message);
       
-      alert('Password updated successfully! Please login with your new password.');
+      toast.success('Password updated successfully! Please login with your new password.');
       navigate(ROUTES.LOGIN);
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Failed to update password';

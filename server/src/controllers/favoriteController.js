@@ -101,7 +101,7 @@ const getMyFavorites = async (req, res, next) => {
         {
           model: Room,
           as: 'room',
-          attributes: ['room_id', 'title', 'description', 'address', 'city', 'district', 'ward', 'price_per_month', 'area_sqm', 'room_type', 'max_occupants', 'status', 'thumbnail_url', 'landlord_id'],
+          attributes: ['room_id', 'title', 'description', 'address', 'city', 'district', 'ward', 'price_per_month', 'area_sqm', 'room_type', 'max_occupants', 'bedrooms', 'status', 'thumbnail_url', 'landlord_id'],
           where: { is_deleted: false },
         },
       ],

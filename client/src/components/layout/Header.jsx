@@ -6,6 +6,7 @@ import { supabase } from '../../config/supabase';
 import { ROUTES } from '../../constants';
 import ThemeToggle from '../ui/ThemeToggle';
 import { API_URL } from '../../config';
+import { getAvatarUrl as getGlobalAvatar } from '../../utils/format';
 import './Header.css';
 
 const Header = ({ toggleSidebar }) => {
@@ -15,6 +16,7 @@ const Header = ({ toggleSidebar }) => {
   const [searchParams] = useSearchParams();
   const keywordParam = searchParams.get('keyword') || '';
   const [quickSearch, setQuickSearch] = React.useState(keywordParam);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = React.useState(false);
 
   React.useEffect(() => {
     setQuickSearch(keywordParam);
@@ -24,12 +26,10 @@ const Header = ({ toggleSidebar }) => {
 
   const getAvatarUrl = () => {
     if (user?.avatarUrl) {
-      // If it's a relative path from our server
       if (user.avatarUrl.startsWith('/uploads')) {
         const baseUrl = API_URL.replace('/api', '');
         return `${baseUrl}${user.avatarUrl}`;
       }
-      // If it's a full URL (e.g., from Google)
       return user.avatarUrl;
     }
     return `https://ui-avatars.com/api/?name=${user?.fullName || 'User'}&background=random`;
@@ -57,26 +57,7 @@ const Header = ({ toggleSidebar }) => {
           <Link to={ROUTES.HOME} className="logo">
             RentalRoom
           </Link>
-          {!isNotificationsPage && (
-            <div className="header-search-bar">
-              <Search size={16} className="search-icon" />
-              <input 
-                type="text" 
-                placeholder="Quick search..." 
-                value={quickSearch}
-                onChange={(e) => setQuickSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (quickSearch.trim()) {
-                      navigate(`${ROUTES.ROOMS}?keyword=${encodeURIComponent(quickSearch.trim())}`);
-                    } else {
-                      navigate(ROUTES.ROOMS);
-                    }
-                  }
-                }}
-              />
-            </div>
-          )}
+
         </div>
 
         <nav className="header-tabs">
@@ -105,11 +86,11 @@ const Header = ({ toggleSidebar }) => {
           {isAuthenticated && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Link
-                to={ROUTES.TENANT.NOTIFICATIONS}
+                to={user?.role === 'LANDLORD' ? ROUTES.LANDLORD.NOTIFICATIONS : ROUTES.TENANT.NOTIFICATIONS}
                 className={`header-bell-btn ${isNotificationsPage ? 'active' : ''}`}
               >
                 <Bell size={20} />
-                <span className="bell-badge-dot"></span>
+                {hasUnreadNotifications && <span className="bell-badge-dot"></span>}
               </Link>
               <Link
                 to="/messages"
@@ -120,7 +101,10 @@ const Header = ({ toggleSidebar }) => {
             </div>
           )}
           {!isAuthenticated ? (
-            <Link to={ROUTES.LOGIN} className="sign-in-btn">Sign In</Link>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <Link to={ROUTES.LOGIN} className="sign-in-btn" style={{ background: 'transparent', color: '#6C3AED', border: '1px solid #6C3AED', padding: '0.4rem 1rem' }}>Log In</Link>
+              <Link to={ROUTES.REGISTER} className="sign-in-btn" style={{ padding: '0.4rem 1rem' }}>Sign Up</Link>
+            </div>
           ) : (
             <div className="user-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               {user?.role === 'LANDLORD' && (
@@ -134,7 +118,7 @@ const Header = ({ toggleSidebar }) => {
               )}
               <Link to={user?.role === 'LANDLORD' ? ROUTES.LANDLORD.PROFILE : ROUTES.TENANT.PROFILE}>
                 <div className="header-avatar" title="Profile">
-                  <img src={getAvatarUrl()} alt="Avatar" />
+                  <img src={getGlobalAvatar(user?.fullName, user?.avatarUrl)} alt="Avatar" />
                 </div>
               </Link>
               <button

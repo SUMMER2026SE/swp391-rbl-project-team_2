@@ -1,7 +1,7 @@
 -- =========================================================
 -- SMART ROOM RENTAL SYSTEM
 -- Database schema synced with Sequelize models
--- Last updated: 2026-06-02
+-- Last updated: 2026-06-20
 -- =========================================================
 
 IF EXISTS (SELECT name FROM sys.databases WHERE name = N'RentalRoomSystem')
@@ -101,16 +101,28 @@ CREATE TABLE room_images (
 );
 
 -- =========================================================
--- 6. FACILITIES (Room Amenities)
+-- 6. FACILITIES (Master Table for Room & Nearby Amenities)
 -- =========================================================
 CREATE TABLE facilities (
     facility_id INT IDENTITY PRIMARY KEY,
-    room_id INT NOT NULL,
     facility_name NVARCHAR(100) NOT NULL,
-    facility_type VARCHAR(15) DEFAULT 'other', -- 'furniture', 'appliance', 'utility', 'security', 'entertainment', 'other'
+    category VARCHAR(15) DEFAULT 'room',      -- 'room', 'nearby'
+    facility_type VARCHAR(50) DEFAULT 'other',
+    created_at DATETIME DEFAULT GETDATE()
+);
+
+-- =========================================================
+-- 6.1 ROOM_FACILITIES (Junction Table)
+-- =========================================================
+CREATE TABLE room_facilities (
+    id INT IDENTITY PRIMARY KEY,
+    room_id INT NOT NULL,
+    facility_id INT NOT NULL,
     created_at DATETIME DEFAULT GETDATE(),
 
-    FOREIGN KEY (room_id) REFERENCES rooms(room_id)
+    FOREIGN KEY (room_id) REFERENCES rooms(room_id) ON DELETE CASCADE,
+    FOREIGN KEY (facility_id) REFERENCES facilities(facility_id) ON DELETE CASCADE,
+    CONSTRAINT UQ_Room_Facility UNIQUE(room_id, facility_id)
 );
 
 -- =========================================================
@@ -147,7 +159,8 @@ CREATE TABLE contracts (
     end_date DATETIME NOT NULL,
     monthly_rent DECIMAL(10,2) NOT NULL,
     deposit_amount DECIMAL(10,2) NULL,
-    status VARCHAR(15) DEFAULT 'active',      -- 'active', 'expired', 'terminated', 'renewed'
+    status VARCHAR(50) DEFAULT 'pending',     -- 'pending', 'active', 'expired', 'terminated', 'renewed'
+    tenant_agreed BIT DEFAULT 0,              -- Whether tenant has agreed to the contract
     terms_and_conditions NVARCHAR(MAX) NULL,
     document_url NVARCHAR(500) NULL,
     is_renewed BIT DEFAULT 0,
@@ -165,19 +178,21 @@ CREATE TABLE contracts (
 -- =========================================================
 CREATE TABLE payments (
     payment_id INT IDENTITY PRIMARY KEY,
-    contract_id INT NOT NULL,
+    contract_id INT NULL,
     tenant_id INT NOT NULL,
     landlord_id INT NOT NULL,
     room_id INT NOT NULL,
+    viewing_schedule_id INT NULL,             -- Link to viewing schedule for deposit payments
     amount DECIMAL(10,2) NOT NULL,
-    payment_type VARCHAR(15) DEFAULT 'rent',  -- 'rent', 'deposit', 'utility', 'maintenance', 'other'
-    status VARCHAR(15) DEFAULT 'pending',     -- 'pending', 'completed', 'failed', 'cancelled'
-    payment_method VARCHAR(15) NULL,          -- 'bank_transfer', 'cash', 'credit_card', 'e_wallet'
+    payment_type VARCHAR(50) DEFAULT 'rent',  -- 'rent', 'deposit', 'viewing_deposit', 'utility', 'maintenance', 'other'
+    status VARCHAR(50) DEFAULT 'pending',     -- 'pending', 'completed', 'failed', 'cancelled', 'refunded'
+    payment_method VARCHAR(20) NULL,          -- 'bank_transfer', 'cash', 'credit_card', 'e_wallet', 'vnpay'
     transaction_id VARCHAR(255) NULL,
     due_date DATETIME NULL,
     paid_date DATETIME NULL,
     notes NVARCHAR(MAX) NULL,
     platform_fee DECIMAL(10,2) DEFAULT 0,     -- Admin commission fee
+    refund_amount DECIMAL(10,2) DEFAULT 0,    -- Amount to be refunded to tenant
     net_amount DECIMAL(10,2) DEFAULT 0,       -- Amount to be paid to landlord
     payout_status VARCHAR(15) DEFAULT 'pending', -- 'pending', 'processing', 'completed'
     payout_date DATETIME NULL,                -- When admin sent money to landlord
@@ -199,7 +214,11 @@ CREATE TABLE viewing_schedules (
     tenant_id INT NOT NULL,
     landlord_id INT NOT NULL,
     scheduled_date DATETIME NOT NULL,
-    status VARCHAR(15) DEFAULT 'scheduled',   -- 'scheduled', 'completed', 'cancelled', 'no_show'
+    status VARCHAR(50) DEFAULT 'pending_payment', -- 'pending_payment', 'pending', 'scheduled', 'completed', 'cancelled', 'no_show', 'rejected', 'contract_requested', 'contract_created', 'disputed', 'dispute_resolved', 'expired'
+    deposit_amount DECIMAL(10,2) NULL,        -- Deposit amount paid by tenant for viewing
+    tenant_decision VARCHAR(50) DEFAULT 'pending', -- 'pending', 'accepted', 'rejected'
+    payment_deadline DATETIME NULL,           -- Deadline for tenant to pay viewing deposit
+    dispute_reason NVARCHAR(MAX) NULL,        -- Reason if tenant disputes the viewing result
     notes NVARCHAR(MAX) NULL,
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE(),
@@ -316,7 +335,7 @@ CREATE TABLE favorites (
 );
 
 -- =========================================================
--- 16. INDEXES (PERFORMANCE)
+-- 17. INDEXES (PERFORMANCE)
 -- =========================================================
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_rooms_landlord ON rooms(landlord_id);
@@ -349,15 +368,45 @@ CREATE INDEX idx_messages_conversation ON messages(conversation_id);
 CREATE INDEX idx_messages_sender ON messages(sender_id);
 CREATE INDEX idx_notifications_user ON notifications(user_id);
 CREATE INDEX idx_notifications_read ON notifications(is_read);
-CREATE INDEX idx_facilities_room ON facilities(room_id);
+CREATE INDEX idx_room_facilities_room ON room_facilities(room_id);
 CREATE INDEX idx_room_images_room ON room_images(room_id);
 CREATE INDEX idx_favorites_tenant ON favorites(tenant_id);
 CREATE INDEX idx_favorites_room ON favorites(room_id);
 
 -- =========================================================
--- 17. SEED DATA
+-- 18. SEED DATA
 -- =========================================================
+
+-- Roles
 INSERT INTO roles (role_name, description) VALUES
 ('Admin', N'System Administrator with full access'),
 ('Landlord', N'Property Owner who manages boarding houses & listings'),
 ('Tenant', N'Renters who search rooms, sign contracts, and send requests');
+
+-- Default Admin account (password: admin123 - bcrypt hashed)
+INSERT INTO users (full_name, email, password_hash, phone, role_id, is_active, is_banned, is_deleted) VALUES
+(N'System Admin', 'admin@smartroom.com', '$2b$10$8K1p/a0dL1LXMIgoEDFrwOfMQkFP.dR1rG6L3cfKpTOUvauKz6W/y', '0900000000', 1, 1, 0, 0);
+
+-- Facility Seed Data
+INSERT INTO facilities (facility_name, category, facility_type) VALUES
+(N'WiFi', 'room', 'utility'),
+(N'Air Conditioner', 'room', 'appliance'),
+(N'Parking', 'room', 'utility'),
+(N'Private Bathroom', 'room', 'utility'),
+(N'Balcony', 'room', 'utility'),
+(N'Bed', 'room', 'furniture'),
+(N'Wardrobe', 'room', 'furniture'),
+(N'Kitchen', 'room', 'utility'),
+(N'Security Camera', 'room', 'security'),
+(N'Near University', 'nearby', 'education'),
+(N'Near Hospital', 'nearby', 'hospital'),
+(N'Near Supermarket', 'nearby', 'shopping'),
+(N'Near Bus Station', 'nearby', 'transport'),
+(N'Near Market', 'nearby', 'shopping'),
+(N'Near Park', 'nearby', 'recreation'),
+(N'Near Convenience Store', 'nearby', 'shopping');
+
+PRINT '=========================================================';
+PRINT 'Database [RentalRoomSystem] created successfully!';
+PRINT 'Admin account: admin@smartroom.com / admin123';
+PRINT '=========================================================';

@@ -264,6 +264,7 @@ const sendMessage = async (req, res, next) => {
     const io = req.app.get('io');
     if (io) {
       io.to(conversationId).emit('receive_message', messageData);
+      io.to(`user_${recipientId}`).emit('new_message_notification', messageData);
     }
 
     return res.status(201).json({

@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  MapPin, Star, Share2, Heart, Wifi, Snowflake, Key, 
-  Coffee, Compass, Dumbbell, Grid, ChevronDown, ChevronLeft, MessageSquare, CheckCircle 
+  MapPin, Share2, Heart, MessageSquare, CheckCircle, Bed, Users, Maximize, Home, Compass, ChevronLeft
 } from 'lucide-react';
 import { favoriteService } from '../services/favoriteService';
 import { rentalRequestService } from '../services/rentalRequestService';
 import { ROUTES } from '../../../constants';
+import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
+import Carousel from 'react-bootstrap/Carousel';
+import Button from 'react-bootstrap/Button';
+import useAuthStore from '../../../store/useAuthStore';
+import toast from 'react-hot-toast';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import api from '../../../services/api';
 import './RoomDetailPage.css';
 
 const RoomDetailPage = () => {
@@ -19,12 +25,31 @@ const RoomDetailPage = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMoreAbout, setShowMoreAbout] = useState(false);
   
-  // Booking Card States
-  const [bookingMode, setBookingMode] = useState('viewing'); // 'viewing' | 'renting'
+  // Editing States
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ title: '', description: '', pricePerMonth: '' });
+
+  const handleEditChange = (e) => setEditForm({...editForm, [e.target.name]: e.target.value});
+
+  const handleSaveEdit = async () => {
+    try {
+      const payload = { ...editForm, pricePerMonth: Number(editForm.pricePerMonth) };
+      const response = await api.put(`/landlord/rooms/${id}`, payload);
+      if (response.success) {
+        toast.success("Room updated successfully!");
+        setRoomData({ ...roomData, ...payload, price_per_month: payload.pricePerMonth });
+        setIsEditing(false);
+      }
+    } catch (e) {
+      toast.error(e.message || "Failed to update room!");
+    }
+  };
+  
+  // Booking States
+  const [showDateModal, setShowDateModal] = useState(false);
   const [viewingDate, setViewingDate] = useState('');
-  const [moveIn, setMoveIn] = useState('');
-  const [moveOut, setMoveOut] = useState('');
-  const [guests, setGuests] = useState('1 Adult');
+
+  const { user, isAuthenticated } = useAuthStore();
 
   const todayDate = new Date().toISOString().split('T')[0];
 
@@ -36,10 +61,14 @@ const RoomDetailPage = () => {
           setRoomData(response.data.data);
         }
         
-        // Fetch favorite status if logged in
-        if (getToken()) {
-          const isFav = await favoriteService.checkFavoriteStatus(id);
-          setIsFavorite(isFav);
+        // Fetch favorite status if logged in as TENANT
+        if (isAuthenticated && user?.role === 'TENANT') {
+          try {
+            const isFav = await favoriteService.checkFavoriteStatus(id);
+            setIsFavorite(isFav);
+          } catch (favErr) {
+            console.error('Failed to fetch favorite status', favErr);
+          }
         }
       } catch (err) {
         setError('Failed to load listing details');
@@ -66,7 +95,7 @@ const RoomDetailPage = () => {
         setIsFavorite(true);
       }
     } catch (err) {
-      alert('Failed to update favorite status');
+      toast.error('Failed to update favorite status');
     }
   };
 
@@ -77,7 +106,7 @@ const RoomDetailPage = () => {
     } catch { return null; }
   };
 
-  const handleBookingRequest = async () => {
+  const handleScheduleViewing = async () => {
     try {
       const token = getToken();
       if (!token) {
@@ -85,64 +114,29 @@ const RoomDetailPage = () => {
         return;
       }
 
-      if (bookingMode === 'viewing') {
-        if (!viewingDate) {
-          alert('Please select a viewing date.');
-          return;
-        }
-        if (viewingDate < todayDate) {
-          alert('Viewing date must be today or a future date.');
-          return;
-        }
+      if (!viewingDate) {
+        toast.error('Please select a viewing date.');
+        return;
+      }
+      if (viewingDate < todayDate) {
+        toast.error('Viewing date must be today or a future date.');
+        return;
+      }
 
-        const response = await rentalRequestService.createRequest({
-          roomId: parseInt(id, 10),
-          message: `Viewing request for ${viewingDate} at 10:00. Requested from room detail page.`,
-          requestedMoveInDate: viewingDate,
-        });
-        if (response.success) {
-          alert('Viewing request sent!');
-        }
-      } else {
-        // renting mode
-        if (!moveIn) {
-          alert('Please select a move in date.');
-          return;
-        }
-        if (!moveOut) {
-          alert('Please select a move out date.');
-          return;
-        }
-        if (moveIn < todayDate) {
-          alert('Move in date must be today or a future date.');
-          return;
-        }
-        if (moveOut <= moveIn) {
-          alert('Move out date must be after Move in date.');
-          return;
-        }
-
-        // Validate 1 month minimum
-        const mIn = new Date(moveIn);
-        const mOut = new Date(moveOut);
-        
-        // Add 1 month to move in date
-        const minMoveOut = new Date(mIn);
-        minMoveOut.setMonth(minMoveOut.getMonth() + 1);
-
-        // Reset times to compare dates properly
-        minMoveOut.setHours(0, 0, 0, 0);
-        mOut.setHours(0, 0, 0, 0);
-
-        if (mOut < minMoveOut) {
-          alert('Minimum rental duration is 1 month. Please select a valid move out date.');
-          return;
-        }
-
-        navigate(`${ROUTES.TENANT.RENTAL_REQUEST}?roomId=${id}&moveIn=${moveIn}&moveOut=${moveOut}&guests=${encodeURIComponent(guests)}`);
+      const response = await rentalRequestService.requestViewing({
+        roomId: parseInt(id, 10),
+        notes: `Viewing request for ${viewingDate}. Requested from room detail page.`,
+        scheduledDate: viewingDate,
+      });
+      if (response.success && response.url) {
+        toast.success('Redirecting to VNPay for viewing deposit...');
+        window.location.href = response.url;
+      } else if (response.success) {
+        toast.success('Viewing request sent!');
+        setShowDateModal(false);
       }
     } catch (err) {
-      alert('Failed to send request. ' + (err.response?.data?.message || err.message));
+      toast.error('Failed to send request. ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -156,7 +150,7 @@ const RoomDetailPage = () => {
       // First, get or create conversation
       const landlordId = roomData.landlordId ?? roomData.landlord?.user_id;
       if (!landlordId) {
-        alert('Failed to start chat. Landlord information is unavailable.');
+        toast.error('Failed to start chat. Landlord information is unavailable.');
         return;
       }
       const response = await axios.post('http://localhost:5000/api/chat/conversations', {
@@ -170,84 +164,96 @@ const RoomDetailPage = () => {
         navigate(`/messages?conversationId=${convId}`);
       }
     } catch (err) {
-      alert('Failed to start chat. ' + (err.response?.data?.message || ''));
+      toast.error('Failed to start chat. ' + (err.response?.data?.message || ''));
     }
   };
 
   if (loading) return <div className="p-8 text-center">Loading...</div>;
   if (error || !roomData) return <div className="p-8 text-center text-red-500">{error || 'Listing not found'}</div>;
 
+  const roomFacilities = roomData.facilities?.filter(f => f.category === 'room' || !f.category) || [];
+  const nearbyFacilities = roomData.facilities?.filter(f => f.category === 'nearby') || [];
+
   const images = roomData.images?.length > 0 
-    ? roomData.images.map(img => `http://localhost:5000${img.image_url}`)
-    : (roomData.thumbnailUrl ? [`http://localhost:5000${roomData.thumbnailUrl}`] : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60']);
+    ? roomData.images.map(img => img.image_url.startsWith('http') ? img.image_url : `http://localhost:5000${img.image_url}`)
+    : (roomData.thumbnailUrl ? [roomData.thumbnailUrl.startsWith('http') ? roomData.thumbnailUrl : `http://localhost:5000${roomData.thumbnailUrl}`] : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60']);
     
-  // Ensure we have at least 5 images for the grid
-  while (images.length < 5) {
-    images.push(images[0]);
-  }
+  
 
   return (
-    <div className="room-detail-page container pt-20">
+    <div className="room-detail-page container pt-20" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+      
       {/* Back button for convenient navigation */}
-      <button className="back-btn" onClick={() => navigate('/listings')}>
-        <ChevronLeft size={16} />
-        <span>Back to Explore</span>
-      </button>
+      <Button 
+        variant="outline-primary" 
+        onClick={() => navigate(isAuthenticated && user?.role === 'LANDLORD' ? ROUTES.LANDLORD.LISTINGS : ROUTES.ROOMS)}
+        className="mb-3 d-flex align-items-center gap-2"
+        style={{ borderRadius: '20px', padding: '8px 16px', fontWeight: '500', width: 'fit-content' }}
+      >
+        <ChevronLeft size={18} />
+        {isAuthenticated && user?.role === 'LANDLORD' ? 'Back to My Listings' : 'Back to Explore'}
+      </Button>
 
       {/* Gallery Section */}
-      <section className="detail-gallery">
-        <div className="gallery-main">
-          <img src={images[0]} alt="Main space" />
-        </div>
-        <div className="gallery-grid">
-          <div className="gallery-item"><img src={images[1]} alt="Bedroom" /></div>
-          <div className="gallery-item"><img src={images[2]} alt="Kitchen" /></div>
-          <div className="gallery-item"><img src={images[3]} alt="Bathroom" /></div>
-          <div className="gallery-item relative">
-            <img src={images[4]} alt="Lounge" />
-            <button className="show-photos-btn">
-              <Grid size={16} />
-              <span>Show all photos</span>
-            </button>
-          </div>
-        </div>
-      </section>
+      <div className="custom-carousel-wrapper" style={{ position: 'relative', marginBottom: '2rem', borderRadius: '16px', overflow: 'hidden' }}>
+        
+        <Carousel>
+          {images.map((img, idx) => (
+            <Carousel.Item key={idx}>
+              <img
+                className="d-block w-100"
+                src={img}
+                alt={`Slide ${idx}`}
+                style={{ height: '480px', objectFit: 'cover' }}
+              />
+            </Carousel.Item>
+          ))}
+        </Carousel>
+      </div>
 
       {/* Content Column Layout */}
-      <div className="detail-layout">
+      <div className="content-sidebar-layout">
         {/* Left Side: Room Details */}
-        <div className="detail-content-main">
-          <div className="detail-header-section">
-            <div className="title-row">
-              <h1>{roomData.title}</h1>
-              <div className="header-actions">
-                <button className="circle-action-btn" title="Share">
-                  <Share2 size={18} />
-                </button>
-                <button 
-                  className={`circle-action-btn ${isFavorite ? 'favorite-active' : ''}`} 
-                  onClick={toggleFavorite}
-                  title="Save"
-                >
-                  <Heart size={18} fill={isFavorite ? "#EF4444" : "none"} />
-                </button>
-              </div>
+        <div className="main-content">
+          <div className="property-header">
+            {isEditing ? (
+              <input name="title" value={editForm.title} onChange={handleEditChange} className="form-control mb-2" style={{ fontSize: '1.8rem', fontWeight: 700 }} />
+            ) : (
+              <h1 className="room-detail-title">{roomData.title}</h1>
+            )}
+            <p className="room-detail-address"><MapPin size={16}/> {[roomData.address, roomData.ward, roomData.district, roomData.city].filter(Boolean).join(', ')}</p>
+          </div>
+          
+          <div className="property-features">
+            <div className="feature-card">
+              <Bed className="feature-icon" />
+              <span className="feature-value">{roomData.bedrooms || 1}</span>
+              <span className="feature-label">Phòng ngủ</span>
             </div>
-            
-            <div className="location-row">
-              <MapPin size={16} className="location-icon" />
-              <span>{roomData.address}</span>
+            <div className="feature-card">
+              <Users className="feature-icon" />
+              <span className="feature-value">{roomData.maxOccupants || roomData.max_occupants || 1}</span>
+              <span className="feature-label">Người tối đa</span>
             </div>
-
-            <div className="meta-specs-row">
-              <span className="rating-span">
-                <Star size={14} className="star-icon" />
-                <strong>5.0</strong> (12 reviews)
+            <div className="feature-card">
+              <Maximize className="feature-icon" />
+              <span className="feature-value">{roomData.areaSqm || roomData.area_sqm || 15}</span>
+              <span className="feature-label">m²</span>
+            </div>
+            <div className="feature-card">
+              <Home className="feature-icon" />
+              <span className="feature-value" style={{ textTransform: 'capitalize' }}>
+                {(() => {
+                  const type = (roomData.roomType || roomData.room_type || '').toLowerCase();
+                  if (type === 'single' || type === 'room') return 'Single Room';
+                  if (type === 'double') return 'Double Room';
+                  if (type === 'shared') return 'Shared Room';
+                  if (type === 'apartment') return 'Apartment';
+                  if (type === 'house') return 'House';
+                  return roomData.roomType || roomData.room_type || 'Phòng riêng';
+                })()}
               </span>
-              <span className="spec-dot">•</span>
-              <span>1 Bedroom</span>
-              <span className="spec-dot">•</span>
-              <span>{roomData.areaSqm || 0} sqm</span>
+              <span className="feature-label">Loại phòng</span>
             </div>
           </div>
 
@@ -256,15 +262,24 @@ const RoomDetailPage = () => {
           {/* Host Card Section */}
           <section className="host-card">
             <div className="host-info">
-              <img src={roomData.landlord?.avatar_url ? (roomData.landlord.avatar_url.startsWith('http') ? roomData.landlord.avatar_url : `http://localhost:5000${roomData.landlord.avatar_url}`) : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'} alt={roomData.landlord?.full_name || 'Landlord'} className="host-avatar" />
+              <div className="host-avatar-wrapper">
+                <img 
+                  src={getGlobalAvatar(roomData.landlord?.full_name, roomData.landlord?.avatar_url || roomData.landlord?.avatarUrl, 100)} 
+                  alt={roomData.landlord?.full_name || 'Landlord'} 
+                  className="host-avatar" 
+                />
+                <span className="host-status-dot"></span>
+              </div>
               <div className="host-text">
                 <h3>Managed by {roomData.landlord?.full_name || 'Landlord'}</h3>
                 <p>Phone: {roomData.landlord?.phone || 'N/A'}</p>
               </div>
             </div>
-            <button className="contact-host-btn flex items-center justify-center gap-2" onClick={handleChatWithLandlord}>
-              <MessageSquare size={16} /> [Chat with Landlord]
-            </button>
+            {!(isAuthenticated && (user?.userId === roomData.landlordId || user?.userId === roomData.landlord?.user_id)) && (
+              <button className="contact-host-btn flex items-center justify-center gap-2" onClick={handleChatWithLandlord}>
+                <MessageSquare size={18} /> Chat with landlord
+              </button>
+            )}
           </section>
 
           <hr className="section-divider" />
@@ -273,13 +288,17 @@ const RoomDetailPage = () => {
           <section className="about-section">
             <h2>About this space</h2>
             <div className={`about-text ${showMoreAbout ? 'expanded' : ''}`}>
-              <p>{roomData.description}</p>
+              {isEditing ? (
+                 <textarea name="description" value={editForm.description} onChange={handleEditChange} className="form-control" rows={6} />
+              ) : (
+                 <p>{roomData.description}</p>
+              )}
             </div>
             <button 
               className="show-more-link" 
               onClick={() => setShowMoreAbout(!showMoreAbout)}
             >
-              {showMoreAbout ? 'Show less' : 'Show more'} <ChevronDown size={14} className={showMoreAbout ? 'rotate-180' : ''} />
+              {showMoreAbout ? 'Show less' : 'Show more'}
             </button>
           </section>
 
@@ -288,115 +307,144 @@ const RoomDetailPage = () => {
           {/* Amenities Section */}
           <section className="amenities-section">
             <h2>What this place offers</h2>
-            <div className="amenities-grid">
-              {roomData.facilities?.map((amenity, idx) => {
-                return (
-                  <div className="amenity-item" key={idx}>
-                    <CheckCircle size={20} className="amenity-icon" />
-                    <span>{amenity.facility_name}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-
-        {/* Right Side: Booking Card */}
-        <aside className="detail-sidebar">
-          <div className="booking-card">
-            <div className="booking-mode-tabs">
-              <button 
-                className={`booking-tab ${bookingMode === 'viewing' ? 'active' : ''}`}
-                onClick={() => setBookingMode('viewing')}
-              >
-                View Room
-              </button>
-              <button 
-                className={`booking-tab ${bookingMode === 'renting' ? 'active' : ''}`}
-                onClick={() => setBookingMode('renting')}
-              >
-                Rent Room
-              </button>
-            </div>
-
-            <div className="booking-price-row mt-4">
-              <span className="booking-price">${roomData.pricePerMonth?.toLocaleString() || 0}</span>
-              <span className="booking-period">/ month</span>
-            </div>
-
-            {bookingMode === 'viewing' ? (
-              <div className="booking-form-box">
-                <div className="date-fields-row">
-                  <div className="date-field" style={{ width: '100%' }}>
-                    <label>VIEWING DATE</label>
-                    <input 
-                      type="date" 
-                      value={viewingDate} 
-                      min={todayDate}
-                      onChange={(e) => setViewingDate(e.target.value)} 
-                    />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="booking-form-box">
-                <div className="date-fields-row">
-                  <div className="date-field">
-                    <label>MOVE IN</label>
-                    <input 
-                      type="date" 
-                      value={moveIn} 
-                      min={todayDate}
-                      onChange={(e) => setMoveIn(e.target.value)} 
-                    />
-                  </div>
-                  <div className="date-field border-left">
-                    <label>MOVE OUT</label>
-                    <input 
-                      type="date" 
-                      value={moveOut} 
-                      min={moveIn || todayDate}
-                      onChange={(e) => setMoveOut(e.target.value)} 
-                    />
-                  </div>
-                </div>
-                <div className="guests-field">
-                  <label>GUESTS</label>
-                  <div className="guests-dropdown" style={{ position: 'relative' }}>
-                    <select 
-                      value={guests}
-                      onChange={(e) => setGuests(e.target.value)}
-                      style={{ width: '100%', border: 'none', outline: 'none', appearance: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500, padding: '0.25rem 0' }}
-                    >
-                      <option value="1 Adult">1 Adult</option>
-                      <option value="2 Adults">2 Adults</option>
-                      <option value="1 Adult, 1 Child">1 Adult, 1 Child</option>
-                      <option value="2 Adults, 1 Child">2 Adults, 1 Child</option>
-                      <option value="3+ Guests">3+ Guests</option>
-                    </select>
-                    <ChevronDown size={16} style={{ position: 'absolute', right: 0, pointerEvents: 'none' }} />
-                  </div>
+            
+            {roomFacilities.length > 0 && (
+              <div style={{ marginTop: '1rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>Room Facilities</h3>
+                <div className="amenities-grid">
+                  {roomFacilities.map((amenity, idx) => (
+                    <div className="amenity-item" key={`room-${idx}`}>
+                      <CheckCircle size={20} className="amenity-icon" />
+                      <span>{amenity.facility_name}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            <div className="flex flex-col gap-3 mt-4">
-              <button className="send-request-btn" onClick={handleBookingRequest}>
-                {bookingMode === 'viewing' ? '[Request Viewing]' : '[Request Rent / Deposit]'}
-              </button>
-            </div>
-            
-            <p className="booking-disclaimer">You won't be charged yet</p>
+            {nearbyFacilities.length > 0 && (
+              <div style={{ marginTop: '1.5rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>Nearby Facilities</h3>
+                <div className="amenities-grid">
+                  {nearbyFacilities.map((amenity, idx) => (
+                    <div className="amenity-item" key={`nearby-${idx}`}>
+                      <MapPin size={20} className="amenity-icon" />
+                      <span>{amenity.facility_name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            <hr className="booking-divider" />
+            {roomFacilities.length === 0 && nearbyFacilities.length === 0 && (
+              <p style={{ color: '#64748b' }}>No facilities listed.</p>
+            )}
+          </section>
+        </div>
 
-            <div className="booking-estimate-row">
-              <span>Total Monthly Estimate</span>
-              <span>${roomData.pricePerMonth?.toLocaleString() || 0}</span>
+        {/* Right Side: Booking Card */}
+        <div className="sidebar-container">
+          <div className="sidebar-sticky">
+            <div className="price-section">
+              <div className="price-header">
+                <div className="price-value-container">
+                  {isEditing ? (
+                    <input name="pricePerMonth" type="number" value={editForm.pricePerMonth} onKeyDown={(e) => { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault(); }} onChange={handleEditChange} className="form-control" style={{ width: '150px', display: 'inline-block' }} />
+                  ) : (
+                    <span className="price-value">{roomData.pricePerMonth?.toLocaleString('vi-VN') || roomData.price_per_month?.toLocaleString('vi-VN')} đ</span>
+                  )}
+                  <span className="price-unit">/ month</span>
+                </div>
+                <span className={`status-badge ${roomData.status || 'available'}`}>
+                  {roomData.status === 'available' ? 'Available' : 'Unavailable'}
+                </span>
+              </div>
+              <div className="booking-info-row">
+                <div className="info-col">
+                  <span className="info-label">Viewing Deposit (10%)</span>
+                  <span className="info-val" style={{ color: '#059669', fontWeight: 700 }}>
+                    {Math.round((roomData.pricePerMonth || roomData.price_per_month || 0) * 0.10).toLocaleString('vi-VN')} đ
+                  </span>
+                </div>
+                <div className="info-col">
+                  <span className="info-label">Term</span>
+                  <span className="info-val">Thỏa thuận</span>
+                </div>
+              </div>
+              
+              {isAuthenticated && user?.role === 'LANDLORD' && (roomData.landlordId === user?.userId || roomData.landlord?.user_id === user?.userId) ? (
+                ['pending', 'maintenance', 'rented', 'occupied', 'unavailable'].includes((roomData.status || '').toLowerCase()) ? (
+                  <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
+                    Cannot edit occupied/pending room
+                  </button>
+                ) : isEditing ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button className="btn-schedule-viewing" onClick={handleSaveEdit} style={{ background: '#10B981' }}>
+                      Save Changes
+                    </button>
+                    <button className="btn-schedule-viewing" onClick={() => setIsEditing(false)} style={{ background: '#EF4444' }}>
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button className="btn-schedule-viewing" onClick={() => {
+                      setEditForm({
+                        title: roomData.title,
+                        description: roomData.description,
+                        pricePerMonth: roomData.pricePerMonth || roomData.price_per_month
+                      });
+                      setIsEditing(true);
+                    }} style={{ background: '#2563EB' }}>
+                    Edit Room Directly
+                  </button>
+                )
+              ) : roomData.status === 'available' ? (
+                <>
+                  <button className="btn-schedule-viewing" onClick={() => setShowDateModal(true)}>
+                    Book room viewing schedule
+                  </button>
+                  <p style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', marginTop: '10px', lineHeight: 1.5 }}>
+                    A 10% viewing deposit is required. Refundable if the room doesn't match the description.
+                  </p>
+                </>
+              ) : (
+                <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
+                  Room is currently unavailable
+                </button>
+              )}
             </div>
           </div>
-        </aside>
+        </div>
       </div>
+
+      {showDateModal && (
+        <div className="modal-overlay" onClick={() => setShowDateModal(false)}>
+          <div className="modal-container" onClick={e => e.stopPropagation()}>
+            <h2>Đặt lịch xem phòng</h2>
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontSize: '14px', color: '#166534', lineHeight: 1.6 }}>
+                <strong>Tiền cọc xem phòng:</strong>{' '}
+                <span style={{ fontSize: '18px', fontWeight: 700 }}>
+                  {Math.round((roomData.pricePerMonth || roomData.price_per_month || 0) * 0.10).toLocaleString('vi-VN')} đ
+                </span>
+                <br />
+                <span style={{ fontSize: '12px' }}>= 10% giá phòng. Hoàn tiền nếu phòng không đúng mô tả.</span>
+              </p>
+            </div>
+            <label>Ngày xem</label>
+            <input 
+              type="date" 
+              value={viewingDate} 
+              min={todayDate}
+              onChange={(e) => setViewingDate(e.target.value)} 
+            />
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={() => setShowDateModal(false)}>Hủy</button>
+              <button className="btn-confirm" onClick={handleScheduleViewing}>Thanh toán & Đặt lịch</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

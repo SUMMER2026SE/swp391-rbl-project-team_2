@@ -319,12 +319,13 @@
   padding: 2rem 2.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   min-height: 100vh;
 }
 
 .auth-card {
   width: 100%;
+  margin-top: auto;
+  margin-bottom: auto;
   animation: formSlideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -341,7 +342,6 @@
 
 /* Footer */
 .auth-footer {
-  margin-top: 2rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--border-light);
   display: flex;

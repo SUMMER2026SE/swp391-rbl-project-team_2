@@ -50,7 +50,6 @@ const Room = sequelize.define('Room', {
   bedrooms: {
     type: DataTypes.INTEGER,
     defaultValue: 1,
-    allowNull: true,
   },
   max_occupants: {
     type: DataTypes.INTEGER,

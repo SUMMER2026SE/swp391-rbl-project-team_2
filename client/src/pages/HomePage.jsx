@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Sparkles, 
-  MapPin, 
-  Star, 
   ArrowRight, 
-  Wifi, 
-  Dumbbell,
-  ArrowUpRight
+  Building, 
+  User, 
+  Megaphone, 
+  Lock, 
+  TrendingUp, 
+  Check, 
+  Calendar, 
+  ShieldCheck, 
+  Coins
 } from 'lucide-react';
 import { ROUTES } from '../constants';
 import Button from '../components/common/Button';
@@ -17,25 +21,16 @@ import './HomePage.css';
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
   const { user, isAuthenticated } = useAuthStore();
 
-  React.useEffect(() => {
+  // Redirect role-specific users
+  useEffect(() => {
     if (isAuthenticated && user?.role === 'LANDLORD') {
       navigate('/landlord/dashboard', { replace: true });
     } else if (isAuthenticated && user?.role === 'ADMIN') {
       navigate(ROUTES.ADMIN.DASHBOARD, { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
-
-  const handleSearch = () => {
-    const params = searchQuery ? `?keyword=${encodeURIComponent(searchQuery)}` : '';
-    navigate(`${ROUTES.ROOMS}${params}`);
-  };
-
-  const handleCustomSearch = () => {
-    navigate(ROUTES.TENANT.CHAT);
-  };
 
   return (
     <div className="home-page">
@@ -45,267 +40,287 @@ const HomePage = () => {
 
       {/* Hero Section */}
       <section className="hero-section">
-        <div className="container hero-container">
-          <div className="hero-content">
-            <h1 className="hero-title">
-              Find your perfect stay, <span className="text-gradient">smarter.</span>
-            </h1>
-            <p className="hero-subtitle">
-              Use our advanced AI to discover modern boarding houses that match your exact lifestyle and budget.
-            </p>
-
-            {/* Quick Filters */}
-            <div className="quick-filters">
-              <button className="filter-chip">Under 3M/month</button>
-              <button className="filter-chip">Near Metro Station</button>
-              <button className="filter-chip">Pet Friendly</button>
-              <button className="filter-chip">Private Bathroom</button>
-            </div>
-
-            {/* AI Search Bar */}
-            <div className="ai-search-wrapper">
-              <div className="ai-search-bar">
-                <Sparkles size={20} className="ai-icon" />
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleSearch();
-                    }
-                  }}
-                  placeholder='Ask our AI: "I need a room under 4M near District 1"' 
-                  className="ai-search-input"
-                />
-                <Button variant="primary" className="search-btn" onClick={handleSearch}>
-                  Search
-                </Button>
-              </div>
-            </div>
+        <div className="container hero-container-centered">
+          <div className="badge-promo">
+            <span className="badge-glowing-dot"></span>
+            <Sparkles size={14} className="text-indigo" />
+            <span>AI-Powered Smart Rental Matching</span>
           </div>
-        </div>
-      </section>
-
-      {/* Featured Listings Section */}
-      <section className="featured-section">
-        <div className="container">
-          <div className="featured-header">
-            <div>
-              <h2 className="featured-title">Featured Listings</h2>
-              <p className="featured-subtitle">Top-rated modern spaces tailored for you.</p>
-            </div>
-            <Button variant="outline" className="view-all-btn" onClick={() => navigate(ROUTES.ROOMS)}>
-              View all <ArrowRight size={16} />
+          <h1 className="hero-title">
+            Find your perfect stay, <span className="text-gradient">smarter.</span>
+          </h1>
+          <p className="hero-subtitle">
+            Find and secure the perfect student room or boarding house near your university with ease. Connect with verified landlords directly.
+          </p>
+          <div className="hero-action-buttons">
+            <Button 
+              variant="primary" 
+              size="large" 
+              onClick={() => navigate(ROUTES.ROOMS)}
+              className="hero-primary-btn"
+            >
+              Find a Room <ArrowRight size={18} />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="large" 
+              onClick={() => navigate('/register?role=landlord')}
+              className="hero-secondary-btn"
+            >
+              List Your Property
             </Button>
           </div>
 
-          <div className="bento-grid">
-            
-            {/* Promo Card (4 cols) */}
-            <div className="bento-card promo-card">
-              <div className="promo-content">
-                <div className="promo-icon-wrapper">
-                  <Sparkles size={28} className="promo-icon" />
-                </div>
-                <div className="promo-text">
-                  <h3 className="promo-title">Can't find the perfect match?</h3>
-                  <p className="promo-desc">Let our AI agent do the heavy lifting. Tell us what you need.</p>
-                </div>
-                <Button variant="primary" className="custom-search-btn" onClick={handleCustomSearch}>
-                  Start Custom Search <ArrowUpRight size={16} />
-                </Button>
-              </div>
+          {/* Quick Metrics */}
+          <div className="hero-metrics">
+            <div className="metric-item">
+              <span className="metric-num">5k+</span>
+              <span className="metric-label">Active Students</span>
             </div>
-
-            {/* Nexus Urban Lofts (8 cols) */}
-            <div className="bento-card large-card" onClick={() => navigate(ROUTES.ROOM_DETAIL)}>
-              <div className="card-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80" 
-                  alt="The Nexus Urban Lofts" 
-                />
-                <div className="price-tag-overlay">
-                  $650<span className="price-mo">/mo</span>
-                </div>
-              </div>
-              <div className="card-info">
-                <div className="card-main-info">
-                  <h3 className="card-title">The Nexus Urban Lofts</h3>
-                  <div className="card-location">
-                    <MapPin size={14}/> District 1, Tech Hub
-                  </div>
-                  <div className="card-amenities">
-                    <span className="amenity-badge"><Wifi size={14}/> High-Speed Wi-Fi</span>
-                    <span className="amenity-badge"><Dumbbell size={14}/> Gym Access</span>
-                  </div>
-                </div>
-                <div className="card-divider"></div>
-                <div className="card-footer">
-                  <div className="rating">
-                    <Star size={16} className="star-icon" fill="currentColor"/> 
-                    <span className="rating-score">4.9</span>
-                    <span className="reviews">(128 reviews)</span>
-                  </div>
-                </div>
-              </div>
+            <div className="metric-divider"></div>
+            <div className="metric-item">
+              <span className="metric-num">1.2k+</span>
+              <span className="metric-label">Verified Rooms</span>
             </div>
-
-            {/* Oakwood Studios (4 cols) */}
-            <div className="bento-card small-card" onClick={() => navigate(ROUTES.ROOM_DETAIL)}>
-              <div className="card-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80" 
-                  alt="Oakwood Studios" 
-                />
-                <div className="price-tag-overlay">
-                  $420<span className="price-mo">/mo</span>
-                </div>
-              </div>
-              <div className="card-info">
-                <h3 className="card-title">Oakwood Studios</h3>
-                <div className="card-location">
-                  <MapPin size={14}/> District 3, Cultural Area
-                </div>
-                <div className="card-divider"></div>
-                <div className="card-footer">
-                  <div className="rating">
-                    <Star size={14} className="star-icon" fill="currentColor"/> 
-                    <span className="rating-score">4.7</span>
-                  </div>
-                  <div className="room-type">Private Room</div>
-                </div>
-              </div>
+            <div className="metric-divider"></div>
+            <div className="metric-item">
+              <span className="metric-num">98.4%</span>
+              <span className="metric-label">Match Accuracy</span>
             </div>
-
-            {/* Vertex Co-Living (4 cols) */}
-            <div className="bento-card small-card" onClick={() => navigate(ROUTES.ROOM_DETAIL)}>
-              <div className="card-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?auto=format&fit=crop&w=600&q=80" 
-                  alt="Vertex Co-Living" 
-                />
-                <div className="price-tag-overlay">
-                  $550<span className="price-mo">/mo</span>
-                </div>
-              </div>
-              <div className="card-info">
-                <h3 className="card-title">Vertex Co-Living</h3>
-                <div className="card-location">
-                  <MapPin size={14}/> District 7, Riverside
-                </div>
-                <div className="card-divider"></div>
-                <div className="card-footer">
-                  <div className="rating">
-                    <Star size={14} className="star-icon" fill="currentColor"/> 
-                    <span className="rating-score">4.8</span>
-                  </div>
-                  <div className="room-type">Studio</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Eco Sharehouse (4 cols) */}
-            <div className="bento-card small-card" onClick={() => navigate(ROUTES.ROOM_DETAIL)}>
-              <div className="card-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=600&q=80" 
-                  alt="Eco Sharehouse" 
-                />
-                <div className="price-tag-overlay">
-                  $380<span className="price-mo">/mo</span>
-                </div>
-              </div>
-              <div className="card-info">
-                <h3 className="card-title">Eco Sharehouse</h3>
-                <div className="card-location">
-                  <MapPin size={14}/> District 2, Minimalist Hub
-                </div>
-                <div className="card-divider"></div>
-                <div className="card-footer">
-                  <div className="rating">
-                    <Star size={14} className="star-icon" fill="currentColor"/> 
-                    <span className="rating-score">4.6</span>
-                  </div>
-                  <div className="room-type">Shared Room</div>
-                </div>
-              </div>
-            </div>
-
           </div>
         </div>
       </section>
 
-      {/* Popular Areas Section */}
-      <section className="popular-areas-section">
+      {/* Role Features Section */}
+      <section className="role-features-section">
         <div className="container">
-          <h2 className="popular-areas-title">Popular Areas</h2>
-          
-          <div className="areas-grid">
-            {/* District 1 */}
-            <div className="area-card" onClick={() => navigate(ROUTES.ROOMS)}>
-              <div className="area-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1596443686812-2717610be2cb?auto=format&fit=crop&w=600&q=80" 
-                  alt="District 1" 
-                />
-                <div className="area-overlay"></div>
+          <div className="section-header text-center">
+            <h2>Select Your Path</h2>
+            <p>Designed to satisfy both landlords looking to rent out and tenants looking for a home.</p>
+          </div>
+          <div className="role-grid">
+            {/* Landlord Card */}
+            <div className="role-card landlord-card">
+              <div className="role-card-content">
+                <div className="role-icon-wrapper landlord">
+                  <Building size={32} />
+                </div>
+                <h3 className="role-title">I am a Landlord</h3>
+                <p className="role-desc">
+                  Post your rooms, manage listings, and reach thousands of students searching for accommodation.
+                </p>
+                
+                <div className="role-bullets">
+                  <div className="bullet-item">
+                    <div className="bullet-icon landlord-bullet">
+                      <Megaphone size={16} />
+                    </div>
+                    <span>Easy room listing & management</span>
+                  </div>
+                  <div className="bullet-item">
+                    <div className="bullet-icon landlord-bullet">
+                      <Lock size={16} />
+                    </div>
+                    <span>Reach active tenants</span>
+                  </div>
+                  <div className="bullet-item">
+                    <div className="bullet-icon landlord-bullet">
+                      <TrendingUp size={16} />
+                    </div>
+                    <span>Boost visibility & bookings</span>
+                  </div>
+                </div>
+                
+                <button 
+                  className="role-action-btn landlord-btn" 
+                  onClick={() => navigate('/register?role=landlord')}
+                >
+                  Start Listing Rooms &rarr;
+                </button>
               </div>
-              <div className="area-info">
-                <h3 className="area-name">District 1</h3>
-                <p className="area-places">142 places</p>
+
+              {/* Landlord Mock Mini Widget */}
+              <div className="role-mock-widget landlord-mock">
+                <div className="widget-header">
+                  <span>Dashboard Overview</span>
+                  <span className="dot-green-pulse"></span>
+                </div>
+                <div className="widget-stats-grid">
+                  <div className="widget-stat">
+                    <span className="stat-lbl">Active Listings</span>
+                    <span className="stat-val text-amber">3 Rooms</span>
+                  </div>
+                  <div className="widget-stat">
+                    <span className="stat-lbl">Secured Deposit</span>
+                    <span className="stat-val text-indigo">4.2M VND</span>
+                  </div>
+                </div>
+                <div className="widget-graph">
+                  <div className="graph-bar bar1"></div>
+                  <div className="graph-bar bar2"></div>
+                  <div className="graph-bar bar3"></div>
+                  <div className="graph-bar bar4"></div>
+                  <div className="graph-bar bar5"></div>
+                </div>
+                <div className="widget-graph-caption">Views count increased by 15.4%</div>
               </div>
             </div>
 
-            {/* District 2 */}
-            <div className="area-card" onClick={() => navigate(ROUTES.ROOMS)}>
-              <div className="area-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1549925232-a5e2f98e6c40?auto=format&fit=crop&w=600&q=80" 
-                  alt="District 2" 
-                />
-                <div className="area-overlay"></div>
+            {/* Tenant Card */}
+            <div className="role-card tenant-card">
+              <div className="role-card-content">
+                <div className="role-icon-wrapper tenant">
+                  <User size={32} />
+                </div>
+                <h3 className="role-title">I am a Tenant</h3>
+                <p className="role-desc">
+                  Find the perfect boarding room, verify landlord listings, and secure your room deposit safely.
+                </p>
+                
+                <div className="role-bullets">
+                  <div className="bullet-item">
+                    <div className="bullet-icon tenant-bullet">
+                      <Search size={16} />
+                    </div>
+                    <span>Search rooms by location & budget</span>
+                  </div>
+                  <div className="bullet-item">
+                    <div className="bullet-icon tenant-bullet">
+                      <ShieldCheck size={16} />
+                    </div>
+                    <span>Secure deposit holding protection</span>
+                  </div>
+                  <div className="bullet-item">
+                    <div className="bullet-icon tenant-bullet">
+                      <Calendar size={16} />
+                    </div>
+                    <span>Book in-person viewing slots</span>
+                  </div>
+                </div>
+                
+                <button 
+                  className="role-action-btn tenant-btn" 
+                  onClick={() => navigate(ROUTES.ROOMS)}
+                >
+                  Find a Room Now &rarr;
+                </button>
               </div>
-              <div className="area-info">
-                <h3 className="area-name">District 2</h3>
-                <p className="area-places">85 places</p>
-              </div>
-            </div>
 
-            {/* District 3 */}
-            <div className="area-card" onClick={() => navigate(ROUTES.ROOMS)}>
-              <div className="area-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&w=600&q=80" 
-                  alt="District 3" 
-                />
-                <div className="area-overlay"></div>
-              </div>
-              <div className="area-info">
-                <h3 className="area-name">District 3</h3>
-                <p className="area-places">110 places</p>
-              </div>
-            </div>
-
-            {/* District 7 */}
-            <div className="area-card" onClick={() => navigate(ROUTES.ROOMS)}>
-              <div className="area-image-wrapper">
-                <img 
-                  src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80" 
-                  alt="District 7" 
-                />
-                <div className="area-overlay"></div>
-              </div>
-              <div className="area-info">
-                <h3 className="area-name">District 7</h3>
-                <p className="area-places">94 places</p>
+              {/* Tenant Mock Mini Widget */}
+              <div className="role-mock-widget tenant-mock">
+                <div className="widget-header">
+                  <span>Viewing Schedule</span>
+                  <span className="badge-booking-status">APPROVED</span>
+                </div>
+                <div className="widget-booking-details">
+                  <div className="booking-info">
+                    <span className="booking-room">Green Villa Studio, Room 302</span>
+                    <span className="booking-time">Sun, June 21 at 15:30</span>
+                  </div>
+                  <div className="booking-landlord">
+                    <span className="landlord-lbl">Landlord:</span>
+                    <span className="landlord-val">Minh Hoang</span>
+                  </div>
+                </div>
+                <div className="widget-booking-action">
+                  <span>Status: Confirmed & Deposit Paid</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
+      {/* How It Works Section */}
+      <section className="how-it-works-section">
+        <div className="container">
+          <div className="section-header text-center">
+            <h2>How It Works</h2>
+            <p>Find your perfect room in 3 simple steps</p>
+          </div>
+          <div className="steps-grid">
+            <div className="step-card">
+              <div className="step-decor-line"></div>
+              <div className="step-number">1</div>
+              <div className="step-icon-inner bg-indigo-light text-indigo">
+                <Search size={24} />
+              </div>
+              <h3>Search & Filter</h3>
+              <p>Tell our AI what you need or use our advanced filters to browse verified listings.</p>
+            </div>
+            <div className="step-card">
+              <div className="step-decor-line"></div>
+              <div className="step-number">2</div>
+              <div className="step-icon-inner bg-amber-light text-amber">
+                <Calendar size={24} />
+              </div>
+              <h3>Schedule a Viewing</h3>
+              <p>Book a time to see the room in person and pay a small deposit to secure your slot.</p>
+            </div>
+            <div className="step-card">
+              <div className="step-number">3</div>
+              <div className="step-icon-inner bg-green-light text-green">
+                <Check size={24} />
+              </div>
+              <h3>Move In</h3>
+              <p>Sign the contract, pay the rent, and move into your new home with peace of mind.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="benefits-section">
+        <div className="container">
+          <div className="section-header text-center">
+            <h2>Why Choose Us</h2>
+            <p>We make renting easier and safer for everyone.</p>
+          </div>
+          <div className="benefits-grid">
+            <div className="benefit-item">
+              <div className="benefit-icon-wrapper">
+                <Sparkles size={24} className="benefit-icon" />
+              </div>
+              <h4>AI-Powered Matching</h4>
+              <p>Our smart system finds the best rooms that fit your lifestyle and budget instantly.</p>
+            </div>
+            <div className="benefit-item">
+              <div className="benefit-icon-wrapper">
+                <ShieldCheck size={24} className="benefit-icon" />
+              </div>
+              <h4>Verified Landlords</h4>
+              <p>Every landlord is vetted to ensure you have a safe and reliable renting experience.</p>
+            </div>
+            <div className="benefit-item">
+              <div className="benefit-icon-wrapper">
+                <Coins size={24} className="benefit-icon" />
+              </div>
+              <h4>Transparent Pricing</h4>
+              <p>No hidden fees. What you see is what you pay. Protect your deposits with our secure platform.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="cta-section">
+        <div className="container">
+          <div className="cta-content">
+            <h2>Ready to find your next home?</h2>
+            <p>Join thousands of users who have already found their perfect space.</p>
+            <div className="cta-buttons">
+              <Button variant="primary" size="large" onClick={() => navigate(ROUTES.ROOMS)} className="btn-cta-primary">
+                Browse Rooms Now
+              </Button>
+              {!isAuthenticated && (
+                <Button variant="outline" size="large" onClick={() => navigate('/register')} className="btn-cta-outline">
+                  Sign Up for Free
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

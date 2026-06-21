@@ -341,19 +341,19 @@
   line-height: 1;
 }
 
-.badge-pending-refund {
-  background-color: #FEF3C7; /* figma soft tan gold */
+.badge-pending {
+  background-color: #FEF3C7; /* soft tan gold */
   color: #92400E;
 }
 
-.badge-confirmed {
-  background-color: #EFF6FF; /* figma soft blue */
+.badge-processing {
+  background-color: #EFF6FF; /* soft blue */
   color: #1D4ED8;
 }
 
-.badge-refunded {
-  background-color: var(--primary-light); /* figma neutral gray */
-  color: var(--text-muted);
+.badge-completed {
+  background-color: #D1FAE5; /* green */
+  color: #065F46;
 }
 
 /* Action Trigger Buttons inside Table */

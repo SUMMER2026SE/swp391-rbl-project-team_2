@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { 
   Calendar, ShieldCheck, Star, Edit, Edit3, Lock, Bell, 
   CreditCard, ChevronRight, Wrench, ThermometerSnowflake, 
@@ -9,26 +10,7 @@ import { authService } from '../../auth/services/authService';
 import { API_URL } from '../../../config';
 import './TenantProfilePage.css';
 
-const MOCK_REQUESTS = [
-  {
-    id: '8492',
-    unit: 'Unit 4B',
-    title: 'Leaking Faucet in Kitchen',
-    status: 'Resolved',
-    description: 'The cold water faucet in the kitchen sink is dripping continuously. Needs washer replacement.',
-    date: 'Oct 12, 2023',
-    iconType: 'plumbing'
-  },
-  {
-    id: '8510',
-    unit: 'Unit 4B',
-    title: 'AC Not Cooling',
-    status: 'In Progress',
-    description: 'Air conditioning unit is blowing warm air. Maintenance scheduled for tomorrow morning.',
-    date: 'Nov 02, 2023',
-    iconType: 'hvac'
-  }
-];
+// Mock requests removed
 
 const TenantProfilePage = () => {
   const { user, updateUser } = useAuthStore();
@@ -37,6 +19,7 @@ const TenantProfilePage = () => {
     fullName: '',
     phone: ''
   });
+  const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -49,7 +32,19 @@ const TenantProfilePage = () => {
     }
   }, [user]);
 
+  const validate = () => {
+    const newErrors = {};
+    if (formData.phone) {
+      if (!/^0\d{9}$/.test(formData.phone)) {
+        newErrors.phone = 'Phone number must be exactly 10 digits and start with 0';
+      }
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSaveProfile = async () => {
+    if (!validate()) return;
     setIsSaving(true);
     try {
       const response = await authService.updateProfile({
@@ -59,9 +54,11 @@ const TenantProfilePage = () => {
       if (!response.success) throw new Error(response.message);
       updateUser(response.data);
       setIsEditing(false);
+      setErrors({});
+      toast.success("Profile updated successfully!");
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Error updating profile';
-      alert(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -82,10 +79,10 @@ const TenantProfilePage = () => {
       const response = await authService.uploadAvatar(formData);
       if (!response.success) throw new Error(response.message);
       updateUser({ avatarUrl: response.data.avatarUrl });
-      alert('Avatar updated successfully!');
+      toast.success('Avatar updated successfully!');
     } catch (error) {
       const msg = error.response?.data?.message || error.message || 'Error uploading avatar';
-      alert(msg);
+      toast.error(msg);
     }
   };
 
@@ -155,23 +152,6 @@ const TenantProfilePage = () => {
               </div>
             </div>
           </div>
-          {!isEditing ? (
-            <button className="edit-profile-btn" onClick={() => setIsEditing(true)}>
-              <Edit3 size={18} />
-              <span>Edit Profile</span>
-            </button>
-          ) : (
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button className="edit-profile-btn" onClick={() => setIsEditing(false)} style={{ background: '#f3f4f6', color: '#374151' }}>
-                <X size={18} />
-                <span>Cancel</span>
-              </button>
-              <button className="edit-profile-btn" onClick={handleSaveProfile} disabled={isSaving}>
-                <Save size={18} />
-                <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Profile Content Grid */}
@@ -212,13 +192,30 @@ const TenantProfilePage = () => {
                 <div className="info-item">
                   <span className="info-label">Phone Number</span>
                   {isEditing ? (
-                    <input 
-                      type="text" 
-                      value={formData.phone} 
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="edit-input"
-                      style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd', width: '100%' }}
-                    />
+                    <div>
+                      <input 
+                        type="text" 
+                        value={formData.phone} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData({...formData, phone: val});
+                          if (val && !/^0\d{9}$/.test(val)) {
+                            setErrors({...errors, phone: 'Phone number must be exactly 10 digits and start with 0'});
+                          } else {
+                            const newErrors = { ...errors };
+                            delete newErrors.phone;
+                            setErrors(newErrors);
+                          }
+                        }}
+                        className={`edit-input ${errors.phone ? 'is-invalid' : ''}`}
+                        style={{ padding: '8px', borderRadius: '6px', border: `1px solid ${errors.phone ? '#dc3545' : '#ddd'}`, width: '100%' }}
+                      />
+                      {errors.phone && (
+                        <div style={{ color: '#dc3545', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                          {errors.phone}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <span className="info-value">{user?.phone || 'Not provided'}</span>
                   )}
@@ -228,63 +225,25 @@ const TenantProfilePage = () => {
                   <span className="info-value" style={{ textTransform: 'capitalize' }}>{user?.role || 'Tenant'}</span>
                 </div>
               </div>
+              {isEditing && (
+                <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
+                  <button className="edit-profile-btn" onClick={() => { setIsEditing(false); setErrors({}); }} style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' }}>
+                    <X size={16} />
+                    <span>Cancel</span>
+                  </button>
+                  <button className="edit-profile-btn" onClick={handleSaveProfile} disabled={isSaving} style={{ background: '#2563eb', color: 'white', border: 'none' }}>
+                    <Save size={16} />
+                    <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                  </button>
+                </div>
+              )}
             </div>
 
 
 
           </aside>
 
-          {/* Main Content */}
-          <main className="profile-main">
-            
-            {/* My Requests */}
-            <div className="profile-card requests-card">
-              <div className="card-header">
-                <h2>My Requests</h2>
-                <button className="view-all-link">View All</button>
-              </div>
-              
-              <div className="requests-list">
-                {MOCK_REQUESTS.map(req => (
-                  <div key={req.id} className="request-item">
-                    <div className="request-item-header">
-                      <div className="request-item-title-group">
-                        <div className={`request-icon-wrapper ${req.iconType}`}>
-                          {req.iconType === 'plumbing' ? <Wrench size={20} /> : <ThermometerSnowflake size={20} />}
-                        </div>
-                        <div className="request-title-area">
-                          <h3>{req.title}</h3>
-                          <span className="request-subtitle">Req #{req.id} • {req.unit}</span>
-                        </div>
-                      </div>
-                      
-                      <div className={`request-status-badge ${req.status.toLowerCase().replace(' ', '-')}`}>
-                        {req.status === 'Resolved' ? <CheckCircle2 size={14} /> : <Clock size={14} />}
-                        <span>{req.status}</span>
-                      </div>
-                    </div>
-                    
-                    <p className="request-description">{req.description}</p>
-                    
-                    <div className="request-item-footer">
-                      <span className="request-date">Submitted: {req.date}</span>
-                      <button className="details-link">
-                        Details <ArrowRight size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="new-request-container">
-                <button className="new-request-btn">
-                  <Plus size={18} />
-                  <span>New Request</span>
-                </button>
-              </div>
-            </div>
-
-          </main>
+          {/* Main Content removed */}
 
         </div>
       </div>

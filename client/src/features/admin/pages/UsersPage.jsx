@@ -1,5 +1,8 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { Search, UserCheck, UserX, MoreVertical, Shield } from 'lucide-react';
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
 import adminService from '../../../services/adminService';
 import './UsersPage.css';
 
@@ -15,6 +18,13 @@ const UsersPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Confirmation Modal State
+  const [confirmDialog, setConfirmDialog] = useState({
+    show: false,
+    userId: null,
+    action: null
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -35,18 +45,28 @@ const UsersPage = () => {
     }
   };
 
-  const handleUpdateStatus = async (userId, action) => {
-    if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
+  const handleUpdateStatus = (userId, action) => {
+    setConfirmDialog({ show: true, userId, action });
+  };
+
+  const executeStatusUpdate = async () => {
+    const { userId, action } = confirmDialog;
+    setConfirmDialog({ show: false, userId: null, action: null });
+
     try {
       const res = await adminService.updateUserStatus(userId, action);
       if (res.success) {
-        alert(`User successfully ${action}d!`);
+        toast.success(`User successfully ${action}d!`);
         fetchUsers(); // Refresh list
       }
     } catch (err) {
-      alert('Failed to update user status.');
+      toast.error('Failed to update user status.');
       console.error(err);
     }
+  };
+
+  const closeConfirmDialog = () => {
+    setConfirmDialog({ show: false, userId: null, action: null });
   };
 
   const filtered = users.filter((u) => {
@@ -172,6 +192,23 @@ const UsersPage = () => {
           </div>
         </div>
       </div>
+
+      <Modal show={confirmDialog.show} onHide={closeConfirmDialog} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm User Action</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to <strong>{confirmDialog.action}</strong> this user?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={closeConfirmDialog}>
+            Cancel
+          </Button>
+          <Button variant={confirmDialog.action === 'suspend' ? 'danger' : 'primary'} onClick={executeStatusUpdate}>
+            Confirm
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

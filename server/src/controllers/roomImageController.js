@@ -29,7 +29,7 @@ const uploadRoomImage = async (req, res, next) => {
     }
 
     // Generate image URL
-    const imageUrl = `/uploads/${req.file.filename}`;
+    const imageUrl = req.file.path;
 
     // Check if this should be primary image
     const existingImages = await RoomImage.count({ where: { room_id: roomId } });

@@ -31,8 +31,10 @@ export const adminService = {
     const response = await api.get('/admin/rooms');
     return response;
   },
-  updateRoomStatus: async (roomId, status) => {
-    const response = await api.put(`/admin/rooms/${roomId}/status`, { status });
+  updateRoomStatus: async (roomId, status, reason = '') => {
+    const body = { status };
+    if (reason) body.reason = reason;
+    const response = await api.put(`/admin/rooms/${roomId}/status`, body);
     return response;
   },
 
@@ -53,8 +55,18 @@ export const adminService = {
     const response = await api.get('/admin/payouts');
     return response;
   },
-  processPayout: async (paymentId, commissionRate) => {
-    const response = await api.put(`/admin/payouts/${paymentId}/process`, { commissionRate });
+  processPayout: async (payoutId, commissionRate) => {
+    const response = await api.put(`/admin/payouts/${payoutId}/process`, { commissionRate });
+    return response;
+  },
+
+  getAllDisputes: async () => {
+    const response = await api.get('/admin/disputes');
+    return response;
+  },
+
+  resolveDispute: async (scheduleId, outcome) => {
+    const response = await api.post(`/admin/disputes/${scheduleId}/resolve`, { outcome });
     return response;
   },
 };

@@ -1,0 +1,72 @@
+/* Admin Action Buttons */
+.admin-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.97rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+}
+
+.admin-action-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.admin-action-btn.approve {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.admin-action-btn.approve:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.admin-action-btn.reject {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
+}
+
+.admin-action-btn.reject:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+}
+
+.admin-action-btn.violation {
+  background: transparent;
+  color: #7c3aed;
+  border: 2px solid #7c3aed;
+  box-shadow: none;
+}
+
+.admin-action-btn.violation:hover:not(:disabled) {
+  background: #7c3aed;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+}
+
+/* About text truncation */
+.about-text {
+  transition: max-height 0.3s ease;
+}
+
+.about-text.expanded {
+  max-height: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}

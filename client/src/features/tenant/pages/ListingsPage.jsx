@@ -54,7 +54,7 @@ const ListingsPage = () => {
               <div className="h-48 overflow-hidden relative">
                 {room.thumbnailUrl ? (
                   <img 
-                    src={`http://localhost:5000${room.thumbnailUrl}`} 
+                    src={(room.thumbnailUrl && room.thumbnailUrl.startsWith('http') ? room.thumbnailUrl : `http://localhost:5000${room.thumbnailUrl}`)} 
                     alt={room.title}
                     className="w-full h-full object-cover"
                     onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60'; }}

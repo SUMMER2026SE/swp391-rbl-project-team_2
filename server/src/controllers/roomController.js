@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Room, RoomImage, Facility, User } = require('../models');
+const { sequelize, Room, RoomImage, Facility, RoomFacility, User } = require('../models');
 
 // =========================================================
 // POST /api/landlord/rooms
@@ -43,10 +43,19 @@ const createRoom = async (req, res, next) => {
     };
 
     if (req.file) {
-      roomData.thumbnail_url = `/uploads/${req.file.filename}`;
+      roomData.thumbnail_url = req.file.path;
     }
 
     const room = await Room.create(roomData);
+
+    if (req.file) {
+      await RoomImage.create({
+        room_id: room.room_id,
+        image_url: req.file.path,
+        is_primary: true,
+        display_order: 0,
+      });
+    }
 
     return res.status(201).json({
       success: true,
@@ -84,7 +93,7 @@ const getLandlordRooms = async (req, res, next) => {
       where,
       include: [
         { model: RoomImage, as: 'images' },
-        { model: Facility, as: 'facilities' },
+        { model: Facility, as: 'facilities', through: { attributes: [] } },
       ],
       offset,
       limit: parseInt(limit),
@@ -96,12 +105,16 @@ const getLandlordRooms = async (req, res, next) => {
       data: rows.map(room => ({
         roomId: room.room_id,
         title: room.title,
+        description: room.description,
         address: room.address,
         city: room.city,
+        district: room.district,
+        ward: room.ward,
         pricePerMonth: room.price_per_month,
         areaSqm: room.area_sqm,
         roomType: room.room_type,
         maxOccupants: room.max_occupants,
+        bedrooms: room.bedrooms,
         status: room.status,
         thumbnailUrl: room.thumbnail_url,
         images: room.images,
@@ -133,7 +146,7 @@ const getRoomDetails = async (req, res, next) => {
       where: { room_id: roomId, landlord_id: landlordId, is_deleted: false },
       include: [
         { model: RoomImage, as: 'images' },
-        { model: Facility, as: 'facilities' },
+        { model: Facility, as: 'facilities', through: { attributes: [] } },
         { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
       ],
     });
@@ -159,6 +172,7 @@ const getRoomDetails = async (req, res, next) => {
         areaSqm: room.area_sqm,
         roomType: room.room_type,
         maxOccupants: room.max_occupants,
+        bedrooms: room.bedrooms,
         status: room.status,
         thumbnailUrl: room.thumbnail_url,
         images: room.images,
@@ -223,7 +237,7 @@ const updateRoom = async (req, res, next) => {
       }
       room.status = status;
     }
-    if (req.file) room.thumbnail_url = `/uploads/${req.file.filename}`;
+    if (req.file) room.thumbnail_url = req.file.path;
 
     room.updated_at = new Date();
     await room.save();
@@ -340,7 +354,7 @@ const getAllPublicRooms = async (req, res, next) => {
       where: { is_deleted: false, status: 'available' },
       include: [
         { model: RoomImage, as: 'images' },
-        { model: Facility, as: 'facilities' },
+        { model: Facility, as: 'facilities', through: { attributes: [] } },
         { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'avatar_url'] }
       ],
       offset,
@@ -356,9 +370,13 @@ const getAllPublicRooms = async (req, res, next) => {
         description: room.description,
         address: room.address,
         city: room.city,
+        district: room.district,
+        ward: room.ward,
         pricePerMonth: room.price_per_month,
         areaSqm: room.area_sqm,
         roomType: room.room_type,
+        maxOccupants: room.max_occupants,
+        bedrooms: room.bedrooms,
         status: room.status,
         thumbnailUrl: room.thumbnail_url,
         images: room.images,
@@ -390,7 +408,7 @@ const getPublicRoomDetails = async (req, res, next) => {
       where: { room_id: roomId, is_deleted: false },
       include: [
         { model: RoomImage, as: 'images' },
-        { model: Facility, as: 'facilities' },
+        { model: Facility, as: 'facilities', through: { attributes: [] } },
         { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
       ],
     });
@@ -418,6 +436,7 @@ const getPublicRoomDetails = async (req, res, next) => {
         areaSqm: room.area_sqm,
         roomType: room.room_type,
         maxOccupants: room.max_occupants,
+        bedrooms: room.bedrooms,
         status: room.status,
         thumbnailUrl: room.thumbnail_url,
         images: room.images,
@@ -442,36 +461,43 @@ const searchRooms = async (req, res, next) => {
       district,
       minPrice,
       maxPrice,
+      minArea,
+      maxArea,
       roomType,
       bedrooms,
-      amenities,
+      maxOccupants,
+      facilities,
+      nearbyFacilities,
       status,
+      sort,
       page = 1,
-      limit = 10,
+      limit = 12,
     } = req.query;
 
-    const offset = (page - 1) * limit;
-
+    const offset = (parseInt(page) - 1) * parseInt(limit);
     const where = { is_deleted: false };
-    
-    // Default to available rooms if status not provided, otherwise use provided status
+
     if (status) {
       where.status = status;
     } else {
       where.status = 'available';
     }
 
-    // Keyword search (title, address, or landlord name)
     if (keyword) {
+      const keywordLower = `%${keyword}%`;
       const matchingLandlords = await User.findAll({
-        where: { full_name: { [Op.like]: `%${keyword}%` }, is_deleted: false },
+        where: { full_name: { [Op.like]: keywordLower }, is_deleted: false },
         attributes: ['user_id'],
       });
       const landlordIds = matchingLandlords.map((u) => u.user_id);
 
       const keywordConditions = [
-        { title: { [Op.like]: `%${keyword}%` } },
-        { address: { [Op.like]: `%${keyword}%` } },
+        { title: { [Op.like]: keywordLower } },
+        { description: { [Op.like]: keywordLower } },
+        { address: { [Op.like]: keywordLower } },
+        { city: { [Op.like]: keywordLower } },
+        { district: { [Op.like]: keywordLower } },
+        { ward: { [Op.like]: keywordLower } },
       ];
       if (landlordIds.length > 0) {
         keywordConditions.push({ landlord_id: { [Op.in]: landlordIds } });
@@ -479,36 +505,45 @@ const searchRooms = async (req, res, next) => {
       where[Op.or] = keywordConditions;
     }
 
-    if (city) {
-      where.city = { [Op.like]: `%${city}%` };
-    }
-    
-    if (district) {
-      where.district = { [Op.like]: `%${district}%` };
-    }
+    if (city) where.city = { [Op.like]: `%${city}%` };
+    if (district) where.district = { [Op.like]: `%${district}%` };
 
-    // Price range
     if (minPrice || maxPrice) {
       where.price_per_month = {};
       if (minPrice) where.price_per_month[Op.gte] = parseFloat(minPrice);
       if (maxPrice) where.price_per_month[Op.lte] = parseFloat(maxPrice);
     }
 
-    // Room type
+    if (minArea || maxArea) {
+      where.area_sqm = {};
+      if (minArea) where.area_sqm[Op.gte] = parseFloat(minArea);
+      if (maxArea) where.area_sqm[Op.lte] = parseFloat(maxArea);
+    }
+
     if (roomType) {
-      // roomType could be multiple comma-separated values in some implementations, but let's support exact match or array
+      // roomType maps the UI values directly to database values (either matching ENUM or whatever literal string is saved)
       const types = roomType.split(',').map(t => t.trim());
       where.room_type = { [Op.in]: types };
     }
 
-    // Bedrooms (use max_occupants as fallback)
     if (bedrooms) {
       const parsedBedrooms = parseInt(bedrooms);
       if (!isNaN(parsedBedrooms)) {
         if (bedrooms.includes('+')) {
-          where.max_occupants = { [Op.gte]: parsedBedrooms };
+          where.bedrooms = { [Op.gte]: parsedBedrooms };
         } else {
-          where.max_occupants = parsedBedrooms;
+          where.bedrooms = parsedBedrooms;
+        }
+      }
+    }
+
+    if (maxOccupants) {
+      const parsedOcc = parseInt(maxOccupants);
+      if (!isNaN(parsedOcc)) {
+        if (maxOccupants.includes('+')) {
+          where.max_occupants = { [Op.gte]: parsedOcc };
+        } else {
+          where.max_occupants = parsedOcc;
         }
       }
     }
@@ -518,19 +553,38 @@ const searchRooms = async (req, res, next) => {
       { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'avatar_url'] },
     ];
 
-    // Handle amenities filtering via facilities join
-    if (amenities) {
-      const amenityList = amenities.split(',').map(a => a.trim());
-      include.push({
-        model: Facility,
-        as: 'facilities',
-        where: {
-          facility_name: { [Op.in]: amenityList }
-        },
-        required: true, // INNER JOIN so only rooms with these amenities are returned
+    let facilityFilters = [];
+    if (facilities) facilityFilters = facilityFilters.concat(facilities.split(',').map(f => f.trim()));
+    if (nearbyFacilities) facilityFilters = facilityFilters.concat(nearbyFacilities.split(',').map(f => f.trim()));
+
+    if (facilityFilters.length > 0) {
+      const facs = await Facility.findAll({
+        where: { facility_name: { [Op.in]: facilityFilters } },
+        attributes: ['facility_id']
       });
-    } else {
-      include.push({ model: Facility, as: 'facilities', required: false });
+      const facIds = facs.map(f => f.facility_id);
+      
+      if (facIds.length > 0) {
+        const roomsWithFacilities = await RoomFacility.findAll({
+          where: { facility_id: { [Op.in]: facIds } },
+          attributes: ['room_id'],
+          group: ['room_id'],
+          having: sequelize.literal(`COUNT(DISTINCT [facility_id]) >= ${facIds.length}`)
+        });
+        const validRoomIds = roomsWithFacilities.map(r => r.room_id);
+        where.room_id = { [Op.in]: validRoomIds };
+      } else {
+        where.room_id = null; // Forces empty result if no valid facility matches
+      }
+    }
+
+    include.push({ model: Facility, as: 'facilities', through: { attributes: [] }, required: false });
+
+    let order = [['created_at', 'DESC']];
+    if (sort) {
+      if (sort === 'price_asc') order = [['price_per_month', 'ASC']];
+      else if (sort === 'price_desc') order = [['price_per_month', 'DESC']];
+      else if (sort === 'area_desc') order = [['area_sqm', 'DESC']];
     }
 
     const { count, rows } = await Room.findAndCountAll({
@@ -538,8 +592,8 @@ const searchRooms = async (req, res, next) => {
       include,
       offset,
       limit: parseInt(limit),
-      order: [['created_at', 'DESC']],
-      distinct: true, // Needed because of INNER JOIN with facilities returning multiple rows
+      order,
+      distinct: true,
     });
 
     return res.status(200).json({
@@ -555,6 +609,7 @@ const searchRooms = async (req, res, next) => {
         areaSqm: room.area_sqm,
         roomType: room.room_type,
         bedrooms: room.bedrooms,
+        maxOccupants: room.max_occupants,
         status: room.status,
         thumbnailUrl: room.thumbnail_url,
         images: room.images,
@@ -566,7 +621,7 @@ const searchRooms = async (req, res, next) => {
         total: count,
         page: parseInt(page),
         limit: parseInt(limit),
-        pages: Math.ceil(count / limit),
+        pages: Math.ceil(count / parseInt(limit)),
       },
     });
   } catch (error) {

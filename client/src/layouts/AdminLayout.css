@@ -56,32 +56,49 @@
   color: var(--text-main);
 }
 
-.topbar-search {
+.topbar-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1.5rem;
+  height: 100%;
+}
+
+.topbar-nav-link {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
   position: relative;
   display: flex;
   align-items: center;
-  width: 320px;
+  gap: 0.5rem;
 }
 
-.topbar-search input {
-  width: 100%;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 0.9rem;
-  padding: 0.5rem 0.5rem 0.5rem 2rem;
-  color: var(--text-main);
-  font-weight: 500;
+.topbar-nav-link:hover {
+  color: var(--primary);
+  background-color: var(--bg-main);
 }
 
-.topbar-search input::placeholder {
-  color: var(--text-muted);
+.topbar-nav-link.active {
+  color: var(--primary);
+  font-weight: 600;
+  background-color: rgba(59, 130, 246, 0.08);
 }
 
-.topbar-search .search-icon {
+.topbar-nav-link.active::after {
+  content: '';
   position: absolute;
-  left: 0.25rem;
-  color: var(--text-muted);
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  background-color: var(--primary);
+  border-radius: 4px;
 }
 
 .topbar-actions {
@@ -142,28 +159,7 @@
   color: #2563EB;
 }
 
-/* Exit Dashboard Button */
-.btn-exit-dashboard {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #DC2626;
-  background: #FEF2F2;
-  border: 1px solid #FECACA;
-  padding: 0.45rem 1rem;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s;
-  text-decoration: none;
-}
 
-.btn-exit-dashboard:hover {
-  background: #FEE2E2;
-  border-color: #F87171;
-  color: #B91C1C;
-}
 
 .user-avatar-container {
   width: 36px;

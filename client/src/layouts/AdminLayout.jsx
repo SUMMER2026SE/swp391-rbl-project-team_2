@@ -1,30 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate, NavLink } from 'react-router-dom';
 import {
-  Bell,
   MessageSquare,
-  Search,
   LogOut,
   Menu,
 } from 'lucide-react';
 import Sidebar from '../components/layout/Sidebar';
-import SearchOverlay from '../components/ui/SearchOverlay';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import { ROUTES } from '../constants';
 import useAuthStore from '../store/useAuthStore';
+import { supabase } from '../config/supabase';
 import { API_URL } from '../config';
 import './AdminLayout.css';
 
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
+  
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      logout();
+      navigate(ROUTES.LOGIN);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
   
   const isLandlord = location.pathname.startsWith('/landlord');
   const isAdmin = location.pathname.startsWith('/admin');
   const isTenant = !isLandlord && !isAdmin;
-
-  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(isTenant);
 
   // Route Protection: Keep users in their proper role area
@@ -90,27 +96,25 @@ const AdminLayout = () => {
 
         {/* Topbar */}
         <header className="admin-topbar">
-            <div className="topbar-left-actions">
+            <div className="topbar-left-actions" style={{ flex: 1 }}>
               <button className="sidebar-toggle-btn" onClick={() => setIsCollapsed(!isCollapsed)}>
                 <Menu size={20} />
               </button>
-              <div
-                className="topbar-search"
-                onClick={() => setShowSearchOverlay(true)}
-                style={{ cursor: 'pointer' }}
-              >
-                <Search size={18} className="search-icon" />
-                <input type="text" placeholder="Search..." readOnly style={{ cursor: 'pointer' }} />
-              </div>
             </div>
 
-            <div className="topbar-actions">
+            {isLandlord && (
+              <div className="topbar-center-actions" style={{ display: 'flex', justifyContent: 'center' }}>
+                <div className="topbar-nav-links" style={{ marginLeft: 0 }}>
+                  <NavLink to={ROUTES.LANDLORD.LISTINGS} className="topbar-nav-link">Listing</NavLink>
+                  <NavLink to={ROUTES.LANDLORD.SCHEDULES} className="topbar-nav-link">Viewing Schedule</NavLink>
+                  <NavLink to={ROUTES.LANDLORD.DEPOSITS} className="topbar-nav-link">Deposit</NavLink>
+                  <NavLink to={ROUTES.LANDLORD.CONTRACTS} className="topbar-nav-link">Contract</NavLink>
+                </div>
+              </div>
+            )}
+
+            <div className="topbar-actions" style={{ flex: 1, justifyContent: 'flex-end' }}>
               <ThemeToggle />
-              {/* Notification Bell */}
-              <Link to={notificationsPath} className="topbar-icon-btn">
-                <Bell size={20} />
-                <span className="badge-dot"></span>
-              </Link>
 
               {/* Chat Icon */}
               <Link
@@ -120,24 +124,18 @@ const AdminLayout = () => {
                 <MessageSquare size={20} />
               </Link>
 
-              <div className="divider-vertical"></div>
-
-              {/* Support link */}
-              <Link to={helpPath} className="btn-support">Support</Link>
-
-              {/* Exit Dashboard — navigates to public home page */}
-              <button 
-                className="btn-exit-dashboard"
-                onClick={() => navigate('/')}
-              >
-                <LogOut size={16} />
-                <span>Exit Dashboard</span>
-              </button>
 
               {/* Dynamic Avatar */}
               <div className="user-avatar-container" onClick={() => navigate(profilePath)}>
                 <img src={getAvatarUrl()} alt="User Avatar" className="admin-avatar-img" />
               </div>
+
+              <button
+                onClick={handleLogout}
+                style={{ background: 'transparent', color: '#6C3AED', border: '1px solid #6C3AED', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', marginLeft: '0.5rem' }}
+              >
+                Logout
+              </button>
             </div>
           </header>
 
@@ -147,14 +145,7 @@ const AdminLayout = () => {
         </main>
       </div>
 
-      {showSearchOverlay && (
-        <SearchOverlay
-          onClose={() => setShowSearchOverlay(false)}
-          onSearchSubmit={(query) => {
-            console.log('Search submitted:', query);
-          }}
-        />
-      )}
+
     </div>
   );
 };

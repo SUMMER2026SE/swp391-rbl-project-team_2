@@ -1,5 +1,6 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import {
   Plus,
@@ -13,11 +14,14 @@ import {
   X,
   Eye,
   Calendar,
-  DollarSign
+  DollarSign,
+  Upload
 } from 'lucide-react';
 import Button from '../../../components/common/Button';
 import { useRooms } from '../hooks/useRooms';
+import { landlordService } from '../services/landlordService';
 import './ManageListingsPage.css';
+import './AddNewPropertyPage.css';
 
 // Initial Mock Listings
 const INITIAL_LISTINGS = [
@@ -85,11 +89,14 @@ const INITIAL_LISTINGS = [
 
 const ManageListingsPage = () => {
   const navigate = useNavigate();
-  const { rooms, loading: roomsLoading, error: roomsError, updateRoom, deleteRoom } = useRooms();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { rooms, loading: roomsLoading, error: roomsError, createRoom, updateRoom, deleteRoom, uploadImage, deleteImage } = useRooms();
+  const [formImageFiles, setFormImageFiles] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
   const [listings, setListings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
-  const [typeFilter, setTypeFilter] = useState('Property Type');
+  const [typeFilter, setTypeFilter] = useState('Room Type');
 
   useEffect(() => {
     if (rooms) {
@@ -98,9 +105,11 @@ const ManageListingsPage = () => {
         let coverImg = 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=600&auto=format&fit=crop&q=80';
         if (room.images && room.images.length > 0) {
           const primary = room.images.find(img => img.is_primary || img.isPrimary);
-          coverImg = primary ? primary.url : room.images[0].url;
-        } else if (room.thumbnailUrl) {
-          coverImg = room.thumbnailUrl;
+          const imgUrl = primary ? (primary.image_url || primary.url) : (room.images[0].image_url || room.images[0].url);
+          coverImg = imgUrl && imgUrl.startsWith('http') ? imgUrl : `http://localhost:5000${imgUrl}`;
+        } else if (room.thumbnailUrl || room.thumbnail_url) {
+          const thumb = room.thumbnailUrl || room.thumbnail_url;
+          coverImg = thumb && thumb.startsWith('http') ? thumb : `http://localhost:5000${thumb}`;
         }
 
         // Facilities mapping
@@ -116,8 +125,16 @@ const ManageListingsPage = () => {
           city: room.city || '',
           district: room.district || '',
           price: Number(room.pricePerMonth || room.price_per_month || 0),
-          status: room.status === 'available' ? 'Available' : 'Occupied',
-          type: room.roomType || 'Apartment',
+          status: (room.status || '').toLowerCase() === 'available' ? 'Available' :
+            ['rented', 'unavailable'].includes((room.status || '').toLowerCase()) ? 'Occupied' :
+              (room.status || '').toLowerCase() === 'pending' ? 'Pending' :
+                (room.status || '').toLowerCase() === 'rejected' ? 'Rejected' :
+                  (room.status || '').toLowerCase() === 'maintenance' ? 'Maintenance' : 'Inactive',
+          type: room.roomType === 'single' ? 'Single Room' :
+            room.roomType === 'double' ? 'Double Room' :
+              room.roomType === 'apartment' ? 'Apartment' :
+                room.roomType === 'shared' ? 'Shared Room' :
+                  room.roomType === 'house' ? 'House' : 'Room',
           image: coverImg,
           tags: tags,
           performance: {
@@ -132,6 +149,18 @@ const ManageListingsPage = () => {
     }
   }, [rooms]);
 
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && listings.length > 0) {
+      const listing = listings.find(l => l.id === editId || l.rawRoom?.room_id === Number(editId) || l.rawRoom?.roomId === Number(editId));
+      if (listing) {
+        handleEditClick(listing);
+        searchParams.delete('edit');
+        setSearchParams(searchParams);
+      }
+    }
+  }, [searchParams, listings, setSearchParams]);
+
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -143,10 +172,19 @@ const ManageListingsPage = () => {
   const [formTitle, setFormTitle] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formPrice, setFormPrice] = useState('');
+  const [formDescription, setFormDescription] = useState('');
   const [formStatus, setFormStatus] = useState('Available');
-  const [formType, setFormType] = useState('Apartment');
+  const [formType, setFormType] = useState('apartment');
   const [formImage, setFormImage] = useState('');
   const [formTags, setFormTags] = useState('');
+  const [formNearbyTags, setFormNearbyTags] = useState('');
+  const [formMaxOccupants, setFormMaxOccupants] = useState('');
+  const [formBedrooms, setFormBedrooms] = useState('');
+  const [formAreaSqm, setFormAreaSqm] = useState('');
+  const [priceError, setPriceError] = useState('');
+  const [occupantsError, setOccupantsError] = useState('');
+  const [bedroomsError, setBedroomsError] = useState('');
+  const [areaError, setAreaError] = useState('');
 
   // Dropdown states
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -163,7 +201,7 @@ const ManageListingsPage = () => {
       statusFilter === 'All Statuses' || item.status === statusFilter;
 
     const matchesType =
-      typeFilter === 'Property Type' || item.type === typeFilter;
+      typeFilter === 'Room Type' || (item.type || '').toLowerCase() === typeFilter.toLowerCase();
 
     return matchesSearch && matchesStatus && matchesType;
   });
@@ -171,50 +209,82 @@ const ManageListingsPage = () => {
   const resetForm = () => {
     setFormId('');
     setFormTitle('');
+    setFormDescription('');
     setFormAddress('');
     setFormPrice('');
     setFormStatus('Available');
-    setFormType('Apartment');
+    setFormType('apartment');
     setFormImage('');
     setFormTags('');
+    setFormNearbyTags('');
+    setFormMaxOccupants('');
+    setFormBedrooms('');
+    setFormAreaSqm('');
+    setFormImageFiles([]);
+    setPreviewImages([]);
+    setPriceError('');
+    setOccupantsError('');
+    setBedroomsError('');
+    setAreaError('');
   };
 
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    const newId = formId.trim() || `APT-${Math.floor(100 + Math.random() * 900)}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
-    const defaultImage = formImage.trim() || 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=600&auto=format&fit=crop&q=80';
+    try {
+      const roomPayload = {
+        title: formTitle,
+        description: formDescription,
+        pricePerMonth: Number(formPrice),
+        roomType: formType,
+        address: formAddress,
+        maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : null,
+        bedrooms: formBedrooms ? Number(formBedrooms) : null,
+        areaSqm: formAreaSqm ? Number(formAreaSqm) : null,
+        status: 'available'
+      };
 
-    const newListing = {
-      id: newId,
-      title: formTitle,
-      address: formAddress,
-      price: Number(formPrice) || 1000,
-      status: formStatus,
-      type: formType,
-      image: defaultImage,
-      tags: formTags.split(',').map(t => t.trim()).filter(Boolean),
-      performance: {
-        views: 0,
-        inquiries: 0,
-        revenue: formStatus === 'Occupied' ? Number(formPrice) : 0
+      const newRoom = await createRoom(roomPayload);
+      const roomId = newRoom.roomId || newRoom.room_id || newRoom.id;
+      
+      if (formImageFiles && formImageFiles.length > 0 && roomId) {
+        for (let file of formImageFiles) {
+          await uploadImage(roomId, file);
+        }
       }
-    };
 
-    setListings([newListing, ...listings]);
-    setIsAddModalOpen(false);
-    resetForm();
+      setIsAddModalOpen(false);
+      resetForm();
+    } catch (err) {
+      toast.error(err.message || 'Failed to create room');
+    }
   };
 
   const handleEditClick = (listing) => {
     setSelectedListing(listing);
     setFormId(listing.id);
     setFormTitle(listing.title);
-    setFormAddress(listing.address);
+    setFormDescription(listing.rawRoom?.description || listing.description || '');
+
+    const raw = listing.rawRoom;
+    const fullAddress = [listing.address, raw?.ward, listing.district, listing.city].filter(Boolean).join(', ');
+    setFormAddress(fullAddress || listing.address);
+
     setFormPrice(listing.price);
     setFormStatus(listing.status);
     setFormType(listing.type);
     setFormImage(listing.image);
-    setFormTags(listing.tags.join(', '));
+
+    const facilities = raw?.facilities || [];
+    const roomFacs = facilities.filter(f => f.category === 'room' || !f.category).map(f => f.facilityName || f.facility_name).join(', ');
+    const nearbyFacs = facilities.filter(f => f.category === 'nearby').map(f => f.facilityName || f.facility_name).join(', ');
+
+    setFormTags(roomFacs);
+    setFormNearbyTags(nearbyFacs);
+    setFormMaxOccupants(raw?.maxOccupants || raw?.max_occupants || '');
+    setFormBedrooms(raw?.bedrooms || '');
+    setFormAreaSqm(raw?.areaSqm || raw?.area_sqm || '');
+    setFormImageFiles([]);
+    setPreviewImages([]);
     setIsEditModalOpen(true);
   };
 
@@ -223,27 +293,58 @@ const ManageListingsPage = () => {
     try {
       const roomPayload = {
         title: formTitle,
-        address: formAddress,
-        city: selectedListing.city || 'Da Nang',
-        district: selectedListing.district || 'Ngu Hanh Son',
+        description: formDescription,
         pricePerMonth: Number(formPrice),
-        status: formStatus === 'Available' ? 'available' : 'rented',
         roomType: formType,
+        maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : null,
+        bedrooms: formBedrooms ? Number(formBedrooms) : null,
+        areaSqm: formAreaSqm ? Number(formAreaSqm) : null,
       };
 
-      await updateRoom(selectedListing.id, roomPayload);
+      if (selectedListing.rawRoom?.status !== 'pending' && selectedListing.rawRoom?.status !== 'rejected') {
+        roomPayload.status = formStatus === 'Available' ? 'available' :
+          formStatus === 'Occupied' ? 'rented' : 'inactive';
+      }
+
+      const roomIdToUpdate = selectedListing.rawRoom?.roomId || selectedListing.id;
+      await updateRoom(roomIdToUpdate, roomPayload);
+
+      if (formImageFiles && formImageFiles.length > 0) {
+        // Delete old images first
+        const oldImages = selectedListing.rawRoom?.images || [];
+        for (let oldImg of oldImages) {
+          try {
+            await deleteImage(roomIdToUpdate, oldImg.imageId || oldImg.image_id || oldImg.id);
+          } catch (e) {
+            console.error('Failed to delete old image:', e);
+          }
+        }
+        
+        // Upload new images
+        for (let file of formImageFiles) {
+          await uploadImage(roomIdToUpdate, file);
+        }
+      }
 
       setListings(listings.map(item => {
         if (item.id === selectedListing.id) {
           return {
             ...item,
             title: formTitle,
+            description: formDescription,
             address: formAddress,
             price: Number(formPrice),
             status: formStatus,
             type: formType,
             image: formImage || item.image,
-            tags: formTags.split(',').map(t => t.trim()).filter(Boolean)
+            tags: formTags ? formTags.split(',').map(t => t.trim()).filter(Boolean) : item.tags,
+            rawRoom: {
+              ...item.rawRoom,
+              description: formDescription,
+              maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : null,
+              bedrooms: formBedrooms ? Number(formBedrooms) : null,
+              areaSqm: formAreaSqm ? Number(formAreaSqm) : null,
+            }
           };
         }
         return item;
@@ -252,7 +353,7 @@ const ManageListingsPage = () => {
       setSelectedListing(null);
       resetForm();
     } catch (err) {
-      alert(err.message || 'Failed to update room');
+      toast.error(err.message || 'Failed to update room');
     }
   };
 
@@ -262,7 +363,7 @@ const ManageListingsPage = () => {
         await deleteRoom(id);
         setListings(listings.filter(item => item.id !== id));
       } catch (err) {
-        alert(err.message || 'Failed to delete room');
+        toast.error(err.message || 'Failed to delete room');
       }
     }
   };
@@ -317,7 +418,7 @@ const ManageListingsPage = () => {
           </button>
           {showStatusDropdown && (
             <div className="filter-dropdown-menu">
-              {['All Statuses', 'Available', 'Occupied'].map((st) => (
+              {['All Statuses', 'Available', 'Occupied', 'Pending', 'Rejected', 'Inactive'].map((st) => (
                 <button
                   key={st}
                   className={`filter-dropdown-item ${statusFilter === st ? 'active' : ''}`}
@@ -333,7 +434,7 @@ const ManageListingsPage = () => {
           )}
         </div>
 
-        {/* Dropdown 2: Property Type */}
+        {/* Dropdown 2: Room Type */}
         <div className="filter-dropdown-container">
           <button
             className="filter-dropdown-btn"
@@ -347,7 +448,7 @@ const ManageListingsPage = () => {
           </button>
           {showTypeDropdown && (
             <div className="filter-dropdown-menu">
-              {['Property Type', 'Apartment', 'Co-living', 'House'].map((tp) => (
+              {['Room Type', 'Single Room', 'Double Room', 'Shared Room', 'Apartment', 'House', 'Room'].map((tp) => (
                 <button
                   key={tp}
                   className={`filter-dropdown-item ${typeFilter === tp ? 'active' : ''}`}
@@ -368,7 +469,7 @@ const ManageListingsPage = () => {
           className="filter-more-btn"
           onClick={() => {
             setStatusFilter('All Statuses');
-            setTypeFilter('Property Type');
+            setTypeFilter('Room Type');
             setSearchTerm('');
           }}
           title="Reset all filters"
@@ -410,8 +511,8 @@ const ManageListingsPage = () => {
 
                   {/* Price Tag */}
                   <div className="listing-card__badge-price">
-                    <span className="price-amount">${listing.price.toLocaleString()}</span>
-                    <span className="price-unit">/mo</span>
+                    <span className="price-amount">{listing.price.toLocaleString('vi-VN')} VNĐ</span>
+                    <span className="price-unit">/tháng</span>
                   </div>
                 </div>
 
@@ -436,9 +537,9 @@ const ManageListingsPage = () => {
                 <div className="listing-card__footer">
                   <button
                     className="btn-performance-link"
-                    onClick={() => handlePerfClick(listing)}
+                    onClick={() => navigate(`/rooms/${listing.id}`)}
                   >
-                    <span>View Performance</span>
+                    <span>View Room Listing</span>
                     <ArrowUpRight size={16} />
                   </button>
 
@@ -447,6 +548,8 @@ const ManageListingsPage = () => {
                       className="action-icon-btn btn-edit"
                       title="Edit Listing"
                       onClick={() => handleEditClick(listing)}
+                      disabled={['Pending', 'Maintenance', 'Occupied'].includes(listing.status)}
+                      style={['Pending', 'Maintenance', 'Occupied'].includes(listing.status) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                       <Pencil size={15} />
                     </button>
@@ -454,6 +557,8 @@ const ManageListingsPage = () => {
                       className="action-icon-btn btn-delete"
                       title="Delete Listing"
                       onClick={() => handleDeleteClick(listing.id)}
+                      disabled={['Pending', 'Maintenance', 'Occupied'].includes(listing.status)}
+                      style={['Pending', 'Maintenance', 'Occupied'].includes(listing.status) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -494,7 +599,7 @@ const ManageListingsPage = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Monthly Rent (USD) *</label>
+                    <label>Monthly Rent (VNĐ) *</label>
                     <input
                       type="number"
                       required
@@ -506,13 +611,23 @@ const ManageListingsPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Property Title *</label>
+                  <label>Listing Title *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Sunny Studio in Downtown"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Property Description</label>
+                  <textarea
+                    placeholder="Describe your property..."
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    rows={4}
                   />
                 </div>
 
@@ -529,30 +644,73 @@ const ManageListingsPage = () => {
 
                 <div className="form-group-row">
                   <div className="form-group">
-                    <label>Property Type</label>
+                    <label>Room Type</label>
                     <select value={formType} onChange={(e) => setFormType(e.target.value)}>
-                      <option value="Apartment">Apartment</option>
-                      <option value="Co-living">Co-living</option>
-                      <option value="House">House</option>
+                      <option value="single">Single Room</option>
+                      <option value="double">Double Room</option>
+                      <option value="shared">Shared Room</option>
+                      <option value="apartment">Apartment</option>
+                      <option value="house">House</option>
                     </select>
                   </div>
-                  <div className="form-group">
-                    <label>Listing Status</label>
-                    <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)}>
-                      <option value="Available">Available</option>
-                      <option value="Occupied">Occupied</option>
-                    </select>
-                  </div>
+
                 </div>
 
                 <div className="form-group">
-                  <label>Image URL (optional)</label>
-                  <input
-                    type="text"
-                    placeholder="https://unsplash.com/..."
-                    value={formImage}
-                    onChange={(e) => setFormImage(e.target.value)}
-                  />
+                  <label>Room Images (optional)</label>
+                  <div className="media-drag-drop-zone">
+                    <input
+                      type="file"
+                      id="add-listing-file-upload"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          const newFiles = Array.from(e.target.files);
+                          setFormImageFiles(newFiles);
+                          const newPreviews = newFiles.map(f => URL.createObjectURL(f));
+                          setPreviewImages(newPreviews);
+                        }
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="add-listing-file-upload" className="drag-drop-label-wrapper">
+                      <div className="drag-drop-cloud-icon">
+                        <Upload size={24} />
+                      </div>
+                      <div className="drag-drop-text-instructions">
+                        <span className="bold-instruction-text">Click to upload</span> or drag and drop
+                      </div>
+                      <span className="upload-limit-info">PNG, JPG, JPEG up to 10MB</span>
+                    </label>
+                  </div>
+
+                  {previewImages.length > 0 && (
+                    <div className="media-preview-container">
+                      <h4 className="preview-section-title">Selected Images ({previewImages.length})</h4>
+                      <div className="media-previews-grid">
+                        {previewImages.map((src, idx) => (
+                          <div className="preview-image-card" key={idx}>
+                            <img src={src} alt={`Preview ${idx}`} />
+                            <button
+                              type="button"
+                              className="remove-preview-image-btn"
+                              onClick={() => {
+                                setFormImageFiles(prev => prev.filter((_, i) => i !== idx));
+                                setPreviewImages(prev => {
+                                  URL.revokeObjectURL(prev[idx]);
+                                  return prev.filter((_, i) => i !== idx);
+                                });
+                              }}
+                            >
+                              <X size={14} />
+                            </button>
+                            {idx === 0 && <span className="featured-image-tag">Cover</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -594,7 +752,7 @@ const ManageListingsPage = () => {
             <form onSubmit={handleEditSubmit}>
               <div className="modal-body">
                 <div className="form-group">
-                  <label>Property Title *</label>
+                  <label>Listing Title *</label>
                   <input
                     type="text"
                     required
@@ -604,60 +762,205 @@ const ManageListingsPage = () => {
                 </div>
 
                 <div className="form-group">
+                  <label>Property Description</label>
+                  <textarea
+                    placeholder="Describe your property..."
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+
+                <div className="form-group">
                   <label>Full Address *</label>
                   <input
                     type="text"
                     required
+                    disabled
                     value={formAddress}
+                    className="disabled-input"
                     onChange={(e) => setFormAddress(e.target.value)}
                   />
                 </div>
 
                 <div className="form-group-row">
                   <div className="form-group">
-                    <label>Monthly Rent (USD) *</label>
+                    <label>Monthly Rent (VNĐ) *</label>
                     <input
-                      type="number"
+                      type="text"
                       required
                       value={formPrice}
-                      onChange={(e) => setFormPrice(e.target.value)}
+                      className={priceError ? 'is-invalid' : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormPrice(val);
+                        if (val !== '' && !/^\d+$/.test(val)) {
+                          setPriceError('Please enter a valid positive number.');
+                        } else if (val !== '' && Number(val) <= 0) {
+                          setPriceError('Rent must be greater than 0.');
+                        } else {
+                          setPriceError('');
+                        }
+                      }}
                     />
+                    {priceError && <div className="invalid-feedback d-block">{priceError}</div>}
                   </div>
                   <div className="form-group">
                     <label>Property Type</label>
                     <select value={formType} onChange={(e) => setFormType(e.target.value)}>
-                      <option value="Apartment">Apartment</option>
-                      <option value="Co-living">Co-living</option>
-                      <option value="House">House</option>
+                      <option value="single">Single Room</option>
+                      <option value="double">Double Room</option>
+                      <option value="shared">Shared Room</option>
+                      <option value="apartment">Apartment</option>
+                      <option value="house">House</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="form-group-row">
                   <div className="form-group">
-                    <label>Listing Status</label>
-                    <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)}>
-                      <option value="Available">Available</option>
-                      <option value="Occupied">Occupied</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Image URL</label>
+                    <label>Max Occupants</label>
                     <input
                       type="text"
-                      value={formImage}
-                      onChange={(e) => setFormImage(e.target.value)}
+                      value={formMaxOccupants}
+                      className={occupantsError ? 'is-invalid' : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormMaxOccupants(val);
+                        if (val !== '' && !/^\d+$/.test(val)) {
+                          setOccupantsError('Please enter a valid number.');
+                        } else if (val !== '' && Number(val) <= 0) {
+                          setOccupantsError('Max occupants must be at least 1.');
+                        } else {
+                          setOccupantsError('');
+                        }
+                      }}
                     />
+                    {occupantsError && <div className="invalid-feedback d-block">{occupantsError}</div>}
+                  </div>
+                  <div className="form-group">
+                    <label>Bedrooms</label>
+                    <input
+                      type="text"
+                      value={formBedrooms}
+                      className={bedroomsError ? 'is-invalid' : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormBedrooms(val);
+                        if (val !== '' && !/^\d+$/.test(val)) {
+                          setBedroomsError('Please enter a valid number.');
+                        } else if (val !== '' && Number(val) <= 0) {
+                          setBedroomsError('Bedrooms must be at least 1.');
+                        } else {
+                          setBedroomsError('');
+                        }
+                      }}
+                    />
+                    {bedroomsError && <div className="invalid-feedback d-block">{bedroomsError}</div>}
+                  </div>
+                </div>
+
+                <div className="form-group-row">
+
+                  <div className="form-group">
+                    <label>Size (m<sup>2</sup>)</label>
+                    <input
+                      type="text"
+                      value={formAreaSqm}
+                      className={areaError ? 'is-invalid' : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormAreaSqm(val);
+                        if (val !== '' && !/^\d+(\.\d+)?$/.test(val)) {
+                          setAreaError('Please enter a valid number.');
+                        } else if (val !== '' && Number(val) <= 0) {
+                          setAreaError('Area must be greater than 0.');
+                        } else {
+                          setAreaError('');
+                        }
+                      }}
+                    />
+                    {areaError && <div className="invalid-feedback d-block">{areaError}</div>}
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label>Tags / Amenities (comma separated)</label>
-                  <input
-                    type="text"
-                    value={formTags}
-                    onChange={(e) => setFormTags(e.target.value)}
-                  />
+                  <label>Update Images</label>
+                  <div className="media-drag-drop-zone">
+                    <input
+                      type="file"
+                      id="edit-listing-file-upload"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          const newFiles = Array.from(e.target.files);
+                          setFormImageFiles(newFiles);
+                          const newPreviews = newFiles.map(f => URL.createObjectURL(f));
+                          setPreviewImages(newPreviews);
+                        }
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="edit-listing-file-upload" className="drag-drop-label-wrapper">
+                      <div className="drag-drop-cloud-icon">
+                        <Upload size={24} />
+                      </div>
+                      <div className="drag-drop-text-instructions">
+                        <span className="bold-instruction-text">Click to upload</span> new images
+                      </div>
+                      <span className="upload-limit-info">PNG, JPG, JPEG up to 10MB</span>
+                    </label>
+                  </div>
+
+                  {previewImages.length > 0 && (
+                    <div className="media-preview-container">
+                      <h4 className="preview-section-title">New Images ({previewImages.length})</h4>
+                      <div className="media-previews-grid">
+                        {previewImages.map((src, idx) => (
+                          <div className="preview-image-card" key={idx}>
+                            <img src={src} alt={`New ${idx}`} />
+                            <button
+                              type="button"
+                              className="remove-preview-image-btn"
+                              onClick={() => {
+                                setFormImageFiles(prev => prev.filter((_, i) => i !== idx));
+                                setPreviewImages(prev => {
+                                  URL.revokeObjectURL(prev[idx]);
+                                  return prev.filter((_, i) => i !== idx);
+                                });
+                              }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-group-row">
+                  <div className="form-group">
+                    <label>Room Facilities (Fixed)</label>
+                    <input
+                      type="text"
+                      disabled
+                      className="disabled-input"
+                      value={formTags}
+                      onChange={(e) => setFormTags(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Nearby Facilities (Fixed)</label>
+                    <input
+                      type="text"
+                      disabled
+                      className="disabled-input"
+                      value={formNearbyTags}
+                      onChange={(e) => setFormNearbyTags(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="modal-footer">
@@ -667,7 +970,7 @@ const ManageListingsPage = () => {
                 }}>
                   Cancel
                 </Button>
-                <Button variant="primary" type="submit">
+                <Button variant="primary" type="submit" disabled={!!priceError || !!occupantsError || !!bedroomsError || !!areaError}>
                   Save Changes
                 </Button>
               </div>
@@ -719,7 +1022,7 @@ const ManageListingsPage = () => {
                   </div>
                   <div className="perf-stat-info">
                     <span className="perf-stat-label">Monthly Revenue</span>
-                    <span className="perf-stat-val">${selectedListing.performance.revenue.toLocaleString()}</span>
+                    <span className="perf-stat-val">{selectedListing.performance.revenue.toLocaleString('vi-VN')} VNĐ</span>
                   </div>
                 </div>
               </div>
