@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
@@ -41,7 +42,7 @@ const VerifyOTPPage = () => {
         const response = await authService.verifyEmail({ email, otp });
         if (!response.success) throw new Error(response.message);
         
-        alert('Email verified successfully! Please login.');
+        toast.success('Email verified successfully! Please login.');
         navigate(ROUTES.LOGIN);
       }
     } catch (err) {
@@ -57,10 +58,10 @@ const VerifyOTPPage = () => {
     try {
       const response = await authService.resendOtp({ email, purpose: type });
       if (!response.success) throw new Error(response.message);
-      alert('New OTP sent to your email!');
+      toast('New OTP sent to your email!');
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Failed to resend OTP';
-      alert(msg);
+      toast(msg);
     } finally {
       setIsResending(false);
     }

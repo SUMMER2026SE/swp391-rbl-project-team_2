@@ -114,10 +114,13 @@ export const useConversations = (params = {}) => {
       const response = await landlordService.sendMessage(conversationId, content);
       const message = response?.data || response;
       if (currentConversation && (currentConversation.conversationId == conversationId || currentConversation.id == conversationId)) {
-        setCurrentConversation(prev => ({
-          ...prev,
-          messages: [...(prev.messages || []), message],
-        }));
+        setCurrentConversation(prev => {
+          if (prev.messages?.find(m => m.messageId == message.messageId)) return prev;
+          return {
+            ...prev,
+            messages: [...(prev.messages || []), message],
+          };
+        });
       }
       return message;
     } catch (err) {

@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import AppRoutes from './routes/AppRoutes';
+import { Toaster } from 'react-hot-toast';
+import AIChatWidget from './components/common/AIChatWidget';
 
 function App() {
   useEffect(() => {
@@ -21,7 +23,9 @@ function App() {
 
   return (
     <div className="app-container">
+      <Toaster position="top-center" />
       <AppRoutes />
+      <AIChatWidget />
     </div>
   );
 }
