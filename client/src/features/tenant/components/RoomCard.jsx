@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, MapPin, Heart, BedDouble, Bath, Maximize } from 'lucide-react';
@@ -22,7 +23,7 @@ const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
   const handleFavoriteClick = async (e) => {
     e.stopPropagation();
     if (!isAuthenticated) {
-      alert("Please login to save favorites");
+      toast.error("Please login to save favorites");
       return;
     }
     
@@ -37,7 +38,7 @@ const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
         if (onFavoriteToggle) onFavoriteToggle(id, true);
       }
     } catch (err) {
-      alert("Failed to toggle favorite");
+      toast.error("Failed to toggle favorite");
     }
   };
 
@@ -70,7 +71,7 @@ const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
         {/* Floating price for chat and standard variants */}
         {(variant === 'chat' || variant === 'standard') && (
           <div className="chat-floating-price">
-            ${price.toLocaleString()}/mo
+            {price.toLocaleString('vi-VN')} vnđ/mo
           </div>
         )}
 
@@ -98,6 +99,18 @@ const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
               <MapPin size={14} />
               <span>{location} {distance ? `• ${distance}` : ''}</span>
             </div>
+            {specs && specs.length > 0 && (
+              <div className="room-card-specs" style={{ margin: '0 0 0.75rem 0' }}>
+                {specs.map((spec, index) => (
+                  <div key={index} className="spec-item">
+                    {spec.icon === 'bed' && <BedDouble size={14} />}
+                    {spec.icon === 'bath' && <Bath size={14} />}
+                    {spec.icon === 'square' && <Maximize size={14} />}
+                    <span>{spec.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="room-card-tags">
               {tags.map((tag, index) => (
                 <span key={index} className="room-card-tag">{tag}</span>
@@ -110,7 +123,7 @@ const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
             <div className="room-card-header favorite-header">
               <h3 className="room-card-title">{title}</h3>
               <p className="room-card-price">
-                <span>${price}</span><span className="price-period">/mo</span>
+                <span>{price.toLocaleString('vi-VN')} vnđ</span><span className="price-period">/mo</span>
               </p>
             </div>
             <div className="room-card-location">

@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { 
   Search, 
@@ -276,7 +277,7 @@ const RentalRequestManagementPage = () => {
                         <button 
                           className="btn-card-icon-action chat"
                           title="Chat with applicant"
-                          onClick={() => alert(`Starting direct conversation with ${app.name}...`)}
+                          onClick={() => toast(`Starting direct conversation with ${app.name}...`)}
                         >
                           <MessageSquare size={16} />
                         </button>
@@ -292,7 +293,7 @@ const RentalRequestManagementPage = () => {
                         <button 
                           className="btn-card-icon-action chat"
                           title="Chat with applicant"
-                          onClick={() => alert(`Starting direct conversation with ${app.name}...`)}
+                          onClick={() => toast(`Starting direct conversation with ${app.name}...`)}
                         >
                           <MessageSquare size={16} />
                         </button>
@@ -445,14 +446,14 @@ const RentalRequestManagementPage = () => {
                   <div className="kanban-card-actions-row">
                     <button 
                       className="btn-card-action-blue"
-                      onClick={() => alert(`Recording security deposit manual check for ${app.name}...`)}
+                      onClick={() => toast(`Recording security deposit manual check for ${app.name}...`)}
                     >
                       Record Deposit
                     </button>
                     <button 
                       className="btn-card-icon-action chat"
                       title="Send message"
-                      onClick={() => alert(`Opening conversation to prompt ${app.name} for deposit payment...`)}
+                      onClick={() => toast(`Opening conversation to prompt ${app.name} for deposit payment...`)}
                     >
                       <MessageSquare size={16} />
                     </button>
