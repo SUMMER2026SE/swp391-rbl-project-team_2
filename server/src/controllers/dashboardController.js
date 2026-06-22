@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Room, Contract, Payment, RentalRequest, Complaint, Notification } = require('../models');
+const { Room, Contract, Payment, RentalRequest, Complaint, Notification, ViewingSchedule } = require('../models');
 
 // =========================================================
 // GET /api/landlord/dashboard/statistics
@@ -29,9 +29,9 @@ const getDashboardStatistics = async (req, res, next) => {
       where: { landlord_id: landlordId, status: 'active' },
     });
 
-    // Total revenue (completed payments)
-    const totalRevenue = await Payment.sum('amount', {
-      where: { landlord_id: landlordId, status: 'completed' },
+    // Total revenue (completed payouts)
+    const totalRevenue = await Payment.sum('net_amount', {
+      where: { landlord_id: landlordId, payout_status: 'completed' },
     });
 
     // Pending payments
@@ -41,6 +41,11 @@ const getDashboardStatistics = async (req, res, next) => {
 
     // Pending rental requests
     const pendingRequests = await RentalRequest.count({
+      where: { landlord_id: landlordId, status: 'pending' },
+    });
+
+    // Pending viewing schedules
+    const pendingSchedules = await ViewingSchedule.count({
       where: { landlord_id: landlordId, status: 'pending' },
     });
 
@@ -71,6 +76,9 @@ const getDashboardStatistics = async (req, res, next) => {
         },
         requests: {
           pending: pendingRequests,
+        },
+        schedules: {
+          pending: pendingSchedules,
         },
         complaints: {
           open: openComplaints,
@@ -162,11 +170,11 @@ const getRevenueChart = async (req, res, next) => {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
 
-      const revenue = await Payment.sum('amount', {
+      const revenue = await Payment.sum('net_amount', {
         where: {
           landlord_id: landlordId,
-          status: 'completed',
-          created_at: {
+          payout_status: 'completed',
+          payout_date: {
             [Op.between]: [date, nextDate],
           },
         },

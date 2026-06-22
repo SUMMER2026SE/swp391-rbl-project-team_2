@@ -14,12 +14,6 @@ const StatCard = ({ title, value, icon, trend, trendValue, isCurrency = false })
         <div className="stat-card-value">
           {isCurrency ? value : value.toLocaleString('vi-VN')}
         </div>
-        {trend && trendValue && (
-          <div className={`stat-card-trend ${trend === 'up' ? 'trend-positive' : 'trend-negative'}`}>
-            <span className="trend-icon">{trend === 'up' ? '↑' : '↓'}</span>
-            <span className="trend-text">{trendValue} from last month</span>
-          </div>
-        )}
       </div>
     </div>
   );

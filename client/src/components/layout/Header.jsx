@@ -107,13 +107,15 @@ const Header = ({ toggleSidebar }) => {
           <ThemeToggle />
           {isAuthenticated && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Link
-                to={user?.role === 'LANDLORD' ? ROUTES.LANDLORD.NOTIFICATIONS : ROUTES.TENANT.NOTIFICATIONS}
-                className={`header-bell-btn ${isNotificationsPage ? 'active' : ''}`}
-              >
-                <Bell size={20} />
-                {hasUnreadNotifications && <span className="bell-badge-dot"></span>}
-              </Link>
+              {user?.role === 'LANDLORD' && (
+                <Link
+                  to={ROUTES.LANDLORD.NOTIFICATIONS}
+                  className={`header-bell-btn ${isNotificationsPage ? 'active' : ''}`}
+                >
+                  <Bell size={20} />
+                  {hasUnreadNotifications && <span className="bell-badge-dot"></span>}
+                </Link>
+              )}
               <Link
                 to="/messages"
                 className={`header-bell-btn ${location.pathname.startsWith('/messages') ? 'active' : ''}`}

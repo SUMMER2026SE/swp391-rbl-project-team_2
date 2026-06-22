@@ -45,6 +45,8 @@ router.post('/viewing-schedules', viewingScheduleController.requestViewing);
 router.post('/viewing-schedules/:scheduleId/pay', viewingScheduleController.retryPayment);
 router.post('/viewing-schedules/:scheduleId/request-contract', viewingScheduleController.requestContract);
 router.post('/viewing-schedules/:scheduleId/dispute', viewingScheduleController.disputeViewingSchedule);
+router.put('/viewing-schedules/:scheduleId/cancel', viewingScheduleController.cancelViewingScheduleTenant);
+router.put('/viewing-schedules/:scheduleId/decline', viewingScheduleController.declineViewingScheduleTenant);
 router.get('/viewing-schedules', viewingScheduleController.getTenantViewingSchedules);
 
 // =========================================================
@@ -52,5 +54,6 @@ router.get('/viewing-schedules', viewingScheduleController.getTenantViewingSched
 // =========================================================
 router.get('/contracts', viewingScheduleController.getTenantContracts);
 router.put('/contracts/:contractId/sign', viewingScheduleController.signContract);
+router.put('/contracts/:contractId/cancel', viewingScheduleController.cancelContract);
 
 module.exports = router;

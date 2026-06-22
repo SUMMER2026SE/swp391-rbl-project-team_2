@@ -63,6 +63,10 @@ const Room = sequelize.define('Room', {
     type: DataTypes.STRING(500),
     allowNull: true,
   },
+  rejection_reason: {
+    type: DataTypes.STRING(1000),
+    allowNull: true,
+  },
   is_deleted: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,

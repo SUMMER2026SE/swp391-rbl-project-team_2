@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line 
@@ -6,28 +6,62 @@ import {
 import { DollarSign, Users, Home, TrendingUp } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import { formatCurrency } from '../../../utils/format';
+import adminService from '../../../services/adminService';
 import './AnalyticsPage.css';
 
-// Mock Data
-const revenueData = [
-  { month: 'Jan', revenue: 45000000 },
-  { month: 'Feb', revenue: 52000000 },
-  { month: 'Mar', revenue: 48000000 },
-  { month: 'Apr', revenue: 61000000 },
-  { month: 'May', revenue: 59000000 },
-  { month: 'Jun', revenue: 75000000 },
-];
-
-const occupancyData = [
-  { month: 'Jan', rate: 85 },
-  { month: 'Feb', rate: 88 },
-  { month: 'Mar', rate: 86 },
-  { month: 'Apr', rate: 92 },
-  { month: 'May', rate: 90 },
-  { month: 'Jun', rate: 95 },
-];
-
 const AnalyticsPage = () => {
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    activeTenants: 0,
+    totalListings: 0,
+    occupancyRate: '0%',
+  });
+  const [revenueData, setRevenueData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Mock data for occupancy until backend supports historical occupancy tracking
+  const occupancyData = [
+    { month: 'Jan', rate: 85 },
+    { month: 'Feb', rate: 88 },
+    { month: 'Mar', rate: 86 },
+    { month: 'Apr', rate: 92 },
+    { month: 'May', rate: 90 },
+    { month: 'Jun', rate: parseInt(stats.occupancyRate) || 95 },
+  ];
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [statsRes, chartRes] = await Promise.all([
+          adminService.getDashboardStats(),
+          adminService.getRevenueChart()
+        ]);
+        if (statsRes.success) setStats(statsRes.data);
+        if (chartRes.success) {
+          // Display last 6 months for the chart
+          const currentMonth = new Date().getMonth();
+          const last6Months = chartRes.data.filter((d, i) => i <= currentMonth && i >= currentMonth - 5);
+          if (last6Months.length < 6) {
+             // fill missing past months if needed
+             const diff = 6 - last6Months.length;
+             const padded = chartRes.data.slice(Math.max(0, currentMonth - 5), currentMonth + 1);
+             setRevenueData(padded);
+          } else {
+             setRevenueData(last6Months);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch analytics:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) return <div className="admin-page-container"><div className="loading-state">Loading analytics...</div></div>;
+
   return (
     <div className="admin-page-container">
       <div className="admin-page-header">
@@ -37,8 +71,8 @@ const AnalyticsPage = () => {
 
       <div className="stats-grid">
         <StatCard 
-          title="Total Revenue (This Month)" 
-          value={formatCurrency(75000000)} 
+          title="Total Revenue (This Year)" 
+          value={formatCurrency(stats.totalRevenue)} 
           icon={<DollarSign size={24} />}
           trend="up"
           trendValue="12.5%"
@@ -46,21 +80,21 @@ const AnalyticsPage = () => {
         />
         <StatCard 
           title="Active Tenants" 
-          value={124} 
+          value={stats.activeTenants} 
           icon={<Users size={24} />}
           trend="up"
           trendValue="4.2%"
         />
         <StatCard 
           title="Total Listings" 
-          value={45} 
+          value={stats.totalListings} 
           icon={<Home size={24} />}
           trend="up"
           trendValue="2"
         />
         <StatCard 
           title="Occupancy Rate" 
-          value="95%" 
+          value={stats.occupancyRate} 
           icon={<TrendingUp size={24} />}
           trend="up"
           trendValue="5%"

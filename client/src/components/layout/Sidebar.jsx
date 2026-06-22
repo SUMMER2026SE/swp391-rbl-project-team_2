@@ -30,6 +30,7 @@ import useAuthStore from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
 import { API_URL } from '../../config';
 import adminService from '../../services/adminService';
+import { landlordService } from '../../features/landlord/services/landlordService';
 import './Sidebar.css';
 
 // ── Menu configs per role ──
@@ -52,7 +53,6 @@ const ADMIN_NAV = [
   { icon: <BarChart3 size={20} />, label: 'Analytics', path: ROUTES.ADMIN.ANALYTICS },
   { icon: <Receipt size={20} />, label: 'Transactions', path: ROUTES.ADMIN.TRANSACTIONS },
   { icon: <Wallet size={20} />, label: 'Payouts', path: ROUTES.ADMIN.PAYOUTS },
-  { icon: <FileText size={20} />, label: 'System Logs', path: ROUTES.ADMIN.LOGS },
   { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.ADMIN.SETTINGS },
 ];
 
@@ -72,6 +72,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingSchedules, setPendingSchedules] = useState(0);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
   // Listen for new messages
@@ -118,8 +119,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           setPendingCount(res.data.pendingListings);
         }
       }).catch(err => console.error('Failed to fetch pending count for sidebar', err));
+    } else if (isLandlord) {
+      landlordService.getStats().then(res => {
+        if (res.success && res.data.schedules?.pending) {
+          setPendingSchedules(res.data.schedules.pending);
+        }
+      }).catch(err => console.error('Failed to fetch pending schedules for sidebar', err));
     }
-  }, [isAdmin, location.pathname]); // refetch occasionally when path changes
+  }, [isAdmin, isLandlord, location.pathname]); // refetch occasionally when path changes
 
   const getAvatarUrl = () => {
     if (user?.avatarUrl) {
@@ -148,8 +155,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const helpPath = isLandlord ? ROUTES.LANDLORD.HELP : isAdmin ? ROUTES.ADMIN.HELP : ROUTES.HELP;
   const profilePath = isLandlord ? ROUTES.LANDLORD.PROFILE : isAdmin ? ROUTES.ADMIN.SETTINGS : ROUTES.TENANT.PROFILE;
 
-  const brandTitle = isLandlord ? 'Landlord Portal' : isAdmin ? 'Admin Portal' : 'Tenant Portal';
-  const brandSubtitle = isLandlord ? 'Room Management' : isAdmin ? 'System Management' : 'My Account';
+  const brandTitle = user?.fullName || 'User';
+  const brandSubtitle = isLandlord ? 'Landlord Portal' : isAdmin ? 'Admin Portal' : 'Tenant Portal';
 
   const isActive = (path) => location.pathname === path;
 
@@ -189,6 +196,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     {isAdmin && link.label === 'Listings' && pendingCount > 0 && (
                       <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
                         {pendingCount}
+                      </span>
+                    )}
+                    {isLandlord && link.label === 'Viewing Schedules' && pendingSchedules > 0 && (
+                      <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
+                        {pendingSchedules}
                       </span>
                     )}
                     {link.label === 'Messages' && hasUnreadMessages && (

@@ -27,6 +27,7 @@ const getAllUsers = async (req, res, next) => {
         rawId: user.user_id,
         name: user.full_name,
         email: user.email,
+        avatarUrl: user.avatar_url,
         role: roleName,
         status: status,
         joined: user.created_at,
@@ -86,11 +87,10 @@ const getDashboardStats = async (req, res, next) => {
     const payments = await Payment.findAll({
       where: {
         status: 'completed',
-        payment_type: 'rent',
         paid_date: { [Op.gte]: startOfMonth }
       }
     });
-    const totalRevenue = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const totalRevenue = payments.reduce((sum, p) => sum + Number(p.platform_fee || 0), 0);
 
     // Active Tenants
     const tenantRole = await Role.findOne({ where: { role_name: 'Tenant' } });
@@ -134,7 +134,6 @@ const getRevenueChart = async (req, res, next) => {
     const payments = await Payment.findAll({
       where: {
         status: 'completed',
-        payment_type: 'rent',
         paid_date: { [Op.gte]: startOfYear }
       }
     });
@@ -143,7 +142,7 @@ const getRevenueChart = async (req, res, next) => {
     const monthlyRevenue = Array(12).fill(0);
     payments.forEach(p => {
       const monthIndex = new Date(p.paid_date).getMonth();
-      monthlyRevenue[monthIndex] += Number(p.amount);
+      monthlyRevenue[monthIndex] += Number(p.platform_fee || 0);
     });
 
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -247,6 +246,9 @@ const getAllRooms = async (req, res, next) => {
         rawId: room.room_id,
         title: room.title,
         location: `${room.district}, ${room.city}`,
+        district: room.district,
+        city: room.city,
+        room_type: room.room_type,
         price: room.price_per_month,
         image: room.thumbnail_url || 'https://via.placeholder.com/200',
         landlord: { name: room.landlord?.full_name, type: 'Verified Host' },
@@ -267,14 +269,41 @@ const getAllRooms = async (req, res, next) => {
 const updateRoomStatus = async (req, res, next) => {
   try {
     const roomId = req.params.id;
-    const { status } = req.body; // 'available', 'hidden'
+    const { status, reason } = req.body; 
 
     const room = await Room.findByPk(roomId);
     if (!room) {
       return res.status(404).json({ success: false, message: 'Room not found' });
     }
 
-    await room.update({ status: status.toLowerCase() });
+    const updateData = { status: status.toLowerCase() };
+    if (updateData.status === 'rejected') {
+      updateData.rejection_reason = reason || null;
+    } else {
+      updateData.rejection_reason = null; // Clear if re-approved or changed
+    }
+
+    await room.update(updateData);
+
+    if (updateData.status === 'rejected' && reason) {
+      const { Notification } = require('../models');
+      await Notification.create({
+        user_id: room.landlord_id,
+        title: 'Listing Rejected',
+        message: `Your listing "${room.title}" was rejected by the admin. Reason: ${reason}`,
+        notification_type: 'system',
+        related_id: room.room_id
+      });
+    } else if (updateData.status === 'available') {
+      const { Notification } = require('../models');
+      await Notification.create({
+        user_id: room.landlord_id,
+        title: 'Listing Approved',
+        message: `Good news! Your listing "${room.title}" has been approved and is now live.`,
+        notification_type: 'system',
+        related_id: room.room_id
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -292,7 +321,7 @@ const getAllTransactions = async (req, res, next) => {
   try {
     const transactions = await Payment.findAll({
       include: [
-        { model: User, as: 'tenant', attributes: ['full_name'] },
+        { model: User, as: 'tenant', attributes: ['full_name', 'avatar_url'] },
         { model: Room, as: 'room', attributes: ['title'] },
       ],
       order: [['created_at', 'DESC']]
@@ -301,8 +330,10 @@ const getAllTransactions = async (req, res, next) => {
     const formattedTransactions = transactions.map(tx => ({
       id: `TRX-${tx.payment_id.toString().padStart(4, '0')}`,
       rawId: tx.payment_id,
+      roomId: tx.room_id,
       date: tx.created_at,
       tenant: tx.tenant?.full_name || 'Unknown',
+      avatarUrl: tx.tenant?.avatar_url || '',
       property: tx.room?.title || 'Unknown',
       type: tx.payment_type.charAt(0).toUpperCase() + tx.payment_type.slice(1).replace('_', ' '),
       amount: Number(tx.amount),

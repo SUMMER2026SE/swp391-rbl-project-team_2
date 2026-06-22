@@ -77,8 +77,9 @@ CREATE TABLE rooms (
     room_type VARCHAR(15) DEFAULT 'single',   -- 'single', 'double', 'shared', 'apartment', 'house'
     bedrooms INT DEFAULT 1,
     max_occupants INT DEFAULT 1,
-    status VARCHAR(15) DEFAULT 'available',   -- 'available', 'rented', 'maintenance', 'inactive'
+    status VARCHAR(15) DEFAULT 'available',   -- 'available', 'rented', 'maintenance', 'inactive', 'rejected', 'pending'
     thumbnail_url NVARCHAR(500) NULL,
+    rejection_reason NVARCHAR(1000) NULL,
     is_deleted BIT DEFAULT 0,
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE(),

@@ -9,8 +9,11 @@ import {
 } from 'lucide-react';
 import api from '../../../services/api';
 import './DepositManagementPage.css';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../constants';
 
 const DepositManagementPage = () => {
+  const navigate = useNavigate();
   const [payouts, setPayouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,12 +22,12 @@ const DepositManagementPage = () => {
   useEffect(() => {
     const fetchPayouts = async () => {
       try {
-        const response = await api.get('/landlord/payments?paymentType=viewing_deposit&status=completed&limit=100');
+        const response = await api.get('/landlord/payments?paymentType=deposit&status=completed&limit=100');
         if (response.success) {
           const mappedData = response.data.map(p => {
             const originalAmount = parseFloat(p.amount) || 0;
             const platformFee = p.platformFee != null ? parseFloat(p.platformFee) : originalAmount * 0.05;
-            const netAmount = p.netAmount != null ? parseFloat(p.netAmount) : originalAmount - platformFee;
+            const netAmount = p.netAmount != null ? parseFloat(p.netAmount) : originalAmount * 0.95;
             
             // Map status
             let uiStatus = p.payout_status || p.payoutStatus || 'pending';
@@ -33,6 +36,7 @@ const DepositManagementPage = () => {
 
             return {
               id: p.transactionId ? `#VNP-${p.transactionId}` : `#PAY-${p.paymentId || p.payment_id}`,
+              roomId: p.room_id || p.room?.room_id,
               tenantName: p.tenant?.full_name || 'Unknown Tenant',
               property: p.room?.title || 'Unknown Property',
               originalAmount,
@@ -84,7 +88,7 @@ const DepositManagementPage = () => {
       <div className="deposit-header-row">
         <div>
           <h1 className="deposit-main-title">Escrow Payouts</h1>
-          <p className="deposit-sub-title">Track your 95% payouts from viewing deposits (escrow). The platform transfers funds to you after the tenant signs the lease.</p>
+          <p className="deposit-sub-title">Track your 95% payouts from contract deposits (escrow). The platform transfers funds to you after the tenant signs the lease.</p>
         </div>
         <div className="deposit-header-actions">
           <button className="btn-export-csv" onClick={() => toast.success('Exporting payout data to CSV...')}>
@@ -99,7 +103,7 @@ const DepositManagementPage = () => {
         <div className="deposit-stat-card">
           <div className="stat-card-main-row">
             <div>
-              <span className="deposit-stat-label">VIEWING DEPOSITS (100%)</span>
+              <span className="deposit-stat-label">CONTRACT DEPOSITS (100%)</span>
               <h2 className="deposit-stat-value">{totalCollected.toLocaleString('vi-VN')} đ</h2>
             </div>
             <div className="deposit-stat-icon-box landmark-blue">
@@ -107,7 +111,7 @@ const DepositManagementPage = () => {
             </div>
           </div>
           <div className="deposit-stat-footer">
-            <span className="stat-normal-desc">Total viewing deposits held securely in escrow</span>
+            <span className="stat-normal-desc">Total contract deposits held securely in escrow</span>
           </div>
         </div>
 
@@ -175,7 +179,7 @@ const DepositManagementPage = () => {
               <th>Date</th>
               <th>Tenant & ID</th>
               <th>Property</th>
-              <th>Viewing Deposit (10%)</th>
+              <th>Deposit Amount</th>
               <th>Platform Fee (5%)</th>
               <th>Net Payout (95%)</th>
               <th>Status</th>
@@ -192,7 +196,20 @@ const DepositManagementPage = () => {
                     <span className="tenant-display-name">{p.tenantName}</span>
                     <span className="tenant-id-sub">{p.id}</span>
                   </td>
-                  <td className="deposit-property-cell">{p.property}</td>
+                  <td className="deposit-property-cell">
+                    {p.roomId ? (
+                      <span 
+                        onClick={() => navigate(`${ROUTES.ROOMS}/${p.roomId}`)}
+                        style={{ cursor: 'pointer', color: '#2563eb', textDecoration: 'none' }}
+                        onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                        onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                      >
+                        {p.property}
+                      </span>
+                    ) : (
+                      p.property
+                    )}
+                  </td>
                   <td className="deposit-amount-cell" style={{color: '#6b7280'}}>{p.originalAmount.toLocaleString('vi-VN')} đ</td>
                   <td className="deposit-amount-cell" style={{color: '#ef4444'}}>-{p.platformFee.toLocaleString('vi-VN')} đ</td>
                   <td className="deposit-amount-cell" style={{color: '#16a34a', fontWeight: 'bold'}}>{p.netAmount.toLocaleString('vi-VN')} đ</td>

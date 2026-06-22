@@ -4,6 +4,7 @@ import { Search, UserCheck, UserX, MoreVertical, Shield } from 'lucide-react';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import adminService from '../../../services/adminService';
+import { getAvatarUrl } from '../../../utils/format';
 import './UsersPage.css';
 
 const ROLE_COLORS = {
@@ -18,6 +19,8 @@ const UsersPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   // Confirmation Modal State
   const [confirmDialog, setConfirmDialog] = useState({
@@ -76,6 +79,13 @@ const UsersPage = () => {
     return matchSearch && matchRole;
   });
 
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedUsers = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, roleFilter]);
+
   return (
     <div className="admin-page-container">
       <div className="admin-page-header">
@@ -122,12 +132,12 @@ const UsersPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((user) => (
+                {paginatedUsers.map((user) => (
                   <tr key={user.id}>
                     <td>
                       <div className="user-cell">
-                        <div className="user-avatar-circle">
-                          {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                        <div className="user-avatar-circle" style={{ overflow: 'hidden' }}>
+                          <img src={getAvatarUrl(user.name, user.avatarUrl)} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div>
                           <p className="user-name">{user.name}</p>
@@ -154,7 +164,7 @@ const UsersPage = () => {
                           className="btn-action-icon" 
                           title="Activate"
                           onClick={() => handleUpdateStatus(user.rawId, 'activate')}
-                          disabled={user.status === 'Active'}
+                          disabled={user.status === 'Active' || user.role === 'ADMIN'}
                         >
                           <UserCheck size={18} />
                         </button>
@@ -162,11 +172,11 @@ const UsersPage = () => {
                           className="btn-action-icon" 
                           title="Suspend"
                           onClick={() => handleUpdateStatus(user.rawId, 'suspend')}
-                          disabled={user.status === 'Suspended'}
+                          disabled={user.status === 'Suspended' || user.role === 'ADMIN'}
                         >
                           <UserX size={18} />
                         </button>
-                        <button className="btn-action-icon" title="More">
+                        <button className="btn-action-icon" title="More" disabled={user.role === 'ADMIN'}>
                           <MoreVertical size={18} />
                         </button>
                       </div>
@@ -184,11 +194,33 @@ const UsersPage = () => {
         </div>
 
         <div className="pagination-container">
-          <span className="pagination-info">Showing {filtered.length} of {users.length} users</span>
+          <span className="pagination-info">
+            Showing {filtered.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} users
+          </span>
           <div className="pagination-controls">
-            <button className="btn-page" disabled>Previous</button>
-            <button className="btn-page active">1</button>
-            <button className="btn-page">Next</button>
+            <button 
+              className="btn-page" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button 
+                key={page} 
+                className={`btn-page ${currentPage === page ? 'active' : ''}`}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </button>
+            ))}
+            <button 
+              className="btn-page" 
+              disabled={currentPage === totalPages || totalPages === 0}
+              onClick={() => setCurrentPage(p => p + 1)}
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>

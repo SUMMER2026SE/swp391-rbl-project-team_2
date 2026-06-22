@@ -145,10 +145,19 @@ const getLandlordViewingSchedules = async (req, res, next) => {
 
     const offset = (page - 1) * limit;
 
+    const { RoomImage } = require('../models');
+
     const { count, rows } = await ViewingSchedule.findAndCountAll({
       where,
       include: [
-        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month'] },
+        { 
+          model: Room, 
+          as: 'room', 
+          attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month'],
+          include: [
+            { model: RoomImage, as: 'images', attributes: ['image_url', 'is_primary'] }
+          ]
+        },
         { model: User, as: 'tenant', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
       ],
       offset,
@@ -378,44 +387,22 @@ const markNoShow = async (req, res, next) => {
       });
     }
 
-    // If the room was temporarily reserved for this viewing, make it available again
-    if (schedule.status === 'pending_payment' || schedule.status === 'scheduled') {
-      const room = await Room.findByPk(schedule.room_id);
-      if (room) {
-        await room.update({ status: 'available' });
-      }
-    }
-
     schedule.status = 'no_show';
     schedule.updated_at = new Date();
     await schedule.save();
-
-    // Tenant loses deposit: 95% goes to landlord, 5% platform fee
-    const payment = await Payment.findOne({
-      where: { viewing_schedule_id: schedule.schedule_id, status: 'completed' }
-    });
-
-    if (payment) {
-      const total = parseFloat(payment.amount);
-      payment.refund_amount = 0;
-      payment.net_amount = total * (1 - PLATFORM_FEE_RATE);
-      payment.platform_fee = total * PLATFORM_FEE_RATE;
-      payment.payout_status = 'pending';
-      await payment.save();
-    }
 
     // Notify tenant
     await Notification.create({
       user_id: schedule.tenant_id,
       title: 'No-Show Recorded',
-      message: `You did not attend the viewing for "${schedule.room.title}". Your deposit has been forfeited.`,
+      message: `You did not attend the viewing for "${schedule.room.title}".`,
       notification_type: 'viewing_schedule',
       related_id: schedule.schedule_id,
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Tenant marked as no-show. Deposit forfeited.',
+      message: 'Tenant marked as no-show.',
       data: { scheduleId: schedule.schedule_id, status: schedule.status },
     });
   } catch (error) {
@@ -482,10 +469,19 @@ const getTenantViewingSchedules = async (req, res, next) => {
 
     const offset = (page - 1) * limit;
 
+    const { RoomImage } = require('../models');
+
     const { count, rows } = await ViewingSchedule.findAndCountAll({
       where,
       include: [
-        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month'] },
+        { 
+          model: Room, 
+          as: 'room', 
+          attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month'],
+          include: [
+            { model: RoomImage, as: 'images', attributes: ['image_url', 'is_primary'] }
+          ]
+        },
         { model: User, as: 'landlordSchedule', attributes: ['user_id', 'full_name', 'email', 'phone'] },
         { model: Payment, as: 'payments', attributes: ['payment_id', 'amount', 'status', 'payment_type'], required: false },
       ],
@@ -556,12 +552,11 @@ const requestViewing = async (req, res, next) => {
       });
     }
 
-    // Check if tenant already has a pending/scheduled viewing for this room
     const existingSchedule = await ViewingSchedule.findOne({
       where: {
         room_id: roomId,
         tenant_id: tenantId,
-        status: { [Op.in]: ['pending_payment', 'scheduled'] },
+        status: { [Op.in]: ['pending', 'pending_payment', 'scheduled'] },
       },
     });
 
@@ -572,56 +567,23 @@ const requestViewing = async (req, res, next) => {
       });
     }
 
-    // Deposit = 10% of room price
-    const DEPOSIT_AMOUNT = Math.round(parseFloat(room.price_per_month) * 0.10);
-
-    const paymentDeadline = new Date(Date.now() + PAYMENT_TIMEOUT_MINUTES * 60 * 1000);
-
     const schedule = await ViewingSchedule.create({
       room_id: roomId,
       tenant_id: tenantId,
       landlord_id: room.landlord_id,
       scheduled_date: new Date(scheduledDate),
-      status: 'pending_payment',
-      deposit_amount: DEPOSIT_AMOUNT,
-      payment_deadline: paymentDeadline,
+      status: 'pending',
+      deposit_amount: 0,
+      payment_deadline: null,
       notes: notes || null,
     });
 
-    const payment = await Payment.create({
-      room_id: roomId,
-      tenant_id: tenantId,
-      landlord_id: room.landlord_id,
-      viewing_schedule_id: schedule.schedule_id,
-      amount: DEPOSIT_AMOUNT,
-      payment_type: 'viewing_deposit',
-      payment_method: 'vnpay',
-      status: 'pending',
-      due_date: paymentDeadline,
-      created_at: new Date(),
-      updated_at: new Date()
-    });
-
-    // Temporarily reserve the room so others cannot see or book it
-    await room.update({ status: 'unavailable' });
-
-    const ipAddr = req.headers['x-forwarded-for'] ||
-        req.connection?.remoteAddress ||
-        req.socket?.remoteAddress ||
-        (req.connection?.socket ? req.connection.socket.remoteAddress : '127.0.0.1');
-
-    const vnpUrl = generateVnpayUrl(payment, ipAddr, roomId);
-
     return res.status(201).json({
       success: true,
-      message: 'Viewing request created. Redirecting to payment...',
-      url: vnpUrl,
+      message: 'Viewing request created successfully! Waiting for landlord approval.',
       data: {
         scheduleId: schedule.schedule_id,
-        depositAmount: DEPOSIT_AMOUNT,
-        paymentDeadline: paymentDeadline,
-        roomPrice: room.price_per_month,
-        paymentId: payment.payment_id,
+        status: schedule.status,
       },
     });
   } catch (error) {
@@ -872,6 +834,103 @@ const disputeViewingSchedule = async (req, res, next) => {
 };
 
 // =========================================================
+// PUT /api/tenant/viewing-schedules/:scheduleId/cancel
+// Tenant cancels the viewing schedule before viewing
+// =========================================================
+const cancelViewingScheduleTenant = async (req, res, next) => {
+  try {
+    const { scheduleId } = req.params;
+    const tenantId = req.user.userId;
+
+    const schedule = await ViewingSchedule.findOne({
+      where: { schedule_id: scheduleId, tenant_id: tenantId },
+      include: [{ model: Room, as: 'room' }]
+    });
+
+    if (!schedule) {
+      return res.status(404).json({ success: false, message: 'Viewing schedule not found.' });
+    }
+
+    if (schedule.status !== 'pending_payment' && schedule.status !== 'pending' && schedule.status !== 'scheduled') {
+      return res.status(400).json({
+        success: false,
+        message: 'You can only cancel schedules that are pending or scheduled.',
+      });
+    }
+
+    schedule.status = 'cancelled';
+    schedule.updated_at = new Date();
+    await schedule.save();
+
+    // Notify landlord
+    const Notification = require('../models').Notification;
+    await Notification.create({
+      user_id: schedule.landlord_id,
+      title: 'Viewing Schedule Cancelled',
+      message: `Tenant has cancelled the viewing for "${schedule.room.title}".`,
+      notification_type: 'viewing_schedule',
+      related_id: schedule.schedule_id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Viewing schedule cancelled successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================================
+// PUT /api/tenant/viewing-schedules/:scheduleId/decline
+// Tenant declines to rent after viewing
+// =========================================================
+const declineViewingScheduleTenant = async (req, res, next) => {
+  try {
+    const { scheduleId } = req.params;
+    const tenantId = req.user.userId;
+
+    const schedule = await ViewingSchedule.findOne({
+      where: { schedule_id: scheduleId, tenant_id: tenantId },
+      include: [{ model: Room, as: 'room' }]
+    });
+
+    if (!schedule) {
+      return res.status(404).json({ success: false, message: 'Viewing schedule not found.' });
+    }
+
+    if (schedule.status !== 'confirmed') {
+      return res.status(400).json({
+        success: false,
+        message: 'You can only decline to rent after the viewing is confirmed by landlord.',
+      });
+    }
+
+    schedule.status = 'completed';
+    schedule.tenant_decision = 'rejected';
+    schedule.updated_at = new Date();
+    await schedule.save();
+
+    // Notify landlord
+    const Notification = require('../models').Notification;
+    await Notification.create({
+      user_id: schedule.landlord_id,
+      title: 'Tenant Declined to Rent',
+      message: `Tenant has decided not to rent "${schedule.room.title}" after viewing.`,
+      notification_type: 'viewing_schedule',
+      related_id: schedule.schedule_id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'You have declined to rent the room. Feedback sent to landlord.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================================
 // POST /api/landlord/viewing-schedules/:scheduleId/create-contract
 // Landlord creates contract after tenant requests it
 // =========================================================
@@ -1090,6 +1149,35 @@ const getTenantContracts = async (req, res, next) => {
   }
 };
 
+const cancelContract = async (req, res, next) => {
+  try {
+    const { contractId } = req.params;
+    const tenantId = req.user.userId;
+
+    const contract = await Contract.findOne({
+      where: { contract_id: contractId, tenant_id: tenantId }
+    });
+
+    if (!contract) {
+      return res.status(404).json({ success: false, message: 'Contract not found.' });
+    }
+
+    if (contract.status === 'active' || contract.status === 'completed') {
+      return res.status(400).json({ success: false, message: 'Cannot cancel an active or completed contract.' });
+    }
+
+    contract.status = 'cancelled';
+    await contract.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Contract cancelled successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createViewingSchedule,
   getLandlordViewingSchedules,
@@ -1103,7 +1191,10 @@ module.exports = {
   retryPayment,
   requestContract,
   disputeViewingSchedule,
+  cancelViewingScheduleTenant,
+  declineViewingScheduleTenant,
   createContractFromViewing,
   signContract,
   getTenantContracts,
+  cancelContract,
 };

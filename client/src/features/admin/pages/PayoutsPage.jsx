@@ -1,6 +1,7 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { CreditCard, DollarSign, ArrowUpRight, Search, CheckCircle, Clock, Percent } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import adminService from '../../../services/adminService';
 import { formatCurrency } from '../../../utils/format';
 import './PayoutsPage.css';
@@ -12,6 +13,8 @@ const PayoutsPage = () => {
   const [selectedPayout, setSelectedPayout] = useState(null);
   const [commissionRate, setCommissionRate] = useState(5); // Default 5%
   const [processing, setProcessing] = useState(false);
+  const [receiptModalPayout, setReceiptModalPayout] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPayouts();
@@ -179,7 +182,13 @@ const PayoutsPage = () => {
                   </td>
                   <td>
                     <div className="room-col">
-                      <span className="room-title">{payout.room?.title}</span>
+                      <span 
+                        className="room-title" 
+                        onClick={() => navigate(`/rooms/${payout.room?.room_id}`)}
+                        style={{ cursor: 'pointer', color: '#2563EB', textDecoration: 'underline' }}
+                      >
+                        {payout.room?.title}
+                      </span>
                       <span className="tenant-name">From: {payout.tenant?.full_name}</span>
                     </div>
                   </td>
@@ -212,7 +221,12 @@ const PayoutsPage = () => {
                         Process Payout
                       </button>
                     ) : (
-                      <button className="btn-view-receipt">Receipt</button>
+                      <button 
+                        className="btn-view-receipt"
+                        onClick={() => setReceiptModalPayout(payout)}
+                      >
+                        Receipt
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -306,6 +320,71 @@ const PayoutsPage = () => {
                 disabled={processing}
               >
                 {processing ? 'Processing...' : 'Confirm & Mark as Paid'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Receipt Modal */}
+      {receiptModalPayout && (
+        <div className="modal-overlay" onClick={() => setReceiptModalPayout(null)}>
+          <div className="modal-content receipt-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Payout Receipt</h3>
+              <button 
+                className="btn-close" 
+                onClick={() => setReceiptModalPayout(null)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body" style={{ background: '#f8fafc', padding: '24px', borderRadius: '8px', border: '1px solid #e2e8f0', margin: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <CheckCircle size={48} color="#10b981" style={{ margin: '0 auto', marginBottom: '8px' }} />
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a' }}>Payment Processed</h2>
+                <p style={{ color: '#64748b' }}>{new Date(receiptModalPayout.payout_date || receiptModalPayout.paid_date).toLocaleString()}</p>
+              </div>
+
+              <div style={{ display: 'grid', gap: '16px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>Transaction ID</span>
+                  <span style={{ fontWeight: 500, color: '#0f172a' }}>#{receiptModalPayout.payment_id}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>Landlord</span>
+                  <span style={{ fontWeight: 500, color: '#0f172a' }}>{receiptModalPayout.landlordPayment?.full_name}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>Room</span>
+                  <span style={{ fontWeight: 500, color: '#0f172a' }}>{receiptModalPayout.room?.title}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gap: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginTop: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>Total Collected</span>
+                  <span style={{ fontWeight: 500, color: '#0f172a' }}>{formatCurrency(receiptModalPayout.amount)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b' }}>Platform Fee</span>
+                  <span style={{ fontWeight: 500, color: '#ef4444' }}>-{formatCurrency(receiptModalPayout.platform_fee)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', fontSize: '1.125rem' }}>
+                  <span style={{ fontWeight: 600, color: '#0f172a' }}>Net Payout</span>
+                  <span style={{ fontWeight: 700, color: '#10b981' }}>{formatCurrency(receiptModalPayout.net_amount)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer" style={{ borderTop: 'none', padding: '0 16px 16px' }}>
+              <button 
+                className="btn-primary" 
+                onClick={() => setReceiptModalPayout(null)}
+                style={{ width: '100%', padding: '12px', background: '#0f172a' }}
+              >
+                Close Receipt
               </button>
             </div>
           </div>

@@ -75,7 +75,7 @@ const HomePage = () => {
           <div className="hero-metrics">
             <div className="metric-item">
               <span className="metric-num">5k+</span>
-              <span className="metric-label">Active Students</span>
+              <span className="metric-label">Active Tenants</span>
             </div>
             <div className="metric-divider"></div>
             <div className="metric-item">
@@ -255,7 +255,7 @@ const HomePage = () => {
                 <Calendar size={24} />
               </div>
               <h3>Schedule a Viewing</h3>
-              <p>Book a time to see the room in person and pay a small deposit to secure your slot.</p>
+              <p>Book a time to see the room in person completely for free.</p>
             </div>
             <div className="step-card">
               <div className="step-number">3</div>

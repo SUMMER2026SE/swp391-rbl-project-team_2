@@ -42,6 +42,7 @@ const LandlordProfilePage = () => {
   const [editForm, setEditForm] = useState({ fullName: '', phone: '' });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
   const fileInputRef = React.useRef(null);
 
@@ -106,12 +107,34 @@ const LandlordProfilePage = () => {
       phone: displayProfile.phone || '',
     });
     setEditError('');
+    setPhoneError('');
     setEditSuccess('');
     setShowEditModal(true);
   };
 
+  const handlePhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ''); // Allow only digits
+    if (value.length > 10) return; // Limit to 10 digits
+    
+    setEditForm(prev => ({ ...prev, phone: value }));
+
+    if (value && !value.startsWith('0')) {
+      setPhoneError('Phone number must start with 0');
+    } else if (value && value.length !== 10) {
+      setPhoneError('Phone number must be exactly 10 digits');
+    } else {
+      setPhoneError('');
+    }
+  };
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    
+    if (phoneError || (editForm.phone && (editForm.phone.length !== 10 || !editForm.phone.startsWith('0')))) {
+      setEditError('Please fix the phone number errors before saving.');
+      return;
+    }
+
     setEditLoading(true);
     setEditError('');
     setEditSuccess('');
@@ -386,9 +409,15 @@ const LandlordProfilePage = () => {
                 <input
                   type="tel"
                   value={editForm.phone}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="Enter your phone number"
+                  onChange={handlePhoneChange}
+                  placeholder="Enter your phone number (e.g. 098...)"
+                  style={phoneError ? { borderColor: '#ef4444' } : {}}
                 />
+                {phoneError && (
+                  <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '4px', display: 'block' }}>
+                    {phoneError}
+                  </span>
+                )}
               </div>
 
               {editError && (

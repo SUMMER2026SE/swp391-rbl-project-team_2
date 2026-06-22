@@ -2,10 +2,7 @@ const { Sequelize } = require('sequelize');
 const moment = require('moment');
 require('dotenv').config();
 
-// Override Sequelize date format to be compatible with MSSQL DATETIME column
-Sequelize.DATE.prototype._stringify = function _stringify(date, options) {
-  return this._applyTimezone(date, options).format('YYYY-MM-DD HH:mm:ss.SSS');
-};
+// Removed custom _stringify to ensure dates are correctly stored as UTC in DB
 
 const sequelize = new Sequelize(
   process.env.DB_NAME,
@@ -19,12 +16,12 @@ const sequelize = new Sequelize(
       options: {
         encrypt: false,
         trustServerCertificate: true,
-        useUTC: false, // Use local time instead of UTC
+        useUTC: true, // Always use UTC for reliable date handling
         dateFirst: 1, // Set first day of week to Monday to align with ymd format defaults
         language: 'us_english' // Force US English language for the SQL Server connection to avoid date parsing errors
       },
     },
-    timezone: '+07:00',
+    timezone: '+00:00', // Set timezone to UTC for consistent parsing
     logging: false,
     pool: {
       max: 10,

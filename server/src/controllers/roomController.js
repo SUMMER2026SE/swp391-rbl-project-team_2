@@ -484,20 +484,24 @@ const searchRooms = async (req, res, next) => {
     }
 
     if (keyword) {
-      const keywordLower = `%${keyword}%`;
       const matchingLandlords = await User.findAll({
-        where: { full_name: { [Op.like]: keywordLower }, is_deleted: false },
+        where: {
+          [Op.and]: [
+            { is_deleted: false },
+            sequelize.where(sequelize.col('full_name'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`))
+          ]
+        },
         attributes: ['user_id'],
       });
       const landlordIds = matchingLandlords.map((u) => u.user_id);
 
       const keywordConditions = [
-        { title: { [Op.like]: keywordLower } },
-        { description: { [Op.like]: keywordLower } },
-        { address: { [Op.like]: keywordLower } },
-        { city: { [Op.like]: keywordLower } },
-        { district: { [Op.like]: keywordLower } },
-        { ward: { [Op.like]: keywordLower } },
+        sequelize.where(sequelize.col('Room.title'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
+        sequelize.where(sequelize.col('Room.description'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
+        sequelize.where(sequelize.col('Room.address'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
+        sequelize.where(sequelize.col('Room.city'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
+        sequelize.where(sequelize.col('Room.district'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
+        sequelize.where(sequelize.col('Room.ward'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`))
       ];
       if (landlordIds.length > 0) {
         keywordConditions.push({ landlord_id: { [Op.in]: landlordIds } });
@@ -505,8 +509,15 @@ const searchRooms = async (req, res, next) => {
       where[Op.or] = keywordConditions;
     }
 
-    if (city) where.city = { [Op.like]: `%${city}%` };
-    if (district) where.district = { [Op.like]: `%${district}%` };
+    if (city || district) {
+        where[Op.and] = where[Op.and] || [];
+        if (city) {
+            where[Op.and].push(sequelize.where(sequelize.col('Room.city'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + city + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)));
+        }
+        if (district) {
+            where[Op.and].push(sequelize.where(sequelize.col('Room.district'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + district + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)));
+        }
+    }
 
     if (minPrice || maxPrice) {
       where.price_per_month = {};

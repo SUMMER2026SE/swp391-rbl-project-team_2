@@ -11,10 +11,15 @@ import './ListingsPage.css';
 const ListingsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [roomTypeFilter, setRoomTypeFilter] = useState('All');
+  const [cityFilter, setCityFilter] = useState('All');
+  const [districtFilter, setDistrictFilter] = useState('All');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'pending'
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
   
   // Confirmation Modal State
   const [confirmDialog, setConfirmDialog] = useState({
@@ -26,6 +31,11 @@ const ListingsPage = () => {
   useEffect(() => {
     fetchListings();
   }, []);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, roomTypeFilter, cityFilter, districtFilter, activeTab]);
 
   const fetchListings = async () => {
     try {
@@ -76,8 +86,39 @@ const ListingsPage = () => {
       matchesStatus = item.status.toLowerCase() === statusFilter.toLowerCase();
     }
     
-    return matchesSearch && matchesStatus;
+    let matchesType = true;
+    if (roomTypeFilter !== 'All') {
+      // Assuming item has a type property, adjust if needed (e.g. item.room_type or item.type)
+      matchesType = item.type === roomTypeFilter || item.room_type === roomTypeFilter;
+    }
+
+    let matchesCity = true;
+    if (cityFilter !== 'All') {
+      matchesCity = item.city === cityFilter || item.location?.includes(cityFilter);
+    }
+
+    let matchesDistrict = true;
+    if (districtFilter !== 'All') {
+      matchesDistrict = item.district === districtFilter || item.location?.includes(districtFilter);
+    }
+
+    return matchesSearch && matchesStatus && matchesType && matchesCity && matchesDistrict;
   });
+
+  // Extract unique options from listings for filters
+  const uniqueRoomTypes = [...new Set(listings.map(item => item.type || item.room_type).filter(Boolean))];
+  const uniqueCities = [...new Set(listings.map(item => item.city || (item.location ? item.location.split(', ').pop() : null)).filter(Boolean))];
+  // If a city is selected, filter districts by that city, else show all
+  const filteredDistricts = cityFilter !== 'All' 
+    ? listings.filter(item => item.city === cityFilter || item.location?.includes(cityFilter))
+    : listings;
+  const uniqueDistricts = [...new Set(filteredDistricts.map(item => item.district || (item.location ? item.location.split(', ')[0] : null)).filter(Boolean))];
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredListings.length / ITEMS_PER_PAGE);
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentListings = filteredListings.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="admin-page-container">
@@ -171,20 +212,48 @@ const ListingsPage = () => {
           
           <div className="toolbar-filters">
             <div className="filter-dropdown-wrapper">
-              <select className="filter-select">
-                <option>All Property Types</option>
-                <option>Apartment</option>
-                <option>Studio</option>
-                <option>Shared Room</option>
+              <select 
+                className="filter-select"
+                value={roomTypeFilter}
+                onChange={(e) => setRoomTypeFilter(e.target.value)}
+              >
+                <option value="All">All Property Types</option>
+                {uniqueRoomTypes.map(type => (
+                  <option key={type} value={type} style={{ textTransform: 'capitalize' }}>
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </option>
+                ))}
               </select>
               <ChevronDown size={14} className="dropdown-icon" />
             </div>
 
             <div className="filter-dropdown-wrapper">
-              <select className="filter-select">
-                <option>All Neighborhoods</option>
-                <option>District 1</option>
-                <option>Binh Thanh</option>
+              <select 
+                className="filter-select"
+                value={cityFilter}
+                onChange={(e) => {
+                  setCityFilter(e.target.value);
+                  setDistrictFilter('All'); // Reset district when city changes
+                }}
+              >
+                <option value="All">All Cities/Provinces</option>
+                {uniqueCities.map(city => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="dropdown-icon" />
+            </div>
+
+            <div className="filter-dropdown-wrapper">
+              <select 
+                className="filter-select"
+                value={districtFilter}
+                onChange={(e) => setDistrictFilter(e.target.value)}
+              >
+                <option value="All">All Districts</option>
+                {uniqueDistricts.map(district => (
+                  <option key={district} value={district}>{district}</option>
+                ))}
               </select>
               <ChevronDown size={14} className="dropdown-icon" />
             </div>
@@ -216,20 +285,38 @@ const ListingsPage = () => {
         {loading ? (
           <div className="loading-state">Loading listings...</div>
         ) : viewMode === 'list' ? (
-          <ListingTable listings={filteredListings} onUpdateStatus={handleUpdateStatus} />
+          <ListingTable listings={currentListings} onUpdateStatus={handleUpdateStatus} />
         ) : (
-          <ListingGrid listings={filteredListings} onUpdateStatus={handleUpdateStatus} />
+          <ListingGrid listings={currentListings} onUpdateStatus={handleUpdateStatus} />
         )}
 
         {/* Pagination */}
-        <div className="pagination-container">
-          <span className="pagination-info">Showing {filteredListings.length} of {listings.length} properties</span>
-          <div className="pagination-controls">
-            <button className="btn-page" disabled>Previous</button>
-            <button className="btn-page active">1</button>
-            <button className="btn-page">Next</button>
+        {filteredListings.length > 0 && (
+          <div className="pagination-container">
+            <span className="pagination-info">
+              Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredListings.length)} of {filteredListings.length} properties
+            </span>
+            <div className="pagination-controls">
+              <button 
+                className="btn-page" 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              >
+                Previous
+              </button>
+              <span className="page-indicator" style={{ margin: '0 10px', fontSize: '0.9rem', color: '#64748b' }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button 
+                className="btn-page" 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <Modal 

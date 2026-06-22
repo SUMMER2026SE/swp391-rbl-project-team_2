@@ -121,6 +121,45 @@ const TenantRequestsPage = () => {
     }
   };
 
+  const handleCancelViewing = (scheduleId) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Cancel Viewing Schedule',
+      message: 'Are you sure you want to cancel this viewing schedule? This action cannot be undone.',
+      confirmText: 'Yes, Cancel it',
+      cancelText: 'Keep it',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await rentalRequestService.cancelViewingSchedule(scheduleId);
+          toast.success('Viewing schedule cancelled successfully.');
+          fetchViewingSchedules();
+        } catch (err) {
+          toast.error('Failed to cancel viewing: ' + (err.response?.data?.message || err.message));
+        }
+      }
+    });
+  };
+
+  const handleDeclineToRent = (scheduleId) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Decline to Rent',
+      message: 'Are you sure you want to decline renting this room?',
+      confirmText: 'Yes, Decline',
+      cancelText: 'Cancel',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await rentalRequestService.declineViewingSchedule(scheduleId);
+          toast.success('You have declined to rent. Feedback sent to landlord.');
+          fetchViewingSchedules();
+        } catch (err) {
+          toast.error('Failed to decline: ' + (err.response?.data?.message || err.message));
+        }
+      }
+    });
+  };
   const handleOpenDispute = (schedule) => {
     setSelectedDisputeSchedule(schedule);
     setDisputeReason('');
@@ -195,21 +234,35 @@ const TenantRequestsPage = () => {
     }
   };
 
-  const handleSignContract = (contractId) => {
+  const handleSignContract = (contractId, roomId) => {
     setConfirmDialog({
       isOpen: true,
       title: 'Sign Contract',
-      message: 'Are you sure you want to sign this contract? This action is final.',
-      confirmText: 'Sign Contract',
+      message: 'You will be redirected to the payment page to pay the deposit and first month rent. Once paid, the contract will be signed and the rental will be active.',
+      confirmText: 'Proceed to Payment',
       cancelText: 'Cancel',
       type: 'primary',
+      onConfirm: () => {
+        navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${roomId}&contractId=${contractId}`);
+      }
+    });
+  };
+
+  const handleCancelContract = (contractId) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Cancel Contract',
+      message: 'Are you sure you want to delete/cancel this contract? This action cannot be undone.',
+      confirmText: 'Yes, Cancel it',
+      cancelText: 'Keep it',
+      type: 'danger',
       onConfirm: async () => {
         try {
-          await rentalRequestService.signContract(contractId);
-          toast.success('Contract signed successfully! Your rental is now active.');
+          await rentalRequestService.cancelContract(contractId);
+          toast.success('Contract cancelled successfully.');
           fetchContracts();
         } catch (err) {
-          toast.error('Failed to sign contract: ' + (err.response?.data?.message || err.message));
+          toast.error('Failed to cancel contract: ' + (err.response?.data?.message || err.message));
         }
       }
     });
@@ -239,7 +292,7 @@ const TenantRequestsPage = () => {
       case 'canceled':
         return { icon: <Ban size={16} />, color: '#64748b', bg: '#f1f5f9', label: 'Cancelled' };
       case 'no_show':
-        return { icon: <AlertTriangle size={16} />, color: '#dc2626', bg: '#fee2e2', label: 'No Show - Deposit Lost' };
+        return { icon: <AlertTriangle size={16} />, color: '#dc2626', bg: '#fee2e2', label: 'No Show' };
       case 'disputed':
         return { icon: <MessageSquare size={16} />, color: '#ea580c', bg: '#fff7ed', label: 'Under Dispute' };
       case 'dispute_resolved':
@@ -333,19 +386,22 @@ const TenantRequestsPage = () => {
           <div className="requests-list">
             {viewingSchedules.map((schedule) => {
               const statusInfo = getStatusInfo(schedule.status);
-              const roomImage = schedule.room?.thumbnail_url 
-                ? (schedule.room.thumbnail_url && schedule.room.thumbnail_url.startsWith('http') ? schedule.room.thumbnail_url : `http://localhost:5000${schedule.room.thumbnail_url}`) 
+              const primaryImage = schedule.room?.images?.find(img => img.is_primary)?.image_url || schedule.room?.images?.[0]?.image_url;
+              const roomImage = primaryImage
+                ? (primaryImage.startsWith('http') ? primaryImage : `http://localhost:5000${primaryImage}`) 
                 : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80';
               
               const requestDate = new Date(schedule.createdAt || Date.now()).toLocaleDateString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric'
               });
               
-              const viewingDate = schedule.scheduledDate 
-                ? new Date(schedule.scheduledDate).toLocaleString('en-US', {
-                    month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                  }) 
+              const scheduleDateObj = schedule.scheduledDate ? new Date(schedule.scheduledDate) : null;
+              const viewingDateOnly = scheduleDateObj 
+                ? scheduleDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                 : 'TBD';
+              const viewingTimeOnly = scheduleDateObj
+                ? scheduleDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                : '';
 
               const depositAmount = schedule.depositAmount 
                 ? parseFloat(schedule.depositAmount).toLocaleString('vi-VN') 
@@ -369,7 +425,14 @@ const TenantRequestsPage = () => {
                   <div className="request-content">
                     <div className="request-top-info">
                       <div className="title-row">
-                        <h3>{schedule.room?.title || 'Unknown Room'}</h3>
+                        <h3 
+                          onClick={() => navigate(`${ROUTES.ROOMS}/${schedule.roomId}`)}
+                          style={{ cursor: 'pointer', color: '#2563eb' }}
+                          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                        >
+                          {schedule.room?.title || 'Unknown Room'}
+                        </h3>
                         <span className="request-date">Requested on {requestDate}</span>
                       </div>
                       <div className="address-row">
@@ -383,18 +446,20 @@ const TenantRequestsPage = () => {
                         <p className="detail-label">Viewing Date</p>
                         <div className="detail-value">
                           <Calendar size={16} />
-                          {viewingDate}
+                          {viewingDateOnly}
                         </div>
                       </div>
-                      {depositAmount && (
+
+                      {viewingTimeOnly && (
                         <div className="detail-item">
-                          <p className="detail-label">Deposit (10%)</p>
-                          <div className="detail-value deposit-value">
-                            <DollarSign size={16} />
-                            {depositAmount} VND
+                          <p className="detail-label">Viewing Time</p>
+                          <div className="detail-value">
+                            <Clock size={16} />
+                            {viewingTimeOnly}
                           </div>
                         </div>
                       )}
+
                       {schedule.status === 'pending_payment' && schedule.paymentDeadline && (
                         <div className="detail-item">
                           <p className="detail-label">Payment Deadline</p>
@@ -410,16 +475,31 @@ const TenantRequestsPage = () => {
                       <div className="action-buttons">
                         {/* Pay deposit button for pending_payment */}
                         {schedule.status === 'pending_payment' && (
-                          <button onClick={() => handlePayDeposit(schedule.scheduleId)} className="btn-action btn-pay">
-                            <CreditCard size={16} /> Pay Deposit
+                          <>
+                            <button onClick={() => handlePayDeposit(schedule.scheduleId)} className="btn-action btn-pay">
+                              <CreditCard size={16} /> Pay Deposit
+                            </button>
+                            <button onClick={() => handleCancelViewing(schedule.scheduleId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
+                              <X size={16} /> Cancel
+                            </button>
+                          </>
+                        )}
+
+                        {/* Cancel button for pending/scheduled */}
+                        {(schedule.status === 'pending' || schedule.status === 'scheduled') && (
+                          <button onClick={() => handleCancelViewing(schedule.scheduleId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
+                            <X size={16} /> Cancel Schedule
                           </button>
                         )}
 
-                        {/* After viewing confirmed — tenant can request contract or dispute */}
+                        {/* After viewing confirmed — tenant can request contract, decline, or dispute */}
                         {schedule.status === 'confirmed' && (
                           <>
                             <button onClick={() => handleOpenContractRequest(schedule)} className="btn-action btn-contract">
                               <FileSignature size={16} /> Request Contract
+                            </button>
+                            <button onClick={() => handleDeclineToRent(schedule.scheduleId)} className="btn-action" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
+                              <Ban size={16} /> Decline
                             </button>
                             <button onClick={() => handleOpenDispute(schedule)} className="btn-action btn-dispute">
                               <MessageSquare size={16} /> Report Issue
@@ -441,9 +521,6 @@ const TenantRequestsPage = () => {
                           </div>
                         )}
 
-                        <button onClick={() => navigate(`${ROUTES.ROOMS}/${schedule.roomId}`)} className="btn-action btn-view">
-                          View Listing <ChevronRight size={16} />
-                        </button>
                       </div>
                     </div>
                   
@@ -496,7 +573,14 @@ const TenantRequestsPage = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px' }}>
                           <div className="address-row" style={{ color: '#4b5563', fontSize: '14px', display: 'flex', alignItems: 'flex-start', gap: '6px', lineHeight: 1.5 }}>
                             <Home size={16} style={{ color: '#6b7280', marginTop: '2px', flexShrink: 0 }} />
-                            <span><strong>{contract.room.title}</strong></span>
+                            <span 
+                              onClick={() => navigate(`${ROUTES.ROOMS}/${contract.roomId}`)}
+                              style={{ cursor: 'pointer', color: '#2563eb' }}
+                              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                            >
+                              <strong>{contract.room.title}</strong>
+                            </span>
                           </div>
                           <div className="address-row" style={{ color: '#6b7280', fontSize: '13px', display: 'flex', alignItems: 'flex-start', gap: '6px', lineHeight: 1.5 }}>
                             <MapPin size={16} style={{ color: '#9ca3af', marginTop: '2px', flexShrink: 0 }} />
@@ -577,8 +661,18 @@ const TenantRequestsPage = () => {
                     <div className="request-actions-row">
                       <div className="action-buttons">
                         {contract.status === 'pending_signature' && (
-                          <button onClick={() => handleSignContract(contract.contractId)} className="btn-action btn-sign">
-                            <FileSignature size={16} /> Sign Contract
+                          <>
+                            <button onClick={() => handleSignContract(contract.contractId, contract.roomId)} className="btn-action btn-sign">
+                              <FileSignature size={16} /> Sign Contract
+                            </button>
+                            <button onClick={() => handleCancelContract(contract.contractId)} className="btn-action btn-cancel" style={{ color: '#DC2626', borderColor: '#DC2626', background: 'transparent' }}>
+                              <XCircle size={16} /> Delete
+                            </button>
+                          </>
+                        )}
+                        {contract.status === 'cancelled' && (
+                          <button onClick={() => handleCancelContract(contract.contractId)} className="btn-action btn-cancel" style={{ color: '#DC2626', borderColor: '#DC2626', background: 'transparent' }}>
+                            <XCircle size={16} /> Delete
                           </button>
                         )}
                         {contract.status === 'active' && (
@@ -656,8 +750,9 @@ const TenantRequestsPage = () => {
             <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#166534', lineHeight: 1.6 }}>
                 <strong>Room:</strong> {selectedContractSchedule.room?.title}<br />
-                <strong>Deposit paid:</strong> {parseFloat(selectedContractSchedule.depositAmount).toLocaleString('vi-VN')} VND<br />
-                <span style={{ fontSize: '0.8rem' }}>Upon successful rental, the platform will retain 5% commission on the deposit. 95% goes to the landlord.</span>
+                <span style={{ fontSize: '0.8rem', color: '#15803d', display: 'block', marginTop: '4px' }}>
+                  You will pay the security deposit and first month's rent when you sign the contract.
+                </span>
               </p>
             </div>
             
