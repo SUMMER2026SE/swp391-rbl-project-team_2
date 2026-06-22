@@ -95,6 +95,26 @@ export const rentalRequestService = {
     }
   },
 
+  cancelViewingSchedule: async (scheduleId) => {
+    try {
+      const response = await httpClient.put(`/tenant/viewing-schedules/${scheduleId}/cancel`);
+      return response;
+    } catch (error) {
+      console.error('Error canceling viewing schedule:', error);
+      throw error;
+    }
+  },
+
+  declineViewingSchedule: async (scheduleId) => {
+    try {
+      const response = await httpClient.put(`/tenant/viewing-schedules/${scheduleId}/decline`);
+      return response;
+    } catch (error) {
+      console.error('Error declining viewing schedule:', error);
+      throw error;
+    }
+  },
+
   getMyContracts: async () => {
     try {
       const response = await httpClient.get('/tenant/contracts');
@@ -111,6 +131,16 @@ export const rentalRequestService = {
       return response;
     } catch (error) {
       console.error('Error signing contract:', error);
+      throw error;
+    }
+  },
+
+  cancelContract: async (contractId) => {
+    try {
+      const response = await httpClient.put(`/tenant/contracts/${contractId}/cancel`);
+      return response;
+    } catch (error) {
+      console.error('Error cancelling contract:', error);
       throw error;
     }
   },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
   MapPin, Share2, Heart, MessageSquare, CheckCircle, Bed, Users, Maximize, Home, Compass, ChevronLeft
@@ -19,6 +19,7 @@ import './RoomDetailPage.css';
 const RoomDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [roomData, setRoomData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,6 +49,7 @@ const RoomDetailPage = () => {
   // Booking States
   const [showDateModal, setShowDateModal] = useState(false);
   const [viewingDate, setViewingDate] = useState('');
+  const [viewingTime, setViewingTime] = useState('');
 
   const { user, isAuthenticated } = useAuthStore();
 
@@ -118,21 +120,25 @@ const RoomDetailPage = () => {
         toast.error('Please select a viewing date.');
         return;
       }
+      if (!viewingTime) {
+        toast.error('Please select a viewing time.');
+        return;
+      }
       if (viewingDate < todayDate) {
         toast.error('Viewing date must be today or a future date.');
         return;
       }
 
+      // Combine date and time
+      const combinedDateTime = `${viewingDate}T${viewingTime}:00`;
+
       const response = await rentalRequestService.requestViewing({
         roomId: parseInt(id, 10),
-        notes: `Viewing request for ${viewingDate}. Requested from room detail page.`,
-        scheduledDate: viewingDate,
+        notes: `Viewing request for ${viewingDate} at ${viewingTime}. Requested from room detail page.`,
+        scheduledDate: combinedDateTime,
       });
-      if (response.success && response.url) {
-        toast.success('Redirecting to VNPay for viewing deposit...');
-        window.location.href = response.url;
-      } else if (response.success) {
-        toast.success('Viewing request sent!');
+      if (response.success) {
+        toast.success('Viewing request scheduled successfully!');
         setShowDateModal(false);
       }
     } catch (err) {
@@ -186,12 +192,21 @@ const RoomDetailPage = () => {
       {/* Back button for convenient navigation */}
       <Button 
         variant="outline-primary" 
-        onClick={() => navigate(isAuthenticated && user?.role === 'LANDLORD' ? ROUTES.LANDLORD.LISTINGS : ROUTES.ROOMS)}
+        onClick={() => {
+          if (location.state?.from === 'viewing_schedule') {
+            navigate(ROUTES.LANDLORD.SCHEDULES);
+          } else {
+            navigate(isAuthenticated && user?.role === 'LANDLORD' ? ROUTES.LANDLORD.LISTINGS : ROUTES.ROOMS);
+          }
+        }}
         className="mb-3 d-flex align-items-center gap-2"
         style={{ borderRadius: '20px', padding: '8px 16px', fontWeight: '500', width: 'fit-content' }}
       >
         <ChevronLeft size={18} />
-        {isAuthenticated && user?.role === 'LANDLORD' ? 'Back to My Listings' : 'Back to Explore'}
+        {location.state?.from === 'viewing_schedule' 
+          ? 'Back to Viewing Schedules' 
+          : (isAuthenticated && user?.role === 'LANDLORD' ? 'Back to My Listings' : 'Back to Explore')
+        }
       </Button>
 
       {/* Gallery Section */}
@@ -356,14 +371,14 @@ const RoomDetailPage = () => {
                   <span className="price-unit">/ month</span>
                 </div>
                 <span className={`status-badge ${roomData.status || 'available'}`}>
-                  {roomData.status === 'available' ? 'Available' : 'Unavailable'}
+                  {roomData.status === 'available' ? 'Available' : (roomData.status === 'rented' ? 'Rented' : (roomData.status === 'occupied' ? 'Occupied' : 'Unavailable'))}
                 </span>
               </div>
               <div className="booking-info-row">
                 <div className="info-col">
-                  <span className="info-label">Viewing Deposit (10%)</span>
+                  <span className="info-label">Viewing Fee</span>
                   <span className="info-val" style={{ color: '#059669', fontWeight: 700 }}>
-                    {Math.round((roomData.pricePerMonth || roomData.price_per_month || 0) * 0.10).toLocaleString('vi-VN')} đ
+                    Miễn phí
                   </span>
                 </div>
                 <div className="info-col">
@@ -403,13 +418,10 @@ const RoomDetailPage = () => {
                   <button className="btn-schedule-viewing" onClick={() => setShowDateModal(true)}>
                     Book room viewing schedule
                   </button>
-                  <p style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', marginTop: '10px', lineHeight: 1.5 }}>
-                    A 10% viewing deposit is required. Refundable if the room doesn't match the description.
-                  </p>
                 </>
               ) : (
                 <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
-                  Room is currently unavailable
+                  {roomData.status === 'rented' ? 'Room is currently rented' : (roomData.status === 'occupied' ? 'Room is currently occupied' : 'Room is currently unavailable')}
                 </button>
               )}
             </div>
@@ -425,22 +437,36 @@ const RoomDetailPage = () => {
               <p style={{ margin: 0, fontSize: '14px', color: '#166534', lineHeight: 1.6 }}>
                 <strong>Tiền cọc xem phòng:</strong>{' '}
                 <span style={{ fontSize: '18px', fontWeight: 700 }}>
-                  {Math.round((roomData.pricePerMonth || roomData.price_per_month || 0) * 0.10).toLocaleString('vi-VN')} đ
+                  Miễn phí
                 </span>
                 <br />
-                <span style={{ fontSize: '12px' }}>= 10% giá phòng. Hoàn tiền nếu phòng không đúng mô tả.</span>
+                <span style={{ fontSize: '12px' }}>Chỉ thanh toán khi kí hợp đồng thuê phòng thành công.</span>
               </p>
             </div>
-            <label>Ngày xem</label>
-            <input 
-              type="date" 
-              value={viewingDate} 
-              min={todayDate}
-              onChange={(e) => setViewingDate(e.target.value)} 
-            />
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Ngày xem</label>
+                <input 
+                  type="date" 
+                  value={viewingDate} 
+                  min={todayDate}
+                  onChange={(e) => setViewingDate(e.target.value)} 
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Giờ xem</label>
+                <input 
+                  type="time" 
+                  value={viewingTime} 
+                  onChange={(e) => setViewingTime(e.target.value)} 
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                />
+              </div>
+            </div>
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setShowDateModal(false)}>Hủy</button>
-              <button className="btn-confirm" onClick={handleScheduleViewing}>Thanh toán & Đặt lịch</button>
+              <button className="btn-confirm" onClick={handleScheduleViewing}>Đặt lịch</button>
             </div>
           </div>
         </div>

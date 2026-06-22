@@ -11,7 +11,8 @@ const DepositPaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get('roomId');
-  
+  const contractId = searchParams.get('contractId');
+
   const [paymentMethod, setPaymentMethod] = useState('vnpay');
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,7 @@ const DepositPaymentPage = () => {
       const response = await api.post('/tenant/payments/create_payment_url', {
         amount: Math.round(totalAmount), // VNPay needs integer amount in VND
         roomId: roomId,
+        contractId: contractId,
         bankCode: 'NCB', // Default for sandbox
         language: 'vn'
       });
@@ -89,9 +91,10 @@ const DepositPaymentPage = () => {
 
   // Calculate costs based on real data
   const basePrice = parseFloat(room.pricePerMonth) || 0;
-  // Usually deposit is 1 month rent
+  // Usually deposit is 1 month rent and rent is 1 month
   const securityDeposit = basePrice;
-  const totalAmount = securityDeposit;
+  const firstMonthRent = basePrice;
+  const totalAmount = securityDeposit + firstMonthRent;
 
   const roomImage = room.images?.length > 0 
     ? (room.images[0].image_url && room.images[0].image_url.startsWith('http') ? room.images[0].image_url : `http://localhost:5000${room.images[0].image_url}`) 
@@ -126,23 +129,23 @@ const DepositPaymentPage = () => {
                   className="summary-image"
                   onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80'; }}
                 />
-                <div className="summary-rating">
-                  <Star size={14} className="star-icon" />
-                  <span>4.9</span>
-                </div>
               </div>
 
               <div className="summary-content">
                 <h3 className="summary-room-title">{room.title}</h3>
                 <div className="summary-location">
                   <MapPin size={14} />
-                  <span>{room.address}, {room.city}</span>
+                  <span>{[room.address, room.ward, room.district, room.city].filter(Boolean).join(', ')}</span>
                 </div>
 
                 <div className="summary-breakdown">
                   <div className="breakdown-row">
                     <span>Security Deposit (1 Month)</span>
                     <span>{securityDeposit.toLocaleString('vi-VN')} VNĐ</span>
+                  </div>
+                  <div className="breakdown-row">
+                    <span>First Month Rent</span>
+                    <span>{firstMonthRent.toLocaleString('vi-VN')} VNĐ</span>
                   </div>
                 </div>
 
