@@ -1,9 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MoreVertical, Eye, Download } from 'lucide-react';
-import { formatCurrency, formatDateTime } from '../../../utils/format';
+import { ROUTES } from '../../../constants';
+import { formatCurrency, formatDateTime, getAvatarUrl } from '../../../utils/format';
 import './TransactionTable.css';
 
-const TransactionTable = ({ transactions }) => {
+const TransactionTable = ({ transactions, onViewInvoice }) => {
+  const navigate = useNavigate();
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case 'success':
@@ -42,26 +45,47 @@ const TransactionTable = ({ transactions }) => {
               <td className="tx-date">{formatDateTime(tx.date)}</td>
               <td className="tx-tenant">
                 <div className="tenant-info">
-                  <div className="tenant-avatar">
-                    {tx.tenant.charAt(0)}
+                  <div className="tenant-avatar" style={{ overflow: 'hidden' }}>
+                    <img src={getAvatarUrl(tx.tenant, tx.avatarUrl)} alt={tx.tenant} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <span>{tx.tenant}</span>
                 </div>
               </td>
-              <td className="tx-property">{tx.property}</td>
+              <td className="tx-property">
+                {tx.roomId ? (
+                  <span 
+                    onClick={() => navigate(`${ROUTES.ROOMS}/${tx.roomId}`)}
+                    style={{ cursor: 'pointer', color: '#2563eb', textDecoration: 'none' }}
+                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                  >
+                    {tx.property}
+                  </span>
+                ) : (
+                  tx.property
+                )}
+              </td>
               <td className="tx-type">{tx.type}</td>
               <td className="tx-amount">{formatCurrency(tx.amount)}</td>
               <td className="tx-status">{getStatusBadge(tx.status)}</td>
               <td className="tx-actions">
                 <div className="action-buttons">
-                  <button className="btn-action-icon" title="View Details">
-                    <Eye size={18} />
-                  </button>
-                  <button className="btn-action-icon" title="Download Invoice">
-                    <Download size={18} />
-                  </button>
-                  <button className="btn-action-icon" title="More Options">
-                    <MoreVertical size={18} />
+                  <button className="btn-action-text" style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '4px',
+                    padding: '6px 12px',
+                    background: '#F1F5F9',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: '#334155',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => onViewInvoice && onViewInvoice(tx)}
+                  >
+                    <Eye size={16} /> View Invoice
                   </button>
                 </div>
               </td>

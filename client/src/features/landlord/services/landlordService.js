@@ -12,6 +12,26 @@ export const landlordService = {
     }
   },
 
+  getRecentActivity: async () => {
+    try {
+      const response = await httpClient.get('/landlord/dashboard/recent-activity');
+      return response;
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+      throw error;
+    }
+  },
+
+  getRevenueChart: async () => {
+    try {
+      const response = await httpClient.get('/landlord/dashboard/revenue-chart');
+      return response;
+    } catch (error) {
+      console.error('Error fetching revenue chart:', error);
+      throw error;
+    }
+  },
+
   // ===== ROOMS MANAGEMENT =====
   getRooms: async (params = {}) => {
     try {

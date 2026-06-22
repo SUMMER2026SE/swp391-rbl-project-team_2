@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   Check,
@@ -29,6 +30,7 @@ import Badge from '../../../components/ui/Badge';
 import './RentalRequestsPage.css'; // Re-use the CSS
 
 const ViewingSchedulesPage = () => {
+  const navigate = useNavigate();
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -158,7 +160,7 @@ const ViewingSchedulesPage = () => {
     setConfirmDialog({
       isOpen: true,
       title: 'Mark No-Show',
-      message: 'Mark tenant as no-show? They will lose their deposit.',
+      message: 'Are you sure you want to mark the tenant as a no-show? This action cannot be undone.',
       confirmText: 'Mark No-Show',
       cancelText: 'Cancel',
       type: 'danger',
@@ -167,7 +169,7 @@ const ViewingSchedulesPage = () => {
           setIsSubmitting(true);
           const res = await api.put(`/landlord/viewing-schedules/${scheduleId}/no-show`);
           if (res.success) {
-            toast.success('Tenant marked as no-show. Deposit forfeited.');
+            toast.success('Tenant marked as no-show.');
             setShowDetailModal(false);
             setSelectedSchedule(null);
             fetchSchedules();
@@ -317,7 +319,7 @@ const ViewingSchedulesPage = () => {
                   <th>Tenant</th>
                   <th>Room</th>
                   <th>Viewing Date</th>
-                  <th>Deposit</th>
+                  <th>Viewing Time</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -342,7 +344,13 @@ const ViewingSchedulesPage = () => {
                   </td>
                   <td>
                     <div className="room-info">
-                      <div className="room-title">{schedule.room?.title || 'N/A'}</div>
+                      <div 
+                        className="room-title" 
+                        onClick={() => navigate(`/rooms/${schedule.roomId}`, { state: { from: 'viewing_schedule' } })}
+                        style={{ cursor: 'pointer', color: '#2563EB', textDecoration: 'underline' }}
+                      >
+                        {schedule.room?.title || 'N/A'}
+                      </div>
                     </div>
                   </td>
                   <td>
@@ -352,10 +360,12 @@ const ViewingSchedulesPage = () => {
                     </div>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 600, color: '#059669', fontSize: '13px' }}>
-                      {schedule.depositAmount ? `${parseFloat(schedule.depositAmount).toLocaleString('vi-VN')} đ` : 'N/A'}
+                    <div className="time-info" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontSize: '14px' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                      {schedule.scheduledDate ? new Date(schedule.scheduledDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                     </div>
                   </td>
+
                   <td>
                     <Badge variant={getStatusColor(schedule.status)}>
                       {getStatusLabel(schedule.status)}
@@ -469,14 +479,7 @@ const ViewingSchedulesPage = () => {
                       {selectedSchedule.scheduledDate ? new Date(selectedSchedule.scheduledDate).toLocaleString() : 'N/A'}
                     </div>
                   </div>
-                  <div className="detail-item">
-                    <label>Deposit Amount</label>
-                    <div className="detail-value" style={{ color: '#059669', fontWeight: 700 }}>
-                      {selectedSchedule.depositAmount 
-                        ? `${parseFloat(selectedSchedule.depositAmount).toLocaleString('vi-VN')} VND (10% of room price)` 
-                        : 'N/A'}
-                    </div>
-                  </div>
+
                   {selectedSchedule.tenantDecision && selectedSchedule.tenantDecision !== 'pending' && (
                     <div className="detail-item">
                       <label>Tenant Decision</label>
@@ -616,9 +619,8 @@ const ViewingSchedulesPage = () => {
                 <p style={{ margin: 0, fontSize: '14px', color: '#166534' }}>
                   <strong>Room:</strong> {selectedSchedule.room?.title}<br />
                   <strong>Tenant:</strong> {selectedSchedule.tenant?.full_name}<br />
-                  <strong>Deposit paid:</strong> {selectedSchedule.depositAmount ? `${parseFloat(selectedSchedule.depositAmount).toLocaleString('vi-VN')} VND` : 'N/A'}<br />
                   <span style={{ fontSize: '12px', color: '#15803d' }}>
-                    When tenant signs, platform retains 5% commission on deposit. 95% goes to you.
+                    When tenant signs, platform retains 5% commission on contract deposit. 95% goes to you.
                   </span>
                 </p>
               </div>

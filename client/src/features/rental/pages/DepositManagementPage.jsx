@@ -10,7 +10,7 @@ const mockKPIs = [
     id: 'total-collected',
     title: 'Total Collected',
     value: '$142,500.00',
-    subtitle: '+12% from last month',
+    subtitle: 'Currently held securely',
     subtitleColor: '#10B981', // green
     icon: <DollarSign size={24} color="#0054B5" />,
     bgColor: '#EFF6FF'

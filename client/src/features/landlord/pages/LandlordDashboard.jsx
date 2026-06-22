@@ -22,7 +22,7 @@ import { useLandlordStats } from '../hooks/useLandlordStats';
 import './LandlordDashboard.css';
 
 // SVG Revenue Chart Component with smooth Bezier Spline
-const RevenueChart = ({ activeMonth, setActiveMonth }) => {
+const RevenueChart = ({ activeMonth, setActiveMonth, data, months }) => {
   const width = 600;
   const height = 280;
   const padL = 60;
@@ -31,29 +31,27 @@ const RevenueChart = ({ activeMonth, setActiveMonth }) => {
   const padB = 40;
   const chartW = width - padL - padR;
   const chartH = height - padT - padB;
+  
+  const getX = (i) => padL + (i / (Math.max(1, data.length - 1))) * chartW;
+  
+  // Dynamic scale based on data max value
+  const maxVal = Math.max(...data, 1000000);
+  let maxScale = Math.ceil((maxVal * 1.2) / 1000000) * 1000000;
+  // Ensure divisible by 3 for nice tick intervals
+  maxScale = Math.ceil(maxScale / 3000000) * 3000000;
 
-  // Chart data points: Jan to May (solid), May to Jun (dashed/projected)
-  // Exact visual coordinates aligned with Figma axis: $0, $10k, $30k, $50k
-  const data = [12000, 18000, 32000, 24000, 10000, 38000];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-  
-  const getX = (i) => padL + (i / (data.length - 1)) * chartW;
-  
-  // Custom non-linear scale matching the axis tick spacing of Figma
-  // Axes ticks are $0, $10k, $30k, $50k
   const getY = (val) => {
-    let percentage = 0;
-    if (val <= 10000) {
-      // 0 to 10k takes up 30% of the height
-      percentage = (val / 10000) * 0.3;
-    } else if (val <= 30000) {
-      // 10k to 30k takes up 40% of the height (from 30% to 70%)
-      percentage = 0.3 + ((val - 10000) / 20000) * 0.4;
-    } else {
-      // 30k to 50k takes up 30% of the height (from 70% to 100%)
-      percentage = 0.7 + ((val - 30000) / 20000) * 0.3;
-    }
-    return padT + chartH - percentage * chartH;
+    return padT + chartH - (val / maxScale) * chartH;
+  };
+
+  const yTicks = [0, maxScale / 3, (maxScale * 2) / 3, maxScale];
+
+  const formatYLabel = (val) => {
+    if (val === 0) return '0 đ';
+    if (val >= 1000000000) return `${+(val / 1000000000).toFixed(1)}Tỷ`;
+    if (val >= 1000000) return `${+(val / 1000000).toFixed(1)}Tr`;
+    if (val >= 1000) return `${+(val / 1000).toFixed(1)}k`;
+    return `${val}`;
   };
 
   const points = data.map((val, i) => ({ x: getX(i), y: getY(val), val, month: months[i] }));
@@ -78,9 +76,9 @@ const RevenueChart = ({ activeMonth, setActiveMonth }) => {
     return path;
   };
 
-  // Splitting points for Solid (Jan-May) and Dashed (May-Jun)
-  const solidPoints = points.slice(0, 5);
-  const dashedPoints = points.slice(4, 6);
+  // Solid points all except last, dashed is last two
+  const solidPoints = points.slice(0, Math.max(1, points.length - 1));
+  const dashedPoints = points.length >= 2 ? points.slice(points.length - 2) : points;
 
   const solidPath = getBezierPath(solidPoints);
   const dashedPath = getBezierPath(dashedPoints);
@@ -104,9 +102,9 @@ const RevenueChart = ({ activeMonth, setActiveMonth }) => {
         </defs>
 
         {/* Y Grid lines & Labels */}
-        {[0, 10000, 30000, 50000].map((yVal, i) => {
+        {yTicks.map((yVal, i) => {
           const y = getY(yVal);
-          const label = yVal === 0 ? '$0' : `$${yVal / 1000}k`;
+          const label = formatYLabel(yVal);
           return (
             <g key={i} className="chart-grid-line-group">
               <line x1={padL} y1={y} x2={width - padR} y2={y} className="chart-grid-line" />
@@ -136,7 +134,7 @@ const RevenueChart = ({ activeMonth, setActiveMonth }) => {
 
         {/* Data dots */}
         {points.map((pt, i) => {
-          const isMay = pt.month === 'May';
+          const isCurrent = i === points.length - 2;
           return (
             <g 
               key={i} 
@@ -156,7 +154,7 @@ const RevenueChart = ({ activeMonth, setActiveMonth }) => {
                 cx={pt.x} 
                 cy={pt.y} 
                 r={activeMonth === i ? 6 : 4.5} 
-                fill={isMay || activeMonth === i ? '#2563EB' : '#FFFFFF'} 
+                fill={isCurrent || activeMonth === i ? '#2563EB' : '#FFFFFF'} 
                 stroke="#2563EB" 
                 strokeWidth={activeMonth === i ? 2.5 : 2} 
                 className="chart-dot-element"
@@ -168,13 +166,13 @@ const RevenueChart = ({ activeMonth, setActiveMonth }) => {
         {/* X labels */}
         {points.map((pt, i) => (
           <g key={i}>
-            {pt.month === 'May' && (
+            {i === points.length - 2 && (
               <circle cx={pt.x} cy={height - 29} r="3" fill="#2563EB" />
             )}
             <text 
               x={pt.x} 
               y={height - 8} 
-              className={`chart-label ${activeMonth === i ? 'active' : ''} ${pt.month === 'May' ? 'current-month-lbl' : ''}`}
+              className={`chart-label ${activeMonth === i ? 'active' : ''} ${i === points.length - 2 ? 'current-month-lbl' : ''}`}
             >
               {pt.month}
             </text>
@@ -188,11 +186,11 @@ const RevenueChart = ({ activeMonth, setActiveMonth }) => {
 const LandlordDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [activeMonth, setActiveMonth] = useState(4); // default May active
+  const [activeMonth, setActiveMonth] = useState(5);
   const [showPeriodFilter, setShowPeriodFilter] = useState(false);
   const [filterPeriod, setFilterPeriod] = useState('Last 30 Days');
 
-  const { stats: statsData, loading, error } = useLandlordStats();
+  const { stats: statsData, recentActivity, revenueChart, loading, error } = useLandlordStats();
 
   // Stats matching Figma design precisely
   const stats = [
@@ -242,45 +240,61 @@ const LandlordDashboard = () => {
     },
   ];
 
-  // Recent activity list matching Figma
-  const activities = [
-    {
-      id: 1,
-      icon: <ClipboardList size={18} />,
-      iconClass: 'activity-icon-container--orange',
-      text: 'New lease application received for Unit 4B from Sarah Jenkins.',
-      time: '2 hours ago',
-    },
-    {
-      id: 2,
-      icon: <CreditCard size={18} />,
-      iconClass: 'activity-icon-container--blue',
-      text: 'Rent payment processed for $1,250 from Unit 12A.',
-      time: '5 hours ago',
-    },
-    {
-      id: 3,
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=80&h=80&q=80',
-      text: 'Maintenance resolved: Plumbing issue in Unit 3C reported by Emily.',
-      time: 'Yesterday',
-    },
-    {
-      id: 4,
-      icon: <AlertCircle size={18} />,
-      iconClass: 'activity-icon-container--red',
-      text: 'Late payment alert for Unit 8D. Grace period ends tomorrow.',
-      time: 'Yesterday',
-    },
-  ];
+  const formatActivity = () => {
+    if (!recentActivity) return [];
+    
+    const allActivities = [
+      ...(recentActivity.recentRequests || []).map(r => ({
+        id: `req-${r.requestId}`,
+        icon: <ClipboardList size={18} />,
+        iconClass: 'activity-icon-container--orange',
+        text: `New rental request received.`,
+        date: new Date(r.createdAt)
+      })),
+      ...(recentActivity.recentPayments || []).map(p => ({
+        id: `pay-${p.paymentId}`,
+        icon: <CreditCard size={18} />,
+        iconClass: 'activity-icon-container--blue',
+        text: `Rent payment processed for $${p.amount}.`,
+        date: new Date(p.createdAt)
+      })),
+      ...(recentActivity.recentComplaints || []).map(c => ({
+        id: `comp-${c.complaintId}`,
+        icon: <AlertCircle size={18} />,
+        iconClass: 'activity-icon-container--red',
+        text: `Complaint reported: ${c.title}`,
+        date: new Date(c.createdAt)
+      }))
+    ];
+
+    allActivities.sort((a, b) => b.date - a.date);
+
+    return allActivities.slice(0, 5).map(act => {
+      const diffHrs = Math.floor((new Date() - act.date) / 3600000);
+      let timeStr = act.date.toLocaleDateString();
+      if (diffHrs === 0) timeStr = 'Just now';
+      else if (diffHrs < 24) timeStr = `${diffHrs} hours ago`;
+      else if (diffHrs < 48) timeStr = 'Yesterday';
+      return { ...act, time: timeStr };
+    });
+  };
+
+  const activities = formatActivity();
 
   const handlePeriodChange = (period) => {
     setFilterPeriod(period);
     setShowPeriodFilter(false);
   };
 
-  const revenueValues = [12000, 18000, 32000, 24000, 10000, 38000];
-  const activeRevenue = activeMonth !== null ? revenueValues[activeMonth] : 0;
-  const isProjected = activeMonth === 5;
+  const revenueChartData = revenueChart && revenueChart.length > 0 
+    ? revenueChart.slice(-6).map(item => item.revenue)
+    : [0, 0, 0, 0, 0, 0];
+  const revenueChartMonths = revenueChart && revenueChart.length > 0
+    ? revenueChart.slice(-6).map(item => item.month.split(' ')[0])
+    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+
+  const activeRevenue = activeMonth !== null ? revenueChartData[activeMonth] || 0 : 0;
+  const isProjected = activeMonth === revenueChartData.length - 1;
 
   return (
     <div className="dashboard-container" id="landlord-dashboard">
@@ -372,10 +386,10 @@ const LandlordDashboard = () => {
           {/* Active stats display bubble on hover */}
           <div className="dashboard-chart-tooltip-display">
             <span className="tooltip-month-indicator">
-              {['January', 'February', 'March', 'April', 'May', 'June'][activeMonth]}:
+              {revenueChartMonths[activeMonth] || 'Month'}:
             </span>
             <span className="tooltip-value-indicator">
-              ${activeRevenue.toLocaleString()}
+              {activeRevenue.toLocaleString('vi-VN')} đ
             </span>
             {isProjected ? (
               <span className="tooltip-projected-tag">Projected</span>
@@ -385,7 +399,12 @@ const LandlordDashboard = () => {
           </div>
 
           <div className="dashboard-chart-container">
-            <RevenueChart activeMonth={activeMonth} setActiveMonth={setActiveMonth} />
+            <RevenueChart 
+              activeMonth={activeMonth} 
+              setActiveMonth={setActiveMonth} 
+              data={revenueChartData}
+              months={revenueChartMonths}
+            />
           </div>
           
           <div className="chart-legend-row">

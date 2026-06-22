@@ -521,6 +521,12 @@ const ManageListingsPage = () => {
                   <div className="listing-card__id">ID: {listing.id}</div>
                   <h3 className="listing-card__title">{listing.title}</h3>
 
+                  {listing.status === 'Rejected' && listing.rawRoom?.rejection_reason && (
+                    <div className="listing-card__rejection-reason" style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '0.5rem', border: '1px solid #fca5a5' }}>
+                      <strong>Rejection Reason:</strong> {listing.rawRoom.rejection_reason}
+                    </div>
+                  )}
+
                   <div className="listing-card__address">
                     <MapPin size={15} />
                     <span>{listing.address}</span>
