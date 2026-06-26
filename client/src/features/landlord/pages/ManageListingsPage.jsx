@@ -96,7 +96,6 @@ const ManageListingsPage = () => {
   const [listings, setListings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
-  const [typeFilter, setTypeFilter] = useState('Room Type');
 
   useEffect(() => {
     if (rooms) {
@@ -130,11 +129,7 @@ const ManageListingsPage = () => {
               (room.status || '').toLowerCase() === 'pending' ? 'Pending' :
                 (room.status || '').toLowerCase() === 'rejected' ? 'Rejected' :
                   (room.status || '').toLowerCase() === 'maintenance' ? 'Maintenance' : 'Inactive',
-          type: room.roomType === 'single' ? 'Single Room' :
-            room.roomType === 'double' ? 'Double Room' :
-              room.roomType === 'apartment' ? 'Apartment' :
-                room.roomType === 'shared' ? 'Shared Room' :
-                  room.roomType === 'house' ? 'House' : 'Room',
+          type: 'Private Room',
           image: coverImg,
           tags: tags,
           performance: {
@@ -174,17 +169,19 @@ const ManageListingsPage = () => {
   const [formPrice, setFormPrice] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formStatus, setFormStatus] = useState('Available');
-  const [formType, setFormType] = useState('apartment');
   const [formImage, setFormImage] = useState('');
   const [formTags, setFormTags] = useState('');
   const [formNearbyTags, setFormNearbyTags] = useState('');
   const [formMaxOccupants, setFormMaxOccupants] = useState('');
-  const [formBedrooms, setFormBedrooms] = useState('');
   const [formAreaSqm, setFormAreaSqm] = useState('');
   const [priceError, setPriceError] = useState('');
   const [occupantsError, setOccupantsError] = useState('');
-  const [bedroomsError, setBedroomsError] = useState('');
   const [areaError, setAreaError] = useState('');
+
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   // Dropdown states
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -200,10 +197,18 @@ const ManageListingsPage = () => {
     const matchesStatus =
       statusFilter === 'All Statuses' || item.status === statusFilter;
 
-    const matchesType =
-      typeFilter === 'Room Type' || (item.type || '').toLowerCase() === typeFilter.toLowerCase();
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const itemDate = new Date(item.rawRoom?.createdAt || item.rawRoom?.created_at || new Date());
+      if (dateFrom && new Date(dateFrom) > itemDate) matchesDate = false;
+      if (dateTo && new Date(dateTo) < itemDate) matchesDate = false;
+    }
 
-    return matchesSearch && matchesStatus && matchesType;
+    return matchesSearch && matchesStatus && matchesDate;
+  }).sort((a, b) => {
+    const dateA = new Date(a.rawRoom?.createdAt || a.rawRoom?.created_at || 0);
+    const dateB = new Date(b.rawRoom?.createdAt || b.rawRoom?.created_at || 0);
+    return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
   });
 
   const resetForm = () => {
@@ -213,18 +218,16 @@ const ManageListingsPage = () => {
     setFormAddress('');
     setFormPrice('');
     setFormStatus('Available');
-    setFormType('apartment');
+
     setFormImage('');
     setFormTags('');
     setFormNearbyTags('');
     setFormMaxOccupants('');
-    setFormBedrooms('');
     setFormAreaSqm('');
     setFormImageFiles([]);
     setPreviewImages([]);
     setPriceError('');
     setOccupantsError('');
-    setBedroomsError('');
     setAreaError('');
   };
 
@@ -235,10 +238,9 @@ const ManageListingsPage = () => {
         title: formTitle,
         description: formDescription,
         pricePerMonth: Number(formPrice),
-        roomType: formType,
+        roomType: 'private_room',
         address: formAddress,
-        maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : null,
-        bedrooms: formBedrooms ? Number(formBedrooms) : null,
+        maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : 4,
         areaSqm: formAreaSqm ? Number(formAreaSqm) : null,
         status: 'available'
       };
@@ -271,7 +273,6 @@ const ManageListingsPage = () => {
 
     setFormPrice(listing.price);
     setFormStatus(listing.status);
-    setFormType(listing.type);
     setFormImage(listing.image);
 
     const facilities = raw?.facilities || [];
@@ -281,7 +282,6 @@ const ManageListingsPage = () => {
     setFormTags(roomFacs);
     setFormNearbyTags(nearbyFacs);
     setFormMaxOccupants(raw?.maxOccupants || raw?.max_occupants || '');
-    setFormBedrooms(raw?.bedrooms || '');
     setFormAreaSqm(raw?.areaSqm || raw?.area_sqm || '');
     setFormImageFiles([]);
     setPreviewImages([]);
@@ -295,9 +295,8 @@ const ManageListingsPage = () => {
         title: formTitle,
         description: formDescription,
         pricePerMonth: Number(formPrice),
-        roomType: formType,
-        maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : null,
-        bedrooms: formBedrooms ? Number(formBedrooms) : null,
+        roomType: 'private_room',
+        maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : 4,
         areaSqm: formAreaSqm ? Number(formAreaSqm) : null,
       };
 
@@ -335,14 +334,13 @@ const ManageListingsPage = () => {
             address: formAddress,
             price: Number(formPrice),
             status: formStatus,
-            type: formType,
+            type: 'Private Room',
             image: formImage || item.image,
             tags: formTags ? formTags.split(',').map(t => t.trim()).filter(Boolean) : item.tags,
             rawRoom: {
               ...item.rawRoom,
               description: formDescription,
-              maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : null,
-              bedrooms: formBedrooms ? Number(formBedrooms) : null,
+              maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : 4,
               areaSqm: formAreaSqm ? Number(formAreaSqm) : null,
             }
           };
@@ -434,42 +432,11 @@ const ManageListingsPage = () => {
           )}
         </div>
 
-        {/* Dropdown 2: Room Type */}
-        <div className="filter-dropdown-container">
-          <button
-            className="filter-dropdown-btn"
-            onClick={() => {
-              setShowTypeDropdown(!showTypeDropdown);
-              setShowStatusDropdown(false);
-            }}
-          >
-            <span>{typeFilter}</span>
-            <ChevronDown size={16} />
-          </button>
-          {showTypeDropdown && (
-            <div className="filter-dropdown-menu">
-              {['Room Type', 'Single Room', 'Double Room', 'Shared Room', 'Apartment', 'House', 'Room'].map((tp) => (
-                <button
-                  key={tp}
-                  className={`filter-dropdown-item ${typeFilter === tp ? 'active' : ''}`}
-                  onClick={() => {
-                    setTypeFilter(tp);
-                    setShowTypeDropdown(false);
-                  }}
-                >
-                  {tp}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* More Filters button */}
         <button
           className="filter-more-btn"
           onClick={() => {
             setStatusFilter('All Statuses');
-            setTypeFilter('Room Type');
             setSearchTerm('');
           }}
           title="Reset all filters"
@@ -648,19 +615,7 @@ const ManageListingsPage = () => {
                   />
                 </div>
 
-                <div className="form-group-row">
-                  <div className="form-group">
-                    <label>Room Type</label>
-                    <select value={formType} onChange={(e) => setFormType(e.target.value)}>
-                      <option value="single">Single Room</option>
-                      <option value="double">Double Room</option>
-                      <option value="shared">Shared Room</option>
-                      <option value="apartment">Apartment</option>
-                      <option value="house">House</option>
-                    </select>
-                  </div>
 
-                </div>
 
                 <div className="form-group">
                   <label>Room Images (optional)</label>
@@ -811,16 +766,6 @@ const ManageListingsPage = () => {
                     />
                     {priceError && <div className="invalid-feedback d-block">{priceError}</div>}
                   </div>
-                  <div className="form-group">
-                    <label>Property Type</label>
-                    <select value={formType} onChange={(e) => setFormType(e.target.value)}>
-                      <option value="single">Single Room</option>
-                      <option value="double">Double Room</option>
-                      <option value="shared">Shared Room</option>
-                      <option value="apartment">Apartment</option>
-                      <option value="house">House</option>
-                    </select>
-                  </div>
                 </div>
 
                 <div className="form-group-row">
@@ -843,26 +788,6 @@ const ManageListingsPage = () => {
                       }}
                     />
                     {occupantsError && <div className="invalid-feedback d-block">{occupantsError}</div>}
-                  </div>
-                  <div className="form-group">
-                    <label>Bedrooms</label>
-                    <input
-                      type="text"
-                      value={formBedrooms}
-                      className={bedroomsError ? 'is-invalid' : ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFormBedrooms(val);
-                        if (val !== '' && !/^\d+$/.test(val)) {
-                          setBedroomsError('Please enter a valid number.');
-                        } else if (val !== '' && Number(val) <= 0) {
-                          setBedroomsError('Bedrooms must be at least 1.');
-                        } else {
-                          setBedroomsError('');
-                        }
-                      }}
-                    />
-                    {bedroomsError && <div className="invalid-feedback d-block">{bedroomsError}</div>}
                   </div>
                 </div>
 
@@ -976,7 +901,7 @@ const ManageListingsPage = () => {
                 }}>
                   Cancel
                 </Button>
-                <Button variant="primary" type="submit" disabled={!!priceError || !!occupantsError || !!bedroomsError || !!areaError}>
+                <Button variant="primary" type="submit" disabled={!!priceError || !!occupantsError || !!areaError}>
                   Save Changes
                 </Button>
               </div>
