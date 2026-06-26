@@ -44,8 +44,8 @@ const Room = sequelize.define('Room', {
     allowNull: true,
   },
   room_type: {
-    type: DataTypes.STRING(15),
-    defaultValue: 'single',
+    type: DataTypes.STRING(20),
+    defaultValue: 'private_room',
   },
   bedrooms: {
     type: DataTypes.INTEGER,
@@ -53,7 +53,7 @@ const Room = sequelize.define('Room', {
   },
   max_occupants: {
     type: DataTypes.INTEGER,
-    defaultValue: 1,
+    defaultValue: 4,
   },
   status: {
     type: DataTypes.STRING(15),

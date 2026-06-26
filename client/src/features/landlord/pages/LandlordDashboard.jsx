@@ -21,7 +21,7 @@ import useAuthStore from '../../../store/useAuthStore';
 import { useLandlordStats } from '../hooks/useLandlordStats';
 import './LandlordDashboard.css';
 
-// SVG Revenue Chart Component with smooth Bezier Spline
+// SVG Revenue Column Chart Component
 const RevenueChart = ({ activeMonth, setActiveMonth, data, months }) => {
   const width = 600;
   const height = 280;
@@ -55,49 +55,20 @@ const RevenueChart = ({ activeMonth, setActiveMonth, data, months }) => {
   };
 
   const points = data.map((val, i) => ({ x: getX(i), y: getY(val), val, month: months[i] }));
-
-  // Generate smooth cubic bezier path
-  const getBezierPath = (pts, tension = 0.2) => {
-    if (pts.length < 2) return '';
-    let path = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const curr = pts[i];
-      const next = pts[i + 1];
-      const prev = pts[i - 1] || curr;
-      const nextNext = pts[i + 2] || next;
-
-      const cp1x = curr.x + (next.x - prev.x) * tension;
-      const cp1y = curr.y + (next.y - prev.y) * tension;
-      const cp2x = next.x - (nextNext.x - curr.x) * tension;
-      const cp2y = next.y - (nextNext.y - curr.y) * tension;
-
-      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
-    }
-    return path;
-  };
-
-  // Solid points all except last, dashed is last two
-  const solidPoints = points.slice(0, Math.max(1, points.length - 1));
-  const dashedPoints = points.length >= 2 ? points.slice(points.length - 2) : points;
-
-  const solidPath = getBezierPath(solidPoints);
-  const dashedPath = getBezierPath(dashedPoints);
-
-  // Gradient area paths
-  const solidAreaPath = `${solidPath} L ${solidPoints[solidPoints.length - 1].x} ${padT + chartH} L ${solidPoints[0].x} ${padT + chartH} Z`;
-  const dashedAreaPath = `${dashedPath} L ${dashedPoints[dashedPoints.length - 1].x} ${padT + chartH} L ${dashedPoints[0].x} ${padT + chartH} Z`;
+  
+  const barWidth = 36;
 
   return (
     <div className="revenue-chart-wrapper">
       <svg viewBox={`0 0 ${width} ${height}`} className="chart-svg" preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id="chartGradientSolid" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2563EB" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
+            <stop offset="0%" stopColor="#2563EB" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#2563EB" stopOpacity="0.4" />
           </linearGradient>
           <linearGradient id="chartGradientDashed" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2563EB" stopOpacity="0.06" />
-            <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
+            <stop offset="0%" stopColor="#2563EB" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#2563EB" stopOpacity="0.1" />
           </linearGradient>
         </defs>
 
@@ -113,51 +84,45 @@ const RevenueChart = ({ activeMonth, setActiveMonth, data, months }) => {
           );
         })}
 
-        {/* Area fill under curve */}
-        <path d={solidAreaPath} fill="url(#chartGradientSolid)" />
-        <path d={dashedAreaPath} fill="url(#chartGradientDashed)" />
-
-        {/* Lines */}
-        <path d={solidPath} className="chart-line-solid" />
-        <path d={dashedPath} className="chart-line-dashed" />
-
-        {/* Interactive indicator bar */}
-        {activeMonth !== null && (
-          <line 
-            x1={points[activeMonth].x} 
-            y1={padT} 
-            x2={points[activeMonth].x} 
-            y2={padT + chartH} 
-            className="chart-active-indicator" 
-          />
-        )}
-
-        {/* Data dots */}
+        {/* Bars */}
         {points.map((pt, i) => {
+          const isProjected = i === points.length - 1;
           const isCurrent = i === points.length - 2;
+          const barHeight = (padT + chartH) - pt.y;
+          
           return (
             <g 
               key={i} 
-              className="chart-dot-trigger"
+              className="chart-bar-trigger"
               onMouseEnter={() => setActiveMonth(i)}
+              style={{ cursor: 'pointer' }}
             >
-              {/* Big hover target circle */}
-              <circle cx={pt.x} cy={pt.y} r="16" fill="transparent" style={{ cursor: 'pointer' }} />
+              {/* Invisible full-height hover target */}
+              <rect 
+                x={pt.x - barWidth / 2 - 10} 
+                y={padT} 
+                width={barWidth + 20} 
+                height={chartH} 
+                fill="transparent" 
+              />
               
-              {/* Outer active circle ring */}
-              {activeMonth === i && (
-                <circle cx={pt.x} cy={pt.y} r="8" fill="#2563EB" opacity="0.18" className="chart-active-ring" />
-              )}
-              
-              {/* Inner dot */}
-              <circle 
-                cx={pt.x} 
-                cy={pt.y} 
-                r={activeMonth === i ? 6 : 4.5} 
-                fill={isCurrent || activeMonth === i ? '#2563EB' : '#FFFFFF'} 
-                stroke="#2563EB" 
-                strokeWidth={activeMonth === i ? 2.5 : 2} 
-                className="chart-dot-element"
+              <rect
+                x={pt.x - barWidth / 2}
+                y={pt.y}
+                width={barWidth}
+                height={barHeight}
+                fill={isProjected ? "url(#chartGradientDashed)" : "url(#chartGradientSolid)"}
+                stroke="#2563EB"
+                strokeWidth={isProjected ? 1.5 : 0}
+                strokeDasharray={isProjected ? "4 4" : "none"}
+                rx="4"
+                ry="4"
+                style={{
+                  transition: 'all 0.3s ease',
+                  opacity: activeMonth === i ? 1 : (activeMonth !== null ? 0.6 : 1),
+                  transformOrigin: 'bottom',
+                  transform: activeMonth === i ? 'scaleY(1.02)' : 'scaleY(1)'
+                }}
               />
             </g>
           );
@@ -255,7 +220,7 @@ const LandlordDashboard = () => {
         id: `pay-${p.paymentId}`,
         icon: <CreditCard size={18} />,
         iconClass: 'activity-icon-container--blue',
-        text: `Rent payment processed for $${p.amount}.`,
+        text: `Rent payment processed for ${p.amount?.toLocaleString('vi-VN') || p.amount} VNĐ.`,
         date: new Date(p.createdAt)
       })),
       ...(recentActivity.recentComplaints || []).map(c => ({
@@ -409,11 +374,11 @@ const LandlordDashboard = () => {
           
           <div className="chart-legend-row">
             <div className="legend-item">
-              <span className="legend-dot legend-dot--blue"></span>
+              <div style={{ width: '14px', height: '14px', background: 'linear-gradient(to bottom, rgba(37, 99, 235, 0.8), rgba(37, 99, 235, 0.4))', borderRadius: '3px' }}></div>
               <span className="legend-label">Actual Income</span>
             </div>
             <div className="legend-item">
-              <span className="legend-line legend-line--dashed"></span>
+              <div style={{ width: '14px', height: '14px', background: 'linear-gradient(to bottom, rgba(37, 99, 235, 0.4), rgba(37, 99, 235, 0.1))', border: '1px dashed #2563EB', borderRadius: '3px' }}></div>
               <span className="legend-label">Projections</span>
             </div>
           </div>

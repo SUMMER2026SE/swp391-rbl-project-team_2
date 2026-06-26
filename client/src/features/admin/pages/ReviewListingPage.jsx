@@ -183,7 +183,7 @@ const ReviewListingPage = () => {
             <div className="feature-card">
               <Bed className="feature-icon" />
               <span className="feature-value">{roomData.bedrooms || 1}</span>
-              <span className="feature-label">Phòng ngủ</span>
+              <span className="feature-label">Giường</span>
             </div>
             <div className="feature-card">
               <Users className="feature-icon" />
@@ -198,7 +198,7 @@ const ReviewListingPage = () => {
             <div className="feature-card">
               <Home className="feature-icon" />
               <span className="feature-value" style={{ textTransform: 'capitalize', fontSize: '0.9rem' }}>
-                {roomData.roomType || roomData.room_type || 'Phòng riêng'}
+                Phòng cá nhân
               </span>
               <span className="feature-label">Loại phòng</span>
             </div>
@@ -229,7 +229,7 @@ const ReviewListingPage = () => {
             <h2>Mô tả phòng</h2>
             <div className={`about-text ${showMoreAbout ? 'expanded' : ''}`}
               style={!showMoreAbout ? { maxHeight: '120px', overflow: 'hidden', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' } : {}}>
-              <p style={{ color: '#4b5563', lineHeight: 1.7 }}>{roomData.description || 'Chưa có mô tả.'}</p>
+              <p style={{ color: '#4b5563', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{roomData.description || 'Chưa có mô tả.'}</p>
             </div>
             {roomData.description && roomData.description.length > 200 && (
               <button
@@ -323,7 +323,7 @@ const ReviewListingPage = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
                   <span style={{ color: '#9ca3af' }}>Loại phòng</span>
                   <span style={{ fontWeight: 500, color: '#1f2937', textTransform: 'capitalize' }}>
-                    {roomData.roomType || roomData.room_type || '—'}
+                    Phòng cá nhân
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>

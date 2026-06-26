@@ -35,9 +35,7 @@ const AddNewPropertyPage = () => {
     // Step 1: Basic Info
     title: '',
     description: '',
-    category: '',
     size: '',
-    bedrooms: '',
     maxOccupants: '',
 
     // Step 2: Location & Price
@@ -169,9 +167,7 @@ const AddNewPropertyPage = () => {
     if (step === 1) {
       if (!formData.title.trim()) errors.title = 'Listing Title is required';
       if (!formData.description.trim()) errors.description = 'Property Description is required';
-      if (!formData.category) errors.category = 'Property Category is required';
       if (formData.size && Number(formData.size) <= 0) errors.size = 'Size must be a positive number';
-      if (!formData.bedrooms) errors.bedrooms = 'Please select the number of bedrooms';
       if (!formData.maxOccupants) errors.maxOccupants = 'Please select max occupants';
     } else if (step === 2) {
       if (!formData.address.trim()) errors.address = 'Street Address is required';
@@ -197,7 +193,7 @@ const AddNewPropertyPage = () => {
   const handlePublish = async () => {
     setIsSubmitting(true);
     try {
-      let roomType = formData.category || 'single';
+      let roomType = 'private_room';
 
       const fd = new FormData();
       fd.append('title', formData.title);
@@ -207,9 +203,8 @@ const AddNewPropertyPage = () => {
       fd.append('district', formData.district);
       fd.append('pricePerMonth', Number(formData.rent));
       fd.append('areaSqm', Number(formData.size) || 0);
-      fd.append('bedrooms', parseInt(formData.bedrooms) || 1);
       fd.append('roomType', roomType);
-      fd.append('maxOccupants', parseInt(formData.maxOccupants) || 1);
+      fd.append('maxOccupants', parseInt(formData.maxOccupants) || 4);
 
       if (selectedFiles && selectedFiles.length > 0) {
         // Appending the first image as 'image' for multer upload.single('image')
@@ -340,26 +335,6 @@ const AddNewPropertyPage = () => {
 
             <div className="form-row-double-cols">
               <div className="form-group-field">
-                <label className="form-input-label">Room Category <span className="text-danger">*</span></label>
-                <div className="form-select-wrapper">
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className={`form-input-select ${formErrors.category ? 'error' : ''}`}
-                  >
-                    <option value="">Select Category</option>
-                    <option value="single">Single Room</option>
-                    <option value="double">Double Room</option>
-                    <option value="shared">Shared Room</option>
-                    <option value="apartment">Apartment</option>
-                    <option value="house">House</option>
-                  </select>
-                </div>
-                {formErrors.category && <span className="form-field-error-msg">{formErrors.category}</span>}
-              </div>
-
-              <div className="form-group-field">
                 <label className="form-input-label">Size (m<sup>2</sup>)</label>
                 <input
                   type="number"
@@ -371,25 +346,6 @@ const AddNewPropertyPage = () => {
                   min="0"
                 />
                 {formErrors.size && <span className="form-field-error-msg">{formErrors.size}</span>}
-              </div>
-
-              <div className="form-group-field">
-                <label className="form-input-label">Bedrooms <span className="text-danger">*</span></label>
-                <div className="form-select-wrapper">
-                  <select
-                    name="bedrooms"
-                    value={formData.bedrooms}
-                    onChange={handleInputChange}
-                    className={`form-input-select ${formErrors.bedrooms ? 'error' : ''}`}
-                  >
-                    <option value="">Select Bedrooms</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4+">4+</option>
-                  </select>
-                </div>
-                {formErrors.bedrooms && <span className="form-field-error-msg">{formErrors.bedrooms}</span>}
               </div>
 
               <div className="form-group-field">
@@ -406,7 +362,6 @@ const AddNewPropertyPage = () => {
                     <option value="2">2</option>
                     <option value="3">3</option>
                     <option value="4">4</option>
-                    <option value="5+">5+</option>
                   </select>
                 </div>
                 {formErrors.maxOccupants && <span className="form-field-error-msg">{formErrors.maxOccupants}</span>}

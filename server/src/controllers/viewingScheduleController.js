@@ -679,7 +679,16 @@ const requestContract = async (req, res, next) => {
   try {
     const { scheduleId } = req.params;
     const tenantId = req.user.userId;
-    const { message: tenantMessage, startDate, durationMonths } = req.body;
+    const { 
+      message: tenantMessage, 
+      startDate, 
+      durationMonths,
+      tenantName,
+      tenantIc,
+      tenantIcIssueDate,
+      tenantIcIssuePlace,
+      tenantPermanentAddress
+    } = req.body;
 
     if (!startDate || !durationMonths || durationMonths < 1 || durationMonths > 12) {
       return res.status(400).json({
@@ -741,13 +750,23 @@ const requestContract = async (req, res, next) => {
         end_date: end,
         monthly_rent: schedule.room.price_per_month,
         deposit_amount: schedule.room.price_per_month, // Standard 1 month deposit
-        status: 'draft'
+        status: 'draft',
+        tenant_name: tenantName,
+        tenant_ic: tenantIc,
+        tenant_ic_issue_date: tenantIcIssueDate || null,
+        tenant_ic_issue_place: tenantIcIssuePlace,
+        tenant_permanent_address: tenantPermanentAddress
       });
     } else {
       await contract.update({
         start_date: start,
         end_date: end,
         monthly_rent: schedule.room.price_per_month,
+        tenant_name: tenantName,
+        tenant_ic: tenantIc,
+        tenant_ic_issue_date: tenantIcIssueDate || null,
+        tenant_ic_issue_place: tenantIcIssuePlace,
+        tenant_permanent_address: tenantPermanentAddress
       });
     }
 
@@ -938,7 +957,18 @@ const createContractFromViewing = async (req, res, next) => {
   try {
     const { scheduleId } = req.params;
     const landlordId = req.user.userId;
-    const { startDate, endDate, monthlyRent, termsAndConditions } = req.body;
+    const { 
+      startDate, 
+      endDate, 
+      monthlyRent, 
+      termsAndConditions,
+      landlordName,
+      landlordIc,
+      landlordIcIssueDate,
+      landlordIcIssuePlace,
+      landlordPermanentAddress,
+      landlordSignature 
+    } = req.body;
 
     const schedule = await ViewingSchedule.findOne({
       where: { schedule_id: scheduleId, landlord_id: landlordId },
@@ -978,6 +1008,15 @@ const createContractFromViewing = async (req, res, next) => {
       const timestamp = Date.now().toString().slice(-6);
       const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
       
+      let signatureUrl = landlordSignature;
+      if (landlordSignature && landlordSignature.startsWith('data:image')) {
+        const { cloudinary } = require('../config/cloudinary');
+        const uploadResponse = await cloudinary.uploader.upload(landlordSignature, {
+          folder: 'signatures',
+        });
+        signatureUrl = uploadResponse.secure_url;
+      }
+
       contract = await Contract.create({
         room_id: schedule.room_id,
         tenant_id: schedule.tenant_id,
@@ -989,11 +1028,32 @@ const createContractFromViewing = async (req, res, next) => {
         deposit_amount: schedule.deposit_amount,
         status: 'pending_signature',
         terms_and_conditions: termsAndConditions || null,
+        landlord_name: landlordName,
+        landlord_ic: landlordIc,
+        landlord_ic_issue_date: landlordIcIssueDate || null,
+        landlord_ic_issue_place: landlordIcIssuePlace,
+        landlord_permanent_address: landlordPermanentAddress,
+        landlord_signature: signatureUrl
       });
     } else {
+      let signatureUrl = landlordSignature;
+      if (landlordSignature && landlordSignature.startsWith('data:image')) {
+        const { cloudinary } = require('../config/cloudinary');
+        const uploadResponse = await cloudinary.uploader.upload(landlordSignature, {
+          folder: 'signatures',
+        });
+        signatureUrl = uploadResponse.secure_url;
+      }
+
       await contract.update({
         terms_and_conditions: termsAndConditions || '',
         status: 'pending_signature',
+        landlord_name: landlordName,
+        landlord_ic: landlordIc,
+        landlord_ic_issue_date: landlordIcIssueDate || null,
+        landlord_ic_issue_place: landlordIcIssuePlace,
+        landlord_permanent_address: landlordPermanentAddress,
+        landlord_signature: signatureUrl,
         updated_at: new Date()
       });
     }
@@ -1033,6 +1093,7 @@ const createContractFromViewing = async (req, res, next) => {
 const signContract = async (req, res, next) => {
   try {
     const { contractId } = req.params;
+    const { tenantSignature } = req.body;
     const tenantId = req.user.userId;
 
     const contract = await Contract.findOne({
@@ -1051,16 +1112,20 @@ const signContract = async (req, res, next) => {
       });
     }
 
-    contract.status = 'active';
+    contract.status = 'pending_payment'; // Wait for deposit payment before making active
     contract.tenant_agreed = true;
+    if (tenantSignature) {
+      contract.tenant_signature = tenantSignature;
+    }
     contract.updated_at = new Date();
     await contract.save();
 
     // Update room status to rented
-    await Room.update(
-      { status: 'rented', updated_at: new Date() },
-      { where: { room_id: contract.room_id } }
-    );
+    // We don't do this here anymore, VNPay return will do it.
+    // await Room.update(
+    //   { status: 'rented', updated_at: new Date() },
+    //   { where: { room_id: contract.room_id } }
+    // );
 
     // Process deposit: 5% platform fee, 95% to landlord
     const viewingSchedule = await ViewingSchedule.findOne({
@@ -1087,18 +1152,29 @@ const signContract = async (req, res, next) => {
       }
     }
 
-    // Notify landlord
+    const { RentalRequest } = require('../models');
+    const rentalRequest = await RentalRequest.findOne({
+      where: { room_id: contract.room_id, tenant_id: tenantId, status: 'contract_created' }
+    });
+
+    if (rentalRequest) {
+      rentalRequest.status = 'completed';
+      rentalRequest.updated_at = new Date();
+      await rentalRequest.save();
+    }
+
+    // Notify landlord that contract is signed and waiting for payment
     await Notification.create({
       user_id: contract.landlord_id,
-      title: 'Contract Signed',
-      message: `Tenant has signed the rental contract for "${contract.room.title}". The rental is now active.`,
+      title: 'Contract Signed (Pending Payment)',
+      message: `Tenant has signed the rental contract for "${contract.room.title}". Waiting for deposit payment.`,
       notification_type: 'contract',
       related_id: contract.contract_id,
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Contract signed successfully! The rental is now active.',
+      message: 'Contract signed successfully! Please proceed to payment.',
       data: {
         contractId: contract.contract_id,
         status: contract.status,
@@ -1121,7 +1197,7 @@ const getTenantContracts = async (req, res, next) => {
       where: { tenant_id: tenantId },
       include: [
         { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month', 'area_sqm', 'room_type', 'bedrooms', 'max_occupants'] },
-        { model: User, as: 'landlordContract', attributes: ['user_id', 'full_name', 'email', 'phone'] },
+        { model: User, as: 'landlordContract', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
       ],
       order: [['created_at', 'DESC']],
     });
@@ -1142,6 +1218,18 @@ const getTenantContracts = async (req, res, next) => {
         room: c.room,
         landlord: c.landlordContract,
         createdAt: c.created_at,
+        tenantIc: c.tenant_ic,
+        tenantName: c.tenant_name,
+        tenantIcIssueDate: c.tenant_ic_issue_date,
+        tenantIcIssuePlace: c.tenant_ic_issue_place,
+        tenantPermanentAddress: c.tenant_permanent_address,
+        tenantSignature: c.tenant_signature,
+        landlordName: c.landlord_name,
+        landlordIc: c.landlord_ic,
+        landlordIcIssueDate: c.landlord_ic_issue_date,
+        landlordIcIssuePlace: c.landlord_ic_issue_place,
+        landlordPermanentAddress: c.landlord_permanent_address,
+        landlordSignature: c.landlord_signature,
       })),
     });
   } catch (error) {

@@ -39,6 +39,7 @@ const LANDLORD_NAV = [
   { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
   { icon: <CreditCard size={20} />, label: 'Deposits', path: ROUTES.LANDLORD.DEPOSITS },
   { icon: <FileText size={20} />, label: 'Contracts', path: ROUTES.LANDLORD.CONTRACTS },
+  { icon: <ClipboardList size={20} />, label: 'Rental Requests', path: ROUTES.LANDLORD.REQUESTS },
   { icon: <Calendar size={20} />, label: 'Viewing Schedules', path: ROUTES.LANDLORD.SCHEDULES },
   { icon: <MessageSquare size={20} />, label: 'Messages', path: ROUTES.LANDLORD.MESSAGES },
   { icon: <UserCircle size={20} />, label: 'Profile', path: ROUTES.LANDLORD.PROFILE },

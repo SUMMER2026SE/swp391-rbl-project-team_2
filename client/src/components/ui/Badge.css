@@ -14,3 +14,4 @@
 .badge-warning  { background: var(--warning-bg); color: var(--warning); }
 .badge-danger   { background: var(--danger-bg); color: var(--danger); }
 .badge-info     { background: var(--primary-light); color: var(--primary); }
+.badge-primary  { background: #e0e7ff; color: #4338ca; }

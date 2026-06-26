@@ -27,9 +27,12 @@ import Button from '../../../components/common/Button';
 import Loading from '../../../components/ui/Loading';
 import EmptyState from '../../../components/ui/EmptyState';
 import Badge from '../../../components/ui/Badge';
+import SignatureCanvas from 'react-signature-canvas';
+import useAuthStore from '../../../store/useAuthStore';
 import './RentalRequestsPage.css'; // Re-use the CSS
 
 const ViewingSchedulesPage = () => {
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +53,20 @@ const ViewingSchedulesPage = () => {
     endDate: '',
     monthlyRent: '',
     termsAndConditions: '',
+    landlordName: '',
+    landlordIc: '',
+    landlordIcIssueDate: '',
+    landlordIcIssuePlace: '',
+    landlordPermanentAddress: '',
   });
+  
+  const landlordSigCanvas = React.useRef(null);
+
+  const clearLandlordSignature = () => {
+    if (landlordSigCanvas.current) {
+      landlordSigCanvas.current.clear();
+    }
+  };
 
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -84,6 +100,11 @@ const ViewingSchedulesPage = () => {
     }
   };
 
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
   const filteredSchedules = schedules.filter(schedule => {
     const tenantName = schedule.tenant?.full_name || '';
     const tenantEmail = schedule.tenant?.email || '';
@@ -95,8 +116,20 @@ const ViewingSchedulesPage = () => {
       tenantEmail.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'All' || schedule.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  }).sort((a, b) => new Date(b.createdAt || b.scheduledDate || 0) - new Date(a.createdAt || a.scheduledDate || 0));
+    
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const scheduleDate = new Date(schedule.createdAt || schedule.scheduledDate || new Date());
+      if (dateFrom && new Date(dateFrom) > scheduleDate) matchesDate = false;
+      if (dateTo && new Date(dateTo) < scheduleDate) matchesDate = false;
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
+  }).sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.scheduledDate || 0);
+    const dateB = new Date(b.createdAt || b.scheduledDate || 0);
+    return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+  });
 
   const totalPages = Math.ceil(filteredSchedules.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -189,6 +222,11 @@ const ViewingSchedulesPage = () => {
       endDate: '',
       monthlyRent: schedule.room?.price_per_month || '',
       termsAndConditions: '',
+      landlordName: user?.full_name || '',
+      landlordIc: '',
+      landlordIcIssueDate: '',
+      landlordIcIssuePlace: '',
+      landlordPermanentAddress: '',
     });
     setSelectedSchedule(schedule);
     setShowContractModal(true);
@@ -197,18 +235,49 @@ const ViewingSchedulesPage = () => {
 
   const handleCreateContract = async () => {
     try {
+      console.log("Submitting contract...", contractData, selectedSchedule?.scheduleId);
+      
+      if (!contractData.landlordName || !contractData.landlordIc || !contractData.landlordIcIssueDate || !contractData.landlordIcIssuePlace || !contractData.landlordPermanentAddress) {
+          toast.error('Please fill in all identity details.');
+          return;
+      }
+      if (contractData.landlordIc.length !== 12) {
+        toast.error('CCCD must be exactly 12 digits.');
+        return;
+      }
+
+      if (!landlordSigCanvas.current || landlordSigCanvas.current.isEmpty()) {
+        toast.error('Vui lòng ký tên vào hợp đồng.');
+        return;
+      }
+
+      const landlordSignature = landlordSigCanvas.current.getCanvas().toDataURL('image/png');
+
       setIsSubmitting(true);
       const res = await api.post(`/landlord/viewing-schedules/${selectedSchedule.scheduleId}/create-contract`, {
         termsAndConditions: contractData.termsAndConditions,
+        landlordName: contractData.landlordName,
+        landlordIc: contractData.landlordIc,
+        landlordIcIssueDate: contractData.landlordIcIssueDate,
+        landlordIcIssuePlace: contractData.landlordIcIssuePlace,
+        landlordPermanentAddress: contractData.landlordPermanentAddress,
+        landlordSignature: landlordSignature,
       });
+      
       if (res.success) {
         toast.success('Contract created! Waiting for tenant to sign.');
         setShowContractModal(false);
         setSelectedSchedule(null);
         fetchSchedules();
+      } else {
+        toast.error(res.message || 'Unknown error occurred');
+        alert(res.message || 'Unknown error occurred');
       }
     } catch (err) {
-      toast.error(err.message || 'Failed to create contract');
+      console.error("Create Contract Error:", err);
+      const errMsg = err?.response?.data?.message || err.message || 'Failed to create contract';
+      toast.error(errMsg);
+      alert(`Lỗi: ${errMsg}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -269,10 +338,10 @@ const ViewingSchedulesPage = () => {
           <span>{error}</span>
         </div>
       )}
-
+      
       {/* Filter Bar */}
-      <div className="rental-requests__filter-bar">
-        <div className="filter-search">
+      <div className="rental-requests__filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+        <div className="filter-search" style={{ minWidth: '250px' }}>
           <Search size={18} />
           <input
             type="text"
@@ -282,17 +351,43 @@ const ViewingSchedulesPage = () => {
           />
         </div>
 
+        <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>From:</span>
+          <input type="date" lang="en-GB" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
+        </div>
+
+        <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>To:</span>
+          <input type="date" lang="en-GB" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
+        </div>
+
+        <div className="filter-dropdown-container">
+          <button
+            className="filter-dropdown-btn"
+            onClick={() => setShowSortDropdown(!showSortDropdown)}
+          >
+            <span>{sortOrder === 'newest' ? 'Newest First' : 'Oldest First'}</span>
+            <ChevronDown size={16} />
+          </button>
+          {showSortDropdown && (
+            <div className="filter-dropdown-menu">
+              <button className={`filter-dropdown-item ${sortOrder === 'newest' ? 'active' : ''}`} onClick={() => { setSortOrder('newest'); setShowSortDropdown(false); }}>Newest First</button>
+              <button className={`filter-dropdown-item ${sortOrder === 'oldest' ? 'active' : ''}`} onClick={() => { setSortOrder('oldest'); setShowSortDropdown(false); }}>Oldest First</button>
+            </div>
+          )}
+        </div>
+
         <div className="filter-dropdown-container">
           <button
             className="filter-dropdown-btn"
             onClick={() => setShowStatusDropdown(!showStatusDropdown)}
           >
-            <span>{statusFilter === 'All' ? 'All Statuses' : getStatusLabel(statusFilter)}</span>
+            <span>{statusFilter === 'All' ? 'All' : getStatusLabel(statusFilter)}</span>
             <ChevronDown size={16} />
           </button>
           {showStatusDropdown && (
             <div className="filter-dropdown-menu">
-              {['All', 'pending_payment', 'scheduled', 'confirmed', 'contract_requested', 'contract_created', 'completed', 'no_show', 'disputed', 'cancelled'].map(status => (
+              {['All', 'pending', 'pending_payment', 'scheduled', 'confirmed', 'contract_requested', 'contract_created', 'completed', 'no_show', 'disputed', 'cancelled'].map(status => (
                 <button
                   key={status}
                   className={`filter-dropdown-item ${statusFilter === status ? 'active' : ''}`}
@@ -356,7 +451,7 @@ const ViewingSchedulesPage = () => {
                   <td>
                     <div className="date-info">
                       <Calendar size={14} />
-                      {schedule.scheduledDate ? new Date(schedule.scheduledDate).toLocaleDateString() : 'N/A'}
+                      {schedule.scheduledDate ? new Date(schedule.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
                     </div>
                   </td>
                   <td>
@@ -640,6 +735,65 @@ const ViewingSchedulesPage = () => {
                 </p>
               </div>
 
+              <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '20px 0 12px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>Your Information (For Contract)</h4>
+              
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Họ và Tên *</label>
+                <input 
+                  type="text" 
+                  value={contractData.landlordName}
+                  onChange={(e) => setContractData({ ...contractData, landlordName: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                  placeholder="Nguyễn Văn A"
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>CCCD/CMND (12 digits) *</label>
+                  <input 
+                    type="text" 
+                    maxLength={12}
+                    value={contractData.landlordIc}
+                    onChange={(e) => setContractData({ ...contractData, landlordIc: e.target.value.replace(/\D/g, '') })}
+                    style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                    placeholder="012345678901"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Date *</label>
+                  <input 
+                    type="date" 
+                    value={contractData.landlordIcIssueDate}
+                    onChange={(e) => setContractData({ ...contractData, landlordIcIssueDate: e.target.value })}
+                    max={new Date().toISOString().split('T')[0]}
+                    style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Place *</label>
+                <input 
+                  type="text" 
+                  value={contractData.landlordIcIssuePlace}
+                  onChange={(e) => setContractData({ ...contractData, landlordIcIssuePlace: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                  placeholder="Cục Cảnh sát Quản lý hành chính về trật tự xã hội"
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Permanent Address *</label>
+                <input 
+                  type="text" 
+                  value={contractData.landlordPermanentAddress}
+                  onChange={(e) => setContractData({ ...contractData, landlordPermanentAddress: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                  placeholder="123 Duong ABC, Phuong XYZ, Quan 1, TP HCM"
+                />
+              </div>
+
               <div style={{ marginTop: '16px' }}>
                 <label style={{ fontWeight: 600, marginBottom: '6px', display: 'block' }}>Terms & Conditions</label>
                 <textarea
@@ -648,6 +802,20 @@ const ViewingSchedulesPage = () => {
                   placeholder="Enter rental terms and conditions..."
                   style={{ width: '100%', padding: '12px', border: '2px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', minHeight: '120px', resize: 'vertical', boxSizing: 'border-box' }}
                 />
+              </div>
+
+              <div style={{ marginTop: '16px' }}>
+                <label style={{ fontWeight: 600, marginBottom: '6px', display: 'block' }}>Chữ ký Bên Cho Thuê (Bên A) *</label>
+                <div style={{ border: '2px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc', position: 'relative', display: 'inline-block' }}>
+                  <SignatureCanvas 
+                    ref={landlordSigCanvas}
+                    penColor="blue"
+                    canvasProps={{width: 400, height: 200, className: 'sigCanvas'}} 
+                  />
+                  <button onClick={clearLandlordSignature} style={{ position: 'absolute', top: 5, right: 5, background: '#e2e8f0', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', color: '#475569', cursor: 'pointer' }} title="Clear">
+                    Xóa chữ ký
+                  </button>
+                </div>
               </div>
             </div>
 

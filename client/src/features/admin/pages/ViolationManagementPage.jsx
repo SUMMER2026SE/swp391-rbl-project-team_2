@@ -315,24 +315,24 @@ const ViolationManagementPage = () => {
                 <div className="detail-group full-width" style={{ marginTop: '20px' }}>
                   <label>Resolution Outcome:</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                      <input type="radio" name="outcome" value="A" checked={disputeOutcome === 'A'} onChange={e => setDisputeOutcome(e.target.value)} />
-                      <div>
-                        <strong>Outcome A (Landlord Wrong)</strong> - 100% Refund to Tenant
-                      </div>
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                      <input type="radio" name="outcome" value="B" checked={disputeOutcome === 'B'} onChange={e => setDisputeOutcome(e.target.value)} />
-                      <div>
-                        <strong>Outcome B (Tenant Unreasonable)</strong> - 0% Refund. Landlord gets 95%, Platform 5%
-                      </div>
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                      <input type="radio" name="outcome" value="C" checked={disputeOutcome === 'C'} onChange={e => setDisputeOutcome(e.target.value)} />
-                      <div>
-                        <strong>Outcome C (Shared Fault)</strong> - 50% Refund to Tenant. Landlord 45%, Platform 5%
-                      </div>
-                    </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input type="radio" name="outcome" value="A" checked={disputeOutcome === 'A'} onChange={e => setDisputeOutcome(e.target.value)} />
+                        <div>
+                          <strong>Outcome A (Landlord Wrong)</strong> - Issue warning to Landlord, cancel schedule
+                        </div>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input type="radio" name="outcome" value="B" checked={disputeOutcome === 'B'} onChange={e => setDisputeOutcome(e.target.value)} />
+                        <div>
+                          <strong>Outcome B (Tenant Unreasonable)</strong> - Reject dispute, cancel schedule
+                        </div>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input type="radio" name="outcome" value="C" checked={disputeOutcome === 'C'} onChange={e => setDisputeOutcome(e.target.value)} />
+                        <div>
+                          <strong>Outcome C (Shared Fault)</strong> - Cancel schedule without penalty
+                        </div>
+                      </label>
                   </div>
                 </div>
               ) : (

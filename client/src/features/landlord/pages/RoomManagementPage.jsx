@@ -43,12 +43,17 @@ const RoomManagementPage = () => {
     description: '',
     address: '',
     price: '',
-    bedrooms: '',
+    maxOccupants: 1,
     bathrooms: '',
     area: '',
     status: 'AVAILABLE',
     amenities: [],
   });
+
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const filteredRooms = rooms.map(room => {
     let coverImg = '';
@@ -59,6 +64,10 @@ const RoomManagementPage = () => {
     }
 
     return {
+      ...room,
+      coverImg,
+      displayPrice: new Intl.NumberFormat('vi-VN').format(room.pricePerMonth) + ' VND',
+      displayStatus: room.status.charAt(0).toUpperCase() + room.status.slice(1).toLowerCase(),
       id: room.roomId || room.room_id || room.id,
       title: room.title || '',
       description: room.description || '',
@@ -66,7 +75,7 @@ const RoomManagementPage = () => {
       city: room.city || '',
       district: room.district || '',
       price: Number(room.pricePerMonth || room.price_per_month || room.price || 0),
-      bedrooms: room.maxOccupants || room.max_occupants || room.bedrooms || 1,
+      maxOccupants: room.maxOccupants || room.max_occupants || 1,
       bathrooms: room.bathrooms || 1,
       area: Number(room.areaSqm || room.area_sqm || room.area || 0),
       status: (room.status || 'AVAILABLE').toUpperCase(),
@@ -77,7 +86,19 @@ const RoomManagementPage = () => {
       room.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       room.address?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' || room.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const roomDate = new Date(room.createdAt || room.created_at || new Date());
+      if (dateFrom && new Date(dateFrom) > roomDate) matchesDate = false;
+      if (dateTo && new Date(dateTo) < roomDate) matchesDate = false;
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
+  }).sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.created_at || 0);
+    const dateB = new Date(b.createdAt || b.created_at || 0);
+    return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
   });
 
   const resetForm = () => {
@@ -86,7 +107,7 @@ const RoomManagementPage = () => {
       description: '',
       address: '',
       price: '',
-      bedrooms: '',
+      maxOccupants: 1,
       bathrooms: '',
       area: '',
       status: 'AVAILABLE',
@@ -141,8 +162,8 @@ const RoomManagementPage = () => {
         district: 'Ngu Hanh Son',
         pricePerMonth: Number(formData.price),
         areaSqm: Number(formData.area) || 0,
-        roomType: 'single',
-        maxOccupants: Number(formData.bedrooms) || 1,
+        roomType: 'private_room',
+        maxOccupants: Math.min(Number(formData.maxOccupants) || 1, 4),
         status: formData.status.toLowerCase(),
       };
       const result = await createRoom(roomPayload);
@@ -168,7 +189,7 @@ const RoomManagementPage = () => {
       description: room.description || '',
       address: room.address || '',
       price: room.price || '',
-      bedrooms: room.bedrooms || '',
+      maxOccupants: room.maxOccupants || 1,
       bathrooms: room.bathrooms || '',
       area: room.area || '',
       status: room.status || 'AVAILABLE',
@@ -191,8 +212,8 @@ const RoomManagementPage = () => {
         district: selectedRoom.district || 'Ngu Hanh Son',
         pricePerMonth: Number(formData.price),
         areaSqm: Number(formData.area) || 0,
-        roomType: selectedRoom.roomType || 'single',
-        maxOccupants: Number(formData.bedrooms) || 1,
+        roomType: 'private_room',
+        maxOccupants: Math.min(Number(formData.maxOccupants) || 1, 4),
         status: formData.status.toLowerCase(),
       };
       await updateRoom(roomId, roomPayload);
@@ -238,7 +259,7 @@ const RoomManagementPage = () => {
       ...prev,
       [name]: value,
     }));
-    if (['price', 'bedrooms', 'bathrooms'].includes(name) && value !== '' && !/^\d+$/.test(value)) {
+    if (['price', 'maxOccupants', 'bathrooms'].includes(name) && value !== '' && !/^\d+$/.test(value)) {
        setFormError('Please enter a valid positive number for ' + name);
     } else if (name === 'area' && value !== '' && !/^\d+(\.\d+)?$/.test(value)) {
        setFormError('Please enter a valid number for area');
@@ -278,8 +299,8 @@ const RoomManagementPage = () => {
       )}
 
       {/* Filter Bar */}
-      <div className="room-management__filter-bar">
-        <div className="filter-search">
+      <div className="room-management__filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+        <div className="filter-search" style={{ minWidth: '250px' }}>
           <Search size={18} />
           <input
             type="text"
@@ -287,6 +308,32 @@ const RoomManagementPage = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
+
+        <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>From:</span>
+          <input type="date" lang="en-GB" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
+        </div>
+
+        <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>To:</span>
+          <input type="date" lang="en-GB" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
+        </div>
+
+        <div className="filter-dropdown-container">
+          <button
+            className="filter-dropdown-btn"
+            onClick={() => setShowSortDropdown(!showSortDropdown)}
+          >
+            <span>{sortOrder === 'newest' ? 'Newest First' : 'Oldest First'}</span>
+            <ChevronDown size={16} />
+          </button>
+          {showSortDropdown && (
+            <div className="filter-dropdown-menu">
+              <button className={`filter-dropdown-item ${sortOrder === 'newest' ? 'active' : ''}`} onClick={() => { setSortOrder('newest'); setShowSortDropdown(false); }}>Newest First</button>
+              <button className={`filter-dropdown-item ${sortOrder === 'oldest' ? 'active' : ''}`} onClick={() => { setSortOrder('oldest'); setShowSortDropdown(false); }}>Oldest First</button>
+            </div>
+          )}
         </div>
 
         <div className="filter-dropdown-container">
@@ -343,9 +390,9 @@ const RoomManagementPage = () => {
                 </div>
 
                 <div className="room-card__specs">
-                  {room.bedrooms && (
+                  {room.maxOccupants && (
                     <span className="spec-item">
-                      <Users size={14} /> {room.bedrooms} Bed
+                      <Users size={14} /> Max {room.maxOccupants} Occupants
                     </span>
                   )}
                   {room.bathrooms && (
@@ -364,7 +411,7 @@ const RoomManagementPage = () => {
                   <span className="price-unit">/month</span>
                 </div>
 
-                <div className="room-card__description">
+                <div className="room-card__description" style={{ whiteSpace: 'pre-wrap' }}>
                   {room.description}
                 </div>
               </div>
@@ -460,12 +507,14 @@ const RoomManagementPage = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Bedrooms</label>
+                    <label>Max Occupants (max 4)</label>
                     <input
-                      type="text"
-                      name="bedrooms"
+                      type="number"
+                      min="1"
+                      max="4"
+                      name="maxOccupants"
                       placeholder="1"
-                      value={formData.bedrooms}
+                      value={formData.maxOccupants}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -625,11 +674,13 @@ const RoomManagementPage = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Bedrooms</label>
+                    <label>Max Occupants (max 4)</label>
                     <input
-                      type="text"
-                      name="bedrooms"
-                      value={formData.bedrooms}
+                      type="number"
+                      min="1"
+                      max="4"
+                      name="maxOccupants"
+                      value={formData.maxOccupants}
                       onChange={handleInputChange}
                     />
                   </div>

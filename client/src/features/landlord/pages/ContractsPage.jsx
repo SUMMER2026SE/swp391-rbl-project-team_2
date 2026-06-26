@@ -21,19 +21,28 @@ import Button from '../../../components/common/Button';
 import Loading from '../../../components/ui/Loading';
 import EmptyState from '../../../components/ui/EmptyState';
 import Badge from '../../../components/ui/Badge';
+import ContractDocument from '../../../components/ContractDocument';
+import { useNavigate } from 'react-router-dom';
 import './ContractsPage.css';
 
 const ContractsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  
   const [selectedContract, setSelectedContract] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showContractModal, setShowContractModal] = useState(false);
   const [showRenewModal, setShowRenewModal] = useState(false);
   const [showTerminateModal, setShowTerminateModal] = useState(false);
   const [renewData, setRenewData] = useState({ duration: 12 });
   const [terminateReason, setTerminateReason] = useState('');
 
+  const navigate = useNavigate();
   const { contracts, loading, error, renewContract, terminateContract } = useContracts();
 
   const filteredContracts = contracts.filter(contract => {
@@ -43,20 +52,40 @@ const ContractsPage = () => {
       (contract.roomTitle || '').toLowerCase().includes(searchLower) ||
       (contract.contractNumber || '').toLowerCase().includes(searchLower);
     const matchesStatus = statusFilter === 'All' || (contract.status || '').toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
+    
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const contractDate = new Date(contract.createdAt || contract.start_date || new Date());
+      if (dateFrom && new Date(dateFrom) > contractDate) matchesDate = false;
+      if (dateTo && new Date(dateTo) < contractDate) matchesDate = false;
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
+  }).sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.start_date || 0);
+    const dateB = new Date(b.createdAt || b.start_date || 0);
+    return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
   });
 
   const getStatusDisplay = (status) => {
-    const s = (status || '').toUpperCase();
+    const s = (status || '').toLowerCase();
     switch (s) {
-      case 'ACTIVE':
+      case 'active':
         return { icon: <CheckCircle2 size={16} />, color: '#059669', bg: '#d1fae5', label: 'Active' };
-      case 'PENDING':
-        return { icon: <Clock size={16} />, color: '#b45309', bg: '#fef3c7', label: 'Pending' };
-      case 'EXPIRED':
+      case 'pending':
+      case 'pending_signature':
+        return { icon: <FileSignature size={16} />, color: '#b45309', bg: '#fef3c7', label: 'Pending Signature' };
+      case 'pending_payment':
+        return { icon: <Clock size={16} />, color: '#7c3aed', bg: '#ede9fe', label: 'Pending Payment' };
+      case 'completed':
+        return { icon: <CheckCircle2 size={16} />, color: '#059669', bg: '#d1fae5', label: 'Completed' };
+      case 'expired':
         return { icon: <Timer size={16} />, color: '#64748b', bg: '#f1f5f9', label: 'Expired' };
-      case 'TERMINATED':
-        return { icon: <Ban size={16} />, color: '#dc2626', bg: '#fee2e2', label: 'Terminated' };
+      case 'terminated':
+      case 'cancelled':
+        return { icon: <Ban size={16} />, color: '#dc2626', bg: '#fee2e2', label: 'Cancelled' };
+      case 'draft':
+        return { icon: <FileText size={16} />, color: '#64748b', bg: '#f1f5f9', label: 'Draft' };
       default:
         return { icon: null, color: '#64748b', bg: '#f1f5f9', label: status };
     }
@@ -121,8 +150,8 @@ const ContractsPage = () => {
       )}
 
       {/* Filter Bar */}
-      <div className="contracts__filter-bar">
-        <div className="filter-search">
+      <div className="contracts__filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+        <div className="filter-search" style={{ minWidth: '250px' }}>
           <Search size={18} />
           <input
             type="text"
@@ -132,17 +161,43 @@ const ContractsPage = () => {
           />
         </div>
 
+        <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>From:</span>
+          <input type="date" lang="en-GB" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
+        </div>
+
+        <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>To:</span>
+          <input type="date" lang="en-GB" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
+        </div>
+
+        <div className="filter-dropdown-container">
+          <button
+            className="filter-dropdown-btn"
+            onClick={() => setShowSortDropdown(!showSortDropdown)}
+          >
+            <span>{sortOrder === 'newest' ? 'Newest First' : 'Oldest First'}</span>
+            <ChevronDown size={16} />
+          </button>
+          {showSortDropdown && (
+            <div className="filter-dropdown-menu">
+              <button className={`filter-dropdown-item ${sortOrder === 'newest' ? 'active' : ''}`} onClick={() => { setSortOrder('newest'); setShowSortDropdown(false); }}>Newest First</button>
+              <button className={`filter-dropdown-item ${sortOrder === 'oldest' ? 'active' : ''}`} onClick={() => { setSortOrder('oldest'); setShowSortDropdown(false); }}>Oldest First</button>
+            </div>
+          )}
+        </div>
+
         <div className="filter-dropdown-container">
           <button
             className="filter-dropdown-btn"
             onClick={() => setShowStatusDropdown(!showStatusDropdown)}
           >
-            <span>{statusFilter}</span>
+            <span>{statusFilter === 'All' ? 'All' : statusFilter.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
             <ChevronDown size={16} />
           </button>
           {showStatusDropdown && (
             <div className="filter-dropdown-menu">
-              {['All', 'active', 'pending', 'expired', 'terminated'].map(status => (
+              {['All', 'active', 'pending_signature', 'pending_payment', 'completed', 'expired', 'terminated', 'cancelled', 'draft'].map(status => (
                 <button
                   key={status}
                   className={`filter-dropdown-item ${statusFilter === status ? 'active' : ''}`}
@@ -151,7 +206,7 @@ const ContractsPage = () => {
                     setShowStatusDropdown(false);
                   }}
                 >
-                  {status}
+                  {status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                 </button>
               ))}
             </div>
@@ -159,71 +214,90 @@ const ContractsPage = () => {
         </div>
       </div>
 
-      {/* Contracts Grid */}
+      {/* Contracts Table */}
       {filteredContracts.length > 0 ? (
-        <div className="contracts__grid">
-          {filteredContracts.map(contract => (
-            <div className="contract-card" key={contract.id}>
-              <div className="contract-card__header">
-                <div>
-                  <h3 className="contract-card__title">{contract.contractNumber}</h3>
-                  <p className="contract-card__subtitle">{contract.roomTitle}</p>
-                </div>
-                <div 
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    padding: '4px 10px', borderRadius: '9999px',
-                    backgroundColor: getStatusDisplay(contract.status).bg,
-                    color: getStatusDisplay(contract.status).color,
-                    fontWeight: '600', fontSize: '0.75rem',
-                    border: `1px solid ${getStatusDisplay(contract.status).color}33`
-                  }}
-                >
-                  {getStatusDisplay(contract.status).icon}
-                  {getStatusDisplay(contract.status).label}
-                </div>
-              </div>
-
-              <div className="contract-card__content">
-                <div className="contract-info-row">
-                  <span className="label">Tenant</span>
-                  <span className="value">{contract.tenantName}</span>
-                </div>
-                <div className="contract-info-row">
-                  <span className="label">Monthly Rent</span>
-                  <span className="value">{contract.monthlyRent?.toLocaleString()} đ</span>
-                </div>
-                <div className="contract-info-row">
-                  <span className="label">Start Date</span>
-                  <span className="value">
-                    <Calendar size={14} />
-                    {new Date(contract.startDate).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="contract-info-row">
-                  <span className="label">End Date</span>
-                  <span className="value">
-                    <Calendar size={14} />
-                    {new Date(contract.endDate).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="contract-card__actions">
-                <button
-                  className="action-btn action-btn--view"
-                  onClick={() => {
-                    setSelectedContract(contract);
-                    setShowDetailModal(true);
-                  }}
-                  style={{ width: '100%' }}
-                >
-                  <Eye size={16} />
-                  View Details
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="contracts__table-container" style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+          <table className="contracts__table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+              <tr>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Tenant</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Room</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Move-in Date</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Duration</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Status</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredContracts.map(contract => (
+                <tr key={contract.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#e2e8f0', flexShrink: 0 }}>
+                        {contract.tenant?.avatar_url ? (
+                          <img src={contract.tenant.avatar_url} alt={contract.tenantName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 600, fontSize: '16px' }}>
+                            {contract.tenantName ? contract.tenantName.charAt(0) : 'T'}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 500, color: '#2563eb', marginBottom: '2px' }}>{contract.tenantName}</div>
+                        <div style={{ fontSize: '13px', color: '#2563eb' }}>{contract.tenantEmail || 'N/A'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#2563eb' }}>
+                    <span 
+                      onClick={() => navigate(`/rooms/${contract.roomId}`)}
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                      onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                    >
+                      {contract.roomTitle}
+                    </span>
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
+                    {new Date(contract.startDate).toLocaleDateString('vi-VN')}
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
+                    {contract.duration} months
+                  </td>
+                  <td style={{ padding: '16px' }}>
+                    <div 
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                        padding: '4px 10px', borderRadius: '9999px',
+                        backgroundColor: getStatusDisplay(contract.status).bg,
+                        color: getStatusDisplay(contract.status).color,
+                        fontWeight: '600', fontSize: '12px',
+                        border: `1px solid ${getStatusDisplay(contract.status).color}33`
+                      }}
+                    >
+                      {getStatusDisplay(contract.status).icon}
+                      {getStatusDisplay(contract.status).label}
+                    </div>
+                  </td>
+                  <td style={{ padding: '16px' }}>
+                    <button
+                      onClick={() => {
+                        setSelectedContract(contract);
+                        setShowContractModal(true);
+                      }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '6px 12px', background: '#f8fafc', border: '1px solid #cbd5e1',
+                        borderRadius: '6px', color: '#475569', fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                      }}
+                    >
+                      <FileText size={14} /> View Contract
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         <EmptyState
@@ -285,12 +359,8 @@ const ContractsPage = () => {
                     <div className="detail-item">
                       <label>Room Type</label>
                       <div className="detail-value" style={{ textTransform: 'capitalize' }}>
-                        {selectedContract.room.room_type?.replace('_', ' ')}
+                        Phòng cá nhân
                       </div>
-                    </div>
-                    <div className="detail-item">
-                      <label>Bedrooms</label>
-                      <div className="detail-value">{selectedContract.room.bedrooms}</div>
                     </div>
                     <div className="detail-item">
                       <label>Max Occupants</label>
@@ -328,18 +398,18 @@ const ContractsPage = () => {
                 <h4 className="section-title">Contract Terms</h4>
                 <div className="detail-grid">
                   <div className="detail-item">
-                    <label>Start Date</label>
-                    <div className="detail-value">
+                    <span className="detail-label">Start Date</span>
+                    <span className="detail-value">
                       <Calendar size={14} />
-                      {new Date(selectedContract.startDate).toLocaleDateString()}
-                    </div>
+                      {new Date(selectedContract.startDate).toLocaleDateString('en-GB')}
+                    </span>
                   </div>
                   <div className="detail-item">
-                    <label>End Date</label>
-                    <div className="detail-value">
+                    <span className="detail-label">End Date</span>
+                    <span className="detail-value">
                       <Calendar size={14} />
-                      {new Date(selectedContract.endDate).toLocaleDateString()}
-                    </div>
+                      {new Date(selectedContract.endDate).toLocaleDateString('en-GB')}
+                    </span>
                   </div>
                   <div className="detail-item">
                     <label>Duration</label>
@@ -360,30 +430,32 @@ const ContractsPage = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Modal Footer with Actions */}
-            {(selectedContract.status || '').toUpperCase() === 'ACTIVE' && (
-              <div className="modal-footer">
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setShowTerminateModal(true);
-                  }}
-                >
-                  <X size={16} />
-                  Terminate
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    setShowRenewModal(true);
-                  }}
-                >
-                  <FileText size={16} />
-                  Renew Contract
-                </Button>
-              </div>
-            )}
+      {/* View Contract Document Modal */}
+      {showContractModal && selectedContract && (
+        <div className="modal-backdrop" onClick={() => setShowContractModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', padding: '40px 20px', overflowY: 'auto', display: 'block' }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative' }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowContractModal(false)}
+              style={{ position: 'absolute', top: '10px', right: '10px', background: '#fff', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}
+            >
+              <X size={20} color="#475569" />
+            </button>
+            <ContractDocument 
+              contract={selectedContract}
+              role="landlord"
+              onTerminate={() => {
+                setShowContractModal(false);
+                setShowTerminateModal(true);
+              }}
+              onRenew={() => {
+                setShowContractModal(false);
+                setShowRenewModal(true);
+              }}
+            />
           </div>
         </div>
       )}

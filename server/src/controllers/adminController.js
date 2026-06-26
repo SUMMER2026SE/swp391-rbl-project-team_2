@@ -466,42 +466,32 @@ const resolveDispute = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Viewing schedule not found' });
     }
 
-    const payment = await Payment.findOne({
-      where: { viewing_schedule_id: schedule.schedule_id, status: 'completed' }
-    });
-
-    if (!payment) {
-      return res.status(404).json({ success: false, message: 'Completed payment not found' });
-    }
-
-    const total = parseFloat(payment.amount);
-
-    if (outcome === 'A') {
-      // 100% refund to tenant
-      payment.refund_amount = total;
-      payment.net_amount = 0;
-      payment.platform_fee = 0;
-      payment.status = 'refunded';
-    } else if (outcome === 'B') {
-      // 0% refund, Landlord 95%, Platform 5%
-      payment.refund_amount = 0;
-      payment.net_amount = total * 0.95;
-      payment.platform_fee = total * 0.05;
-      payment.payout_status = 'pending'; // To be paid to landlord
-    } else if (outcome === 'C') {
-      // 50% refund, Landlord 45%, Platform 5%
-      payment.refund_amount = total * 0.50;
-      payment.net_amount = total * 0.45;
-      payment.platform_fee = total * 0.05;
-      payment.status = 'refunded'; // Partial refund
-      payment.payout_status = 'pending';
-    } else {
-      return res.status(400).json({ success: false, message: 'Invalid outcome' });
-    }
-
-    await payment.save();
+    // Payment logic removed because there is no deposit paid for viewing schedule anymore.
+    // We just resolve the schedule status and potentially add warnings later.
+    
+    // Just unlock the room and resolve the schedule
     schedule.status = 'dispute_resolved';
     await schedule.save();
+
+    const { Notification } = require('../models');
+
+    if (outcome === 'A') {
+      await Notification.create({
+        user_id: schedule.landlord_id,
+        title: 'Warning: Dispute Resolution',
+        message: `Admin has reviewed the dispute for room schedule #${schedule.schedule_id}. It was resolved in favor of the tenant. Please ensure your room matches the description and you attend scheduled viewings to avoid account penalties.`,
+        notification_type: 'system',
+        related_id: schedule.schedule_id
+      });
+    } else if (outcome === 'B') {
+      await Notification.create({
+        user_id: schedule.tenant_id,
+        title: 'Dispute Rejected',
+        message: `Admin has reviewed your dispute for schedule #${schedule.schedule_id} and found it unreasonable. Continuous false reports may lead to account suspension.`,
+        notification_type: 'system',
+        related_id: schedule.schedule_id
+      });
+    }
 
     // Unlock the room since the viewing schedule process has ended
     if (schedule.room_id) {

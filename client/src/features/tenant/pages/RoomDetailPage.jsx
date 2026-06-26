@@ -46,10 +46,13 @@ const RoomDetailPage = () => {
     }
   };
   
-  // Booking States
   const [showDateModal, setShowDateModal] = useState(false);
   const [viewingDate, setViewingDate] = useState('');
   const [viewingTime, setViewingTime] = useState('');
+
+  // Rental Request States
+  const [showRentalRequestModal, setShowRentalRequestModal] = useState(false);
+  const [rentalRequestMessage, setRentalRequestMessage] = useState('');
 
   const { user, isAuthenticated } = useAuthStore();
 
@@ -138,11 +141,34 @@ const RoomDetailPage = () => {
         scheduledDate: combinedDateTime,
       });
       if (response.success) {
-        toast.success('Viewing request scheduled successfully!');
+        toast.success('Viewing schedule requested successfully!');
         setShowDateModal(false);
+        navigate(ROUTES.TENANT.REQUESTS);
       }
     } catch (err) {
-      toast.error('Failed to send request. ' + (err.response?.data?.message || err.message));
+      toast.error(err.response?.data?.message || 'Failed to schedule viewing');
+    }
+  };
+
+  const handleSendRentalRequest = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
+    try {
+      const response = await rentalRequestService.createRequest({
+        roomId: roomData.roomId || roomData.room_id,
+        message: rentalRequestMessage
+      });
+
+      if (response.success) {
+        toast.success("Rental request submitted successfully!");
+        setShowRentalRequestModal(false);
+        navigate(ROUTES.TENANT.REQUESTS);
+      }
+    } catch (err) {
+      toast.error('Failed to submit request: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -243,7 +269,7 @@ const RoomDetailPage = () => {
             <div className="feature-card">
               <Bed className="feature-icon" />
               <span className="feature-value">{roomData.bedrooms || 1}</span>
-              <span className="feature-label">Phòng ngủ</span>
+              <span className="feature-label">Giường</span>
             </div>
             <div className="feature-card">
               <Users className="feature-icon" />
@@ -258,15 +284,7 @@ const RoomDetailPage = () => {
             <div className="feature-card">
               <Home className="feature-icon" />
               <span className="feature-value" style={{ textTransform: 'capitalize' }}>
-                {(() => {
-                  const type = (roomData.roomType || roomData.room_type || '').toLowerCase();
-                  if (type === 'single' || type === 'room') return 'Single Room';
-                  if (type === 'double') return 'Double Room';
-                  if (type === 'shared') return 'Shared Room';
-                  if (type === 'apartment') return 'Apartment';
-                  if (type === 'house') return 'House';
-                  return roomData.roomType || roomData.room_type || 'Phòng riêng';
-                })()}
+                Phòng cá nhân
               </span>
               <span className="feature-label">Loại phòng</span>
             </div>
@@ -277,7 +295,10 @@ const RoomDetailPage = () => {
           {/* Host Card Section */}
           <section className="host-card">
             <div className="host-info">
-              <div className="host-avatar-wrapper">
+              <div 
+                className="host-avatar-wrapper cursor-pointer" 
+                onClick={() => navigate(`${ROUTES.ROOMS}?landlordId=${roomData.landlord?.user_id || roomData.landlordId}`)}
+              >
                 <img 
                   src={getGlobalAvatar(roomData.landlord?.full_name, roomData.landlord?.avatar_url || roomData.landlord?.avatarUrl, 100)} 
                   alt={roomData.landlord?.full_name || 'Landlord'} 
@@ -288,6 +309,10 @@ const RoomDetailPage = () => {
               <div className="host-text">
                 <h3>Managed by {roomData.landlord?.full_name || 'Landlord'}</h3>
                 <p>Phone: {roomData.landlord?.phone || 'N/A'}</p>
+                <div className="flex gap-4 mt-1 text-sm text-gray-600">
+                  <span>Listings: <strong>{roomData.landlord?.postCount || 0}</strong></span>
+                  <span>Rented rooms: <strong>{roomData.landlord?.rentedRoomCount || 0}</strong></span>
+                </div>
               </div>
             </div>
             {!(isAuthenticated && (user?.userId === roomData.landlordId || user?.userId === roomData.landlord?.user_id)) && (
@@ -306,7 +331,7 @@ const RoomDetailPage = () => {
               {isEditing ? (
                  <textarea name="description" value={editForm.description} onChange={handleEditChange} className="form-control" rows={6} />
               ) : (
-                 <p>{roomData.description}</p>
+                 <p style={{ whiteSpace: 'pre-wrap' }}>{roomData.description}</p>
               )}
             </div>
             <button 
@@ -418,6 +443,9 @@ const RoomDetailPage = () => {
                   <button className="btn-schedule-viewing" onClick={() => setShowDateModal(true)}>
                     Book room viewing schedule
                   </button>
+                  <button className="btn-schedule-viewing mt-2" onClick={() => setShowRentalRequestModal(true)} style={{ background: '#10B981' }}>
+                    Send rental request
+                  </button>
                 </>
               ) : (
                 <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
@@ -467,6 +495,30 @@ const RoomDetailPage = () => {
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setShowDateModal(false)}>Hủy</button>
               <button className="btn-confirm" onClick={handleScheduleViewing}>Đặt lịch</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRentalRequestModal && (
+        <div className="modal-overlay" onClick={() => setShowRentalRequestModal(false)}>
+          <div className="modal-container" onClick={e => e.stopPropagation()}>
+            <h2>Send Rental Request</h2>
+            <p style={{ color: '#64748b', marginBottom: '16px', fontSize: '14px' }}>
+              You are about to send a rental request to the landlord. Once approved, you can request a contract.
+            </p>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Message to Landlord (Optional)</label>
+              <textarea 
+                value={rentalRequestMessage}
+                onChange={(e) => setRentalRequestMessage(e.target.value)}
+                placeholder="Briefly introduce yourself and mention any specific requirements..."
+                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', minHeight: '100px' }}
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={() => setShowRentalRequestModal(false)}>Cancel</button>
+              <button className="btn-confirm" onClick={handleSendRentalRequest} style={{ background: '#10B981' }}>Send Request</button>
             </div>
           </div>
         </div>

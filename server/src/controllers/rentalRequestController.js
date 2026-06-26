@@ -154,10 +154,10 @@ const approveRentalRequest = async (req, res, next) => {
     rentalRequest.updated_at = safeNow;
     await rentalRequest.save();
 
-    // Update room status to rented
-    rentalRequest.room.status = 'rented';
-    rentalRequest.room.updated_at = safeNow;
-    await rentalRequest.room.save();
+    // Do not update room status to rented yet. VNPay return will do it after payment.
+    // rentalRequest.room.status = 'rented';
+    // rentalRequest.room.updated_at = safeNow;
+    // await rentalRequest.room.save();
 
     // Create notification for tenant
     await Notification.create({
@@ -247,10 +247,102 @@ const rejectRentalRequest = async (req, res, next) => {
     next(error);
   }
 };
+// =========================================================
+// POST /api/landlord/rental-requests/:requestId/create-contract
+// Landlord provides their details and signs the drafted contract
+// =========================================================
+const createContractFromRequest = async (req, res, next) => {
+  try {
+    const { requestId } = req.params;
+    const landlordId = req.user.userId;
+    const {
+      termsAndConditions,
+      landlordName,
+      landlordIc,
+      landlordIcIssueDate,
+      landlordIcIssuePlace,
+      landlordPermanentAddress,
+      landlordSignature,
+    } = req.body;
+
+    const rentalRequest = await RentalRequest.findOne({
+      where: { request_id: requestId, landlord_id: landlordId },
+      include: [
+        { model: Room, as: 'room' },
+        { model: User, as: 'tenant' },
+      ],
+    });
+
+    if (!rentalRequest) {
+      return res.status(404).json({ success: false, message: 'Rental request not found.' });
+    }
+
+    if (rentalRequest.status !== 'contract_requested') {
+      return res.status(400).json({ success: false, message: 'Contract has not been requested by tenant yet.' });
+    }
+
+    const { Contract } = require('../models');
+    const contract = await Contract.findOne({
+      where: {
+        room_id: rentalRequest.room_id,
+        tenant_id: rentalRequest.tenant_id,
+        status: 'draft'
+      }
+    });
+
+    if (!contract) {
+      return res.status(404).json({ success: false, message: 'Draft contract not found.' });
+    }
+
+    let signatureUrl = landlordSignature;
+    if (landlordSignature && landlordSignature.startsWith('data:image')) {
+      const { cloudinary } = require('../config/cloudinary');
+      const uploadResponse = await cloudinary.uploader.upload(landlordSignature, {
+        folder: 'signatures',
+      });
+      signatureUrl = uploadResponse.secure_url;
+    }
+
+    contract.terms_and_conditions = termsAndConditions;
+    contract.landlord_name = landlordName;
+    contract.landlord_ic = landlordIc;
+    contract.landlord_ic_issue_date = landlordIcIssueDate || null;
+    contract.landlord_ic_issue_place = landlordIcIssuePlace;
+    contract.landlord_permanent_address = landlordPermanentAddress;
+    contract.landlord_signature = signatureUrl;
+    contract.status = 'pending_signature';
+    await contract.save();
+
+    const safeNow = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    rentalRequest.status = 'contract_created';
+    rentalRequest.updated_at = safeNow;
+    await rentalRequest.save();
+
+    await Notification.create({
+      user_id: rentalRequest.tenant_id,
+      title: 'Contract Ready to Sign',
+      message: `The landlord has created the contract for ${rentalRequest.room.title}. Please review, sign, and pay the deposit.`,
+      notification_type: 'contract',
+      related_id: contract.contract_id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Contract created successfully. Waiting for tenant to sign.',
+      data: {
+        contractId: contract.contract_id,
+        status: contract.status,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   getLandlordRentalRequests,
   getRentalRequestDetails,
   approveRentalRequest,
   rejectRentalRequest,
+  createContractFromRequest,
 };

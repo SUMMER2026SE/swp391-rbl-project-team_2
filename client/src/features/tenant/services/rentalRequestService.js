@@ -71,16 +71,40 @@ export const rentalRequestService = {
     }
   },
 
-  requestContract: async (scheduleId, message, startDate, durationMonths) => {
+  requestContract: async (scheduleId, message, startDate, durationMonths, tenantName, tenantIc, tenantIcIssueDate, tenantIcIssuePlace, tenantPermanentAddress) => {
     try {
       const response = await httpClient.post(`/tenant/viewing-schedules/${scheduleId}/request-contract`, { 
         message,
         startDate,
-        durationMonths
+        durationMonths,
+        tenantName,
+        tenantIc,
+        tenantIcIssueDate,
+        tenantIcIssuePlace,
+        tenantPermanentAddress
       });
       return response;
     } catch (error) {
       console.error('Error requesting contract:', error);
+      throw error;
+    }
+  },
+
+  requestContractForRentalRequest: async (requestId, message, startDate, durationMonths, tenantName, tenantIc, tenantIcIssueDate, tenantIcIssuePlace, tenantPermanentAddress) => {
+    try {
+      const response = await httpClient.post(`/tenant/rental-requests/${requestId}/request-contract`, { 
+        message,
+        startDate,
+        durationMonths,
+        tenantName,
+        tenantIc,
+        tenantIcIssueDate,
+        tenantIcIssuePlace,
+        tenantPermanentAddress
+      });
+      return response;
+    } catch (error) {
+      console.error('Error requesting contract for rental request:', error);
       throw error;
     }
   },
@@ -125,9 +149,9 @@ export const rentalRequestService = {
     }
   },
 
-  signContract: async (contractId) => {
+  signContract: async (contractId, data) => {
     try {
-      const response = await httpClient.put(`/tenant/contracts/${contractId}/sign`);
+      const response = await httpClient.put(`/tenant/contracts/${contractId}/sign`, data);
       return response;
     } catch (error) {
       console.error('Error signing contract:', error);

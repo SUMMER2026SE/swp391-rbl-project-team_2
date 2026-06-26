@@ -178,7 +178,7 @@ const DepositPaymentPage = () => {
                   onClick={() => setPaymentMethod('vnpay')}
                   style={{ fontWeight: paymentMethod === 'vnpay' ? 'bold' : 'normal' }}
                 >
-                  <img src="https://vnpay.vn/s1/statics.vnpay.vn/2023/6/oxqpsemggw1z1686814746087.png" alt="VNPay" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                  <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-1.png" alt="VNPay" style={{ height: 24, objectFit: 'contain' }} />
                   <span>VNPay (Sandbox)</span>
                 </button>
               </div>

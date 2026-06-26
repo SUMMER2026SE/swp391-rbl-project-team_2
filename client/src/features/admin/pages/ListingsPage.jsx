@@ -11,7 +11,7 @@ import './ListingsPage.css';
 const ListingsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [roomTypeFilter, setRoomTypeFilter] = useState('All');
+
   const [cityFilter, setCityFilter] = useState('All');
   const [districtFilter, setDistrictFilter] = useState('All');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
@@ -35,7 +35,7 @@ const ListingsPage = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, roomTypeFilter, cityFilter, districtFilter, activeTab]);
+  }, [searchTerm, statusFilter, cityFilter, districtFilter, activeTab]);
 
   const fetchListings = async () => {
     try {
@@ -86,11 +86,7 @@ const ListingsPage = () => {
       matchesStatus = item.status.toLowerCase() === statusFilter.toLowerCase();
     }
     
-    let matchesType = true;
-    if (roomTypeFilter !== 'All') {
-      // Assuming item has a type property, adjust if needed (e.g. item.room_type or item.type)
-      matchesType = item.type === roomTypeFilter || item.room_type === roomTypeFilter;
-    }
+
 
     let matchesCity = true;
     if (cityFilter !== 'All') {
@@ -102,11 +98,11 @@ const ListingsPage = () => {
       matchesDistrict = item.district === districtFilter || item.location?.includes(districtFilter);
     }
 
-    return matchesSearch && matchesStatus && matchesType && matchesCity && matchesDistrict;
+    return matchesSearch && matchesStatus && matchesCity && matchesDistrict;
   });
 
   // Extract unique options from listings for filters
-  const uniqueRoomTypes = [...new Set(listings.map(item => item.type || item.room_type).filter(Boolean))];
+
   const uniqueCities = [...new Set(listings.map(item => item.city || (item.location ? item.location.split(', ').pop() : null)).filter(Boolean))];
   // If a city is selected, filter districts by that city, else show all
   const filteredDistricts = cityFilter !== 'All' 
@@ -211,21 +207,7 @@ const ListingsPage = () => {
           </div>
           
           <div className="toolbar-filters">
-            <div className="filter-dropdown-wrapper">
-              <select 
-                className="filter-select"
-                value={roomTypeFilter}
-                onChange={(e) => setRoomTypeFilter(e.target.value)}
-              >
-                <option value="All">All Property Types</option>
-                {uniqueRoomTypes.map(type => (
-                  <option key={type} value={type} style={{ textTransform: 'capitalize' }}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="dropdown-icon" />
-            </div>
+
 
             <div className="filter-dropdown-wrapper">
               <select 

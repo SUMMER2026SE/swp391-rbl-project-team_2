@@ -23,7 +23,7 @@ const RentalRequest = sequelize.define('RentalRequest', {
     references: undefined, // Remove foreign key constraint from model definition
   },
   status: {
-    type: DataTypes.STRING(15),
+    type: DataTypes.STRING(50),
     defaultValue: 'pending',
   },
   requested_move_in_date: {

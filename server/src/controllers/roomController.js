@@ -7,7 +7,7 @@ const { sequelize, Room, RoomImage, Facility, RoomFacility, User } = require('..
 // =========================================================
 const createRoom = async (req, res, next) => {
   try {
-    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, roomType, maxOccupants, bedrooms } = req.body;
+    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants } = req.body;
     const landlordId = req.user.userId;
 
     // Validate required fields
@@ -36,9 +36,9 @@ const createRoom = async (req, res, next) => {
       ward,
       price_per_month: pricePerMonth,
       area_sqm: areaSqm,
-      room_type: roomType || 'single',
-      bedrooms: bedrooms || 1,
-      max_occupants: maxOccupants || 1,
+      room_type: 'private_room',
+      bedrooms: 1,
+      max_occupants: maxOccupants ? Math.min(maxOccupants, 4) : 4,
       status: 'pending', // Requires admin approval
     };
 
@@ -195,7 +195,7 @@ const updateRoom = async (req, res, next) => {
   try {
     const { roomId } = req.params;
     const landlordId = req.user.userId;
-    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, roomType, maxOccupants, bedrooms, status } = req.body;
+    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, status } = req.body;
 
     const room = await Room.findOne({
       where: { room_id: roomId, landlord_id: landlordId, is_deleted: false },
@@ -225,9 +225,7 @@ const updateRoom = async (req, res, next) => {
       room.price_per_month = pricePerMonth;
     }
     if (areaSqm) room.area_sqm = areaSqm;
-    if (roomType) room.room_type = roomType;
-    if (maxOccupants) room.max_occupants = maxOccupants;
-    if (bedrooms) room.bedrooms = bedrooms;
+    if (maxOccupants) room.max_occupants = Math.min(maxOccupants, 4);
     if (status) {
       if (room.status === 'pending' || room.status === 'rejected') {
         return res.status(403).json({
@@ -420,6 +418,14 @@ const getPublicRoomDetails = async (req, res, next) => {
       });
     }
 
+    const postCount = await Room.count({
+      where: { landlord_id: room.landlord_id, is_deleted: false }
+    });
+
+    const rentedRoomCount = await Room.count({
+      where: { landlord_id: room.landlord_id, is_deleted: false, status: 'rented' }
+    });
+
     return res.status(200).json({
       success: true,
       data: {
@@ -441,7 +447,11 @@ const getPublicRoomDetails = async (req, res, next) => {
         thumbnailUrl: room.thumbnail_url,
         images: room.images,
         facilities: room.facilities,
-        landlord: room.landlord,
+        landlord: {
+          ...room.landlord.toJSON(),
+          postCount,
+          rentedRoomCount
+        },
         createdAt: room.created_at,
         updatedAt: room.updated_at,
       },
@@ -463,13 +473,12 @@ const searchRooms = async (req, res, next) => {
       maxPrice,
       minArea,
       maxArea,
-      roomType,
-      bedrooms,
       maxOccupants,
       facilities,
       nearbyFacilities,
       status,
       sort,
+      landlordId,
       page = 1,
       limit = 12,
     } = req.query;
@@ -481,6 +490,10 @@ const searchRooms = async (req, res, next) => {
       where.status = status;
     } else {
       where.status = 'available';
+    }
+
+    if (landlordId) {
+      where.landlord_id = landlordId;
     }
 
     if (keyword) {
@@ -531,22 +544,7 @@ const searchRooms = async (req, res, next) => {
       if (maxArea) where.area_sqm[Op.lte] = parseFloat(maxArea);
     }
 
-    if (roomType) {
-      // roomType maps the UI values directly to database values (either matching ENUM or whatever literal string is saved)
-      const types = roomType.split(',').map(t => t.trim());
-      where.room_type = { [Op.in]: types };
-    }
 
-    if (bedrooms) {
-      const parsedBedrooms = parseInt(bedrooms);
-      if (!isNaN(parsedBedrooms)) {
-        if (bedrooms.includes('+')) {
-          where.bedrooms = { [Op.gte]: parsedBedrooms };
-        } else {
-          where.bedrooms = parsedBedrooms;
-        }
-      }
-    }
 
     if (maxOccupants) {
       const parsedOcc = parseInt(maxOccupants);

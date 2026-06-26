@@ -93,6 +93,7 @@ router.get('/rental-requests', rentalRequestController.getLandlordRentalRequests
 router.get('/rental-requests/:requestId', rentalRequestController.getRentalRequestDetails);
 router.put('/rental-requests/:requestId/approve', rentalRequestController.approveRentalRequest);
 router.put('/rental-requests/:requestId/reject', rentalRequestController.rejectRentalRequest);
+router.post('/rental-requests/:requestId/create-contract', rentalRequestController.createContractFromRequest);
 
 // =========================================================
 // PAYMENT ROUTES
