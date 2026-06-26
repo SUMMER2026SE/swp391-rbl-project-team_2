@@ -68,7 +68,7 @@ const createRentalRequest = async (req, res, next) => {
       status: 'pending',
       message: message || null,
       requested_move_in_date: requestedMoveInDate || null,
-      lease_duration_months: leaseDurationMonths || 12,
+      lease_duration_months: leaseDurationMonths || null,
     });
 
     // Create notification for landlord
@@ -279,9 +279,101 @@ const cancelRentalRequest = async (req, res, next) => {
   }
 };
 
+// =========================================================
+// POST /api/tenant/rental-requests/:requestId/request-contract
+// Tenant requests a contract after rental request is approved
+// =========================================================
+const requestContract = async (req, res, next) => {
+  try {
+    const { requestId } = req.params;
+    const tenantId = req.user.userId;
+    const { message, startDate, durationMonths, tenantName, tenantIc, tenantIcIssueDate, tenantIcIssuePlace, tenantPermanentAddress } = req.body;
+
+    const rentalRequest = await RentalRequest.findOne({
+      where: { request_id: requestId, tenant_id: tenantId },
+      include: [
+        { model: Room, as: 'room' },
+      ],
+    });
+
+    if (!rentalRequest) {
+      return res.status(404).json({ success: false, message: 'Rental request not found.' });
+    }
+
+    if (rentalRequest.status !== 'approved') {
+      return res.status(400).json({ success: false, message: 'Rental request must be approved before requesting a contract.' });
+    }
+
+    // We do not have rental_request_id in Contract, so we just check if there's an existing draft contract for this room and tenant
+    const { Contract } = require('../models');
+    let contract = await Contract.findOne({
+      where: { 
+        room_id: rentalRequest.room_id,
+        tenant_id: tenantId,
+        status: { [require('sequelize').Op.in]: ['draft', 'pending_signature', 'pending_payment'] }
+      }
+    });
+
+    if (contract) {
+      return res.status(400).json({ success: false, message: 'A contract has already been requested or created for this room.' });
+    }
+
+    let end = new Date(startDate);
+    end.setMonth(end.getMonth() + parseInt(durationMonths));
+    
+    // Generate a unique contract number
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+
+    contract = await Contract.create({
+      room_id: rentalRequest.room_id,
+      tenant_id: tenantId,
+      landlord_id: rentalRequest.room.landlord_id,
+      contract_number: `CT-${timestamp}-${random}`,
+      status: 'draft',
+      start_date: startDate,
+      end_date: end,
+      monthly_rent: rentalRequest.room.price_per_month,
+      deposit_amount: rentalRequest.room.price_per_month, // Usually 1 month rent
+      tenant_name: tenantName,
+      tenant_ic: tenantIc,
+      tenant_ic_issue_date: tenantIcIssueDate || null,
+      tenant_ic_issue_place: tenantIcIssuePlace,
+      tenant_permanent_address: tenantPermanentAddress,
+    });
+
+    rentalRequest.status = 'contract_requested';
+    rentalRequest.requested_move_in_date = startDate;
+    rentalRequest.lease_duration_months = parseInt(durationMonths);
+    const safeNow = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    rentalRequest.updated_at = safeNow;
+    await rentalRequest.save();
+
+    await Notification.create({
+      user_id: rentalRequest.room.landlord_id,
+      title: 'Contract Requested',
+      message: `Tenant has requested a contract for "${rentalRequest.room.title}".`,
+      notification_type: 'contract',
+      related_id: contract.contract_id,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Contract requested successfully! Waiting for landlord to draft.',
+      data: {
+        contractId: contract.contract_id,
+        status: contract.status,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createRentalRequest,
   getMyRentalRequests,
   getRentalRequestDetail,
   cancelRentalRequest,
+  requestContract,
 };

@@ -29,6 +29,7 @@ router.post('/rental-requests', tenantRentalRequestController.createRentalReques
 router.get('/rental-requests', tenantRentalRequestController.getMyRentalRequests);
 router.get('/rental-requests/:requestId', tenantRentalRequestController.getRentalRequestDetail);
 router.put('/rental-requests/:requestId/cancel', tenantRentalRequestController.cancelRentalRequest);
+router.post('/rental-requests/:requestId/request-contract', tenantRentalRequestController.requestContract);
 
 // =========================================================
 // PAYMENT ROUTES (Tenant-side)

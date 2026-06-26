@@ -31,13 +31,12 @@ const aiController = {
         - priceMin: Minimum price in VND (number). (e.g. 1M = 1000000)
         - priceMax: Maximum price in VND (number).
         - district: District name.
-        - roomType: 'single', 'double', 'apartment', 'house', 'shared', or null.
-        - bedrooms: Number of bedrooms (integer).
+
         
         User Query: "${query}"
         
         Respond ONLY with a valid JSON object matching this structure:
-        { "keyword": string|null, "priceMin": number|null, "priceMax": number|null, "district": string|null, "roomType": string|null, "bedrooms": number|null }
+        { "keyword": string|null, "priceMin": number|null, "priceMax": number|null, "district": string|null }
       `;
 
       const chatCompletion = await groq.chat.completions.create({
@@ -75,10 +74,11 @@ const aiController = {
         You are a professional AI assistant for a room rental platform named "RoomMaster" in Vietnam.
         CRITICAL RULES:
         1. DO NOT invent, hallucinate, or suggest any rooms that are not explicitly provided in the "CURRENTLY AVAILABLE" list below.
-        2. If the user asks for a room (e.g. in District 1) and there are no matching rooms in the list, you MUST say: "Hiện tại hệ thống chưa có phòng trống phù hợp với yêu cầu của bạn."
-        3. ALWAYS use the exact Price, Title, and Location from the provided list.
-        4. Answer concisely and politely in Vietnamese.
-        5. FORMATTING RULES: Use emojis to make the room information visually appealing. For EACH room you recommend, use this exact format:
+        2. If the user asks for a specific requirement (e.g. District 1) and there are no matching rooms in the list, say: "Hiện tại hệ thống chưa có phòng trống phù hợp với yêu cầu của bạn."
+        3. If the user asks a general question like "phòng còn trống" or "có phòng nào không" (available rooms), you MUST list up to 5 available rooms from the provided list. Do NOT say there are no rooms if the list below is not empty!
+        4. ALWAYS use the exact Price, Title, and Location from the provided list.
+        5. Answer concisely and politely in Vietnamese. Understand Vietnamese without diacritics (e.g. "phong con trong" = "phòng còn trống").
+        6. FORMATTING RULES: Use emojis to make the room information visually appealing. For EACH room you recommend, use this exact format:
            🏠 Tên phòng
            📍 Địa chỉ
            💰 Giá tiền
@@ -90,7 +90,7 @@ const aiController = {
       let roomDataString = "";
       try {
         const availableRooms = await Room.findAll({
-          where: { status: 'available' },
+          where: { status: 'available', is_deleted: false },
           limit: 15,
           order: [['created_at', 'DESC']],
           include: [{ model: Facility, as: 'facilities', attributes: ['facility_name'], through: { attributes: [] } }]
@@ -100,7 +100,8 @@ const aiController = {
           roomDataString = "Here is the list of CURRENTLY AVAILABLE rooms in the database. Use this exact information to advise the tenant. For each room you recommend, ALWAYS include its link at the end so the tenant can view details.\n" + availableRooms.map(r => {
             const facs = r.facilities ? r.facilities.map(f => f.facility_name).join(', ') : 'Không có';
             const link = `http://localhost:5173/rooms/${r.room_id}`;
-            return `- Room ID: ${r.room_id} | Title: "${r.title}" | Price: ${r.price_per_month?.toLocaleString('vi-VN')} VND/month | Location: ${r.address}, ${r.district}, ${r.city} | Type: ${r.room_type} | Area: ${r.area_sqm}m2 | Max Occupants: ${r.max_occupants} | Amenities: ${facs} | Link: ${link}`;
+            const price = r.price_per_month ? Number(r.price_per_month).toLocaleString('vi-VN') : '0';
+            return `- Room ID: ${r.room_id} | Title: "${r.title}" | Price: ${price} VND/month | Location: ${r.address}, ${r.district}, ${r.city} | Area: ${r.area_sqm}m2 | Max Occupants: ${r.max_occupants} | Amenities: ${facs} | Link: ${link}`;
           }).join('\n');
         } else {
           roomDataString = "Currently, there are no available rooms in the database. Tell the user to check back later.";

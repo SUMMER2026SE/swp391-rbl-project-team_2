@@ -60,6 +60,54 @@ const Contract = sequelize.define('Contract', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  landlord_name: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  landlord_ic: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+  },
+  landlord_ic_issue_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+  },
+  landlord_ic_issue_place: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  landlord_permanent_address: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  landlord_signature: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  tenant_name: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  tenant_ic: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+  },
+  tenant_ic_issue_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+  },
+  tenant_ic_issue_place: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  tenant_permanent_address: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  tenant_signature: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
   renewal_contract_id: {
     type: DataTypes.INTEGER,
     allowNull: true,
