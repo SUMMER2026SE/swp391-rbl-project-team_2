@@ -34,11 +34,11 @@ const SearchPage = () => {
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
   const [minArea, setMinArea] = useState(searchParams.get('minArea') || '');
   const [maxArea, setMaxArea] = useState(searchParams.get('maxArea') || '');
-  const [roomType, setRoomType] = useState(searchParams.get('roomType') ? searchParams.get('roomType').split(',') : []);
-  const [bedrooms, setBedrooms] = useState(searchParams.get('bedrooms') || '');
+
   const [maxOccupants, setMaxOccupants] = useState(searchParams.get('maxOccupants') || '');
   const [facilities, setFacilities] = useState(searchParams.get('facilities') ? searchParams.get('facilities').split(',') : []);
   const [nearbyFacilities, setNearbyFacilities] = useState(searchParams.get('nearbyFacilities') ? searchParams.get('nearbyFacilities').split(',') : []);
+  const [landlordId, setLandlordId] = useState(searchParams.get('landlordId') || '');
   const [sectionsExpanded, setSectionsExpanded] = useState({
     basic: true,
     details: false,
@@ -108,15 +108,15 @@ const SearchPage = () => {
     if (maxPrice) params.maxPrice = maxPrice;
     if (minArea) params.minArea = minArea;
     if (maxArea) params.maxArea = maxArea;
-    if (roomType.length > 0) params.roomType = roomType.join(',');
-    if (bedrooms) params.bedrooms = bedrooms;
+
     if (maxOccupants) params.maxOccupants = maxOccupants;
     if (facilities.length > 0) params.facilities = facilities.join(',');
     if (nearbyFacilities.length > 0) params.nearbyFacilities = nearbyFacilities.join(',');
     if (sort) params.sort = sort;
+    if (landlordId) params.landlordId = landlordId;
 
     return params;
-  }, [keyword, city, district, minPrice, maxPrice, minArea, maxArea, roomType, bedrooms, maxOccupants, facilities, nearbyFacilities, sort]);
+  }, [keyword, city, district, minPrice, maxPrice, minArea, maxArea, maxOccupants, facilities, nearbyFacilities, sort, landlordId]);
 
   const updateUrlParams = useCallback((params) => {
     const searchObj = {};
@@ -152,7 +152,7 @@ const SearchPage = () => {
         price: room.pricePerMonth,
         location: [room.address, room.district, room.city].filter(Boolean).join(', '),
         specs: [
-          { icon: 'bed', text: `${room.bedrooms || 1} Beds` },
+          { icon: 'bed', text: `${room.bedrooms || 1} Bed` },
           { icon: 'square', text: `${room.areaSqm || 0} m²` }
         ],
         imageTags: room.status === 'available' ? [{ text: 'Available', type: 'primary' }] : [],
@@ -206,7 +206,7 @@ const SearchPage = () => {
 
     return () => clearTimeout(debounceRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyword, city, district, minPrice, maxPrice, minArea, maxArea, roomType, bedrooms, maxOccupants, facilities, nearbyFacilities, sort]); 
+  }, [keyword, city, district, minPrice, maxPrice, minArea, maxArea, maxOccupants, facilities, nearbyFacilities, sort, landlordId]); 
 
   const handleReset = () => {
     setKeyword('');
@@ -217,12 +217,12 @@ const SearchPage = () => {
     setMaxPrice('');
     setMinArea('');
     setMaxArea('');
-    setRoomType([]);
-    setBedrooms('');
+
     setMaxOccupants('');
     setFacilities([]);
     setNearbyFacilities([]);
     setSort('newest');
+    setLandlordId('');
     
     setTimeout(() => {
        fetchRooms(1, false);
@@ -272,13 +272,7 @@ const SearchPage = () => {
     'Near Bus Station', 'Near Market', 'Near Park', 'Near Convenience Store'
   ];
 
-  const roomTypeMap = [
-    { id: 'single', label: 'Single Room' },
-    { id: 'double', label: 'Double Room' },
-    { id: 'shared', label: 'Shared Room' },
-    { id: 'apartment', label: 'Apartment' },
-    { id: 'house', label: 'House' }
-  ];
+
 
   return (
     <div className="search-page">
@@ -352,25 +346,7 @@ const SearchPage = () => {
                     </select>
                   </div>
 
-                  <div className="filter-item-group">
-                    <label className="filter-item-label">Room Type</label>
-                    <div className="pill-list-selector">
-                      {roomTypeMap.map(type => {
-                        const isSelected = roomType.includes(type.id);
-                        return (
-                          <button
-                            key={type.id}
-                            type="button"
-                            className={`pill-select-item ${isSelected ? 'active' : ''}`}
-                            onClick={() => toggleArrayItem(setRoomType, roomType, type.id)}
-                          >
-                            {isSelected && <Check size={12} />}
-                            <span>{type.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+
                 </div>
               )}
             </div>
@@ -388,17 +364,7 @@ const SearchPage = () => {
               
               {sectionsExpanded.details && (
                 <div className="accordion-content animate-slide-down">
-                  <div className="filter-item-group">
-                    <label className="filter-item-label">Bedrooms</label>
-                    <select className="w-full p-2 border border-gray-300 rounded select-input" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)}>
-                      <option value="">Any</option>
-                      <option value="1">1 Bedroom</option>
-                      <option value="2">2 Bedrooms</option>
-                      <option value="3">3 Bedrooms</option>
-                      <option value="4">4+ Bedrooms</option>
-                    </select>
-                  </div>
-                  
+
                   <div className="filter-item-group">
                     <label className="filter-item-label">Max Occupants</label>
                     <select className="w-full p-2 border border-gray-300 rounded select-input" value={maxOccupants} onChange={(e) => setMaxOccupants(e.target.value)}>

@@ -1,6 +1,7 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import useAuthStore from '../../../store/useAuthStore';
 import { 
   Loader, 
   AlertCircle, 
@@ -31,11 +32,14 @@ import {
 import { rentalRequestService } from '../services/rentalRequestService';
 import Button from '../../../components/common/Button';
 import { ROUTES } from '../../../constants';
+import ContractDocument from '../../../components/ContractDocument';
 import './TenantRequestsPage.css';
 
 const TenantRequestsPage = () => {
-  const [activeTab, setActiveTab] = useState('viewing'); // 'viewing' or 'contracts'
+  const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState('viewing'); // 'viewing', 'requests', or 'contracts'
   const [viewingSchedules, setViewingSchedules] = useState([]);
+  const [rentalRequests, setRentalRequests] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,6 +52,14 @@ const TenantRequestsPage = () => {
   const [contractMessage, setContractMessage] = useState('');
   const [contractStartDate, setContractStartDate] = useState('');
   const [contractDuration, setContractDuration] = useState('6'); // Default 6 months
+  const [tenantName, setTenantName] = useState('');
+  const [tenantIc, setTenantIc] = useState('');
+  const [tenantIcIssueDate, setTenantIcIssueDate] = useState('');
+  const [tenantIcIssuePlace, setTenantIcIssuePlace] = useState('');
+  const [tenantPermanentAddress, setTenantPermanentAddress] = useState('');
+
+  const [selectedContractToSign, setSelectedContractToSign] = useState(null);
+  const [showContractModal, setShowContractModal] = useState(false);
   const [submittingContract, setSubmittingContract] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -63,6 +75,8 @@ const TenantRequestsPage = () => {
   useEffect(() => {
     if (activeTab === 'viewing') {
       fetchViewingSchedules();
+    } else if (activeTab === 'requests') {
+      fetchRentalRequests();
     } else {
       fetchContracts();
     }
@@ -82,6 +96,20 @@ const TenantRequestsPage = () => {
     }
   };
 
+  const fetchRentalRequests = async () => {
+    try {
+      setLoading(true);
+      const response = await rentalRequestService.getMyRequests();
+      const data = response.data?.data || response.data || [];
+      setRentalRequests(data);
+    } catch (err) {
+      console.error(err);
+      setRentalRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchContracts = async () => {
     try {
       setLoading(true);
@@ -96,12 +124,12 @@ const TenantRequestsPage = () => {
     }
   };
 
-  const handleCancel = async (requestId) => {
+  const handleCancelRequest = async (requestId) => {
     if (!window.confirm('Are you sure you want to cancel this request?')) return;
     try {
       await rentalRequestService.cancelRequest(requestId, 'Canceled by tenant');
       toast.success('Request canceled successfully');
-      fetchRequests();
+      fetchRentalRequests();
     } catch (err) {
       toast.error('Failed to cancel request: ' + (err.response?.data?.message || ''));
     }
@@ -196,6 +224,11 @@ const TenantRequestsPage = () => {
     setContractMessage('');
     setContractStartDate('');
     setContractDuration('6');
+    setTenantName(user?.full_name || '');
+    setTenantIc('');
+    setTenantIcIssueDate('');
+    setTenantIcIssuePlace('');
+    setTenantPermanentAddress('');
     setIsContractModalOpen(true);
   };
 
@@ -205,6 +238,11 @@ const TenantRequestsPage = () => {
     setContractMessage('');
     setContractStartDate('');
     setContractDuration('6');
+    setTenantName('');
+    setTenantIc('');
+    setTenantIcIssueDate('');
+    setTenantIcIssuePlace('');
+    setTenantPermanentAddress('');
   };
 
   const handleSubmitContractRequest = async () => {
@@ -221,31 +259,75 @@ const TenantRequestsPage = () => {
       return;
     }
 
+    if (!tenantName || !tenantIc || !tenantIcIssueDate || !tenantIcIssuePlace || !tenantPermanentAddress) {
+      toast.error('Please fill in all identity details for the contract.');
+      return;
+    }
+    if (tenantIc.length !== 12) {
+      toast.error('CCCD must be exactly 12 digits.');
+      return;
+    }
+
     try {
-      setSubmittingContract(true);
-      await rentalRequestService.requestContract(selectedContractSchedule.scheduleId, contractMessage, contractStartDate, contractDuration);
-      toast.success('Contract request sent to landlord!');
-      handleCloseContractRequest();
-      fetchViewingSchedules();
+      setSubmittingDispute(true);
+      // Determine if requesting from a viewing schedule or rental request
+      if (selectedContractSchedule.scheduleId || selectedContractSchedule.schedule_id) {
+        await rentalRequestService.requestContract(
+          selectedContractSchedule.scheduleId || selectedContractSchedule.schedule_id, 
+          contractMessage, contractStartDate, contractDuration, 
+          tenantName, tenantIc, tenantIcIssueDate, tenantIcIssuePlace, tenantPermanentAddress
+        );
+        toast.success('Contract requested successfully. Landlord will draft it shortly.');
+        handleCloseContractRequest();
+        fetchViewingSchedules();
+      } else if (selectedContractSchedule.requestId || selectedContractSchedule.request_id) {
+        await rentalRequestService.requestContractForRentalRequest(
+          selectedContractSchedule.requestId || selectedContractSchedule.request_id, 
+          contractMessage, contractStartDate, contractDuration, 
+          tenantName, tenantIc, tenantIcIssueDate, tenantIcIssuePlace, tenantPermanentAddress
+        );
+        toast.success('Contract requested successfully. Landlord will draft it shortly.');
+        handleCloseContractRequest();
+        fetchRentalRequests();
+      }
     } catch (err) {
       toast.error('Failed to request contract: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmittingDispute(false);
+    }
+  };
+
+  const handleSignContract = (contract) => {
+    setSelectedContractToSign(contract);
+    setShowContractModal(true);
+  };
+
+  const proceedToSignContractInline = async (contract, signatureDataUrl) => {
+    const { contractId, roomId } = contract;
+    try {
+      setSubmittingContract(true);
+      await rentalRequestService.signContract(contractId, { tenantSignature: signatureDataUrl });
+      navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${roomId}&contractId=${contractId}`);
+    } catch (err) {
+      toast.error('Failed to sign contract: ' + (err.response?.data?.message || err.message));
     } finally {
       setSubmittingContract(false);
     }
   };
 
-  const handleSignContract = (contractId, roomId) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Sign Contract',
-      message: 'You will be redirected to the payment page to pay the deposit and first month rent. Once paid, the contract will be signed and the rental will be active.',
-      confirmText: 'Proceed to Payment',
-      cancelText: 'Cancel',
-      type: 'primary',
-      onConfirm: () => {
-        navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${roomId}&contractId=${contractId}`);
-      }
-    });
+  const proceedToSignContract = async (signatureDataUrl) => {
+    if (!selectedContractToSign) return;
+    const { contractId, roomId } = selectedContractToSign;
+    try {
+      setSubmittingContract(true);
+      await rentalRequestService.signContract(contractId, { tenantSignature: signatureDataUrl });
+      setSelectedContractToSign(null);
+      navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${roomId}&contractId=${contractId}`);
+    } catch (err) {
+      toast.error('Failed to sign contract: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmittingContract(false);
+    }
   };
 
   const handleCancelContract = (contractId) => {
@@ -360,6 +442,12 @@ const TenantRequestsPage = () => {
             onClick={() => setActiveTab('viewing')}
           >
             <Eye size={16} /> Viewing Schedules
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`}
+            onClick={() => setActiveTab('requests')}
+          >
+            <Home size={16} /> Rental Requests
           </button>
           <button 
             className={`tab-btn ${activeTab === 'contracts' ? 'active' : ''}`}
@@ -531,6 +619,108 @@ const TenantRequestsPage = () => {
           </div>
         ))}
 
+        {/* =================== RENTAL REQUESTS TAB =================== */}
+        {activeTab === 'requests' && (rentalRequests.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon-wrapper">
+              <Home size={40} />
+            </div>
+            <h3>No rental requests</h3>
+            <p>You haven't submitted any rental requests yet. Browse rooms and send a request!</p>
+            <Button onClick={() => navigate(ROUTES.ROOMS)} className="btn-browse">
+              Browse Rooms
+            </Button>
+          </div>
+        ) : (
+          <div className="requests-list">
+            {rentalRequests.map((request) => {
+              const statusInfo = getStatusInfo(request.status);
+              const primaryImage = request.room?.thumbnail_url || (request.room?.images?.find(img => img.is_primary)?.image_url || request.room?.images?.[0]?.image_url);
+              const roomImage = primaryImage
+                ? (primaryImage.startsWith('http') ? primaryImage : `http://localhost:5000${primaryImage}`) 
+                : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80';
+              
+              const requestDate = new Date(request.createdAt || Date.now()).toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric'
+              });
+
+              return (
+                <div key={request.requestId} className="request-card">
+                  <div className="request-image-wrapper">
+                    <img src={roomImage} alt={request.room?.title || 'Room'} />
+                    <div className="status-badge-container">
+                      <div className={`status-badge ${request.status}`} style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
+                        {statusInfo.icon}
+                        {statusInfo.label}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="request-content">
+                    <div className="request-top-info">
+                      <div className="title-row">
+                        <h3 
+                          onClick={() => navigate(`${ROUTES.ROOMS}/${request.roomId}`)}
+                          style={{ cursor: 'pointer', color: '#2563eb' }}
+                          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                        >
+                          {request.room?.title || 'Unknown Room'}
+                        </h3>
+                        <span className="request-date">Requested on {requestDate}</span>
+                      </div>
+                      <div className="address-row">
+                        <MapPin size={14} />
+                        <span>{[request.room?.address, request.room?.ward, request.room?.district, request.room?.city].filter(Boolean).join(', ') || 'Address not available'}</span>
+                      </div>
+                    </div>
+
+                    <div className="key-details-box">
+                      <div className="detail-item">
+                        <p className="detail-label">Move-in Date</p>
+                        <div className="detail-value">
+                          <Calendar size={16} />
+                          {request.requestedMoveInDate ? new Date(request.requestedMoveInDate).toLocaleDateString('en-US') : 'TBD'}
+                        </div>
+                      </div>
+
+                      <div className="detail-item">
+                        <p className="detail-label">Duration</p>
+                        <div className="detail-value">
+                          <Clock size={16} />
+                          {request.leaseDurationMonths || 6} months
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="request-actions-row">
+                      <div className="action-buttons">
+                        {request.status === 'pending' && (
+                          <button onClick={() => handleCancelRequest(request.requestId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
+                            <X size={16} /> Cancel Request
+                          </button>
+                        )}
+
+                        {request.status === 'approved' && (
+                          <button onClick={() => handleOpenContractRequest(request)} className="btn-action btn-contract">
+                            <FileSignature size={16} /> Request Contract
+                          </button>
+                        )}
+                        
+                        {request.status === 'contract_requested' && (
+                          <div className="status-message-inline">
+                            <Clock size={14} /> Waiting for landlord to create contract...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+
         {/* =================== CONTRACTS TAB =================== */}
         {activeTab === 'contracts' && (contracts.length === 0 ? (
           <div className="empty-state">
@@ -544,153 +734,109 @@ const TenantRequestsPage = () => {
             </Button>
           </div>
         ) : (
-          <div className="requests-list">
-            {contracts.map((contract) => {
-              const statusInfo = getStatusInfo(contract.status);
-              
-              const startDate = contract.startDate 
-                ? new Date(contract.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                : 'N/A';
-              const endDate = contract.endDate 
-                ? new Date(contract.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                : 'N/A';
+          <div className="contracts__table-container" style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+            <table className="contracts__table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <tr>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Landlord</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Room</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Move-in Date</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Duration</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Status</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contracts.map((contract) => {
+                  const statusInfo = getStatusInfo(contract.status);
+                  
+                  const isValidDate = (d) => d && !isNaN(new Date(d).getTime());
+                  const startDate = isValidDate(contract.startDate)
+                    ? new Date(contract.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : 'N/A';
+                  
+                  const duration = contract.startDate && contract.endDate 
+                    ? Math.round((new Date(contract.endDate) - new Date(contract.startDate)) / (1000 * 60 * 60 * 24 * 30))
+                    : 0;
 
-              return (
-                <div key={contract.contractId} className="request-card contract-card">
-                  <div className="request-content" style={{ flex: 1 }}>
-                    <div className="request-top-info">
-                      <div className="title-row">
-                        <h3>
-                          <FileText size={18} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />
-                          Contract #{contract.contractNumber}
-                        </h3>
-                        <div className={`status-badge ${contract.status}`} style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
+                  return (
+                    <tr key={contract.contractId} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#e2e8f0', flexShrink: 0 }}>
+                            {contract.landlord?.avatar_url ? (
+                              <img src={contract.landlord.avatar_url} alt={contract.landlord?.full_name || 'Landlord'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 600, fontSize: '16px' }}>
+                                {contract.landlord?.full_name ? contract.landlord.full_name.charAt(0) : 'L'}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 500, color: '#2563eb', marginBottom: '2px' }}>{contract.landlord?.full_name || 'N/A'}</div>
+                            <div style={{ fontSize: '13px', color: '#2563eb' }}>{contract.landlord?.email || 'N/A'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '16px', fontSize: '14px', color: '#2563eb' }}>
+                        {contract.room && (
+                          <span 
+                            onClick={() => navigate(`${ROUTES.ROOMS}/${contract.roomId}`)}
+                            style={{ cursor: 'pointer' }}
+                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                          >
+                            {contract.room.title}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
+                        {startDate}
+                      </td>
+                      <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
+                        {duration} months
+                      </td>
+                      <td style={{ padding: '16px' }}>
+                        <div className={`status-badge ${contract.status}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: statusInfo.bg, color: statusInfo.color, fontWeight: '600', fontSize: '12px', border: `1px solid ${statusInfo.color}33` }}>
                           {statusInfo.icon}
                           {statusInfo.label}
                         </div>
-                      </div>
-                      {contract.room && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px' }}>
-                          <div className="address-row" style={{ color: '#4b5563', fontSize: '14px', display: 'flex', alignItems: 'flex-start', gap: '6px', lineHeight: 1.5 }}>
-                            <Home size={16} style={{ color: '#6b7280', marginTop: '2px', flexShrink: 0 }} />
-                            <span 
-                              onClick={() => navigate(`${ROUTES.ROOMS}/${contract.roomId}`)}
-                              style={{ cursor: 'pointer', color: '#2563eb' }}
-                              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                      </td>
+                      <td style={{ padding: '16px' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => handleSignContract(contract)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '6px',
+                              padding: '6px 12px', background: contract.status === 'pending_signature' ? '#2563eb' : '#f8fafc', 
+                              border: contract.status === 'pending_signature' ? 'none' : '1px solid #cbd5e1',
+                              borderRadius: '6px', color: contract.status === 'pending_signature' ? 'white' : '#475569', 
+                              fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                            }}
+                          >
+                            <FileText size={14} /> View Contract
+                          </button>
+                          {contract.status === 'pending_payment' && (
+                            <button
+                              onClick={() => navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${contract.roomId}&contractId=${contract.contractId}`)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '6px 12px', background: '#7c3aed', 
+                                border: 'none',
+                                borderRadius: '6px', color: 'white', 
+                                fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                              }}
                             >
-                              <strong>{contract.room.title}</strong>
-                            </span>
-                          </div>
-                          <div className="address-row" style={{ color: '#6b7280', fontSize: '13px', display: 'flex', alignItems: 'flex-start', gap: '6px', lineHeight: 1.5 }}>
-                            <MapPin size={16} style={{ color: '#9ca3af', marginTop: '2px', flexShrink: 0 }} />
-                            <span>
-                              {contract.room.address}, {contract.room.ward}, {contract.room.district}, {contract.room.city}
-                              {contract.room.area_sqm ? ` • ${contract.room.area_sqm}m²` : ''}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="key-details-box">
-                      <div className="detail-item">
-                        <p className="detail-label">Start Date</p>
-                        <div className="detail-value">
-                          <Calendar size={16} />
-                          {startDate}
-                        </div>
-                      </div>
-                      <div className="detail-item">
-                        <p className="detail-label">End Date</p>
-                        <div className="detail-value">
-                          <Calendar size={16} />
-                          {endDate}
-                        </div>
-                      </div>
-                      <div className="detail-item">
-                        <p className="detail-label">Monthly Rent</p>
-                        <div className="detail-value deposit-value">
-                          <DollarSign size={16} />
-                          {parseFloat(contract.monthlyRent).toLocaleString('vi-VN')} VND
-                        </div>
-                      </div>
-                      {contract.room && (
-                        <>
-                          <div className="detail-item">
-                            <p className="detail-label">Room Type</p>
-                            <div className="detail-value" style={{ textTransform: 'capitalize' }}>
-                              <Layout size={16} />
-                              {contract.room.room_type.replace('_', ' ')}
-                            </div>
-                          </div>
-                          <div className="detail-item">
-                            <p className="detail-label">Bedrooms</p>
-                            <div className="detail-value">
-                              <Bed size={16} />
-                              {contract.room.bedrooms}
-                            </div>
-                          </div>
-                          <div className="detail-item">
-                            <p className="detail-label">Max Occupants</p>
-                            <div className="detail-value">
-                              <Users size={16} />
-                              {contract.room.max_occupants}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                      {contract.landlord && (
-                        <div className="detail-item">
-                          <p className="detail-label">Landlord</p>
-                          <div className="detail-value">
-                            <User size={16} />
-                            {contract.landlord.full_name}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {contract.termsAndConditions && (
-                      <div className="contract-terms-preview">
-                        <strong>Terms:</strong> {contract.termsAndConditions.substring(0, 200)}
-                        {contract.termsAndConditions.length > 200 && '...'}
-                      </div>
-                    )}
-
-                    <div className="request-actions-row">
-                      <div className="action-buttons">
-                        {contract.status === 'pending_signature' && (
-                          <>
-                            <button onClick={() => handleSignContract(contract.contractId, contract.roomId)} className="btn-action btn-sign">
-                              <FileSignature size={16} /> Sign Contract
+                              <CreditCard size={14} /> Pay Deposit
                             </button>
-                            <button onClick={() => handleCancelContract(contract.contractId)} className="btn-action btn-cancel" style={{ color: '#DC2626', borderColor: '#DC2626', background: 'transparent' }}>
-                              <XCircle size={16} /> Delete
-                            </button>
-                          </>
-                        )}
-                        {contract.status === 'cancelled' && (
-                          <button onClick={() => handleCancelContract(contract.contractId)} className="btn-action btn-cancel" style={{ color: '#DC2626', borderColor: '#DC2626', background: 'transparent' }}>
-                            <XCircle size={16} /> Delete
-                          </button>
-                        )}
-                        {contract.status === 'active' && (
-                          <div className="status-message-inline success">
-                            <CheckCircle2 size={14} /> Contract is active
-                          </div>
-                        )}
-                        {contract.room && (
-                          <button onClick={() => navigate(`${ROUTES.ROOMS}/${contract.roomId}`)} className="btn-action btn-view">
-                            View Room <ChevronRight size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ))}
       </div>
@@ -739,8 +885,8 @@ const TenantRequestsPage = () => {
 
       {/* =================== CONTRACT REQUEST MODAL =================== */}
       {isContractModalOpen && selectedContractSchedule && (
-        <div className="modal-overlay" onClick={handleCloseContractRequest}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '90%', background: '#fff', borderRadius: '16px', padding: '28px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+        <div className="modal-overlay" onClick={handleCloseContractRequest} style={{ overflowY: 'auto', padding: '20px 0' }}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%', background: '#fff', borderRadius: '16px', padding: '28px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', margin: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <FileSignature size={20} style={{ color: '#059669' }} />
@@ -783,6 +929,65 @@ const TenantRequestsPage = () => {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '20px 0 12px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>Tenant Information (For Contract)</h3>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Full Name *</label>
+              <input 
+                type="text" 
+                value={tenantName}
+                onChange={(e) => setTenantName(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                placeholder="Nguyễn Văn A"
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>CCCD/CMND (12 digits) *</label>
+                <input 
+                  type="text" 
+                  maxLength={12}
+                  value={tenantIc}
+                  onChange={(e) => setTenantIc(e.target.value.replace(/\D/g, ''))}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                  placeholder="012345678901"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Date *</label>
+                <input 
+                  type="date" 
+                  value={tenantIcIssueDate}
+                  onChange={(e) => setTenantIcIssueDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Place *</label>
+              <input 
+                type="text" 
+                value={tenantIcIssuePlace}
+                onChange={(e) => setTenantIcIssuePlace(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                placeholder="Cục Cảnh sát Quản lý hành chính về trật tự xã hội"
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Permanent Address *</label>
+              <input 
+                type="text" 
+                value={tenantPermanentAddress}
+                onChange={(e) => setTenantPermanentAddress(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                placeholder="123 Duong ABC, Phuong XYZ, Quan 1, TP HCM"
+              />
             </div>
 
             <textarea
@@ -862,6 +1067,30 @@ const TenantRequestsPage = () => {
                 {confirmDialog.confirmText}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Contract Document Modal */}
+      {showContractModal && selectedContractToSign && (
+        <div className="modal-backdrop" onClick={() => setShowContractModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', padding: '40px 20px', overflowY: 'auto', display: 'block' }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative' }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowContractModal(false)}
+              style={{ position: 'absolute', top: '10px', right: '10px', background: '#fff', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}
+            >
+              <X size={20} color="#475569" />
+            </button>
+            <ContractDocument 
+              contract={selectedContractToSign}
+              role="tenant"
+              onSign={proceedToSignContractInline}
+              onCancel={(id) => {
+                setShowContractModal(false);
+                handleCancelContract(id);
+              }}
+            />
           </div>
         </div>
       )}

@@ -27,7 +27,7 @@ const FavoritesPage = () => {
             price: room.price_per_month,
             location: [room.address, room.district, room.city].filter(Boolean).join(', '),
             specs: [
-              { icon: 'bed', text: `${room.bedrooms || 1} Beds` },
+              { icon: 'bed', text: `${room.bedrooms || 1} Bed` },
               { icon: 'square', text: `${room.area_sqm || 0} m²` }
             ],
             imageTags: room.status === 'available' ? [{ text: 'Available', type: 'primary' }] : [],
