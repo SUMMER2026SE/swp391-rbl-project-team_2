@@ -17,6 +17,7 @@ const messageController = require('../controllers/messageController');
 const notificationController = require('../controllers/notificationController');
 const dashboardController = require('../controllers/dashboardController');
 const landlordProfileController = require('../controllers/landlordProfileController');
+const propertyController = require('../controllers/propertyController');
 
 // =========================================================
 // MULTER CONFIGURATION
@@ -59,6 +60,17 @@ router.get('/dashboard/statistics', dashboardController.getDashboardStatistics);
 router.get('/dashboard/recent-activity', dashboardController.getRecentActivity);
 router.get('/dashboard/revenue-chart', dashboardController.getRevenueChart);
 router.get('/dashboard/room-status', dashboardController.getRoomStatusDistribution);
+
+// =========================================================
+// PROPERTY ROUTES (Multi-property management)
+// =========================================================
+router.post('/properties', upload.single('image'), propertyController.createProperty);
+router.get('/properties', propertyController.getProperties);
+router.get('/properties/:propertyId', propertyController.getPropertyDetails);
+router.put('/properties/:propertyId', upload.single('image'), propertyController.updateProperty);
+router.delete('/properties/:propertyId', propertyController.deleteProperty);
+router.get('/properties/:propertyId/dashboard', propertyController.getPropertyDashboard);
+router.post('/properties/:propertyId/rooms/duplicate', propertyController.duplicateRoom);
 
 // =========================================================
 // ROOM ROUTES

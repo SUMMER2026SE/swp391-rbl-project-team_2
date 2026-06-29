@@ -2,8 +2,10 @@ const { Sequelize } = require('sequelize');
 const moment = require('moment');
 require('dotenv').config();
 
-// Removed custom _stringify to ensure dates are correctly stored as UTC in DB
-
+// Override Sequelize date format to be compatible with MSSQL DATETIME column
+Sequelize.DATE.prototype._stringify = function _stringify(date, options) {
+  return this._applyTimezone(date, options).format('YYYY-MM-DD HH:mm:ss.SSS');
+};
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,

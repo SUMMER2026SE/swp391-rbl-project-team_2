@@ -36,7 +36,8 @@ import './Sidebar.css';
 // ── Menu configs per role ──
 const LANDLORD_NAV = [
   { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.LANDLORD.DASHBOARD },
-  { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
+  { icon: <Building2 size={20} />, label: 'Properties', path: ROUTES.LANDLORD.PROPERTIES },
+  { icon: <Home size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
   { icon: <CreditCard size={20} />, label: 'Deposits', path: ROUTES.LANDLORD.DEPOSITS },
   { icon: <FileText size={20} />, label: 'Contracts', path: ROUTES.LANDLORD.CONTRACTS },
   { icon: <ClipboardList size={20} />, label: 'Rental Requests', path: ROUTES.LANDLORD.REQUESTS },

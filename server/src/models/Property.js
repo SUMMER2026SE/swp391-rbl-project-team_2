@@ -1,8 +1,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const Room = sequelize.define('Room', {
-  room_id: {
+const Property = sequelize.define('Property', {
+  property_id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
@@ -11,19 +11,7 @@ const Room = sequelize.define('Room', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  property_id: {
-    type: DataTypes.INTEGER,
-    allowNull: true, // null = standalone room (not part of a property/building)
-  },
-  floor: {
-    type: DataTypes.INTEGER,
-    allowNull: true, // null = standalone room
-  },
-  room_number: {
-    type: DataTypes.STRING(20),
-    allowNull: true, // e.g. "101", "202", etc.
-  },
-  title: {
+  name: {
     type: DataTypes.STRING(255),
     allowNull: false,
   },
@@ -47,37 +35,18 @@ const Room = sequelize.define('Room', {
     type: DataTypes.STRING(100),
     allowNull: true,
   },
-  price_per_month: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false,
-  },
-  area_sqm: {
-    type: DataTypes.DECIMAL(8, 2),
+  total_floors: {
+    type: DataTypes.INTEGER,
     allowNull: true,
-  },
-  room_type: {
-    type: DataTypes.STRING(20),
-    defaultValue: 'private_room',
-  },
-  bedrooms: {
-    type: DataTypes.INTEGER,
     defaultValue: 1,
-  },
-  max_occupants: {
-    type: DataTypes.INTEGER,
-    defaultValue: 4,
-  },
-  status: {
-    type: DataTypes.STRING(15),
-    defaultValue: 'available',
   },
   thumbnail_url: {
     type: DataTypes.STRING(500),
     allowNull: true,
   },
-  rejection_reason: {
-    type: DataTypes.STRING(1000),
-    allowNull: true,
+  status: {
+    type: DataTypes.STRING(15),
+    defaultValue: 'active',
   },
   is_deleted: {
     type: DataTypes.BOOLEAN,
@@ -92,7 +61,7 @@ const Room = sequelize.define('Room', {
     defaultValue: DataTypes.NOW,
   },
 }, {
-  tableName: 'rooms',
+  tableName: 'properties',
   timestamps: false,
   indexes: [
     {
@@ -104,4 +73,4 @@ const Room = sequelize.define('Room', {
   ],
 });
 
-module.exports = Room;
+module.exports = Property;

@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { sequelize, Room, RoomImage, Facility, RoomFacility, User } = require('../models');
+const { sequelize, Room, RoomImage, Facility, RoomFacility, User, Property } = require('../models');
 
 // =========================================================
 // POST /api/landlord/rooms
@@ -7,7 +7,7 @@ const { sequelize, Room, RoomImage, Facility, RoomFacility, User } = require('..
 // =========================================================
 const createRoom = async (req, res, next) => {
   try {
-    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants } = req.body;
+    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, propertyId, floor, roomNumber } = req.body;
     const landlordId = req.user.userId;
 
     // Validate required fields
@@ -40,6 +40,9 @@ const createRoom = async (req, res, next) => {
       bedrooms: 1,
       max_occupants: maxOccupants ? Math.min(maxOccupants, 4) : 4,
       status: 'pending', // Requires admin approval
+      property_id: propertyId || null,
+      floor: floor || null,
+      room_number: roomNumber || null,
     };
 
     if (req.file) {
@@ -94,6 +97,7 @@ const getLandlordRooms = async (req, res, next) => {
       include: [
         { model: RoomImage, as: 'images' },
         { model: Facility, as: 'facilities', through: { attributes: [] } },
+        { model: Property, as: 'property', attributes: ['property_id', 'name', 'address', 'city', 'district'] },
       ],
       offset,
       limit: parseInt(limit),
@@ -117,6 +121,10 @@ const getLandlordRooms = async (req, res, next) => {
         bedrooms: room.bedrooms,
         status: room.status,
         thumbnailUrl: room.thumbnail_url,
+        propertyId: room.property_id,
+        floor: room.floor,
+        roomNumber: room.room_number,
+        property: room.property,
         images: room.images,
         facilities: room.facilities,
         createdAt: room.created_at,
@@ -195,7 +203,7 @@ const updateRoom = async (req, res, next) => {
   try {
     const { roomId } = req.params;
     const landlordId = req.user.userId;
-    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, status } = req.body;
+    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, status, roomNumber } = req.body;
 
     const room = await Room.findOne({
       where: { room_id: roomId, landlord_id: landlordId, is_deleted: false },
@@ -226,6 +234,7 @@ const updateRoom = async (req, res, next) => {
     }
     if (areaSqm) room.area_sqm = areaSqm;
     if (maxOccupants) room.max_occupants = Math.min(maxOccupants, 4);
+    if (roomNumber !== undefined) room.room_number = roomNumber || null;
     if (status) {
       if (room.status === 'pending' || room.status === 'rejected') {
         return res.status(403).json({

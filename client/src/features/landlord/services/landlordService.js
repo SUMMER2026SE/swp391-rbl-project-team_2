@@ -32,6 +32,17 @@ export const landlordService = {
     }
   },
 
+  // ===== PROPERTIES MANAGEMENT =====
+  getPropertyDetails: async (propertyId) => {
+    try {
+      const response = await httpClient.get(`/landlord/properties/${propertyId}`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching property details:', error);
+      throw error;
+    }
+  },
+
   // ===== ROOMS MANAGEMENT =====
   getRooms: async (params = {}) => {
     try {
@@ -151,7 +162,7 @@ export const landlordService = {
     }
   },
 
-  // ===== PROPERTIES MANAGEMENT (Legacy - kept for compatibility) =====
+  // ===== PROPERTIES MANAGEMENT (Multi-property) =====
   getProperties: async (params = {}) => {
     try {
       const response = await httpClient.get('/landlord/properties', { params });
@@ -162,9 +173,21 @@ export const landlordService = {
     }
   },
 
+  getPropertyById: async (id) => {
+    try {
+      const response = await httpClient.get(`/landlord/properties/${id}`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching property:', error);
+      throw error;
+    }
+  },
+
   createProperty: async (data) => {
     try {
-      const response = await httpClient.post('/landlord/properties', data);
+      const isFormData = data instanceof FormData;
+      const headers = isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined;
+      const response = await httpClient.post('/landlord/properties', data, { headers });
       return response;
     } catch (error) {
       console.error('Error creating property:', error);
@@ -174,7 +197,9 @@ export const landlordService = {
 
   updateProperty: async (id, data) => {
     try {
-      const response = await httpClient.put(`/landlord/properties/${id}`, data);
+      const isFormData = data instanceof FormData;
+      const headers = isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined;
+      const response = await httpClient.put(`/landlord/properties/${id}`, data, { headers });
       return response;
     } catch (error) {
       console.error('Error updating property:', error);
@@ -188,6 +213,26 @@ export const landlordService = {
       return response;
     } catch (error) {
       console.error('Error deleting property:', error);
+      throw error;
+    }
+  },
+
+  getPropertyDashboard: async (id) => {
+    try {
+      const response = await httpClient.get(`/landlord/properties/${id}/dashboard`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching property dashboard:', error);
+      throw error;
+    }
+  },
+
+  duplicateRoom: async (propertyId, data) => {
+    try {
+      const response = await httpClient.post(`/landlord/properties/${propertyId}/rooms/duplicate`, data);
+      return response;
+    } catch (error) {
+      console.error('Error duplicating room:', error);
       throw error;
     }
   },

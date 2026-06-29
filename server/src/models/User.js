@@ -31,6 +31,22 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(500),
     allowNull: true,
   },
+  ic_number: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+  },
+  ic_issue_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+  },
+  ic_issue_place: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  permanent_address: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+  },
   google_id: {
     type: DataTypes.STRING(255),
     allowNull: true,

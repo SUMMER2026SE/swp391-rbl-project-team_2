@@ -39,7 +39,7 @@ const LandlordProfilePage = () => {
 
   // Edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({ fullName: '', phone: '' });
+  const [editForm, setEditForm] = useState({ fullName: '', phone: '', icNumber: '', icIssueDate: '', icIssuePlace: '', permanentAddress: '' });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
   const [phoneError, setPhoneError] = useState('');
@@ -105,6 +105,10 @@ const LandlordProfilePage = () => {
     setEditForm({
       fullName: displayProfile.fullName || displayProfile.full_name || '',
       phone: displayProfile.phone || '',
+      icNumber: displayProfile.icNumber || '',
+      icIssueDate: displayProfile.icIssueDate ? new Date(displayProfile.icIssueDate).toISOString().split('T')[0] : '',
+      icIssuePlace: displayProfile.icIssuePlace || '',
+      permanentAddress: displayProfile.permanentAddress || '',
     });
     setEditError('');
     setPhoneError('');
@@ -140,9 +144,13 @@ const LandlordProfilePage = () => {
     setEditSuccess('');
 
     try {
-      const response = await httpClient.put('/user/profile', {
+      const response = await landlordService.updateProfile({
         fullName: editForm.fullName,
         phone: editForm.phone,
+        icNumber: editForm.icNumber,
+        icIssueDate: editForm.icIssueDate,
+        icIssuePlace: editForm.icIssuePlace,
+        permanentAddress: editForm.permanentAddress,
       });
 
       const updatedData = response.data || response;
@@ -327,6 +335,49 @@ const LandlordProfilePage = () => {
               </div>
             </div>
           </div>
+
+          {/* Identity Details */}
+          <div className="profile-section-card" style={{ marginTop: '1.5rem' }}>
+            <div className="section-card-header">
+              <h2 className="section-card-title">Identity Details (For Contracts)</h2>
+            </div>
+            <div className="section-card-body pt-1">
+              <div className="contact-info-list">
+                <div className="contact-info-item">
+                  <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '12px' }}>🆔</span>
+                  </div>
+                  <div>
+                    <span className="contact-label">CCCD/CMND</span>
+                    <span className="contact-val">{displayProfile.icNumber || 'Not provided'}</span>
+                  </div>
+                </div>
+                <div className="contact-info-item">
+                  <Calendar size={16} className="contact-icon" />
+                  <div>
+                    <span className="contact-label">Issue Date</span>
+                    <span className="contact-val">
+                      {displayProfile.icIssueDate ? new Date(displayProfile.icIssueDate).toLocaleDateString() : 'Not provided'}
+                    </span>
+                  </div>
+                </div>
+                <div className="contact-info-item">
+                  <MapPin size={16} className="contact-icon" />
+                  <div>
+                    <span className="contact-label">Issue Place</span>
+                    <span className="contact-val">{displayProfile.icIssuePlace || 'Not provided'}</span>
+                  </div>
+                </div>
+                <div className="contact-info-item">
+                  <Home size={16} className="contact-icon" />
+                  <div>
+                    <span className="contact-label">Permanent Address</span>
+                    <span className="contact-val">{displayProfile.permanentAddress || 'Not provided'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Column */}
@@ -418,6 +469,50 @@ const LandlordProfilePage = () => {
                     {phoneError}
                   </span>
                 )}
+              </div>
+
+              <div style={{ margin: '20px 0', borderTop: '1px solid #e2e8f0' }}></div>
+              <h4 style={{ marginBottom: '16px', fontSize: '15px', color: '#334155', fontWeight: '600' }}>Identity Information (For Contracts)</h4>
+
+              <div className="edit-form-group">
+                <label>CCCD/CMND (12 digits)</label>
+                <input
+                  type="text"
+                  maxLength={12}
+                  value={editForm.icNumber}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, icNumber: e.target.value.replace(/\D/g, '') }))}
+                  placeholder="Enter 12 digit ID number"
+                />
+              </div>
+
+              <div className="edit-form-group">
+                <label>Issue Date</label>
+                <input
+                  type="date"
+                  value={editForm.icIssueDate}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, icIssueDate: e.target.value }))}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+
+              <div className="edit-form-group">
+                <label>Issue Place</label>
+                <input
+                  type="text"
+                  value={editForm.icIssuePlace}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, icIssuePlace: e.target.value }))}
+                  placeholder="e.g. Cục Cảnh sát QLHC về TTXH"
+                />
+              </div>
+
+              <div className="edit-form-group">
+                <label>Permanent Address</label>
+                <input
+                  type="text"
+                  value={editForm.permanentAddress}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, permanentAddress: e.target.value }))}
+                  placeholder="Enter your permanent address"
+                />
               </div>
 
               {editError && (

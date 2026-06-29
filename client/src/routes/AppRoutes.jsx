@@ -43,6 +43,9 @@ import {
   PaymentsPage,
   ContractsPage,
   ComplaintsPage,
+  PropertiesPage,
+  PropertyDashboardPage,
+  AddPropertyPage,
 } from '../features/landlord';
 
 import ViewingSchedulesPage from '../features/landlord/pages/ViewingSchedulesPage';
@@ -145,6 +148,9 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.CONTRACTS} element={<ContractsPage />} />
         <Route path={ROUTES.LANDLORD.SCHEDULES} element={<ViewingSchedulesPage />} />
         <Route path={ROUTES.LANDLORD.COMPLAINTS} element={<ComplaintsPage />} />
+        <Route path={ROUTES.LANDLORD.PROPERTIES} element={<PropertiesPage />} />
+        <Route path={ROUTES.LANDLORD.NEW_PROPERTY} element={<AddPropertyPage />} />
+        <Route path={ROUTES.LANDLORD.PROPERTY_DASHBOARD} element={<PropertyDashboardPage />} />
         <Route path={ROUTES.LANDLORD.TERMS} element={<TermsPage />} />
       
       </Route>

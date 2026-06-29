@@ -15,6 +15,9 @@ export { default as RentalRequestsPage } from './pages/RentalRequestsPage';
 export { default as PaymentsPage } from './pages/PaymentsPage';
 export { default as ContractsPage } from './pages/ContractsPage';
 export { default as ComplaintsPage } from './pages/ComplaintsPage';
+export { default as PropertiesPage } from './pages/PropertiesPage';
+export { default as PropertyDashboardPage } from './pages/PropertyDashboardPage';
+export { default as AddPropertyPage } from './pages/AddPropertyPage';
 
 // Hooks
 export { default as useLandlordStats } from './hooks/useLandlordStats';

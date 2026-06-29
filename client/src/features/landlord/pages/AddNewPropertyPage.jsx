@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,17 +23,21 @@ import './AddNewPropertyPage.css';
 
 const AddNewPropertyPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [provincesList, setProvincesList] = useState([]);
   const [districtsList, setDistrictsList] = useState([]);
+  const [propertyInherited, setPropertyInherited] = useState(false);
+  const propertyIdParam = searchParams.get('propertyId');
 
   // Form State
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
     title: '',
+    roomNumber: '',
     description: '',
     size: '',
     maxOccupants: '',
@@ -77,6 +81,25 @@ const AddNewPropertyPage = () => {
       })
       .catch(err => console.error("Error fetching provinces", err));
   }, []);
+
+  useEffect(() => {
+    if (propertyIdParam) {
+      landlordService.getPropertyDetails(propertyIdParam)
+        .then(res => {
+          const property = res.data?.property || res.data;
+          if (property) {
+            setFormData(prev => ({
+              ...prev,
+              address: property.address || prev.address,
+              city: property.city || prev.city,
+              district: property.district || prev.district,
+            }));
+            setPropertyInherited(true);
+          }
+        })
+        .catch(err => console.error("Error fetching property details", err));
+    }
+  }, [propertyIdParam]);
 
   useEffect(() => {
     const selectedProv = provincesList.find(p => p.full_name === formData.city);
@@ -206,6 +229,13 @@ const AddNewPropertyPage = () => {
       fd.append('roomType', roomType);
       fd.append('maxOccupants', parseInt(formData.maxOccupants) || 4);
 
+      const propertyId = searchParams.get('propertyId');
+      const floor = searchParams.get('floor');
+      
+      if (propertyId) fd.append('propertyId', propertyId);
+      if (floor) fd.append('floor', floor);
+      if (formData.roomNumber) fd.append('roomNumber', formData.roomNumber);
+
       if (selectedFiles && selectedFiles.length > 0) {
         // Appending the first image as 'image' for multer upload.single('image')
         fd.append('image', selectedFiles[0]);
@@ -307,17 +337,31 @@ const AddNewPropertyPage = () => {
               <p className="form-step-subtitle">Start with the essential details of the property.</p>
             </div>
 
-            <div className="form-group-field">
-              <label className="form-input-label">Listing Title <span className="text-danger">*</span></label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                className={`form-input-text ${formErrors.title ? 'error' : ''}`}
-                placeholder="e.g. Spacious Studio in Downtown"
-              />
-              {formErrors.title && <span className="form-field-error-msg">{formErrors.title}</span>}
+            <div className="form-row-double-cols">
+              <div className="form-group-field">
+                <label className="form-input-label">Listing Title <span className="text-danger">*</span></label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  className={`form-input-text ${formErrors.title ? 'error' : ''}`}
+                  placeholder="e.g. Spacious Studio in Downtown"
+                />
+                {formErrors.title && <span className="form-field-error-msg">{formErrors.title}</span>}
+              </div>
+
+              <div className="form-group-field">
+                <label className="form-input-label">Room Number</label>
+                <input
+                  type="text"
+                  name="roomNumber"
+                  value={formData.roomNumber}
+                  onChange={handleInputChange}
+                  className="form-input-text"
+                  placeholder="e.g. 101, A2"
+                />
+              </div>
             </div>
 
             <div className="form-group-field">
@@ -376,6 +420,12 @@ const AddNewPropertyPage = () => {
             <div className="form-step-header">
               <h2 className="form-step-title">Location &amp; Price</h2>
               <p className="form-step-subtitle">Specify where your rental is situated and set your pricing.</p>
+              {propertyInherited && (
+                <div className="inherited-property-banner" style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#eff6ff', color: '#1e40af', borderRadius: '6px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <MapPin size={16} />
+                  <span>The address is automatically inherited from the parent property.</span>
+                </div>
+              )}
             </div>
 
             <div className="form-group-field">
@@ -385,8 +435,10 @@ const AddNewPropertyPage = () => {
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
-                className={`form-input-text ${formErrors.address ? 'error' : ''}`}
+                className={`form-input-text ${formErrors.address ? 'error' : ''} ${propertyInherited ? 'disabled-input' : ''}`}
                 placeholder="e.g., 123 Nguyen Van Linh St"
+                disabled={propertyInherited}
+                style={propertyInherited ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : {}}
               />
               {formErrors.address && <span className="form-field-error-msg">{formErrors.address}</span>}
             </div>
@@ -400,6 +452,8 @@ const AddNewPropertyPage = () => {
                     value={formData.city}
                     onChange={handleInputChange}
                     className={`form-input-select ${formErrors.city ? 'error' : ''}`}
+                    disabled={propertyInherited}
+                    style={propertyInherited ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : {}}
                   >
                     <option value="">Select City / Province</option>
                     {provincesList.map((city, index) => (
@@ -418,7 +472,8 @@ const AddNewPropertyPage = () => {
                     value={formData.district}
                     onChange={handleInputChange}
                     className={`form-input-select ${formErrors.district ? 'error' : ''}`}
-                    disabled={!formData.city || districtsList.length === 0}
+                    disabled={propertyInherited || !formData.city || districtsList.length === 0}
+                    style={propertyInherited ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : {}}
                   >
                     <option value="">Select District / Ward</option>
                     {districtsList.map((district, index) => (

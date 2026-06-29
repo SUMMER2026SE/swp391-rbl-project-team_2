@@ -1,0 +1,567 @@
+/* =============================================
+   PROPERTY DASHBOARD PAGE STYLES
+   ============================================= */
+
+.property-dashboard {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.property-dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.property-header-info {
+  flex: 1;
+}
+
+.property-header-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #6366f1;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+  transition: color 0.2s ease;
+  background: none;
+  border: none;
+}
+
+.property-header-back:hover {
+  color: #4f46e5;
+}
+
+.property-header-info h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.35rem;
+}
+
+.property-header-address {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.property-header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-add-room {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.btn-add-room:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.4);
+}
+
+/* Stats Cards */
+.property-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.property-stat-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.property-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.property-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.property-stat-icon.rooms {
+  background: #eef2ff;
+  color: #6366f1;
+}
+
+.property-stat-icon.available {
+  background: #f0fdf4;
+  color: #22c55e;
+}
+
+.property-stat-icon.rented {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.property-stat-icon.revenue {
+  background: #fdf2f8;
+  color: #ec4899;
+}
+
+.property-stat-icon.active-contracts {
+  background: #f0f9ff;
+  color: #0ea5e9;
+}
+
+.property-stat-icon.occupancy {
+  background: #faf5ff;
+  color: #a855f7;
+}
+
+.property-stat-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.property-stat-info h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.property-stat-info span {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+  display: block;
+  white-space: nowrap;
+}
+
+/* Floor Plan Section */
+.floor-plan-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+}
+
+.floor-plan-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.floor-plan-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.legend-dot.available {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.legend-dot.rented {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.legend-dot.pending {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+.legend-dot.maintenance {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* Floor Group */
+.floor-group {
+  margin-bottom: 1.5rem;
+}
+
+.floor-group:last-child {
+  margin-bottom: 0;
+}
+
+.floor-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.floor-label .floor-count {
+  font-size: 0.75rem;
+  background: #e2e8f0;
+  padding: 0.15rem 0.5rem;
+  border-radius: 99px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.floor-rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Room Card in Floor Plan */
+.floor-room-card {
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.floor-room-card.available {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.floor-room-card.rented {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.floor-room-card.pending {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.floor-room-card.maintenance {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.floor-room-card.inactive {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.floor-room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.room-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.room-card-number {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1e293b;
+}
+
+.room-card-status-badge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 99px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.room-card-status-badge.available {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.room-card-status-badge.rented {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.room-card-status-badge.pending {
+  background: #e0e7ff;
+  color: #6366f1;
+}
+
+.room-card-status-badge.maintenance {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.room-card-status-badge.inactive {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.room-card-price {
+  font-size: 0.85rem;
+  color: #16a34a;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.room-card-area {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Revenue Chart Placeholder */
+.revenue-chart-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+}
+
+.revenue-chart-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.revenue-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 200px;
+  padding: 0 0.5rem;
+}
+
+.revenue-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.revenue-bar {
+  width: 100%;
+  max-width: 50px;
+  background: linear-gradient(180deg, #6366f1, #a78bfa);
+  border-radius: 6px 6px 0 0;
+  min-height: 4px;
+  transition: height 0.6s ease;
+}
+
+.revenue-bar-label {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  font-weight: 500;
+  text-align: center;
+}
+
+.revenue-bar-value {
+  font-size: 0.65rem;
+  color: #6366f1;
+  font-weight: 600;
+}
+
+/* Duplicate Room Modal */
+.duplicate-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.duplicate-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 460px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s ease;
+}
+
+.duplicate-modal h3 {
+  font-size: 1.15rem;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.duplicate-modal-field {
+  margin-bottom: 1rem;
+}
+
+.duplicate-modal-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.35rem;
+}
+
+.duplicate-modal-field input,
+.duplicate-modal-field select {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.duplicate-modal-field input:focus,
+.duplicate-modal-field select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.duplicate-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.duplicate-modal-actions button {
+  flex: 1;
+  padding: 0.65rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-duplicate-cancel {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-duplicate-cancel:hover {
+  background: #e2e8f0;
+}
+
+.btn-duplicate-confirm {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-duplicate-confirm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.4);
+}
+
+/* Empty Floor Plan */
+.floor-plan-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #94a3b8;
+}
+
+.floor-plan-empty svg {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.floor-plan-empty p {
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .property-dashboard {
+    padding: 1rem;
+  }
+
+  .property-dashboard-header {
+    flex-direction: column;
+  }
+
+  .property-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .floor-rooms-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

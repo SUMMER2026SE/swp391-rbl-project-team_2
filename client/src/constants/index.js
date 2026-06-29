@@ -47,6 +47,9 @@ export const ROUTES = {
     CONTRACTS: '/landlord/contracts',
     COMPLAINTS: '/landlord/complaints',
     SCHEDULES: '/landlord/schedules',
+    PROPERTIES: '/landlord/properties',
+    NEW_PROPERTY: '/landlord/properties/new',
+    PROPERTY_DASHBOARD: '/landlord/properties/:propertyId/dashboard',
   },
 
   ADMIN: {

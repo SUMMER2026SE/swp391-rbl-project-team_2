@@ -163,7 +163,7 @@ const ManageListingsPage = () => {
   const [selectedListing, setSelectedListing] = useState(null);
 
   // Form states
-  const [formId, setFormId] = useState('');
+  const [formRoomNumber, setformRoomNumber] = useState('');
   const [formTitle, setFormTitle] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formPrice, setFormPrice] = useState('');
@@ -212,7 +212,7 @@ const ManageListingsPage = () => {
   });
 
   const resetForm = () => {
-    setFormId('');
+    setformRoomNumber('');
     setFormTitle('');
     setFormDescription('');
     setFormAddress('');
@@ -242,6 +242,7 @@ const ManageListingsPage = () => {
         address: formAddress,
         maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : 4,
         areaSqm: formAreaSqm ? Number(formAreaSqm) : null,
+        roomNumber: formRoomNumber,
         status: 'available'
       };
 
@@ -263,7 +264,7 @@ const ManageListingsPage = () => {
 
   const handleEditClick = (listing) => {
     setSelectedListing(listing);
-    setFormId(listing.id);
+    setformRoomNumber(listing.rawRoom?.room_number || listing.rawRoom?.roomNumber || '');
     setFormTitle(listing.title);
     setFormDescription(listing.rawRoom?.description || listing.description || '');
 
@@ -298,6 +299,7 @@ const ManageListingsPage = () => {
         roomType: 'private_room',
         maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : 4,
         areaSqm: formAreaSqm ? Number(formAreaSqm) : null,
+        roomNumber: formRoomNumber,
       };
 
       if (selectedListing.rawRoom?.status !== 'pending' && selectedListing.rawRoom?.status !== 'rejected') {
@@ -485,7 +487,7 @@ const ManageListingsPage = () => {
 
                 {/* Body */}
                 <div className="listing-card__body">
-                  <div className="listing-card__id">ID: {listing.id}</div>
+                  <div className="listing-card__id">Room: {listing.rawRoom?.room_number || listing.rawRoom?.roomNumber || listing.id}</div>
                   <h3 className="listing-card__title">{listing.title}</h3>
 
                   {listing.status === 'Rejected' && listing.rawRoom?.rejection_reason && (
@@ -521,8 +523,6 @@ const ManageListingsPage = () => {
                       className="action-icon-btn btn-edit"
                       title="Edit Listing"
                       onClick={() => handleEditClick(listing)}
-                      disabled={['Pending', 'Maintenance', 'Occupied'].includes(listing.status)}
-                      style={['Pending', 'Maintenance', 'Occupied'].includes(listing.status) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                       <Pencil size={15} />
                     </button>
@@ -530,8 +530,8 @@ const ManageListingsPage = () => {
                       className="action-icon-btn btn-delete"
                       title="Delete Listing"
                       onClick={() => handleDeleteClick(listing.id)}
-                      disabled={['Pending', 'Maintenance', 'Occupied'].includes(listing.status)}
-                      style={['Pending', 'Maintenance', 'Occupied'].includes(listing.status) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                      disabled={['Occupied'].includes(listing.status)}
+                      style={['Occupied'].includes(listing.status) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -563,12 +563,12 @@ const ManageListingsPage = () => {
               <div className="modal-body">
                 <div className="form-group-row">
                   <div className="form-group">
-                    <label>Listing ID (optional)</label>
+                    <label>Room Number</label>
                     <input
                       type="text"
-                      placeholder="e.g. APT-104A"
-                      value={formId}
-                      onChange={(e) => setFormId(e.target.value)}
+                      placeholder="e.g. 101, A2"
+                      value={formRoomNumber}
+                      onChange={(e) => setformRoomNumber(e.target.value)}
                     />
                   </div>
                   <div className="form-group">
@@ -712,6 +712,33 @@ const ManageListingsPage = () => {
             </div>
             <form onSubmit={handleEditSubmit}>
               <div className="modal-body">
+                <div className="form-group-row">
+                  <div className="form-group">
+                    <label>Room Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 101, A2"
+                      value={formRoomNumber}
+                      onChange={(e) => setformRoomNumber(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Status</label>
+                    <div className="form-select-wrapper">
+                      <select
+                        value={formStatus}
+                        onChange={(e) => setFormStatus(e.target.value)}
+                        className="form-input-select"
+                      >
+                        <option value="Available">Available</option>
+                        <option value="Occupied">Occupied (Rented)</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="form-group">
                   <label>Listing Title *</label>
                   <input
@@ -1016,3 +1043,4 @@ const ManageListingsPage = () => {
 };
 
 export default ManageListingsPage;
+

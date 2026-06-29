@@ -98,18 +98,35 @@ const RentalRequestsPage = () => {
     }
   };
 
-  const handleOpenContractModal = (request) => {
-    setContractData({
-      termsAndConditions: '',
-      landlordName: user?.full_name || '',
-      landlordIc: '',
-      landlordIcIssueDate: '',
-      landlordIcIssuePlace: '',
-      landlordPermanentAddress: '',
-    });
-    setSelectedRequest(request);
-    setShowContractModal(true);
-    setShowDetailModal(false);
+  const handleOpenContractModal = async (request) => {
+    try {
+      setIsSubmitting(true);
+      const res = await api.get('/landlord/profile');
+      if (!res.success) throw new Error('Failed to fetch profile');
+      const profile = res.data;
+      
+      if (!profile.icNumber || !profile.icIssueDate || !profile.icIssuePlace || !profile.permanentAddress) {
+        toast.error('Vui lòng cập nhật đầy đủ thông tin pháp lý (CCCD, Địa chỉ) trong trang Profile trước khi tạo hợp đồng.', { duration: 5000 });
+        navigate('/landlord/profile');
+        return;
+      }
+
+      setContractData({
+        termsAndConditions: '',
+        landlordName: profile.fullName || user?.full_name || '',
+        landlordIc: profile.icNumber,
+        landlordIcIssueDate: profile.icIssueDate ? new Date(profile.icIssueDate).toISOString().split('T')[0] : '',
+        landlordIcIssuePlace: profile.icIssuePlace,
+        landlordPermanentAddress: profile.permanentAddress,
+      });
+      setSelectedRequest(request);
+      setShowContractModal(true);
+      setShowDetailModal(false);
+    } catch (error) {
+      toast.error('Không thể lấy thông tin Profile. Vui lòng thử lại.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCreateContract = async () => {
@@ -601,23 +618,23 @@ const RentalRequestsPage = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="form-group">
                       <label>Full Name</label>
-                      <input type="text" value={contractData.landlordName} onChange={(e) => setContractData({...contractData, landlordName: e.target.value})} placeholder="e.g. Nguyen Van A" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                      <input type="text" value={contractData.landlordName} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
                     </div>
                     <div className="form-group">
                       <label>CCCD / CMND</label>
-                      <input type="text" value={contractData.landlordIc} onChange={(e) => setContractData({...contractData, landlordIc: e.target.value})} placeholder="12 digit ID number" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                      <input type="text" value={contractData.landlordIc} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
                     </div>
                     <div className="form-group" style={{ flex: 1 }}>
                       <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Ngày Cấp *</label>
-                      <input type="date" lang="en-GB" value={contractData.landlordIcIssueDate} onChange={(e) => setContractData({...contractData, landlordIcIssueDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                      <input type="date" lang="en-GB" value={contractData.landlordIcIssueDate} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
                     </div>
                     <div className="form-group">
                       <label>Issue Place</label>
-                      <input type="text" value={contractData.landlordIcIssuePlace} onChange={(e) => setContractData({...contractData, landlordIcIssuePlace: e.target.value})} placeholder="e.g. Cục Cảnh sát QLHC về TTXH" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                      <input type="text" value={contractData.landlordIcIssuePlace} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
                     </div>
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                       <label>Permanent Address</label>
-                      <input type="text" value={contractData.landlordPermanentAddress} onChange={(e) => setContractData({...contractData, landlordPermanentAddress: e.target.value})} placeholder="e.g. 123 Nguyen Hue, District 1, HCMC" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                      <input type="text" value={contractData.landlordPermanentAddress} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
                     </div>
                   </div>
                 </div>

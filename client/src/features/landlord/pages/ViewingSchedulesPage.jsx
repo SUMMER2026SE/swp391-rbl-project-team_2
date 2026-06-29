@@ -216,21 +216,38 @@ const ViewingSchedulesPage = () => {
     });
   };
 
-  const handleOpenContractModal = (schedule) => {
-    setContractData({
-      startDate: '',
-      endDate: '',
-      monthlyRent: schedule.room?.price_per_month || '',
-      termsAndConditions: '',
-      landlordName: user?.full_name || '',
-      landlordIc: '',
-      landlordIcIssueDate: '',
-      landlordIcIssuePlace: '',
-      landlordPermanentAddress: '',
-    });
-    setSelectedSchedule(schedule);
-    setShowContractModal(true);
-    setShowDetailModal(false);
+  const handleOpenContractModal = async (schedule) => {
+    try {
+      setIsSubmitting(true);
+      const res = await api.get('/landlord/profile');
+      if (!res.success) throw new Error('Failed to fetch profile');
+      const profile = res.data;
+      
+      if (!profile.icNumber || !profile.icIssueDate || !profile.icIssuePlace || !profile.permanentAddress) {
+        toast.error('Vui lòng cập nhật đầy đủ thông tin pháp lý (CCCD, Địa chỉ) trong trang Profile trước khi tạo hợp đồng.', { duration: 5000 });
+        navigate('/landlord/profile');
+        return;
+      }
+
+      setContractData({
+        startDate: '',
+        endDate: '',
+        monthlyRent: schedule.room?.price_per_month || '',
+        termsAndConditions: '',
+        landlordName: profile.fullName || user?.full_name || '',
+        landlordIc: profile.icNumber,
+        landlordIcIssueDate: profile.icIssueDate ? new Date(profile.icIssueDate).toISOString().split('T')[0] : '',
+        landlordIcIssuePlace: profile.icIssuePlace,
+        landlordPermanentAddress: profile.permanentAddress,
+      });
+      setSelectedSchedule(schedule);
+      setShowContractModal(true);
+      setShowDetailModal(false);
+    } catch (error) {
+      toast.error('Không thể lấy thông tin Profile. Vui lòng thử lại.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCreateContract = async () => {
@@ -742,9 +759,8 @@ const ViewingSchedulesPage = () => {
                 <input 
                   type="text" 
                   value={contractData.landlordName}
-                  onChange={(e) => setContractData({ ...contractData, landlordName: e.target.value })}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
-                  placeholder="Nguyễn Văn A"
+                  readOnly
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }}
                 />
               </div>
 
@@ -753,11 +769,9 @@ const ViewingSchedulesPage = () => {
                   <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>CCCD/CMND (12 digits) *</label>
                   <input 
                     type="text" 
-                    maxLength={12}
                     value={contractData.landlordIc}
-                    onChange={(e) => setContractData({ ...contractData, landlordIc: e.target.value.replace(/\D/g, '') })}
-                    style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
-                    placeholder="012345678901"
+                    readOnly
+                    style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }}
                   />
                 </div>
                 <div>
@@ -765,9 +779,8 @@ const ViewingSchedulesPage = () => {
                   <input 
                     type="date" 
                     value={contractData.landlordIcIssueDate}
-                    onChange={(e) => setContractData({ ...contractData, landlordIcIssueDate: e.target.value })}
-                    max={new Date().toISOString().split('T')[0]}
-                    style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                    readOnly
+                    style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }}
                   />
                 </div>
               </div>
@@ -777,9 +790,8 @@ const ViewingSchedulesPage = () => {
                 <input 
                   type="text" 
                   value={contractData.landlordIcIssuePlace}
-                  onChange={(e) => setContractData({ ...contractData, landlordIcIssuePlace: e.target.value })}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
-                  placeholder="Cục Cảnh sát Quản lý hành chính về trật tự xã hội"
+                  readOnly
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }}
                 />
               </div>
 
@@ -788,9 +800,8 @@ const ViewingSchedulesPage = () => {
                 <input 
                   type="text" 
                   value={contractData.landlordPermanentAddress}
-                  onChange={(e) => setContractData({ ...contractData, landlordPermanentAddress: e.target.value })}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
-                  placeholder="123 Duong ABC, Phuong XYZ, Quan 1, TP HCM"
+                  readOnly
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }}
                 />
               </div>
 

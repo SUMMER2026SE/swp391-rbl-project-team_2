@@ -15,7 +15,7 @@ const getLandlordProfile = async (req, res, next) => {
     console.log('📨 Querying User with landlordId:', landlordId);
     const user = await User.findOne({
       where: { user_id: landlordId, is_deleted: false },
-      attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url', 'is_active', 'is_banned', 'created_at'],
+      attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url', 'ic_number', 'ic_issue_date', 'ic_issue_place', 'permanent_address', 'is_active', 'is_banned', 'created_at'],
     });
 
     console.log('📨 User found:', user ? 'YES' : 'NO');
@@ -40,6 +40,10 @@ const getLandlordProfile = async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         avatarUrl: user.avatar_url,
+        icNumber: user.ic_number,
+        icIssueDate: user.ic_issue_date,
+        icIssuePlace: user.ic_issue_place,
+        permanentAddress: user.permanent_address,
         isActive: user.is_active,
         isBanned: user.is_banned,
         createdAt: user.created_at,
@@ -60,7 +64,7 @@ const getLandlordProfile = async (req, res, next) => {
 const updateLandlordProfile = async (req, res, next) => {
   try {
     const landlordId = req.user.userId;
-    const { fullName, phone } = req.body;
+    const { fullName, phone, icNumber, icIssueDate, icIssuePlace, permanentAddress } = req.body;
 
     const user = await User.findOne({
       where: { user_id: landlordId, is_deleted: false },
@@ -83,6 +87,22 @@ const updateLandlordProfile = async (req, res, next) => {
     if (phone) {
       updateFields.push('phone = :phone');
       replacements.phone = phone;
+    }
+    if (icNumber !== undefined) {
+      updateFields.push('ic_number = :icNumber');
+      replacements.icNumber = icNumber || null;
+    }
+    if (icIssueDate !== undefined) {
+      updateFields.push('ic_issue_date = :icIssueDate');
+      replacements.icIssueDate = icIssueDate || null;
+    }
+    if (icIssuePlace !== undefined) {
+      updateFields.push('ic_issue_place = :icIssuePlace');
+      replacements.icIssuePlace = icIssuePlace || null;
+    }
+    if (permanentAddress !== undefined) {
+      updateFields.push('permanent_address = :permanentAddress');
+      replacements.permanentAddress = permanentAddress || null;
     }
     updateFields.push('updated_at = SYSDATETIMEOFFSET()');
 
@@ -107,6 +127,10 @@ const updateLandlordProfile = async (req, res, next) => {
         email: updatedUser.email,
         phone: updatedUser.phone,
         avatarUrl: updatedUser.avatar_url,
+        icNumber: updatedUser.ic_number,
+        icIssueDate: updatedUser.ic_issue_date,
+        icIssuePlace: updatedUser.ic_issue_place,
+        permanentAddress: updatedUser.permanent_address,
       },
     });
   } catch (error) {

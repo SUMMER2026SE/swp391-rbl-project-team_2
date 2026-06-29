@@ -2,6 +2,7 @@ const sequelize = require('../config/database');
 const Role = require('./Role');
 const User = require('./User');
 const OtpVerification = require('./OtpVerification');
+const Property = require('./Property');
 const Room = require('./Room');
 const RoomImage = require('./RoomImage');
 const Facility = require('./Facility');
@@ -31,6 +32,14 @@ const defineAssociations = () => {
   // User <-> OtpVerification
   User.hasMany(OtpVerification, { foreignKey: 'user_id', as: 'otps' });
   OtpVerification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  // User <-> Property (Landlord)
+  User.hasMany(Property, { foreignKey: 'landlord_id', as: 'properties' });
+  Property.belongsTo(User, { foreignKey: 'landlord_id', as: 'landlord' });
+
+  // Property <-> Room
+  Property.hasMany(Room, { foreignKey: 'property_id', as: 'rooms' });
+  Room.belongsTo(Property, { foreignKey: 'property_id', as: 'property' });
 
   // User <-> Room (Landlord)
   User.hasMany(Room, { foreignKey: 'landlord_id', as: 'rooms' });
@@ -162,6 +171,7 @@ module.exports = {
   Role,
   User,
   OtpVerification,
+  Property,
   Room,
   RoomImage,
   Facility,
