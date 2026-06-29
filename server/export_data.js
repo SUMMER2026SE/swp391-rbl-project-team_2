@@ -23,7 +23,7 @@ async function exportData() {
     await sequelize.authenticate();
     console.log('Connected to database.');
 
-    const sqlFilePath = path.join(__dirname, '../Database/SmartRoomRentalSystem_TestData.sql');
+    const sqlFilePath = path.join(__dirname, '../Database/rentalroomsystem.sql');
     let sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
 
     // Remove existing INSERT statements from the schema file
@@ -88,7 +88,7 @@ async function exportData() {
     }
 
     fs.writeFileSync(sqlFilePath, sqlContent + dataScript);
-    console.log('Data successfully exported to SmartRoomRentalSystem_TestData.sql');
+    console.log('Data successfully exported to rentalroomsystem.sql');
 
   } catch (error) {
     console.error('Error:', error);
