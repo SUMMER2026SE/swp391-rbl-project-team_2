@@ -262,6 +262,9 @@ const RoomDetailPage = () => {
             ) : (
               <h1 className="room-detail-title">{roomData.title}</h1>
             )}
+            {roomData.roomNumber && (
+              <p className="room-detail-address" style={{ marginTop: '0.2rem', marginBottom: '0.5rem', fontWeight: '500', color: '#4f46e5' }}>Phòng: {roomData.roomNumber}</p>
+            )}
             <p className="room-detail-address"><MapPin size={16}/> {[roomData.address, roomData.ward, roomData.district, roomData.city].filter(Boolean).join(', ')}</p>
           </div>
           

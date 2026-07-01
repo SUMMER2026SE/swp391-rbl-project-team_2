@@ -80,6 +80,16 @@ const createRentalRequest = async (req, res, next) => {
       related_id: rentalRequest.request_id,
     });
 
+    // Emit socket event to landlord
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${room.landlord_id}`).emit('new_notification', {
+        title: 'New Rental Request',
+        message: `You have a new rental request for ${room.title}.`,
+        type: 'rental_request'
+      });
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Rental request created successfully!',
@@ -266,6 +276,16 @@ const cancelRentalRequest = async (req, res, next) => {
       related_id: rentalRequest.request_id,
     });
 
+    // Emit socket event to landlord
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${rentalRequest.landlord_id}`).emit('new_notification', {
+        title: 'Rental Request Cancelled',
+        message: `A tenant has cancelled their rental request for ${rentalRequest.room.title}.`,
+        type: 'rental_request'
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Rental request cancelled successfully!',
@@ -356,6 +376,16 @@ const requestContract = async (req, res, next) => {
       notification_type: 'contract',
       related_id: contract.contract_id,
     });
+
+    // Emit socket event to landlord
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${rentalRequest.room.landlord_id}`).emit('new_notification', {
+        title: 'Contract Requested',
+        message: `Tenant has requested a contract for "${rentalRequest.room.title}".`,
+        type: 'contract'
+      });
+    }
 
     return res.status(201).json({
       success: true,

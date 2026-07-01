@@ -580,8 +580,8 @@ const TenantRequestsPage = () => {
                           </button>
                         )}
 
-                        {/* After viewing confirmed — tenant can request contract, decline, or dispute */}
-                        {schedule.status === 'confirmed' && (
+                        {/* After viewing confirmed/completed — tenant can request contract, decline, or dispute */}
+                        {(schedule.status === 'confirmed' || schedule.status === 'completed') && (
                           <>
                             <button onClick={() => handleOpenContractRequest(schedule)} className="btn-action btn-contract">
                               <FileSignature size={16} /> Request Contract

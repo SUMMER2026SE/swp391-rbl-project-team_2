@@ -263,8 +263,15 @@ const PropertyDashboardPage = () => {
                   <div
                     className={`floor-room-card ${room.status}`}
                     key={room.roomId}
-                    onClick={() => handleDuplicateRoom(room)}
-                    title="Click to duplicate this room"
+                    title={room.status === 'available' ? 'Click to view room details' : `Rented by ${room.tenantName} - Click to view contracts`}
+                    onClick={() => {
+                      if (room.status === 'rented' || room.status === 'pending') {
+                        navigate(ROUTES.LANDLORD.CONTRACTS, { state: { search: room.tenantName } });
+                      } else {
+                        navigate(`/listings/${room.originalRoomId}`);
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
                   >
                     <div className="room-card-header">
                       <span className="room-card-number">
@@ -278,9 +285,15 @@ const PropertyDashboardPage = () => {
                         {room.status === 'inactive' && 'Inactive'}
                       </span>
                     </div>
-                    <div className="room-card-price">
-                      {formatPrice(room.pricePerMonth)}đ/mo
-                    </div>
+                    {room.tenantName ? (
+                      <div className="room-card-tenant" style={{ fontSize: '13px', color: '#475569', marginTop: '6px', fontWeight: 500 }}>
+                        👤 {room.tenantName}
+                      </div>
+                    ) : (
+                      <div className="room-card-price">
+                        {formatPrice(room.pricePerMonth)}đ/mo
+                      </div>
+                    )}
                     <div className="room-card-area">
                       {room.areaSqm ? `${room.areaSqm} m²` : '—'}
                       {room.maxOccupants ? ` · ${room.maxOccupants} people` : ''}

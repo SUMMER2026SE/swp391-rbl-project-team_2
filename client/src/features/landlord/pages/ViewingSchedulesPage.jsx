@@ -27,6 +27,7 @@ import Button from '../../../components/common/Button';
 import Loading from '../../../components/ui/Loading';
 import EmptyState from '../../../components/ui/EmptyState';
 import Badge from '../../../components/ui/Badge';
+import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
 import SignatureCanvas from 'react-signature-canvas';
 import useAuthStore from '../../../store/useAuthStore';
 import './RentalRequestsPage.css'; // Re-use the CSS
@@ -58,6 +59,7 @@ const ViewingSchedulesPage = () => {
     landlordIcIssueDate: '',
     landlordIcIssuePlace: '',
     landlordPermanentAddress: '',
+    assignedRoomNumber: '',
   });
   
   const landlordSigCanvas = React.useRef(null);
@@ -239,6 +241,7 @@ const ViewingSchedulesPage = () => {
         landlordIcIssueDate: profile.icIssueDate ? new Date(profile.icIssueDate).toISOString().split('T')[0] : '',
         landlordIcIssuePlace: profile.icIssuePlace,
         landlordPermanentAddress: profile.permanentAddress,
+        assignedRoomNumber: schedule.room?.room_number || '',
       });
       setSelectedSchedule(schedule);
       setShowContractModal(true);
@@ -257,6 +260,10 @@ const ViewingSchedulesPage = () => {
       if (!contractData.landlordName || !contractData.landlordIc || !contractData.landlordIcIssueDate || !contractData.landlordIcIssuePlace || !contractData.landlordPermanentAddress) {
           toast.error('Please fill in all identity details.');
           return;
+      }
+      if (!contractData.assignedRoomNumber) {
+        toast.error('Vui lòng gán số phòng thực tế cho hợp đồng này.');
+        return;
       }
       if (contractData.landlordIc.length !== 12) {
         toast.error('CCCD must be exactly 12 digits.');
@@ -279,6 +286,7 @@ const ViewingSchedulesPage = () => {
         landlordIcIssuePlace: contractData.landlordIcIssuePlace,
         landlordPermanentAddress: contractData.landlordPermanentAddress,
         landlordSignature: landlordSignature,
+        assignedRoomNumber: contractData.assignedRoomNumber,
       });
       
       if (res.success) {
@@ -442,11 +450,7 @@ const ViewingSchedulesPage = () => {
                   <td>
                     <div className="tenant-info">
                       <div className="tenant-avatar">
-                        {schedule.tenant?.avatar_url ? (
-                          <img src={schedule.tenant.avatar_url} alt={schedule.tenant.full_name} />
-                        ) : (
-                          <span>{schedule.tenant?.full_name?.charAt(0) || 'T'}</span>
-                        )}
+                        <img src={getGlobalAvatar(schedule.tenant?.full_name, schedule.tenant?.avatar_url)} alt={schedule.tenant?.full_name || 'Unknown'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                       </div>
                       <div>
                         <div className="tenant-name">{schedule.tenant?.full_name || 'Unknown'}</div>
@@ -754,6 +758,17 @@ const ViewingSchedulesPage = () => {
 
               <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '20px 0 12px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>Your Information (For Contract)</h4>
               
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Assign Room Number (Physical Room) *</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. 101, A2" 
+                  value={contractData.assignedRoomNumber} 
+                  onChange={(e) => setContractData({...contractData, assignedRoomNumber: e.target.value})}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                />
+              </div>
+
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Họ và Tên *</label>
                 <input 

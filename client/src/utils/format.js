@@ -73,7 +73,7 @@ export const truncateString = (str, maxLength = 50) => {
  * @returns {string} Formatted avatar URL
  */
 export const getAvatarUrl = (fullName, avatarUrl, size = 150) => {
-  if (avatarUrl) {
+  if (avatarUrl && avatarUrl !== 'null' && avatarUrl !== 'undefined') {
     if (avatarUrl.startsWith('/uploads')) {
       const baseUrl = 'http://localhost:5000'; // Fallback backend URL
       return `${baseUrl}${avatarUrl}`;

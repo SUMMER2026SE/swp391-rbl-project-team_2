@@ -1,5 +1,11 @@
 {
+  "name": "rental-room-system",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\""
+  },
   "dependencies": {
-    "puppeteer": "^25.1.0"
+    "puppeteer": "^25.1.0",
+    "concurrently": "^8.2.2"
   }
 }

@@ -59,6 +59,14 @@ const Room = sequelize.define('Room', {
     type: DataTypes.STRING(20),
     defaultValue: 'private_room',
   },
+  quantity: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1,
+  },
+  available_quantity: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1,
+  },
   bedrooms: {
     type: DataTypes.INTEGER,
     defaultValue: 1,

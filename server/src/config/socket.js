@@ -24,6 +24,12 @@ const initSocket = (server) => {
       console.log(`👤 Socket ${socket.id} joined user channel: user_${userId}`);
     });
 
+    // Join admin channel
+    socket.on('join_admin', () => {
+      socket.join('admin_channel');
+      console.log(`👤 Socket ${socket.id} joined admin_channel`);
+    });
+
     // Leave a conversation room
     socket.on('leave_conversation', (conversationId) => {
       socket.leave(conversationId);

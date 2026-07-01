@@ -15,6 +15,7 @@ import Button from '../../../components/common/Button';
 import Loading from '../../../components/ui/Loading';
 import EmptyState from '../../../components/ui/EmptyState';
 import Badge from '../../../components/ui/Badge';
+import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
 import './PaymentsPage.css';
 
 const PaymentsPage = () => {
@@ -189,11 +190,7 @@ const PaymentsPage = () => {
                   <td>
                     <div className="tenant-info">
                       <div className="tenant-avatar">
-                        {payment.tenantAvatar ? (
-                          <img src={payment.tenantAvatar} alt={payment.tenantName} />
-                        ) : (
-                          <span>{payment.tenantName?.charAt(0)}</span>
-                        )}
+                        <img src={getGlobalAvatar(payment.tenantName, payment.tenantAvatar)} alt={payment.tenantName || 'Unknown'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                       </div>
                       <div>
                         <div className="tenant-name">{payment.tenantName}</div>

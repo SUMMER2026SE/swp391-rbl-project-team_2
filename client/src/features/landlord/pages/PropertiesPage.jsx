@@ -109,7 +109,11 @@ const PropertiesPage = () => {
                 {/* Thumbnail */}
                 <div className="property-card-thumbnail">
                   {property.thumbnailUrl ? (
-                    <img src={property.thumbnailUrl} alt={property.name} />
+                    <img 
+                      src={property.thumbnailUrl.startsWith('http') ? property.thumbnailUrl : `http://localhost:5000${property.thumbnailUrl}`} 
+                      alt={property.name} 
+                      onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60'; }}
+                    />
                   ) : (
                     <div className="property-icon-placeholder">
                       <Building2 size={48} />
@@ -162,13 +166,12 @@ const PropertiesPage = () => {
                   {/* Price Range */}
                   {priceRange.max > 0 && (
                     <div className="property-card-price">
-                      <DollarSign size={14} />
-                      <span>
-                        <span className="price-value">{formatPrice(priceRange.min)}đ</span>
+                      <span style={{ fontWeight: 600, color: '#16a34a' }}>
+                        {formatPrice(priceRange.min)} đ
                         {priceRange.min !== priceRange.max && (
-                          <> - <span className="price-value">{formatPrice(priceRange.max)}đ</span></>
+                          <> - {formatPrice(priceRange.max)} đ</>
                         )}
-                        <span> / month</span>
+                        <span style={{ color: '#64748b', fontWeight: 500 }}> / tháng</span>
                       </span>
                     </div>
                   )}

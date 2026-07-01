@@ -52,14 +52,16 @@ const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
           onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60'; }}
         />
         
-        {/* Floating tags on the image (For Favorite/Chat variant) */}
-        {(variant === 'favorite' || variant === 'chat') && imageTags.length > 0 && (
+        {/* Floating tags on the image */}
+        {imageTags.length > 0 && (
           <div className="room-card-image-tags">
             {imageTags.map((tag, idx) => (
               <span key={idx} className={clsx(
                 "image-tag", 
                 tag.type === 'primary' && 'primary-tag',
                 tag.type === 'match' && 'match-tag',
+                tag.type === 'danger' && 'danger-tag',
+                tag.type === 'warning' && 'warning-tag',
                 (!tag.type || tag.type === 'secondary') && 'secondary-tag'
               )}>
                 {tag.text}

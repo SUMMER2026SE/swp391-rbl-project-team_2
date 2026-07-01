@@ -22,11 +22,13 @@ import Loading from '../../../components/ui/Loading';
 import EmptyState from '../../../components/ui/EmptyState';
 import Badge from '../../../components/ui/Badge';
 import ContractDocument from '../../../components/ContractDocument';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import './ContractsPage.css';
 
 const ContractsPage = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const location = useLocation();
+  const [searchTerm, setSearchTerm] = useState(location.state?.search || '');
   const [statusFilter, setStatusFilter] = useState('All');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [sortOrder, setSortOrder] = useState('newest');
@@ -43,7 +45,7 @@ const ContractsPage = () => {
   const [terminateReason, setTerminateReason] = useState('');
 
   const navigate = useNavigate();
-  const { contracts, loading, error, renewContract, terminateContract } = useContracts();
+  const { contracts, loading, error, renewContract, terminateContract, updateContract, fetchContracts } = useContracts();
 
   const filteredContracts = contracts.filter(contract => {
     const searchLower = (searchTerm || '').toLowerCase();
@@ -257,6 +259,11 @@ const ContractsPage = () => {
                     >
                       {contract.roomTitle}
                     </span>
+                    {contract.assignedRoomNumber && (
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                        Room: {contract.assignedRoomNumber}
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
                     {new Date(contract.startDate).toLocaleDateString('vi-VN')}
@@ -360,6 +367,32 @@ const ContractsPage = () => {
                       <label>Room Type</label>
                       <div className="detail-value" style={{ textTransform: 'capitalize' }}>
                         Phòng cá nhân
+                      </div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Assigned Room</label>
+                      <div className="detail-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {selectedContract.assignedRoomNumber || 'Chưa gán số'}
+                        <button
+                          className="btn-icon"
+                          onClick={async () => {
+                            const num = prompt('Nhập số phòng thực tế (ví dụ: Phòng 101):', selectedContract.assignedRoomNumber || '');
+                            if (num !== null && num.trim() !== '') {
+                              try {
+                                await updateContract(selectedContract.id, { assignedRoomNumber: num.trim() });
+                                toast.success('Đã cập nhật số phòng thành công!');
+                                setSelectedContract({ ...selectedContract, assignedRoomNumber: num.trim() });
+                                fetchContracts();
+                              } catch (err) {
+                                toast.error(err.message || 'Lỗi khi cập nhật số phòng');
+                              }
+                            }
+                          }}
+                          title="Gán/Sửa số phòng"
+                          style={{ padding: 4, background: '#f1f5f9', borderRadius: 4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        >
+                          <Edit size={14} color="#64748b" />
+                        </button>
                       </div>
                     </div>
                     <div className="detail-item">

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ROUTES } from '../../../constants';
 import {
+  Building2,
   Plus,
   Search,
   MapPin,
@@ -90,7 +91,7 @@ const INITIAL_LISTINGS = [
 const ManageListingsPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { rooms, loading: roomsLoading, error: roomsError, createRoom, updateRoom, deleteRoom, uploadImage, deleteImage } = useRooms();
+  const { rooms, loading: roomsLoading, error: roomsError, createRoom, updateRoom, deleteRoom, uploadImage, deleteImage } = useRooms({ limit: 100 });
   const [formImageFiles, setFormImageFiles] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   const [listings, setListings] = useState([]);
@@ -164,6 +165,7 @@ const ManageListingsPage = () => {
 
   // Form states
   const [formRoomNumber, setformRoomNumber] = useState('');
+  const [formQuantity, setFormQuantity] = useState('');
   const [formTitle, setFormTitle] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formPrice, setFormPrice] = useState('');
@@ -211,8 +213,22 @@ const ManageListingsPage = () => {
     return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
   });
 
+  // Group listings by property
+  const groupedListings = filteredListings.reduce((acc, listing) => {
+    let propertyName = listing.rawRoom?.property?.name;
+    if (!propertyName) {
+      propertyName = listing.address ? `${listing.address} (Independent)` : "Independent Rooms"; 
+    }
+    if (!acc[propertyName]) {
+      acc[propertyName] = [];
+    }
+    acc[propertyName].push(listing);
+    return acc;
+  }, {});
+
   const resetForm = () => {
     setformRoomNumber('');
+    setFormQuantity('');
     setFormTitle('');
     setFormDescription('');
     setFormAddress('');
@@ -243,6 +259,7 @@ const ManageListingsPage = () => {
         maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : 4,
         areaSqm: formAreaSqm ? Number(formAreaSqm) : null,
         roomNumber: formRoomNumber,
+        quantity: formQuantity ? Number(formQuantity) : 1,
         status: 'available'
       };
 
@@ -465,8 +482,16 @@ const ManageListingsPage = () => {
       {/* Grid of Listings */}
       {!roomsLoading && !roomsError && (
         filteredListings.length > 0 ? (
-          <div className="manage-listings__grid">
-            {filteredListings.map((listing) => (
+          <div className="manage-listings__grouped-container">
+            {Object.entries(groupedListings).map(([propertyName, items]) => (
+              <div key={propertyName} className="manage-listings__property-group">
+                <h2 className="manage-listings__property-title">
+                  <Building2 size={20} className="property-icon" />
+                  {propertyName}
+                  <span className="property-count">{items.length} {items.length === 1 ? 'room' : 'rooms'}</span>
+                </h2>
+                <div className="manage-listings__grid">
+                  {items.map((listing) => (
               <div className="listing-card" key={listing.id}>
                 {/* Image & Badges */}
                 <div className="listing-card__image-container">
@@ -499,6 +524,11 @@ const ManageListingsPage = () => {
                   <div className="listing-card__address">
                     <MapPin size={15} />
                     <span>{listing.address}</span>
+                  </div>
+
+                  {/* Room Description */}
+                  <div className="listing-card__description" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>
+                    {listing.rawRoom?.description || 'Chưa có mô tả.'}
                   </div>
 
                   <div className="listing-card__tags">
@@ -536,6 +566,9 @@ const ManageListingsPage = () => {
                       <Trash2 size={15} />
                     </button>
                   </div>
+                </div>
+              </div>
+            ))}
                 </div>
               </div>
             ))}
@@ -579,6 +612,16 @@ const ManageListingsPage = () => {
                       placeholder="e.g. 1200"
                       value={formPrice}
                       onChange={(e) => setFormPrice(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Quantity of Rooms *</label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="e.g. 5"
+                      value={formQuantity}
+                      onChange={(e) => setFormQuantity(e.target.value)}
                     />
                   </div>
                 </div>

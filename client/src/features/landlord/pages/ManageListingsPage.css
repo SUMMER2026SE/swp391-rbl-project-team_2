@@ -153,6 +153,45 @@
   color: var(--text-main);
 }
 
+/* Property Grouping */
+.manage-listings__grouped-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.manage-listings__property-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.manage-listings__property-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.property-icon {
+  color: var(--primary);
+}
+
+.property-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background-color: var(--bg-main);
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  margin-left: 0.5rem;
+}
+
 /* Listing Cards Grid */
 .manage-listings__grid {
   display: grid;

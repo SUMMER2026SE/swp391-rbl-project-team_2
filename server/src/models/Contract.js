@@ -60,6 +60,10 @@ const Contract = sequelize.define('Contract', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  assigned_room_number: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+  },
   landlord_name: {
     type: DataTypes.STRING(255),
     allowNull: true,

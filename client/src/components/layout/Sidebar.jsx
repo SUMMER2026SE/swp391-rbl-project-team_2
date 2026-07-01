@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import toast from 'react-hot-toast';
 import {
   LayoutDashboard,
   Building2,
@@ -72,9 +73,10 @@ const TENANT_NAV = [
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, user } = useAuthStore();
+  const { logout, user, hasUnreadTenantRequests, setHasUnreadTenantRequests } = useAuthStore();
   const [pendingCount, setPendingCount] = useState(0);
   const [pendingSchedules, setPendingSchedules] = useState(0);
+  const [pendingRequests, setPendingRequests] = useState(0);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
   // Listen for new messages
@@ -88,6 +90,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     });
 
     socket.emit('join_user', user.id || user.userId);
+    
+    // Detect role context from current URL
+    const isAdminUrl = location.pathname.startsWith('/admin');
+    if (isAdminUrl || user.role === 'admin') {
+      socket.emit('join_admin');
+    }
 
     socket.on('new_message_notification', (message) => {
       // If we receive a message and we are not on the messages page
@@ -96,16 +104,50 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       }
     });
 
+    socket.on('new_notification', (data) => {
+      toast.success(data.message || data.title, {
+        duration: 5000,
+        position: 'bottom-right',
+      });
+      
+      // Auto refetch stats when new notification arrives to update sidebar badges
+      if (location.pathname.startsWith('/landlord')) {
+        landlordService.getStats().then(res => {
+          if (res.success) {
+            if (res.data.schedules?.pending !== undefined) setPendingSchedules(res.data.schedules.pending);
+            if (res.data.requests?.pending !== undefined) setPendingRequests(res.data.requests.pending);
+          }
+        }).catch(e => console.error(e));
+      } else if (location.pathname.startsWith('/admin')) {
+        adminService.getDashboardStats().then(res => {
+          if (res.success && res.data.pendingListings) {
+            setPendingCount(res.data.pendingListings);
+          }
+        }).catch(e => console.error(e));
+      } else {
+        // Tenant notifications check - apply on all pages for tenant
+        if (data.type === 'rental_request' || data.type === 'contract' || data.type === 'viewing_schedule') {
+          if (location.pathname !== '/tenant/requests') {
+             setHasUnreadTenantRequests(true);
+          }
+        }
+      }
+    });
+
     return () => {
       socket.off('new_message_notification');
+      socket.off('new_notification');
       socket.disconnect();
     };
   }, [user, location.pathname]);
 
-  // Clear unread dot when visiting messages
+  // Clear unread dot when visiting messages or tenant requests
   useEffect(() => {
     if (location.pathname === '/messages' || location.pathname === ROUTES.LANDLORD.MESSAGES) {
       setHasUnreadMessages(false);
+    }
+    if (location.pathname === '/tenant/requests') {
+      setHasUnreadTenantRequests(false);
     }
   }, [location.pathname]);
 
@@ -123,10 +165,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       }).catch(err => console.error('Failed to fetch pending count for sidebar', err));
     } else if (isLandlord) {
       landlordService.getStats().then(res => {
-        if (res.success && res.data.schedules?.pending) {
-          setPendingSchedules(res.data.schedules.pending);
+        if (res.success) {
+          if (res.data.schedules?.pending !== undefined) {
+            setPendingSchedules(res.data.schedules.pending);
+          }
+          if (res.data.requests?.pending !== undefined) {
+            setPendingRequests(res.data.requests.pending);
+          }
         }
-      }).catch(err => console.error('Failed to fetch pending schedules for sidebar', err));
+      }).catch(err => console.error('Failed to fetch stats for sidebar', err));
     }
   }, [isAdmin, isLandlord, location.pathname]); // refetch occasionally when path changes
 
@@ -205,7 +252,22 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                         {pendingSchedules}
                       </span>
                     )}
+                    {isLandlord && link.label === 'Rental Requests' && pendingRequests > 0 && (
+                      <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
+                        {pendingRequests}
+                      </span>
+                    )}
                     {link.label === 'Messages' && hasUnreadMessages && (
+                      <span style={{ 
+                        width: '8px', 
+                        height: '8px', 
+                        backgroundColor: '#ef4444', 
+                        borderRadius: '50%',
+                        marginLeft: '8px',
+                        display: 'inline-block'
+                      }}></span>
+                    )}
+                    {isTenant && link.label === 'Requests' && hasUnreadTenantRequests && (
                       <span style={{ 
                         width: '8px', 
                         height: '8px', 
