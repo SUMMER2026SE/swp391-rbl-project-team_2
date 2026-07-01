@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Sparkles, Loader, Search, ChevronDown, ChevronUp, Check, RotateCcw, Filter } from 'lucide-react';
-import RoomCard from '../components/RoomCard';
+import PropertyCard from '../components/PropertyCard';
 import { roomService } from '../services/roomService';
-import { favoriteService } from '../services/favoriteService';
 import useAuthStore from '../../../store/useAuthStore';
 import './SearchPage.css';
 
@@ -133,37 +132,25 @@ const SearchPage = () => {
       setLoading(true);
       const params = buildSearchParams(currentPage);
       
-      const response = await roomService.searchRooms(params);
-      
-      let favoriteIds = [];
-      if (isAuthenticated) {
-        try {
-          const favResponse = await favoriteService.getFavorites();
-          const favs = favResponse.data || favResponse || [];
-          favoriteIds = favs.map(f => parseInt(f.room_id) || parseInt(f.roomId));
-        } catch (e) {
-          console.error("Could not fetch favorites", e);
-        }
-      }
+      const response = await roomService.searchProperties(params);
 
-      const mappedRooms = response.data.map(room => ({
-        id: room.roomId,
-        title: room.title,
-        price: room.pricePerMonth,
-        location: [room.address, room.district, room.city].filter(Boolean).join(', '),
-        specs: [
-          { icon: 'bed', text: `${room.bedrooms || 1} Bed` },
-          { icon: 'square', text: `${room.areaSqm || 0} m²` }
-        ],
-        imageTags: room.status === 'available' ? [{ text: 'Available', type: 'primary' }] : [],
-        isFavorite: favoriteIds.includes(parseInt(room.roomId)),
-        image: room.thumbnailUrl ? (room.thumbnailUrl && room.thumbnailUrl.startsWith('http') ? room.thumbnailUrl : `http://localhost:5000${room.thumbnailUrl}`) : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500'
+      const mappedProperties = response.data.map(prop => ({
+        id: prop.id,
+        title: prop.title,
+        address: prop.address,
+        district: prop.district,
+        city: prop.city,
+        thumbnailUrl: prop.thumbnailUrl ? (prop.thumbnailUrl.startsWith('http') ? prop.thumbnailUrl : `http://localhost:5000${prop.thumbnailUrl}`) : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500',
+        minPrice: prop.minPrice,
+        maxPrice: prop.maxPrice,
+        totalRooms: prop.totalRooms,
+        availableRooms: prop.availableRooms,
       }));
 
       if (!append) {
-        setRooms(mappedRooms);
+        setRooms(mappedProperties);
       } else {
-        setRooms(prev => [...prev, ...mappedRooms]);
+        setRooms(prev => [...prev, ...mappedProperties]);
       }
       setTotalPages(response.pagination?.pages || 1);
       setPage(currentPage);
@@ -173,7 +160,7 @@ const SearchPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [buildSearchParams, isAuthenticated]);
+  }, [buildSearchParams]);
 
   useEffect(() => {
     fetchRooms(1);
@@ -467,7 +454,7 @@ const SearchPage = () => {
 
             <div className="results-header flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-2xl font-bold">Available Rooms</h2>
+                <h2 className="text-2xl font-bold">Available Properties</h2>
                 {loading && page === 1 ? (
                   <p className="text-gray-500">Loading...</p>
                 ) : (
@@ -489,11 +476,11 @@ const SearchPage = () => {
 
             <div className="rooms-grid">
               {rooms.length > 0 ? (
-                rooms.map(room => (
-                  <RoomCard key={room.id} room={room} variant="standard" />
+                rooms.map(prop => (
+                  <PropertyCard key={prop.id} property={prop} />
                 ))
               ) : (
-                !loading && <div className="col-span-full py-12 text-center text-gray-500">No rooms found matching your criteria. Try adjusting your filters.</div>
+                !loading && <div className="col-span-full py-12 text-center text-gray-500">No properties found matching your criteria. Try adjusting your filters.</div>
               )}
             </div>
 
@@ -504,7 +491,7 @@ const SearchPage = () => {
                   onClick={() => fetchRooms(page + 1, true)}
                   disabled={loading}
                 >
-                  {loading ? 'Loading...' : 'Load More Rooms'}
+                  {loading ? 'Loading...' : 'Load More Properties'}
                 </button>
               </div>
             )}

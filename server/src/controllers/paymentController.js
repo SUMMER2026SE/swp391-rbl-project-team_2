@@ -263,7 +263,16 @@ const createPaymentUrl = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Room not found' });
     }
 
-    if (room.status === 'rented') {
+    // Verify contract if provided
+    let contract = null;
+    if (contractId) {
+      contract = await Contract.findOne({ where: { contract_id: contractId, tenant_id: tenantId } });
+      if (!contract) {
+        return res.status(400).json({ success: false, message: 'Contract not found or does not belong to you.' });
+      }
+    }
+
+    if (room.status === 'rented' && !contract) {
       return res.status(400).json({ success: false, message: 'This room has already been rented by another tenant.' });
     }
 
@@ -427,7 +436,7 @@ const vnpayReturn = async (req, res, next) => {
               const otherSchedules = await ViewingSchedule.findAll({
                 where: {
                   room_id: contract.room_id,
-                  status: { [Op.in]: ['pending', 'scheduled', 'contract_requested', 'contract_created'] },
+                  status: { [Op.in]: ['pending', 'scheduled', 'confirmed', 'completed', 'contract_requested', 'contract_created'] },
                   schedule_id: { [Op.ne]: viewingSchedule ? viewingSchedule.schedule_id : null }
                 }
               });
@@ -444,6 +453,30 @@ const vnpayReturn = async (req, res, next) => {
                   message: `Your viewing schedule for "${room ? room.title : 'room'}" has been cancelled because the room was just rented by another tenant.`,
                   notification_type: 'viewing_schedule',
                   related_id: sched.schedule_id,
+                });
+              }
+
+              // Cancel all other active rental requests for this room
+              const { RentalRequest } = require('../models');
+              const otherRequests = await RentalRequest.findAll({
+                where: {
+                  room_id: contract.room_id,
+                  status: { [Op.in]: ['pending', 'approved', 'contract_requested', 'contract_created'] }
+                }
+              });
+
+              for (const req of otherRequests) {
+                await req.update({
+                  status: 'cancelled',
+                  rejection_reason: '[SYSTEM]: Room has been rented by another tenant.'
+                });
+                
+                await Notification.create({
+                  user_id: req.tenant_id,
+                  title: 'Request Cancelled',
+                  message: `Your rental request for "${room ? room.title : 'room'}" has been cancelled because the room was just rented by another tenant.`,
+                  notification_type: 'rental_request',
+                  related_id: req.request_id,
                 });
               }
 
@@ -507,7 +540,7 @@ const vnpayReturn = async (req, res, next) => {
               const otherSchedules = await ViewingSchedule.findAll({
                 where: {
                   room_id: payment.room_id,
-                  status: { [Op.in]: ['pending', 'scheduled', 'contract_requested', 'contract_created'] }
+                  status: { [Op.in]: ['pending', 'scheduled', 'confirmed', 'completed', 'contract_requested', 'contract_created'] }
                 }
               });
 
@@ -523,6 +556,30 @@ const vnpayReturn = async (req, res, next) => {
                   message: `Your viewing schedule for "${room.title}" has been cancelled because the room was just rented by another tenant.`,
                   notification_type: 'viewing_schedule',
                   related_id: sched.schedule_id,
+                });
+              }
+
+              // Cancel all other active rental requests for this room
+              const otherRequests = await RentalRequest.findAll({
+                where: {
+                  room_id: payment.room_id,
+                  status: { [Op.in]: ['pending', 'approved', 'contract_requested', 'contract_created'] },
+                  request_id: { [Op.ne]: rentalRequest ? rentalRequest.request_id : null }
+                }
+              });
+
+              for (const req of otherRequests) {
+                await req.update({
+                  status: 'cancelled',
+                  rejection_reason: '[SYSTEM]: Room has been rented by another tenant.'
+                });
+                
+                await Notification.create({
+                  user_id: req.tenant_id,
+                  title: 'Request Cancelled',
+                  message: `Your rental request for "${room.title}" has been cancelled because the room was just rented by another tenant.`,
+                  notification_type: 'rental_request',
+                  related_id: req.request_id,
                 });
               }
 

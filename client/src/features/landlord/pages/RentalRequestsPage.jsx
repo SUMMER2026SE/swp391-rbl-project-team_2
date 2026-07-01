@@ -47,6 +47,7 @@ const RentalRequestsPage = () => {
     landlordIcIssueDate: '',
     landlordIcIssuePlace: '',
     landlordPermanentAddress: '',
+    assignedRoomNumber: '',
   });
   const landlordSigCanvas = React.useRef({});
 
@@ -118,6 +119,7 @@ const RentalRequestsPage = () => {
         landlordIcIssueDate: profile.icIssueDate ? new Date(profile.icIssueDate).toISOString().split('T')[0] : '',
         landlordIcIssuePlace: profile.icIssuePlace,
         landlordPermanentAddress: profile.permanentAddress,
+        assignedRoomNumber: request.room?.room_number || '',
       });
       setSelectedRequest(request);
       setShowContractModal(true);
@@ -134,6 +136,10 @@ const RentalRequestsPage = () => {
       if (!contractData.landlordName || !contractData.landlordIc || !contractData.landlordIcIssueDate || !contractData.landlordIcIssuePlace || !contractData.landlordPermanentAddress) {
           toast.error('Please fill in all identity details.');
           return;
+      }
+      if (!contractData.assignedRoomNumber) {
+        toast.error('Vui lòng gán số phòng thực tế cho hợp đồng này.');
+        return;
       }
       if (contractData.landlordIc.length !== 12) {
         toast.error('CCCD/CMND must be exactly 12 digits.');
@@ -156,6 +162,7 @@ const RentalRequestsPage = () => {
         landlordIcIssuePlace: contractData.landlordIcIssuePlace,
         landlordPermanentAddress: contractData.landlordPermanentAddress,
         landlordSignature: landlordSignature,
+        assignedRoomNumber: contractData.assignedRoomNumber,
       });
       
       if (res.success) {
@@ -321,11 +328,7 @@ const RentalRequestsPage = () => {
                   <td>
                     <div className="tenant-info">
                       <div className="tenant-avatar">
-                        {request.tenant?.avatar_url ? (
-                          <img src={getGlobalAvatar(request.tenant.full_name, request.tenant.avatar_url)} alt={request.tenant.full_name} />
-                        ) : (
-                          <span>{request.tenant?.full_name?.charAt(0) || 'T'}</span>
-                        )}
+                        <img src={getGlobalAvatar(request.tenant?.full_name, request.tenant?.avatar_url)} alt={request.tenant?.full_name || 'Unknown'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                       </div>
                       <div>
                         <div className="tenant-name">{request.tenant?.full_name || 'Unknown'}</div>
@@ -611,6 +614,16 @@ const RentalRequestsPage = () => {
                   <h4 style={{ margin: '0 0 12px 0', color: '#334155', fontSize: '1rem' }}>Room Details</h4>
                   <p style={{ margin: '0 0 8px 0', color: '#475569' }}><strong>Room:</strong> {selectedRequest.room?.title}</p>
                   <p style={{ margin: 0, color: '#475569' }}><strong>Monthly Rent:</strong> {selectedRequest.room?.price_per_month?.toLocaleString()} VNĐ</p>
+                  <div className="form-group" style={{ marginTop: '12px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#334155' }}>Assign Room Number (Physical Room) *</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. 101, A2" 
+                      value={contractData.assignedRoomNumber} 
+                      onChange={(e) => setContractData({...contractData, assignedRoomNumber: e.target.value})}
+                      style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
                 </div>
 
                 <div>

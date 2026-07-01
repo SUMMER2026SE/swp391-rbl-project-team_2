@@ -99,6 +99,16 @@
   color: var(--text-main);
 }
 
+.danger-tag {
+  background-color: #EF4444; /* Red */
+  color: #FFFFFF;
+}
+
+.warning-tag {
+  background-color: #F59E0B; /* Amber */
+  color: #FFFFFF;
+}
+
 /* Card Content */
 .room-card-content {
   padding: 1.25rem;

@@ -64,6 +64,7 @@ export const useContracts = (params = {}) => {
 
   const updateContract = async (id, contractData) => {
     try {
+      setError(null);
       const updated = await landlordService.updateContract(id, contractData);
       setContracts(contracts.map(c => c.id === id ? updated : c));
       return updated;

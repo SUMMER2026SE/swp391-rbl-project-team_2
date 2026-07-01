@@ -110,6 +110,15 @@ const createViewingSchedule = async (req, res, next) => {
       related_id: schedule.schedule_id,
     });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${tenantId}`).emit('new_notification', {
+        title: 'Viewing Schedule Created',
+        message: `A viewing has been scheduled for ${room.title}`,
+        type: 'viewing_schedule'
+      });
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Viewing schedule created successfully!',
@@ -153,7 +162,7 @@ const getLandlordViewingSchedules = async (req, res, next) => {
         { 
           model: Room, 
           as: 'room', 
-          attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month'],
+          attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month', 'room_number'],
           include: [
             { model: RoomImage, as: 'images', attributes: ['image_url', 'is_primary'] }
           ]
@@ -300,6 +309,40 @@ const updateViewingSchedule = async (req, res, next) => {
     schedule.updated_at = new Date();
     await schedule.save();
 
+    // Notify tenant about status change
+    if (status) {
+      let statusTitle = 'Viewing Schedule Updated';
+      let statusMessage = `Your viewing schedule status has been updated to ${status}.`;
+      
+      if (status === 'rejected') {
+        statusTitle = 'Viewing Request Rejected';
+        statusMessage = `Your viewing request has been rejected by the landlord.`;
+      } else if (status === 'scheduled') {
+        statusTitle = 'Viewing Request Approved';
+        statusMessage = `Your viewing request has been approved and scheduled.`;
+      } else if (status === 'cancelled') {
+        statusTitle = 'Viewing Schedule Cancelled';
+        statusMessage = `Your viewing schedule has been cancelled by the landlord.`;
+      }
+
+      await Notification.create({
+        user_id: schedule.tenant_id,
+        title: statusTitle,
+        message: statusMessage,
+        notification_type: 'viewing_schedule',
+        related_id: schedule.schedule_id,
+      });
+
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`user_${schedule.tenant_id}`).emit('new_notification', {
+          title: statusTitle,
+          message: statusMessage,
+          type: 'viewing_schedule'
+        });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Viewing schedule updated successfully!',
@@ -352,6 +395,15 @@ const confirmViewing = async (req, res, next) => {
       related_id: schedule.schedule_id,
     });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${schedule.tenant_id}`).emit('new_notification', {
+        title: 'Viewing Confirmed',
+        message: `Your room viewing for "${schedule.room.title}" has been confirmed by the landlord. You can now decide to rent or report an issue.`,
+        type: 'viewing_schedule'
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Tenant viewing confirmed! They can now decide to proceed with renting.',
@@ -400,6 +452,15 @@ const markNoShow = async (req, res, next) => {
       related_id: schedule.schedule_id,
     });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${schedule.tenant_id}`).emit('new_notification', {
+        title: 'No-Show Recorded',
+        message: `You did not attend the viewing for "${schedule.room.title}".`,
+        type: 'viewing_schedule'
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Tenant marked as no-show.',
@@ -443,6 +504,15 @@ const deleteViewingSchedule = async (req, res, next) => {
       notification_type: 'viewing_schedule',
       related_id: schedule.schedule_id,
     });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${schedule.tenant_id}`).emit('new_notification', {
+        title: 'Viewing Schedule Cancelled',
+        message: 'A viewing schedule has been cancelled',
+        type: 'viewing_schedule'
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -578,6 +648,23 @@ const requestViewing = async (req, res, next) => {
       notes: notes || null,
     });
 
+    await Notification.create({
+      user_id: room.landlord_id,
+      title: 'New Viewing Request',
+      message: `A tenant has requested a viewing for "${room.title}".`,
+      notification_type: 'viewing_schedule',
+      related_id: schedule.schedule_id,
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${room.landlord_id}`).emit('new_notification', {
+        title: 'New Viewing Request',
+        message: `A tenant has requested a viewing for "${room.title}".`,
+        type: 'viewing_schedule'
+      });
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Viewing request created successfully! Waiting for landlord approval.',
@@ -706,10 +793,10 @@ const requestContract = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Viewing schedule not found.' });
     }
 
-    if (schedule.status !== 'confirmed') {
+    if (schedule.status !== 'confirmed' && schedule.status !== 'completed') {
       return res.status(400).json({ 
         success: false, 
-        message: 'You can only request a contract after your viewing has been confirmed by the landlord.' 
+        message: 'You can only request a contract after your viewing has been confirmed or completed by the landlord.' 
       });
     }
 
@@ -819,10 +906,10 @@ const disputeViewingSchedule = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Viewing schedule not found.' });
     }
 
-    if (schedule.status !== 'confirmed') {
+    if (schedule.status !== 'confirmed' && schedule.status !== 'completed') {
       return res.status(400).json({
         success: false,
-        message: 'Only confirmed viewing schedules can be disputed.',
+        message: 'Only confirmed or completed viewing schedules can be disputed.',
       });
     }
 
@@ -841,6 +928,15 @@ const disputeViewingSchedule = async (req, res, next) => {
       notification_type: 'viewing_schedule',
       related_id: schedule.schedule_id,
     });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${schedule.landlord_id}`).emit('new_notification', {
+        title: 'Viewing Dispute',
+        message: `Tenant has disputed the viewing. Reason: ${reason || 'Not provided'}. Admin will review.`,
+        type: 'viewing_schedule'
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -891,6 +987,15 @@ const cancelViewingScheduleTenant = async (req, res, next) => {
       related_id: schedule.schedule_id,
     });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${schedule.landlord_id}`).emit('new_notification', {
+        title: 'Viewing Schedule Cancelled',
+        message: `Tenant has cancelled the viewing for "${schedule.room.title}".`,
+        type: 'viewing_schedule'
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Viewing schedule cancelled successfully.',
@@ -918,10 +1023,10 @@ const declineViewingScheduleTenant = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Viewing schedule not found.' });
     }
 
-    if (schedule.status !== 'confirmed') {
+    if (schedule.status !== 'confirmed' && schedule.status !== 'completed') {
       return res.status(400).json({
         success: false,
-        message: 'You can only decline to rent after the viewing is confirmed by landlord.',
+        message: 'You can only decline to rent after the viewing is confirmed or completed by landlord.',
       });
     }
 
@@ -939,6 +1044,15 @@ const declineViewingScheduleTenant = async (req, res, next) => {
       notification_type: 'viewing_schedule',
       related_id: schedule.schedule_id,
     });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${schedule.landlord_id}`).emit('new_notification', {
+        title: 'Tenant Declined to Rent',
+        message: `Tenant has decided not to rent "${schedule.room.title}" after viewing.`,
+        type: 'viewing_schedule'
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -967,7 +1081,8 @@ const createContractFromViewing = async (req, res, next) => {
       landlordIcIssueDate,
       landlordIcIssuePlace,
       landlordPermanentAddress,
-      landlordSignature 
+      landlordSignature,
+      assignedRoomNumber
     } = req.body;
 
     const schedule = await ViewingSchedule.findOne({
@@ -984,6 +1099,14 @@ const createContractFromViewing = async (req, res, next) => {
         success: false,
         message: 'Tenant has not requested a contract for this viewing.',
       });
+    }
+
+    if (!assignedRoomNumber) {
+      return res.status(400).json({ success: false, message: 'Please assign a physical room number for this contract.' });
+    }
+
+    if (schedule.room.available_quantity <= 0) {
+      return res.status(400).json({ success: false, message: 'This room type is out of stock.' });
     }
 
     if (!startDate && !termsAndConditions) { // keep some fallback for legacy requests if needed, but we'll enforce finding the draft contract.
@@ -1009,12 +1132,16 @@ const createContractFromViewing = async (req, res, next) => {
       const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
       
       let signatureUrl = landlordSignature;
-      if (landlordSignature && landlordSignature.startsWith('data:image')) {
-        const { cloudinary } = require('../config/cloudinary');
-        const uploadResponse = await cloudinary.uploader.upload(landlordSignature, {
-          folder: 'signatures',
-        });
-        signatureUrl = uploadResponse.secure_url;
+      if (landlordSignature && landlordSignature.startsWith('data:image') && process.env.CLOUDINARY_URL) {
+        try {
+          const { cloudinary } = require('../config/cloudinary');
+          const uploadResponse = await cloudinary.uploader.upload(landlordSignature, {
+            folder: 'signatures',
+          });
+          signatureUrl = uploadResponse.secure_url;
+        } catch (error) {
+          console.error("Cloudinary upload failed for signature, falling back to base64", error);
+        }
       }
 
       contract = await Contract.create({
@@ -1033,16 +1160,21 @@ const createContractFromViewing = async (req, res, next) => {
         landlord_ic_issue_date: landlordIcIssueDate || null,
         landlord_ic_issue_place: landlordIcIssuePlace,
         landlord_permanent_address: landlordPermanentAddress,
-        landlord_signature: signatureUrl
+        landlord_signature: signatureUrl,
+        assigned_room_number: assignedRoomNumber
       });
     } else {
       let signatureUrl = landlordSignature;
-      if (landlordSignature && landlordSignature.startsWith('data:image')) {
-        const { cloudinary } = require('../config/cloudinary');
-        const uploadResponse = await cloudinary.uploader.upload(landlordSignature, {
-          folder: 'signatures',
-        });
-        signatureUrl = uploadResponse.secure_url;
+      if (landlordSignature && landlordSignature.startsWith('data:image') && process.env.CLOUDINARY_URL) {
+        try {
+          const { cloudinary } = require('../config/cloudinary');
+          const uploadResponse = await cloudinary.uploader.upload(landlordSignature, {
+            folder: 'signatures',
+          });
+          signatureUrl = uploadResponse.secure_url;
+        } catch (error) {
+          console.error("Cloudinary upload failed for signature, falling back to base64", error);
+        }
       }
 
       await contract.update({
@@ -1054,9 +1186,17 @@ const createContractFromViewing = async (req, res, next) => {
         landlord_ic_issue_place: landlordIcIssuePlace,
         landlord_permanent_address: landlordPermanentAddress,
         landlord_signature: signatureUrl,
+        assigned_room_number: assignedRoomNumber,
         updated_at: new Date()
       });
     }
+
+    const roomToUpdate = schedule.room;
+    roomToUpdate.available_quantity -= 1;
+    if (roomToUpdate.available_quantity <= 0) {
+      roomToUpdate.status = 'rented';
+    }
+    await roomToUpdate.save();
 
     schedule.status = 'contract_created';
     schedule.updated_at = new Date();

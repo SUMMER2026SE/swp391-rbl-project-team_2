@@ -12,5 +12,13 @@ export const roomService = {
   searchRooms: async (params) => {
     const response = await httpClient.get('/listings/search', { params });
     return response;
+  },
+  searchProperties: async (params) => {
+    const response = await httpClient.get('/listings/properties/search', { params });
+    return response;
+  },
+  getPropertyById: async (id) => {
+    const response = await httpClient.get(`/listings/properties/${id}`);
+    return response;
   }
 };

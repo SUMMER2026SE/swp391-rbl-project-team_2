@@ -14,6 +14,12 @@ const upload = multer({ storage });
 // GET /api/listings -> get all active public rooms
 router.get('/', roomController.getAllPublicRooms);
 
+// GET /api/listings/properties/search -> search grouped properties
+router.get('/properties/search', roomController.searchProperties);
+
+// GET /api/listings/properties/:id -> get property details
+router.get('/properties/:id', roomController.getPublicPropertyDetails);
+
 // GET /api/listings/search -> search rooms
 router.get('/search', roomController.searchRooms);
 

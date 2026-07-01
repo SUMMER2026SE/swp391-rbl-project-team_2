@@ -20,7 +20,7 @@ const getLandlordRentalRequests = async (req, res, next) => {
     const { count, rows } = await RentalRequest.findAndCountAll({
       where,
       include: [
-        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month'] },
+        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month', 'room_number'] },
         { model: User, as: 'tenant', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
       ],
       offset,
@@ -168,6 +168,16 @@ const approveRentalRequest = async (req, res, next) => {
       related_id: rentalRequest.request_id,
     });
 
+    // Emit socket event to tenant
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${rentalRequest.tenant_id}`).emit('new_notification', {
+        title: 'Rental Request Approved',
+        message: `Your rental request for ${rentalRequest.room.title} has been approved!`,
+        type: 'rental_request'
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Rental request approved successfully!',
@@ -235,6 +245,16 @@ const rejectRentalRequest = async (req, res, next) => {
       related_id: rentalRequest.request_id,
     });
 
+    // Emit socket event to tenant
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${rentalRequest.tenant_id}`).emit('new_notification', {
+        title: 'Rental Request Rejected',
+        message: `Your rental request for ${rentalRequest.room.title} has been rejected. Reason: ${rejectionReason}`,
+        type: 'rental_request'
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Rental request rejected successfully!',
@@ -263,6 +283,7 @@ const createContractFromRequest = async (req, res, next) => {
       landlordIcIssuePlace,
       landlordPermanentAddress,
       landlordSignature,
+      assignedRoomNumber,
     } = req.body;
 
     const rentalRequest = await RentalRequest.findOne({
@@ -281,6 +302,14 @@ const createContractFromRequest = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Contract has not been requested by tenant yet.' });
     }
 
+    if (!assignedRoomNumber) {
+      return res.status(400).json({ success: false, message: 'Please assign a physical room number for this contract.' });
+    }
+
+    if (rentalRequest.room.available_quantity <= 0) {
+      return res.status(400).json({ success: false, message: 'This room type is out of stock.' });
+    }
+
     const { Contract } = require('../models');
     const contract = await Contract.findOne({
       where: {
@@ -295,12 +324,16 @@ const createContractFromRequest = async (req, res, next) => {
     }
 
     let signatureUrl = landlordSignature;
-    if (landlordSignature && landlordSignature.startsWith('data:image')) {
-      const { cloudinary } = require('../config/cloudinary');
-      const uploadResponse = await cloudinary.uploader.upload(landlordSignature, {
-        folder: 'signatures',
-      });
-      signatureUrl = uploadResponse.secure_url;
+    if (landlordSignature && landlordSignature.startsWith('data:image') && process.env.CLOUDINARY_URL) {
+      try {
+        const { cloudinary } = require('../config/cloudinary');
+        const uploadResponse = await cloudinary.uploader.upload(landlordSignature, {
+          folder: 'signatures',
+        });
+        signatureUrl = uploadResponse.secure_url;
+      } catch (error) {
+        console.error("Cloudinary upload failed for signature, falling back to base64", error);
+      }
     }
 
     contract.terms_and_conditions = termsAndConditions;
@@ -310,8 +343,16 @@ const createContractFromRequest = async (req, res, next) => {
     contract.landlord_ic_issue_place = landlordIcIssuePlace;
     contract.landlord_permanent_address = landlordPermanentAddress;
     contract.landlord_signature = signatureUrl;
+    contract.assigned_room_number = assignedRoomNumber;
     contract.status = 'pending_signature';
     await contract.save();
+
+    const roomToUpdate = rentalRequest.room;
+    roomToUpdate.available_quantity -= 1;
+    if (roomToUpdate.available_quantity <= 0) {
+      roomToUpdate.status = 'rented';
+    }
+    await roomToUpdate.save();
 
     const safeNow = new Date().toISOString().replace('T', ' ').substring(0, 19);
     rentalRequest.status = 'contract_created';
@@ -325,6 +366,16 @@ const createContractFromRequest = async (req, res, next) => {
       notification_type: 'contract',
       related_id: contract.contract_id,
     });
+
+    // Emit socket event to tenant
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${rentalRequest.tenant_id}`).emit('new_notification', {
+        title: 'Contract Ready to Sign',
+        message: `The landlord has created the contract for ${rentalRequest.room.title}. Please review, sign, and pay the deposit.`,
+        type: 'contract'
+      });
+    }
 
     return res.status(200).json({
       success: true,

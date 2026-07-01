@@ -152,6 +152,7 @@ const getLandlordContracts = async (req, res, next) => {
         landlordIcIssuePlace: contract.landlord_ic_issue_place,
         landlordPermanentAddress: contract.landlord_permanent_address,
         landlordSignature: contract.landlord_signature,
+        assignedRoomNumber: contract.assigned_room_number,
       })),
       pagination: {
         total: count,
@@ -221,6 +222,7 @@ const getContractDetails = async (req, res, next) => {
         landlordIcIssuePlace: contract.landlord_ic_issue_place,
         landlordPermanentAddress: contract.landlord_permanent_address,
         landlordSignature: contract.landlord_signature,
+        assignedRoomNumber: contract.assigned_room_number,
       },
     });
   } catch (error) {
@@ -235,7 +237,7 @@ const getContractDetails = async (req, res, next) => {
 const updateContract = async (req, res, next) => {
   try {
     const { contractId } = req.params;
-    const { monthlyRent, depositAmount, termsAndConditions, status } = req.body;
+    const { monthlyRent, depositAmount, termsAndConditions, status, assignedRoomNumber } = req.body;
     const landlordId = req.user.userId;
 
     const contract = await Contract.findOne({
@@ -253,6 +255,7 @@ const updateContract = async (req, res, next) => {
     if (depositAmount) contract.deposit_amount = depositAmount;
     if (termsAndConditions) contract.terms_and_conditions = termsAndConditions;
     if (status) contract.status = status;
+    if (assignedRoomNumber !== undefined) contract.assigned_room_number = assignedRoomNumber;
 
     contract.updated_at = new Date();
     await contract.save();
@@ -386,8 +389,9 @@ const terminateContract = async (req, res, next) => {
     contract.updated_at = new Date();
     await contract.save();
 
-    // Update room status to available
+    // Update room status to available and increment available_quantity
     contract.room.status = 'available';
+    contract.room.available_quantity += 1;
     await contract.room.save();
 
     // Create notification for tenant

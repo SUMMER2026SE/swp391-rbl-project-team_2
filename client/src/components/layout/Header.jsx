@@ -12,7 +12,7 @@ import './Header.css';
 const Header = ({ toggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout, hasUnreadTenantRequests } = useAuthStore();
   const [searchParams] = useSearchParams();
   const keywordParam = searchParams.get('keyword') || '';
   const [quickSearch, setQuickSearch] = React.useState(keywordParam);
@@ -96,7 +96,20 @@ const Header = ({ toggleSidebar }) => {
               {isAuthenticated && user?.role !== 'ADMIN' && (
                 <>
                   <Link to={ROUTES.TENANT.FAVORITES} className={`tab-link ${location.pathname === ROUTES.TENANT.FAVORITES ? 'active' : ''}`}>Favorites</Link>
-                  <Link to="/tenant/requests" className={`tab-link ${location.pathname === '/tenant/requests' ? 'active' : ''}`}>Requests</Link>
+                  <Link to="/tenant/requests" className={`tab-link ${location.pathname === '/tenant/requests' ? 'active' : ''}`} style={{ position: 'relative' }}>
+                    Requests
+                    {hasUnreadTenantRequests && (
+                      <span style={{ 
+                        width: '8px', 
+                        height: '8px', 
+                        backgroundColor: '#ef4444', 
+                        borderRadius: '50%',
+                        position: 'absolute',
+                        top: '12px',
+                        right: '-8px'
+                      }}></span>
+                    )}
+                  </Link>
                 </>
               )}
             </>

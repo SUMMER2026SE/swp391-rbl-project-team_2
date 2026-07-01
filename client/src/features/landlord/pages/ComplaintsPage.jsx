@@ -16,6 +16,7 @@ import Button from '../../../components/common/Button';
 import Loading from '../../../components/ui/Loading';
 import EmptyState from '../../../components/ui/EmptyState';
 import Badge from '../../../components/ui/Badge';
+import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
 import './ComplaintsPage.css';
 
 const ComplaintsPage = () => {
@@ -202,11 +203,7 @@ const ComplaintsPage = () => {
                   <td>
                     <div className="tenant-info">
                       <div className="tenant-avatar">
-                        {complaint.tenantAvatar ? (
-                          <img src={complaint.tenantAvatar} alt={complaint.tenantName} />
-                        ) : (
-                          <span>{complaint.tenantName?.charAt(0)}</span>
-                        )}
+                        <img src={getGlobalAvatar(complaint.tenantName, complaint.tenantAvatar)} alt={complaint.tenantName || 'Unknown'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                       </div>
                       <span>{complaint.tenantName}</span>
                     </div>

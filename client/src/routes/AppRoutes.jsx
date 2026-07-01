@@ -25,6 +25,7 @@ import {
   TenantDashboardPage,
   TenantRequestsPage,
   ListingsPage as TenantListingsPage,
+  PropertyDetailPage
 } from '../features/tenant';
 
 // Landlord feature
@@ -89,6 +90,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.HOME} element={<HomePage />} />
         <Route path={ROUTES.ROOMS} element={<SearchPage />} />
         <Route path="/listings" element={<TenantListingsPage />} />
+        <Route path="/properties/:id" element={<PropertyDetailPage />} />
         <Route path="/listings/:id" element={<RoomDetailPage />} />
         <Route path={ROUTES.ROOM_DETAIL} element={<RoomDetailPage />} />
         <Route path={ROUTES.TENANT.CHAT} element={<AIChatPage />} />

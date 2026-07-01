@@ -305,18 +305,29 @@ const getPropertyDashboard = async (req, res, next) => {
     // Get all rooms for this property
     const rooms = await Room.findAll({
       where: { property_id: propertyId, is_deleted: false },
-      attributes: ['room_id', 'title', 'floor', 'room_number', 'price_per_month', 'area_sqm', 'status', 'max_occupants', 'thumbnail_url'],
+      attributes: ['room_id', 'title', 'floor', 'room_number', 'price_per_month', 'area_sqm', 'status', 'max_occupants', 'thumbnail_url', 'quantity', 'available_quantity'],
       order: [['floor', 'ASC'], ['room_number', 'ASC']],
     });
 
     // Get room IDs for financial queries
     const roomIds = rooms.map(r => r.room_id);
 
-    // Room statistics
-    const totalRooms = rooms.length;
-    const availableRooms = rooms.filter(r => r.status === 'available').length;
-    const rentedRooms = rooms.filter(r => r.status === 'rented').length;
-    const maintenanceRooms = rooms.filter(r => r.status === 'maintenance').length;
+    // Room statistics (accounting for quantity)
+    let totalRooms = 0;
+    let availableRooms = 0;
+    let rentedRooms = 0;
+    let maintenanceRooms = 0;
+
+    rooms.forEach(r => {
+      const q = r.quantity || 1;
+      const aq = (r.available_quantity !== undefined && r.available_quantity !== null)
+                 ? r.available_quantity
+                 : (r.status === 'rented' ? 0 : q);
+      totalRooms += q;
+      availableRooms += aq;
+      rentedRooms += (q - aq);
+      if (r.status === 'maintenance') maintenanceRooms += q; // Rough approximation
+    });
 
     // Financial data SCOPED to this property only
     let totalRevenue = 0;
@@ -346,23 +357,68 @@ const getPropertyDashboard = async (req, res, next) => {
       });
     }
 
-    // Build floor plan structure
+    // Fetch active/pending contracts to map physical rooms on the floor plan
+    let activeContractsList = [];
+    if (roomIds.length > 0) {
+      activeContractsList = await Contract.findAll({
+        where: {
+          room_id: { [Op.in]: roomIds },
+          status: { [Op.in]: ['active', 'pending', 'pending_signature', 'pending_payment'] }
+        },
+        attributes: ['contract_id', 'room_id', 'assigned_room_number', 'status', 'tenant_name']
+      });
+    }
+
+    // Build floor plan structure (simulated physical rooms based on quantity)
     const floorPlan = {};
     rooms.forEach(room => {
       const floor = room.floor || 1;
       if (!floorPlan[floor]) {
         floorPlan[floor] = [];
       }
-      floorPlan[floor].push({
-        roomId: room.room_id,
-        title: room.title,
-        roomNumber: room.room_number,
-        pricePerMonth: room.price_per_month,
-        areaSqm: room.area_sqm,
-        status: room.status,
-        maxOccupants: room.max_occupants,
-        thumbnailUrl: room.thumbnail_url,
+      
+      const qty = room.quantity || 1;
+      // Get contracts for this room type
+      const roomContracts = activeContractsList.filter(c => c.room_id === room.room_id);
+      
+      // Push blocks for each active contract
+      roomContracts.forEach(contract => {
+        floorPlan[floor].push({
+          roomId: `contract-${contract.contract_id}`,
+          originalRoomId: room.room_id,
+          title: room.title,
+          roomNumber: contract.assigned_room_number ? `Phòng ${contract.assigned_room_number}` : `Chưa gán số phòng`,
+          pricePerMonth: room.price_per_month,
+          areaSqm: room.area_sqm,
+          status: (contract.status === 'active' || contract.status === 'completed') ? 'rented' : 'pending',
+          maxOccupants: room.max_occupants,
+          thumbnailUrl: room.thumbnail_url,
+          tenantName: contract.tenant_name
+        });
       });
+      
+      // Calculate remaining empty blocks
+      const emptyBlocks = qty - roomContracts.length;
+      
+      const allNumbers = room.room_number ? room.room_number.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const rentedNumbers = roomContracts.map(c => c.assigned_room_number?.trim()).filter(Boolean);
+      const availableNumbers = allNumbers.filter(n => !rentedNumbers.includes(n));
+
+      for (let i = 0; i < emptyBlocks; i++) {
+        const assignedNumber = availableNumbers[i];
+
+        floorPlan[floor].push({
+          roomId: `empty-${room.room_id}-${i}`,
+          originalRoomId: room.room_id,
+          title: room.title,
+          roomNumber: assignedNumber ? `Phòng ${assignedNumber}` : `Trống (${room.title})`,
+          pricePerMonth: room.price_per_month,
+          areaSqm: room.area_sqm,
+          status: (room.status === 'pending' || room.status === 'rejected' || room.status === 'inactive' || room.status === 'maintenance') ? room.status : 'available',
+          maxOccupants: room.max_occupants,
+          thumbnailUrl: room.thumbnail_url,
+        });
+      }
     });
 
     // Monthly revenue for this property (last 6 months)
