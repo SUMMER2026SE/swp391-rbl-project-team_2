@@ -36,38 +36,38 @@ import './Sidebar.css';
 
 // ── Menu configs per role ──
 const LANDLORD_NAV = [
-  { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.LANDLORD.DASHBOARD },
-  { icon: <Building2 size={20} />, label: 'Properties', path: ROUTES.LANDLORD.PROPERTIES },
-  { icon: <Home size={20} />, label: 'Listings', path: ROUTES.LANDLORD.LISTINGS },
-  { icon: <CreditCard size={20} />, label: 'Deposits', path: ROUTES.LANDLORD.DEPOSITS },
-  { icon: <FileText size={20} />, label: 'Contracts', path: ROUTES.LANDLORD.CONTRACTS },
-  { icon: <ClipboardList size={20} />, label: 'Rental Requests', path: ROUTES.LANDLORD.REQUESTS },
-  { icon: <Calendar size={20} />, label: 'Viewing Schedules', path: ROUTES.LANDLORD.SCHEDULES },
-  { icon: <MessageSquare size={20} />, label: 'Messages', path: ROUTES.LANDLORD.MESSAGES },
-  { icon: <UserCircle size={20} />, label: 'Profile', path: ROUTES.LANDLORD.PROFILE },
-  { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.LANDLORD.SETTINGS },
+  { icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: ROUTES.LANDLORD.DASHBOARD },
+  { icon: <Building2 size={20} />, label: 'Khu trọ', path: ROUTES.LANDLORD.PROPERTIES },
+  { icon: <Home size={20} />, label: 'Phòng của tôi', path: ROUTES.LANDLORD.LISTINGS },
+  { icon: <CreditCard size={20} />, label: 'Tiền cọc', path: ROUTES.LANDLORD.DEPOSITS },
+  { icon: <FileText size={20} />, label: 'Hợp đồng', path: ROUTES.LANDLORD.CONTRACTS },
+  { icon: <ClipboardList size={20} />, label: 'Yêu cầu thuê', path: ROUTES.LANDLORD.REQUESTS },
+  { icon: <Calendar size={20} />, label: 'Lịch xem phòng', path: ROUTES.LANDLORD.SCHEDULES },
+  { icon: <MessageSquare size={20} />, label: 'Tin nhắn', path: ROUTES.LANDLORD.MESSAGES },
+  { icon: <UserCircle size={20} />, label: 'Hồ sơ', path: ROUTES.LANDLORD.PROFILE },
+  { icon: <Settings size={20} />, label: 'Cài đặt', path: ROUTES.LANDLORD.SETTINGS },
 ];
 
 const ADMIN_NAV = [
-  { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: ROUTES.ADMIN.DASHBOARD },
-  { icon: <Building2 size={20} />, label: 'Listings', path: ROUTES.ADMIN.LISTINGS },
-  { icon: <Users size={20} />, label: 'Users', path: ROUTES.ADMIN.USERS },
-  { icon: <ShieldCheck size={20} />, label: 'Moderation', path: ROUTES.ADMIN.MODERATION },
-  { icon: <BarChart3 size={20} />, label: 'Analytics', path: ROUTES.ADMIN.ANALYTICS },
-  { icon: <Receipt size={20} />, label: 'Transactions', path: ROUTES.ADMIN.TRANSACTIONS },
-  { icon: <Wallet size={20} />, label: 'Payouts', path: ROUTES.ADMIN.PAYOUTS },
-  { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.ADMIN.SETTINGS },
+  { icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: ROUTES.ADMIN.DASHBOARD },
+  { icon: <Building2 size={20} />, label: 'Quản lý phòng', path: ROUTES.ADMIN.LISTINGS },
+  { icon: <Users size={20} />, label: 'Người dùng', path: ROUTES.ADMIN.USERS },
+  { icon: <ShieldCheck size={20} />, label: 'Kiểm duyệt', path: ROUTES.ADMIN.MODERATION },
+  { icon: <BarChart3 size={20} />, label: 'Thống kê', path: ROUTES.ADMIN.ANALYTICS },
+  { icon: <Receipt size={20} />, label: 'Giao dịch', path: ROUTES.ADMIN.TRANSACTIONS },
+  { icon: <Wallet size={20} />, label: 'Thanh toán', path: ROUTES.ADMIN.PAYOUTS },
+  { icon: <Settings size={20} />, label: 'Cài đặt', path: ROUTES.ADMIN.SETTINGS },
 ];
 
 const TENANT_NAV = [
-  { icon: <Home size={20} />, label: 'Home', path: ROUTES.HOME },
-  { icon: <Compass size={20} />, label: 'Explore', path: ROUTES.ROOMS },
-  { icon: <ClipboardList size={20} />, label: 'Requests', path: '/tenant/requests' },
-  { icon: <CreditCard size={20} />, label: 'Deposit History', path: ROUTES.TENANT.DEPOSIT_HISTORY },
-  { icon: <Heart size={20} />, label: 'Favorites', path: ROUTES.TENANT.FAVORITES },
-  { icon: <MessageSquare size={20} />, label: 'Messages', path: '/messages' },
-  { icon: <UserCircle size={20} />, label: 'Profile', path: ROUTES.TENANT.PROFILE },
-  { icon: <Settings size={20} />, label: 'Settings', path: ROUTES.TENANT.SETTINGS },
+  { icon: <Home size={20} />, label: 'Trang chủ', path: ROUTES.HOME },
+  { icon: <Compass size={20} />, label: 'Khám phá', path: ROUTES.ROOMS },
+  { icon: <ClipboardList size={20} />, label: 'Yêu cầu', path: '/tenant/requests' },
+  { icon: <CreditCard size={20} />, label: 'Lịch sử cọc', path: ROUTES.TENANT.DEPOSIT_HISTORY },
+  { icon: <Heart size={20} />, label: 'Yêu thích', path: ROUTES.TENANT.FAVORITES },
+  { icon: <MessageSquare size={20} />, label: 'Tin nhắn', path: '/messages' },
+  { icon: <UserCircle size={20} />, label: 'Hồ sơ', path: ROUTES.TENANT.PROFILE },
+  { icon: <Settings size={20} />, label: 'Cài đặt', path: ROUTES.TENANT.SETTINGS },
 ];
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
@@ -205,7 +205,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const profilePath = isLandlord ? ROUTES.LANDLORD.PROFILE : isAdmin ? ROUTES.ADMIN.SETTINGS : ROUTES.TENANT.PROFILE;
 
   const brandTitle = user?.fullName || 'User';
-  const brandSubtitle = isLandlord ? 'Landlord Portal' : isAdmin ? 'Admin Portal' : 'Tenant Portal';
+  const brandSubtitle = isLandlord ? 'Kênh Chủ Trọ' : isAdmin ? 'Kênh Quản Trị' : 'Kênh Người Thuê';
 
   const isActive = (path) => location.pathname === path;
 
@@ -242,22 +242,22 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 {!isCollapsed && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
                     <span>{link.label}</span>
-                    {isAdmin && link.label === 'Listings' && pendingCount > 0 && (
+                    {isAdmin && link.label === 'Quản lý phòng' && pendingCount > 0 && (
                       <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
                         {pendingCount}
                       </span>
                     )}
-                    {isLandlord && link.label === 'Viewing Schedules' && pendingSchedules > 0 && (
+                    {isLandlord && link.label === 'Lịch xem phòng' && pendingSchedules > 0 && (
                       <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
                         {pendingSchedules}
                       </span>
                     )}
-                    {isLandlord && link.label === 'Rental Requests' && pendingRequests > 0 && (
+                    {isLandlord && link.label === 'Yêu cầu thuê' && pendingRequests > 0 && (
                       <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
                         {pendingRequests}
                       </span>
                     )}
-                    {link.label === 'Messages' && hasUnreadMessages && (
+                    {link.label === 'Tin nhắn' && hasUnreadMessages && (
                       <span style={{ 
                         width: '8px', 
                         height: '8px', 
@@ -267,7 +267,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                         display: 'inline-block'
                       }}></span>
                     )}
-                    {isTenant && link.label === 'Requests' && hasUnreadTenantRequests && (
+                    {isTenant && link.label === 'Yêu cầu' && hasUnreadTenantRequests && (
                       <span style={{ 
                         width: '8px', 
                         height: '8px', 
@@ -289,13 +289,13 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       <div className="sidebar-footer">
         <div className="support-btn-container" style={{ marginTop: '0.75rem' }}>
           {isCollapsed ? (
-            <a href="#" onClick={handleLogout} className="sidebar-link logout-link" title="Log Out" style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem' }}>
+            <a href="#" onClick={handleLogout} className="sidebar-link logout-link" title="Đăng xuất" style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem' }}>
               <LogOut size={20} style={{ transform: 'rotate(180deg)' }} />
             </a>
           ) : (
             <a href="#" onClick={handleLogout} className="btn-support-center" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}>
               <LogOut size={18} style={{ transform: 'rotate(180deg)' }} />
-              Log Out
+              Đăng xuất
             </a>
           )}
         </div>

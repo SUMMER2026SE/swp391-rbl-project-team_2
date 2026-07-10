@@ -161,7 +161,7 @@ const RegisterPage = () => {
           <label>
             <input type="checkbox" {...register('terms')} />
             <span>
-              I agree to the <Link to="#">Terms of Service</Link> and <Link to="#">Privacy Policy</Link>.
+              I agree to the <Link to="/terms">Terms of Service</Link> and <Link to="/privacy">Privacy Policy</Link>.
             </span>
           </label>
           {errors.terms && <span className="error-message">{errors.terms.message}</span>}

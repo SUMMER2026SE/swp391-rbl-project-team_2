@@ -74,6 +74,24 @@ const initDatabase = async () => {
                 tenant_signature NVARCHAR(MAX) NULL;
         END
       `);
+
+      // Add missing room columns
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'quantity')
+        BEGIN
+            ALTER TABLE rooms ADD quantity INT DEFAULT 1;
+            ALTER TABLE rooms ADD available_quantity INT DEFAULT 1;
+        END
+      `);
+
+      // Add missing contract columns
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('contracts') AND name = 'assigned_room_number')
+        BEGIN
+            ALTER TABLE contracts ADD assigned_room_number VARCHAR(50) NULL;
+        END
+      `);
+
       console.log('✅ Applied schema migrations');
     } catch (err) {
       console.warn('⚠️ Could not apply schema migrations:', err.message);

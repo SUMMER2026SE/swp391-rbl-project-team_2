@@ -668,6 +668,7 @@ const RentalRequestsPage = () => {
                   <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', background: '#f8fafc', overflow: 'hidden' }}>
                     <SignatureCanvas 
                       ref={landlordSigCanvas}
+                      penColor="black"
                       canvasProps={{ width: 750, height: 200, className: 'sigCanvas' }}
                       backgroundColor="#f8fafc"
                     />

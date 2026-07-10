@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Sparkles, Loader, Search, ChevronDown, ChevronUp, Check, RotateCcw, Filter } from 'lucide-react';
+import { Sparkles, Loader, Search, ChevronDown, ChevronUp, Check, RotateCcw, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import PropertyCard from '../components/PropertyCard';
 import { roomService } from '../services/roomService';
 import useAuthStore from '../../../store/useAuthStore';
@@ -8,7 +8,7 @@ import './SearchPage.css';
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // Keyword mapping from URL or local state
   const initialKeyword = searchParams.get('keyword') || '';
   const [keyword, setKeyword] = useState(initialKeyword);
@@ -41,8 +41,8 @@ const SearchPage = () => {
   const [sectionsExpanded, setSectionsExpanded] = useState({
     basic: true,
     details: false,
-    facilities: false,
-    nearby: false
+    facilities: searchParams.get('facilities') ? true : false,
+    nearby: searchParams.get('nearbyFacilities') ? true : false
   });
 
   const toggleSection = (section) => {
@@ -97,7 +97,7 @@ const SearchPage = () => {
   const buildSearchParams = useCallback((currentPage = 1) => {
     const params = {
       page: currentPage,
-      limit: 12,
+      limit: 9,
     };
 
     if (keyword) params.keyword = keyword;
@@ -131,7 +131,7 @@ const SearchPage = () => {
     try {
       setLoading(true);
       const params = buildSearchParams(currentPage);
-      
+
       const response = await roomService.searchProperties(params);
 
       const mappedProperties = response.data.map(prop => ({
@@ -182,18 +182,18 @@ const SearchPage = () => {
       isFirstRender.current = false;
       return;
     }
-    
+
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
-    
+
     debounceRef.current = setTimeout(() => {
       handleApplyFilters();
     }, 500);
 
     return () => clearTimeout(debounceRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyword, city, district, minPrice, maxPrice, minArea, maxArea, maxOccupants, facilities, nearbyFacilities, sort, landlordId]); 
+  }, [keyword, city, district, minPrice, maxPrice, minArea, maxArea, maxOccupants, facilities, nearbyFacilities, sort, landlordId]);
 
   const handleReset = () => {
     setKeyword('');
@@ -210,10 +210,10 @@ const SearchPage = () => {
     setNearbyFacilities([]);
     setSort('newest');
     setLandlordId('');
-    
+
     setTimeout(() => {
-       fetchRooms(1, false);
-       setSearchParams({});
+      fetchRooms(1, false);
+      setSearchParams({});
     }, 0);
   };
 
@@ -250,12 +250,12 @@ const SearchPage = () => {
   };
 
   const roomFacilitiesList = [
-    'WiFi', 'Air Conditioner', 'Parking', 'Private Bathroom', 
+    'WiFi', 'Air Conditioner', 'Parking', 'Private Bathroom',
     'Balcony', 'Bed', 'Wardrobe', 'Kitchen', 'Security Camera'
   ];
 
   const nearbyFacilitiesList = [
-    'Near University', 'Near Hospital', 'Near Supermarket', 
+    'Near University', 'Near Hospital', 'Near Supermarket',
     'Near Bus Station', 'Near Market', 'Near Park', 'Near Convenience Store'
   ];
 
@@ -280,15 +280,15 @@ const SearchPage = () => {
 
             {/* Section 1: Basic Filters */}
             <div className="accordion-section">
-              <button 
-                type="button" 
-                className="accordion-trigger" 
+              <button
+                type="button"
+                className="accordion-trigger"
                 onClick={() => toggleSection('basic')}
               >
                 <span>Basic Criteria</span>
                 {sectionsExpanded.basic ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
-              
+
               {sectionsExpanded.basic && (
                 <div className="accordion-content animate-slide-down">
                   <div className="filter-item-group">
@@ -333,27 +333,8 @@ const SearchPage = () => {
                     </select>
                   </div>
 
-
-                </div>
-              )}
-            </div>
-
-            {/* Section 2: Room Details */}
-            <div className="accordion-section">
-              <button 
-                type="button" 
-                className="accordion-trigger" 
-                onClick={() => toggleSection('details')}
-              >
-                <span>Room Specifications</span>
-                {sectionsExpanded.details ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
-              
-              {sectionsExpanded.details && (
-                <div className="accordion-content animate-slide-down">
-
                   <div className="filter-item-group">
-                    <label className="filter-item-label">Max Occupants</label>
+                    <label className="filter-item-label">Max occupant</label>
                     <select className="w-full p-2 border border-gray-300 rounded select-input" value={maxOccupants} onChange={(e) => setMaxOccupants(e.target.value)}>
                       <option value="">Any</option>
                       <option value="1">1 Person</option>
@@ -363,21 +344,22 @@ const SearchPage = () => {
                       <option value="5">5+ People</option>
                     </select>
                   </div>
+
                 </div>
               )}
             </div>
 
             {/* Section 3: Room Facilities */}
             <div className="accordion-section">
-              <button 
-                type="button" 
-                className="accordion-trigger" 
+              <button
+                type="button"
+                className="accordion-trigger"
                 onClick={() => toggleSection('facilities')}
               >
                 <span>Room Facilities</span>
                 {sectionsExpanded.facilities ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
-              
+
               {sectionsExpanded.facilities && (
                 <div className="accordion-content animate-slide-down">
                   <div className="pill-list-selector">
@@ -402,15 +384,15 @@ const SearchPage = () => {
 
             {/* Section 4: Nearby Facilities */}
             <div className="accordion-section">
-              <button 
-                type="button" 
-                className="accordion-trigger" 
+              <button
+                type="button"
+                className="accordion-trigger"
                 onClick={() => toggleSection('nearby')}
               >
                 <span>Nearby Facilities</span>
                 {sectionsExpanded.nearby ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
-              
+
               {sectionsExpanded.nearby && (
                 <div className="accordion-content animate-slide-down">
                   <div className="pill-list-selector">
@@ -438,10 +420,10 @@ const SearchPage = () => {
           <div className="search-results-area">
             {/* Top Search Bar Row */}
             <form className="ask-ai-container" onSubmit={(e) => e.preventDefault()}>
-              <Search className="sparkles-icon" size={20} style={{color: '#6B7280'}} />
-              <input 
-                type="text" 
-                placeholder="Search by keyword (e.g. Da Nang, title, address)" 
+              <Search className="sparkles-icon" size={20} style={{ color: '#6B7280' }} />
+              <input
+                type="text"
+                placeholder="Search by keyword (e.g. Da Nang, title, address)"
                 value={searchInput}
                 onChange={(e) => {
                   setSearchInput(e.target.value);
@@ -484,15 +466,38 @@ const SearchPage = () => {
               )}
             </div>
 
-            {page < totalPages && (
-              <div className="load-more-container mt-8 text-center">
-                <button 
-                  className="load-more-btn px-6 py-2 border border-blue-600 text-blue-600 font-semibold rounded hover:bg-blue-50 transition" 
-                  onClick={() => fetchRooms(page + 1, true)}
-                  disabled={loading}
-                >
-                  {loading ? 'Loading...' : 'Load More Properties'}
-                </button>
+            {totalPages > 1 && (
+              <div className="search-pagination-container">
+                {page > 1 && (
+                  <button
+                    className="pagination-btn"
+                    onClick={() => { fetchRooms(page - 1, false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    disabled={loading}
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                )}
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    className={`pagination-btn ${page === p ? 'active' : ''}`}
+                    onClick={() => { fetchRooms(p, false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    disabled={loading}
+                  >
+                    {p}
+                  </button>
+                ))}
+
+                {page < totalPages && (
+                  <button
+                    className="pagination-btn"
+                    onClick={() => { fetchRooms(page + 1, false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    disabled={loading}
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -324,43 +324,55 @@ const requestContract = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Rental request must be approved before requesting a contract.' });
     }
 
-    // We do not have rental_request_id in Contract, so we just check if there's an existing draft contract for this room and tenant
     const { Contract } = require('../models');
     let contract = await Contract.findOne({
       where: { 
         room_id: rentalRequest.room_id,
         tenant_id: tenantId,
-        status: { [require('sequelize').Op.in]: ['draft', 'pending_signature', 'pending_payment'] }
+        status: { [require('sequelize').Op.in]: ['draft', 'pending_signature', 'pending_payment', 'active'] }
       }
     });
 
-    if (contract) {
-      return res.status(400).json({ success: false, message: 'A contract has already been requested or created for this room.' });
-    }
-
     let end = new Date(startDate);
     end.setMonth(end.getMonth() + parseInt(durationMonths));
-    
-    // Generate a unique contract number
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
-    contract = await Contract.create({
-      room_id: rentalRequest.room_id,
-      tenant_id: tenantId,
-      landlord_id: rentalRequest.room.landlord_id,
-      contract_number: `CT-${timestamp}-${random}`,
-      status: 'draft',
-      start_date: startDate,
-      end_date: end,
-      monthly_rent: rentalRequest.room.price_per_month,
-      deposit_amount: rentalRequest.room.price_per_month, // Usually 1 month rent
-      tenant_name: tenantName,
-      tenant_ic: tenantIc,
-      tenant_ic_issue_date: tenantIcIssueDate || null,
-      tenant_ic_issue_place: tenantIcIssuePlace,
-      tenant_permanent_address: tenantPermanentAddress,
-    });
+    if (contract) {
+      if (contract.status !== 'draft') {
+        return res.status(400).json({ success: false, message: 'A contract has already been requested or created for this room.' });
+      }
+      
+      // Update existing draft contract
+      await contract.update({
+        start_date: startDate,
+        end_date: end,
+        tenant_name: tenantName,
+        tenant_ic: tenantIc,
+        tenant_ic_issue_date: tenantIcIssueDate || null,
+        tenant_ic_issue_place: tenantIcIssuePlace,
+        tenant_permanent_address: tenantPermanentAddress,
+      });
+    } else {
+      // Generate a unique contract number
+      const timestamp = Date.now().toString().slice(-6);
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+
+      contract = await Contract.create({
+        room_id: rentalRequest.room_id,
+        tenant_id: tenantId,
+        landlord_id: rentalRequest.room.landlord_id,
+        contract_number: `CT-${timestamp}-${random}`,
+        status: 'draft',
+        start_date: startDate,
+        end_date: end,
+        monthly_rent: rentalRequest.room.price_per_month,
+        deposit_amount: rentalRequest.room.price_per_month, // Usually 1 month rent
+        tenant_name: tenantName,
+        tenant_ic: tenantIc,
+        tenant_ic_issue_date: tenantIcIssueDate || null,
+        tenant_ic_issue_place: tenantIcIssuePlace,
+        tenant_permanent_address: tenantPermanentAddress,
+      });
+    }
 
     rentalRequest.status = 'contract_requested';
     rentalRequest.requested_move_in_date = startDate;

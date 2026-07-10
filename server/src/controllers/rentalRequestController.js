@@ -306,7 +306,7 @@ const createContractFromRequest = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please assign a physical room number for this contract.' });
     }
 
-    if (rentalRequest.room.available_quantity <= 0) {
+    if (rentalRequest.room.available_quantity !== null && rentalRequest.room.available_quantity <= 0) {
       return res.status(400).json({ success: false, message: 'This room type is out of stock.' });
     }
 
@@ -348,8 +348,12 @@ const createContractFromRequest = async (req, res, next) => {
     await contract.save();
 
     const roomToUpdate = rentalRequest.room;
-    roomToUpdate.available_quantity -= 1;
-    if (roomToUpdate.available_quantity <= 0) {
+    if (roomToUpdate.available_quantity !== null) {
+      roomToUpdate.available_quantity -= 1;
+      if (roomToUpdate.available_quantity <= 0) {
+        roomToUpdate.status = 'rented';
+      }
+    } else {
       roomToUpdate.status = 'rented';
     }
     await roomToUpdate.save();

@@ -151,7 +151,7 @@ const ContractDocumentModal = ({ isOpen, onClose, contract, onSign }) => {
                     <div style={{ border: '1px solid #e2e8f0', borderRadius: '4px', background: '#f8fafc', marginTop: '10px', position: 'relative' }}>
                       <SignatureCanvas
                         ref={sigCanvas}
-                        penColor="blue"
+                        penColor="black"
                         canvasProps={{ width: 300, height: 150, className: 'sigCanvas' }}
                       />
                       <button onClick={clearSignature} style={{ position: 'absolute', top: 5, right: 5, background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }} title="Clear">

@@ -835,7 +835,7 @@ const ViewingSchedulesPage = () => {
                 <div style={{ border: '2px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc', position: 'relative', display: 'inline-block' }}>
                   <SignatureCanvas 
                     ref={landlordSigCanvas}
-                    penColor="blue"
+                    penColor="black"
                     canvasProps={{width: 400, height: 200, className: 'sigCanvas'}} 
                   />
                   <button onClick={clearLandlordSignature} style={{ position: 'absolute', top: 5, right: 5, background: '#e2e8f0', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', color: '#475569', cursor: 'pointer' }} title="Clear">

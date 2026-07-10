@@ -302,27 +302,65 @@ const TenantRequestsPage = () => {
     setShowContractModal(true);
   };
 
-  const proceedToSignContractInline = async (contract, signatureDataUrl) => {
-    const { contractId, roomId } = contract;
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [pendingSignatureData, setPendingSignatureData] = useState('');
+  const [pendingContractId, setPendingContractId] = useState(null);
+  const [pendingRoomId, setPendingRoomId] = useState(null);
+
+  const triggerOtpFlow = async (contractId, roomId, signatureDataUrl) => {
     try {
       setSubmittingContract(true);
-      await rentalRequestService.signContract(contractId, { tenantSignature: signatureDataUrl });
-      navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${roomId}&contractId=${contractId}`);
+      await rentalRequestService.sendContractOtp(contractId);
+      setPendingSignatureData(signatureDataUrl);
+      setPendingContractId(contractId);
+      setPendingRoomId(roomId);
+      setOtpCode('');
+      setShowOtpModal(true);
+      toast.success('OTP sent to your email.');
     } catch (err) {
-      toast.error('Failed to sign contract: ' + (err.response?.data?.message || err.message));
+      toast.error('Failed to send OTP: ' + (err.response?.data?.message || err.message));
     } finally {
       setSubmittingContract(false);
     }
   };
 
+  const proceedToSignContractInline = async (contract, signatureDataUrl) => {
+    const { contractId, roomId } = contract;
+    await triggerOtpFlow(contractId, roomId, signatureDataUrl);
+  };
+
   const proceedToSignContract = async (signatureDataUrl) => {
     if (!selectedContractToSign) return;
     const { contractId, roomId } = selectedContractToSign;
+    await triggerOtpFlow(contractId, roomId, signatureDataUrl);
+  };
+
+  const handleVerifyOtpAndSign = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP.');
+      return;
+    }
     try {
       setSubmittingContract(true);
-      await rentalRequestService.signContract(contractId, { tenantSignature: signatureDataUrl });
+      // Generate PDF
+      const element = document.querySelector('.contract-document-wrapper') || document.querySelector('.contract-modal-container');
+      let pdfBase64 = '';
+      if (element) {
+        // dynamically import html2pdf
+        const html2pdf = (await import('html2pdf.js')).default;
+        pdfBase64 = await html2pdf().from(element).outputPdf('datauristring');
+      }
+
+      await rentalRequestService.signContract(pendingContractId, { 
+        tenantSignature: pendingSignatureData, 
+        otp: otpCode,
+        contractPdf: pdfBase64
+      });
+      setShowOtpModal(false);
       setSelectedContractToSign(null);
-      navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${roomId}&contractId=${contractId}`);
+      toast.success('Contract signed successfully!');
+      navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${pendingRoomId}&contractId=${pendingContractId}`);
     } catch (err) {
       toast.error('Failed to sign contract: ' + (err.response?.data?.message || err.message));
     } finally {
@@ -441,19 +479,19 @@ const TenantRequestsPage = () => {
             className={`tab-btn ${activeTab === 'viewing' ? 'active' : ''}`}
             onClick={() => setActiveTab('viewing')}
           >
-            <Eye size={16} /> Viewing Schedules
+            <Eye size={16} /> Lịch xem phòng
           </button>
           <button 
             className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`}
             onClick={() => setActiveTab('requests')}
           >
-            <Home size={16} /> Rental Requests
+            <Home size={16} /> Yêu cầu thuê
           </button>
           <button 
             className={`tab-btn ${activeTab === 'contracts' ? 'active' : ''}`}
             onClick={() => setActiveTab('contracts')}
           >
-            <FileText size={16} /> My Contracts
+            <FileText size={16} /> Hợp đồng
           </button>
         </div>
         
@@ -1065,6 +1103,71 @@ const TenantRequestsPage = () => {
                 }}
               >
                 {confirmDialog.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* OTP Verification Modal */}
+      {showOtpModal && (
+        <div className="modal-overlay" onClick={() => setShowOtpModal(false)}>
+          <div className="modal-container" style={{ maxWidth: '400px', background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+              <h2 className="modal-title" style={{ fontSize: '18px' }}>Verify Contract Signature</h2>
+              <button 
+                className="modal-close" 
+                onClick={() => setShowOtpModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="modal-body" style={{ padding: '24px' }}>
+              <p style={{ margin: '0 0 16px 0', fontSize: '15px', color: '#4b5563', lineHeight: 1.5 }}>
+                An OTP has been sent to your email. Please enter the 6-digit code below to finalize signing this contract.
+              </p>
+              <input 
+                type="text"
+                placeholder="Enter 6-digit OTP"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                maxLength={6}
+                style={{ width: '100%', padding: '12px', fontSize: '1.2rem', textAlign: 'center', letterSpacing: '4px', border: '2px solid #e2e8f0', borderRadius: '8px', outline: 'none', transition: 'border-color 0.2s' }}
+                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+              />
+            </div>
+            
+            <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowOtpModal(false)}
+                disabled={submittingContract}
+                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontWeight: 500 }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleVerifyOtpAndSign}
+                disabled={submittingContract || otpCode.length !== 6}
+                style={{ 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  background: (submittingContract || otpCode.length !== 6) ? '#9ca3af' : '#4f46e5', 
+                  color: '#fff', 
+                  cursor: (submittingContract || otpCode.length !== 6) ? 'not-allowed' : 'pointer', 
+                  fontWeight: 600,
+                  marginLeft: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {submittingContract ? 'Verifying...' : 'Verify & Sign'}
               </button>
             </div>
           </div>

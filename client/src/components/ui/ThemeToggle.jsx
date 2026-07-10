@@ -3,7 +3,7 @@ import { Moon, Sun, Monitor } from 'lucide-react';
 import './ThemeToggle.css';
 
 const MODES = ['light', 'dark'];
-const MODE_LABELS = { light: 'Light', dark: 'Dark' };
+const MODE_LABELS = { light: 'Sáng', dark: 'Tối' };
 
 const ThemeToggle = () => {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
@@ -52,7 +52,7 @@ const ThemeToggle = () => {
     <button 
       className="theme-toggle-btn" 
       onClick={cycleTheme}
-      title={`Theme: ${MODE_LABELS[theme]} — Click to switch`}
+      title={`Chế độ: ${MODE_LABELS[theme]} — Nhấn để đổi`}
     >
       {getIcon()}
       <span className="theme-toggle-label">{MODE_LABELS[theme]}</span>

@@ -328,29 +328,45 @@ body.dark .pill-select-item.active {
   }
 }
 
-/* Load More Button */
-.load-more-container {
+/* Pagination */
+.search-pagination-container {
   display: flex;
   justify-content: center;
-  margin-top: 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2.5rem;
 }
 
-.load-more-btn {
-  background-color: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
-  padding: 0.75rem 2rem;
-  border-radius: var(--radius-md);
-  font-size: 0.9375rem;
-  font-weight: 600;
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light, #E2E8F0);
+  background: white;
+  color: var(--text-main, #334155);
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.load-more-btn:hover {
-  background-color: #EFF6FF;
-  border-color: #1d4ed8;
-  color: #1d4ed8;
+.pagination-btn:hover:not(:disabled) {
+  background-color: var(--bg-hover, #F1F5F9);
+}
+
+.pagination-btn.active {
+  background-color: #2563EB;
+  color: white;
+  border-color: #2563EB;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Floating Chat Bot Button */
