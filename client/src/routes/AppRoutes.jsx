@@ -76,7 +76,7 @@ import { VerificationPage } from '../features/verification';
 // Shared pages
 import HomePage from '../pages/HomePage';
 import HelpCenterPage from '../pages/HelpCenterPage';
-import TermsPage from '../pages/TermsPage';
+import InfoSupportPage from '../pages/InfoSupportPage';
 import ContactSupportPage from '../pages/ContactSupportPage';
 import LandlordSettingsPage from '../pages/SettingsPage';
 import GlobalSearchPage from '../pages/GlobalSearchPage';
@@ -96,6 +96,12 @@ const AppRoutes = () => {
         <Route path={ROUTES.TENANT.CHAT} element={<AIChatPage />} />
         <Route path={ROUTES.TENANT.RENTAL_REQUEST} element={<RentalRequestPage />} />
         <Route path={ROUTES.HELP} element={<HelpCenterPage />} />
+        <Route path="/about" element={<InfoSupportPage />} />
+        <Route path="/privacy" element={<InfoSupportPage />} />
+        <Route path="/terms" element={<InfoSupportPage />} />
+        <Route path="/faq" element={<InfoSupportPage />} />
+        <Route path="/guide" element={<InfoSupportPage />} />
+        <Route path="/report" element={<InfoSupportPage />} />
         
         {/* Tenant Portal Routes */}
         <Route path={ROUTES.TENANT.DASHBOARD} element={<TenantDashboardPage />} />
@@ -124,7 +130,6 @@ const AppRoutes = () => {
       {/* ===== STANDALONE PAGES (NO LAYOUT) ===== */}
       <Route path={ROUTES.TENANT.PAYMENT} element={<DepositPaymentPage />} />
       <Route path={ROUTES.VERIFICATION} element={<VerificationPage />} />
-      <Route path={ROUTES.TERMS} element={<TermsPage />} />
       <Route path={ROUTES.SEARCH} element={<GlobalSearchPage />} />
 
       {/* ===== LANDLORD ROUTES ===== */}
@@ -153,7 +158,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.PROPERTIES} element={<PropertiesPage />} />
         <Route path={ROUTES.LANDLORD.NEW_PROPERTY} element={<AddPropertyPage />} />
         <Route path={ROUTES.LANDLORD.PROPERTY_DASHBOARD} element={<PropertyDashboardPage />} />
-        <Route path={ROUTES.LANDLORD.TERMS} element={<TermsPage />} />
+        <Route path={ROUTES.LANDLORD.TERMS} element={<InfoSupportPage />} />
       
       </Route>
 

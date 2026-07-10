@@ -14,6 +14,7 @@ import useAuthStore from '../../../store/useAuthStore';
 import toast from 'react-hot-toast';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import api from '../../../services/api';
+import RoomCard from '../components/RoomCard';
 import './RoomDetailPage.css';
 
 const RoomDetailPage = () => {
@@ -25,6 +26,8 @@ const RoomDetailPage = () => {
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMoreAbout, setShowMoreAbout] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [suggestedRooms, setSuggestedRooms] = useState([]);
   
   // Editing States
   const [isEditing, setIsEditing] = useState(false);
@@ -75,6 +78,52 @@ const RoomDetailPage = () => {
             console.error('Failed to fetch favorite status', favErr);
           }
         }
+
+        // Fetch suggested rooms
+        try {
+          const allRes = await axios.get('http://localhost:5000/api/listings');
+          if (allRes.data && allRes.data.success) {
+            const listings = allRes.data.data;
+            const currentRoom = response.data.data;
+            const available = listings.filter(r => 
+              (r.status === 'available' || !r.status) && 
+              r.id !== parseInt(id) && 
+              r.room_id !== parseInt(id) &&
+              r.roomId !== parseInt(id)
+            );
+            
+            let suggested = available.filter(r => r.district === currentRoom?.district && r.city === currentRoom?.city);
+            if (suggested.length < 6) {
+              const sameCity = available.filter(r => r.city === currentRoom?.city && r.district !== currentRoom?.district);
+              suggested = [...suggested, ...sameCity];
+            }
+            if (suggested.length < 6) {
+              const other = available.filter(r => r.city !== currentRoom?.city);
+              suggested = [...suggested, ...other];
+            }
+            
+            const formattedSuggestions = suggested.slice(0, 6).map(room => {
+              const imgUrl = room.thumbnailUrl || room.thumbnail_url;
+              return {
+                id: room.id || room.room_id || room.roomId,
+                title: room.title,
+                price: room.pricePerMonth || room.price_per_month || 0,
+                location: [room.address, room.district, room.city].filter(Boolean).join(', '),
+                specs: [
+                  { icon: 'bed', text: `${room.bedrooms || 1} Giường` },
+                  { icon: 'square', text: `${room.areaSqm || room.area_sqm || 0} m²` }
+                ],
+                imageTags: [{ text: 'Còn phòng', type: 'primary' }],
+                isFavorite: false, // We'd need to check this properly if needed, but default false is fine
+                image: imgUrl ? (imgUrl.startsWith('http') ? imgUrl : `http://localhost:5000${imgUrl}`) : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60'
+              };
+            });
+            
+            setSuggestedRooms(formattedSuggestions);
+          }
+        } catch (sugErr) {
+          console.error("Failed to fetch suggestions", sugErr);
+        }
       } catch (err) {
         setError('Failed to load listing details');
       } finally {
@@ -82,7 +131,7 @@ const RoomDetailPage = () => {
       }
     };
     fetchListing();
-  }, [id]);
+  }, [id, isAuthenticated, user]);
 
   const toggleFavorite = async () => {
     try {
@@ -109,6 +158,14 @@ const RoomDetailPage = () => {
       const authStorage = JSON.parse(sessionStorage.getItem('auth-storage'));
       return authStorage?.state?.token || null;
     } catch { return null; }
+  };
+
+  const handleNextImage = () => {
+    setActiveImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const handlePrevImage = () => {
+    setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
   const handleScheduleViewing = async () => {
@@ -213,7 +270,7 @@ const RoomDetailPage = () => {
   
 
   return (
-    <div className="room-detail-page container pt-20" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+    <div className="room-detail-page container pt-20 pb-20 mb-10" style={{ maxWidth: '1200px', margin: '0 auto', paddingLeft: '20px', paddingRight: '20px', paddingBottom: '80px', marginBottom: '80px' }}>
       
       {/* Back button for convenient navigation */}
       <Button 
@@ -230,32 +287,55 @@ const RoomDetailPage = () => {
       >
         <ChevronLeft size={18} />
         {location.state?.from === 'viewing_schedule' 
-          ? 'Back to Viewing Schedules' 
-          : (isAuthenticated && user?.role === 'LANDLORD' ? 'Back to My Listings' : 'Back to Explore')
+          ? 'Quay lại Lịch hẹn' 
+          : (isAuthenticated && user?.role === 'LANDLORD' ? 'Quay lại danh sách phòng' : 'Quay lại Khám phá')
         }
       </Button>
-
-      {/* Gallery Section */}
-      <div className="custom-carousel-wrapper" style={{ position: 'relative', marginBottom: '2rem', borderRadius: '16px', overflow: 'hidden' }}>
-        
-        <Carousel>
-          {images.map((img, idx) => (
-            <Carousel.Item key={idx}>
-              <img
-                className="d-block w-100"
-                src={img}
-                alt={`Slide ${idx}`}
-                style={{ height: '480px', objectFit: 'cover' }}
-              />
-            </Carousel.Item>
-          ))}
-        </Carousel>
-      </div>
 
       {/* Content Column Layout */}
       <div className="content-sidebar-layout">
         {/* Left Side: Room Details */}
         <div className="main-content">
+          {/* Gallery Section */}
+          <div className="room-gallery-container">
+            <div className="main-image-wrapper">
+              <img 
+                src={images[activeImageIndex]} 
+                alt={`Room image ${activeImageIndex + 1}`} 
+                className="main-image"
+              />
+              
+              {images.length > 1 && (
+                <>
+                  <button onClick={handlePrevImage} className="gallery-nav-btn prev">
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button onClick={handleNextImage} className="gallery-nav-btn next">
+                    <ChevronLeft size={24} style={{ transform: 'rotate(180deg)' }} />
+                  </button>
+                  
+                  <div className="gallery-counter">
+                    {activeImageIndex + 1} / {images.length}
+                  </div>
+                </>
+              )}
+            </div>
+            
+            {images.length > 1 && (
+              <div className="thumbnails-wrapper custom-scrollbar">
+                {images.map((img, idx) => (
+                  <button 
+                    key={idx}
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`thumbnail-btn ${activeImageIndex === idx ? 'active' : ''}`}
+                  >
+                    <img src={img} alt={`Thumbnail ${idx + 1}`} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="property-header">
             {isEditing ? (
               <input name="title" value={editForm.title} onChange={handleEditChange} className="form-control mb-2" style={{ fontSize: '1.8rem', fontWeight: 700 }} />
@@ -295,41 +375,11 @@ const RoomDetailPage = () => {
 
           <hr className="section-divider" />
 
-          {/* Host Card Section */}
-          <section className="host-card">
-            <div className="host-info">
-              <div 
-                className="host-avatar-wrapper cursor-pointer" 
-                onClick={() => navigate(`${ROUTES.ROOMS}?landlordId=${roomData.landlord?.user_id || roomData.landlordId}`)}
-              >
-                <img 
-                  src={getGlobalAvatar(roomData.landlord?.full_name, roomData.landlord?.avatar_url || roomData.landlord?.avatarUrl, 100)} 
-                  alt={roomData.landlord?.full_name || 'Landlord'} 
-                  className="host-avatar" 
-                />
-                <span className="host-status-dot"></span>
-              </div>
-              <div className="host-text">
-                <h3>Managed by {roomData.landlord?.full_name || 'Landlord'}</h3>
-                <p>Phone: {roomData.landlord?.phone || 'N/A'}</p>
-                <div className="flex gap-4 mt-1 text-sm text-gray-600">
-                  <span>Listings: <strong>{roomData.landlord?.postCount || 0}</strong></span>
-                  <span>Rented rooms: <strong>{roomData.landlord?.rentedRoomCount || 0}</strong></span>
-                </div>
-              </div>
-            </div>
-            {!(isAuthenticated && (user?.userId === roomData.landlordId || user?.userId === roomData.landlord?.user_id)) && (
-              <button className="contact-host-btn flex items-center justify-center gap-2" onClick={handleChatWithLandlord}>
-                <MessageSquare size={18} /> Chat with landlord
-              </button>
-            )}
-          </section>
-
           <hr className="section-divider" />
 
           {/* About Section */}
           <section className="about-section">
-            <h2>About this space</h2>
+            <h2>Thông tin chi tiết</h2>
             <div className={`about-text ${showMoreAbout ? 'expanded' : ''}`}>
               {isEditing ? (
                  <textarea name="description" value={editForm.description} onChange={handleEditChange} className="form-control" rows={6} />
@@ -341,7 +391,7 @@ const RoomDetailPage = () => {
               className="show-more-link" 
               onClick={() => setShowMoreAbout(!showMoreAbout)}
             >
-              {showMoreAbout ? 'Show less' : 'Show more'}
+              {showMoreAbout ? 'Thu gọn' : 'Xem thêm'}
             </button>
           </section>
 
@@ -349,11 +399,11 @@ const RoomDetailPage = () => {
 
           {/* Amenities Section */}
           <section className="amenities-section">
-            <h2>What this place offers</h2>
+            <h2>Tiện nghi & Dịch vụ</h2>
             
             {roomFacilities.length > 0 && (
               <div style={{ marginTop: '1rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>Room Facilities</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>Tiện ích trong phòng</h3>
                 <div className="amenities-grid">
                   {roomFacilities.map((amenity, idx) => (
                     <div className="amenity-item" key={`room-${idx}`}>
@@ -367,7 +417,7 @@ const RoomDetailPage = () => {
 
             {nearbyFacilities.length > 0 && (
               <div style={{ marginTop: '1.5rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>Nearby Facilities</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>Tiện ích xung quanh</h3>
                 <div className="amenities-grid">
                   {nearbyFacilities.map((amenity, idx) => (
                     <div className="amenity-item" key={`nearby-${idx}`}>
@@ -380,7 +430,7 @@ const RoomDetailPage = () => {
             )}
 
             {roomFacilities.length === 0 && nearbyFacilities.length === 0 && (
-              <p style={{ color: '#64748b' }}>No facilities listed.</p>
+              <p style={{ color: '#64748b' }}>Chưa có thông tin tiện ích.</p>
             )}
           </section>
         </div>
@@ -396,37 +446,67 @@ const RoomDetailPage = () => {
                   ) : (
                     <span className="price-value">{roomData.pricePerMonth?.toLocaleString('vi-VN') || roomData.price_per_month?.toLocaleString('vi-VN')} đ</span>
                   )}
-                  <span className="price-unit">/ month</span>
+                  <span className="price-unit">/ tháng</span>
                 </div>
                 <span className={`status-badge ${roomData.status || 'available'}`}>
-                  {roomData.status === 'available' ? 'Available' : (roomData.status === 'rented' ? 'Rented' : (roomData.status === 'occupied' ? 'Occupied' : 'Unavailable'))}
+                  {roomData.status === 'available' ? 'Còn phòng' : (roomData.status === 'rented' ? 'Đã thuê' : (roomData.status === 'occupied' ? 'Đang ở' : 'Trống'))}
                 </span>
               </div>
               <div className="booking-info-row">
                 <div className="info-col">
-                  <span className="info-label">Viewing Fee</span>
+                  <span className="info-label">Phí xem phòng</span>
                   <span className="info-val" style={{ color: '#059669', fontWeight: 700 }}>
                     Miễn phí
                   </span>
                 </div>
                 <div className="info-col">
-                  <span className="info-label">Term</span>
+                  <span className="info-label">Thời hạn thuê</span>
                   <span className="info-val">Thỏa thuận</span>
                 </div>
               </div>
+              <hr className="my-4 border-gray-200" style={{ margin: '1.5rem 0', borderColor: '#e2e8f0' }} />
               
+              {/* Host Card Section Moved Inside Price Card */}
+              <div className="host-info" style={{ marginBottom: '1.25rem' }}>
+                <div 
+                  className="host-avatar-wrapper cursor-pointer" 
+                  onClick={() => navigate(`${ROUTES.ROOMS}?landlordId=${roomData.landlord?.user_id || roomData.landlordId}`)}
+                >
+                  <img 
+                    src={getGlobalAvatar(roomData.landlord?.full_name, roomData.landlord?.avatar_url || roomData.landlord?.avatarUrl, 100)} 
+                    alt={roomData.landlord?.full_name || 'Landlord'} 
+                    className="host-avatar" 
+                  />
+                  <span className="host-status-dot"></span>
+                </div>
+                <div className="host-text">
+                  <h3>Quản lý bởi {roomData.landlord?.full_name || 'Chủ trọ'}</h3>
+                  <p>SĐT: {roomData.landlord?.phone || 'Đang cập nhật'}</p>
+                  <div className="flex gap-4 mt-1 text-sm text-gray-600">
+                    <span>Số phòng đăng: <strong>{roomData.landlord?.postCount || 0}</strong></span>
+                    <span>Phòng đã thuê: <strong>{roomData.landlord?.rentedRoomCount || 0}</strong></span>
+                  </div>
+                </div>
+              </div>
+              {!(isAuthenticated && (user?.userId === roomData.landlordId || user?.userId === roomData.landlord?.user_id)) && (
+                <button className="contact-host-btn flex items-center justify-center gap-2" style={{ marginBottom: '1.5rem', width: '100%' }} onClick={handleChatWithLandlord}>
+                  <MessageSquare size={18} /> Chat với chủ trọ
+                </button>
+              )}
+              
+              <hr className="my-4 border-gray-200" style={{ margin: '1.5rem 0', borderColor: '#e2e8f0' }} />
               {isAuthenticated && user?.role === 'LANDLORD' && (roomData.landlordId === user?.userId || roomData.landlord?.user_id === user?.userId) ? (
                 ['pending', 'maintenance', 'rented', 'occupied', 'unavailable'].includes((roomData.status || '').toLowerCase()) ? (
                   <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
-                    Cannot edit occupied/pending room
+                    Không thể sửa phòng đang có khách/chờ
                   </button>
                 ) : isEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <button className="btn-schedule-viewing" onClick={handleSaveEdit} style={{ background: '#10B981' }}>
-                      Save Changes
+                      Lưu thay đổi
                     </button>
                     <button className="btn-schedule-viewing" onClick={() => setIsEditing(false)} style={{ background: '#EF4444' }}>
-                      Cancel
+                      Hủy bỏ
                     </button>
                   </div>
                 ) : (
@@ -438,27 +518,65 @@ const RoomDetailPage = () => {
                       });
                       setIsEditing(true);
                     }} style={{ background: '#2563EB' }}>
-                    Edit Room Directly
+                    Chỉnh sửa phòng trực tiếp
                   </button>
                 )
               ) : roomData.status === 'available' ? (
                 <>
                   <button className="btn-schedule-viewing" onClick={() => setShowDateModal(true)}>
-                    Book room viewing schedule
+                    Đặt lịch xem phòng
                   </button>
                   <button className="btn-schedule-viewing mt-2" onClick={() => setShowRentalRequestModal(true)} style={{ background: '#10B981' }}>
-                    Send rental request
+                    Gửi yêu cầu thuê phòng
                   </button>
                 </>
               ) : (
                 <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
-                  {roomData.status === 'rented' ? 'Room is currently rented' : (roomData.status === 'occupied' ? 'Room is currently occupied' : 'Room is currently unavailable')}
+                  {roomData.status === 'rented' ? 'Phòng đã được cho thuê' : (roomData.status === 'occupied' ? 'Phòng đang có người ở' : 'Phòng hiện không trống')}
                 </button>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Suggested Rooms Section */}
+      {suggestedRooms.length > 0 && (
+        <div className="suggested-rooms-section" style={{ marginTop: '5rem', marginBottom: '2rem' }}>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-3" style={{ color: '#2563eb' }}>Gợi ý thêm cho bạn</h2>
+            <p className="text-gray-500 text-lg">Các phòng trọ có thể bạn sẽ quan tâm</p>
+          </div>
+          <div className="suggested-rooms-grid">
+            {suggestedRooms.map(room => (
+              <RoomCard key={room.id} room={room} variant="standard" />
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '3rem' }}>
+            <button 
+              className="view-all-btn-bottom" 
+              onClick={() => navigate(ROUTES.ROOMS)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 24px',
+                backgroundColor: 'transparent',
+                color: '#2563eb',
+                border: '1px solid #2563eb',
+                borderRadius: '8px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#2563eb'; e.currentTarget.style.color = '#fff'; }}
+              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#2563eb'; }}
+            >
+              Xem thêm các phòng khác
+            </button>
+          </div>
+        </div>
+      )}
 
       {showDateModal && (
         <div className="modal-overlay" onClick={() => setShowDateModal(false)}>
@@ -506,22 +624,22 @@ const RoomDetailPage = () => {
       {showRentalRequestModal && (
         <div className="modal-overlay" onClick={() => setShowRentalRequestModal(false)}>
           <div className="modal-container" onClick={e => e.stopPropagation()}>
-            <h2>Send Rental Request</h2>
+            <h2>Gửi yêu cầu thuê phòng</h2>
             <p style={{ color: '#64748b', marginBottom: '16px', fontSize: '14px' }}>
-              You are about to send a rental request to the landlord. Once approved, you can request a contract.
+              Bạn sắp gửi yêu cầu thuê phòng đến chủ trọ. Sau khi được phê duyệt, bạn có thể yêu cầu tạo hợp đồng.
             </p>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Message to Landlord (Optional)</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Lời nhắn cho Chủ trọ (Tùy chọn)</label>
               <textarea 
                 value={rentalRequestMessage}
                 onChange={(e) => setRentalRequestMessage(e.target.value)}
-                placeholder="Briefly introduce yourself and mention any specific requirements..."
+                placeholder="Giới thiệu ngắn gọn về bản thân và các yêu cầu cụ thể..."
                 style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', minHeight: '100px' }}
               />
             </div>
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setShowRentalRequestModal(false)}>Cancel</button>
-              <button className="btn-confirm" onClick={handleSendRentalRequest} style={{ background: '#10B981' }}>Send Request</button>
+              <button className="btn-cancel" onClick={() => setShowRentalRequestModal(false)}>Hủy</button>
+              <button className="btn-confirm" onClick={handleSendRentalRequest} style={{ background: '#10B981' }}>Gửi yêu cầu</button>
             </div>
           </div>
         </div>

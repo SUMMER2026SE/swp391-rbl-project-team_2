@@ -85,19 +85,20 @@ const Header = ({ toggleSidebar }) => {
         <nav className="header-tabs">
           {isAuthenticated && user?.role === 'LANDLORD' ? (
             <>
-              <Link to="/landlord/dashboard" className={`tab-link ${location.pathname === '/landlord/dashboard' || location.pathname === '/landlord' ? 'active' : ''}`} style={{ fontWeight: '700', color: '#2563EB' }}>Landlord Dashboard</Link>
-              <Link to={ROUTES.LANDLORD.LISTINGS} className={`tab-link ${location.pathname === ROUTES.LANDLORD.LISTINGS ? 'active' : ''}`}>My Listings</Link>
-              <Link to={ROUTES.LANDLORD.MESSAGES} className={`tab-link ${location.pathname === ROUTES.LANDLORD.MESSAGES ? 'active' : ''}`}>Messages</Link>
+              <Link to="/landlord/dashboard" className={`tab-link ${location.pathname === '/landlord/dashboard' || location.pathname === '/landlord' ? 'active' : ''}`} style={{ fontWeight: '700', color: '#2563EB' }}>Bảng điều khiển</Link>
+              <Link to={ROUTES.LANDLORD.LISTINGS} className={`tab-link ${location.pathname === ROUTES.LANDLORD.LISTINGS ? 'active' : ''}`}>Phòng của tôi</Link>
+              <Link to={ROUTES.LANDLORD.MESSAGES} className={`tab-link ${location.pathname === ROUTES.LANDLORD.MESSAGES ? 'active' : ''}`}>Tin nhắn</Link>
             </>
           ) : (
             <>
-              <Link to={ROUTES.HOME} className={`tab-link ${location.pathname === ROUTES.HOME ? 'active' : ''}`}>Home</Link>
-              <Link to={ROUTES.ROOMS} className={`tab-link ${location.pathname === ROUTES.ROOMS ? 'active' : ''}`}>Explore</Link>
+              <Link to={ROUTES.HOME} className={`tab-link ${location.pathname === ROUTES.HOME ? 'active' : ''}`}>Trang chủ</Link>
+              <Link to={ROUTES.ROOMS} className={`tab-link ${location.pathname === ROUTES.ROOMS ? 'active' : ''}`}>Khám phá</Link>
+              
               {isAuthenticated && user?.role !== 'ADMIN' && (
                 <>
-                  <Link to={ROUTES.TENANT.FAVORITES} className={`tab-link ${location.pathname === ROUTES.TENANT.FAVORITES ? 'active' : ''}`}>Favorites</Link>
+                  <Link to={ROUTES.TENANT.FAVORITES} className={`tab-link ${location.pathname === ROUTES.TENANT.FAVORITES ? 'active' : ''}`}>Yêu thích</Link>
                   <Link to="/tenant/requests" className={`tab-link ${location.pathname === '/tenant/requests' ? 'active' : ''}`} style={{ position: 'relative' }}>
-                    Requests
+                    Yêu cầu
                     {hasUnreadTenantRequests && (
                       <span style={{ 
                         width: '8px', 
@@ -110,6 +111,7 @@ const Header = ({ toggleSidebar }) => {
                       }}></span>
                     )}
                   </Link>
+                  <Link to="/guide" className={`tab-link ${location.pathname === '/guide' ? 'active' : ''}`}>Hướng dẫn</Link>
                 </>
               )}
             </>
@@ -139,8 +141,8 @@ const Header = ({ toggleSidebar }) => {
           )}
           {!isAuthenticated ? (
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              <Link to={ROUTES.LOGIN} className="sign-in-btn" style={{ background: 'transparent', color: '#6C3AED', border: '1px solid #6C3AED', padding: '0.4rem 1rem' }}>Log In</Link>
-              <Link to={ROUTES.REGISTER} className="sign-in-btn" style={{ padding: '0.4rem 1rem' }}>Sign Up</Link>
+              <Link to={ROUTES.LOGIN} className="sign-in-btn" style={{ background: 'transparent', color: '#6C3AED', border: '1px solid #6C3AED', padding: '0.4rem 1rem' }}>Đăng nhập</Link>
+              <Link to={ROUTES.REGISTER} className="sign-in-btn" style={{ padding: '0.4rem 1rem' }}>Đăng ký</Link>
             </div>
           ) : (
             <div className="user-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -150,11 +152,11 @@ const Header = ({ toggleSidebar }) => {
                   className="sign-in-btn"
                   style={{ background: '#2563EB', color: 'white', border: 'none', padding: '0.4rem 0.9rem', fontSize: '0.85rem', fontWeight: '600', textDecoration: 'none', borderRadius: '4px' }}
                 >
-                  Landlord Portal
+                  Kênh Chủ Trọ
                 </Link>
               )}
               <Link to={user?.role === 'LANDLORD' ? ROUTES.LANDLORD.PROFILE : ROUTES.TENANT.PROFILE}>
-                <div className="header-avatar" title="Profile">
+                <div className="header-avatar" title="Hồ sơ">
                   <img src={getGlobalAvatar(user?.fullName, user?.avatarUrl)} alt="Avatar" />
                 </div>
               </Link>
@@ -163,7 +165,7 @@ const Header = ({ toggleSidebar }) => {
                 className="sign-in-btn"
                 style={{ background: 'transparent', color: '#6C3AED', border: '1px solid #6C3AED', cursor: 'pointer' }}
               >
-                Logout
+                Đăng xuất
               </button>
             </div>
           )}

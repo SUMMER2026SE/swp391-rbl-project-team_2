@@ -54,6 +54,7 @@ router.get('/viewing-schedules', viewingScheduleController.getTenantViewingSched
 // CONTRACT ROUTES (Tenant-side)
 // =========================================================
 router.get('/contracts', viewingScheduleController.getTenantContracts);
+router.post('/contracts/:contractId/send-otp', viewingScheduleController.sendContractOtp);
 router.put('/contracts/:contractId/sign', viewingScheduleController.signContract);
 router.put('/contracts/:contractId/cancel', viewingScheduleController.cancelContract);
 

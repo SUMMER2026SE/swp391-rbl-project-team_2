@@ -1,5 +1,7 @@
 const { Op } = require('sequelize');
-const { ViewingSchedule, Room, User, Notification, Payment, Contract } = require('../models');
+const { ViewingSchedule, Room, User, Notification, Payment, Contract, OtpVerification } = require('../models');
+const generateOtp = require('../utils/generateOtp');
+const { sendOtpEmail, sendContractEmail } = require('../utils/sendEmail');
 const crypto = require('crypto');
 const vnp_TmnCode = process.env.VNP_TMN_CODE || '98KLJQXT';
 const vnp_HashSecret = process.env.VNP_HASH_SECRET || '7HVTWYRFWK4H9EMWOLX9R7GH8VXKGKI8';
@@ -1105,7 +1107,7 @@ const createContractFromViewing = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please assign a physical room number for this contract.' });
     }
 
-    if (schedule.room.available_quantity <= 0) {
+    if (schedule.room.available_quantity !== null && schedule.room.available_quantity <= 0) {
       return res.status(400).json({ success: false, message: 'This room type is out of stock.' });
     }
 
@@ -1192,8 +1194,12 @@ const createContractFromViewing = async (req, res, next) => {
     }
 
     const roomToUpdate = schedule.room;
-    roomToUpdate.available_quantity -= 1;
-    if (roomToUpdate.available_quantity <= 0) {
+    if (roomToUpdate.available_quantity !== null) {
+      roomToUpdate.available_quantity -= 1;
+      if (roomToUpdate.available_quantity <= 0) {
+        roomToUpdate.status = 'rented';
+      }
+    } else {
       roomToUpdate.status = 'rented';
     }
     await roomToUpdate.save();
@@ -1227,18 +1233,16 @@ const createContractFromViewing = async (req, res, next) => {
 };
 
 // =========================================================
-// PUT /api/tenant/contracts/:contractId/sign
-// Tenant signs the contract — finalize the rental
+// POST /api/tenant/contracts/:contractId/send-otp
+// Tenant requests OTP to sign contract
 // =========================================================
-const signContract = async (req, res, next) => {
+const sendContractOtp = async (req, res, next) => {
   try {
     const { contractId } = req.params;
-    const { tenantSignature } = req.body;
     const tenantId = req.user.userId;
 
     const contract = await Contract.findOne({
       where: { contract_id: contractId, tenant_id: tenantId },
-      include: [{ model: Room, as: 'room' }],
     });
 
     if (!contract) {
@@ -1252,6 +1256,85 @@ const signContract = async (req, res, next) => {
       });
     }
 
+    const tenant = await User.findByPk(tenantId);
+
+    const otpCode = generateOtp();
+    const expiredAt = new Date();
+    expiredAt.setMinutes(expiredAt.getMinutes() + 5);
+
+    await OtpVerification.create({
+      user_id: tenantId,
+      otp_code: otpCode,
+      purpose: 'sign_contract',
+      expired_at: expiredAt,
+    });
+
+    await sendOtpEmail(tenant.email, otpCode, 'sign_contract');
+
+    return res.status(200).json({
+      success: true,
+      message: 'OTP sent to your email. Please check your inbox to sign the contract.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================================
+// PUT /api/tenant/contracts/:contractId/sign
+// Tenant signs the contract — finalize the rental
+// =========================================================
+const signContract = async (req, res, next) => {
+  try {
+    const { contractId } = req.params;
+    const { tenantSignature, otp, contractPdf } = req.body;
+    const tenantId = req.user.userId;
+
+    if (!otp) {
+      return res.status(400).json({ success: false, message: 'OTP is required to sign the contract.' });
+    }
+
+    const contract = await Contract.findOne({
+      where: { contract_id: contractId, tenant_id: tenantId },
+      include: [
+        { model: Room, as: 'room' },
+        { model: User, as: 'landlordContract' }
+      ],
+    });
+
+    if (!contract) {
+      return res.status(404).json({ success: false, message: 'Contract not found.' });
+    }
+
+    if (contract.status !== 'pending_signature') {
+      return res.status(400).json({
+        success: false,
+        message: 'This contract is not pending signature.',
+      });
+    }
+
+    // Verify OTP
+    const otpRecord = await OtpVerification.findOne({
+      where: {
+        user_id: tenantId,
+        otp_code: otp,
+        purpose: 'sign_contract',
+        is_used: false,
+        expired_at: { [Op.gt]: new Date() },
+      },
+      order: [['otp_id', 'DESC']],
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP.',
+      });
+    }
+
+    // Mark OTP as used
+    await otpRecord.update({ is_used: true });
+
     contract.status = 'pending_payment'; // Wait for deposit payment before making active
     contract.tenant_agreed = true;
     if (tenantSignature) {
@@ -1259,6 +1342,18 @@ const signContract = async (req, res, next) => {
     }
     contract.updated_at = new Date();
     await contract.save();
+
+    // Send contract PDF email to landlord and tenant if provided
+    if (contractPdf) {
+      const tenantUser = await User.findByPk(tenantId);
+      if (tenantUser && tenantUser.email) {
+        await sendContractEmail(tenantUser.email, contract.contract_number, contractPdf);
+      }
+      if (contract.landlordContract && contract.landlordContract.email) {
+        await sendContractEmail(contract.landlordContract.email, contract.contract_number, contractPdf);
+      }
+    }
+
 
     // Update room status to rented
     // We don't do this here anymore, VNPay return will do it.
@@ -1422,6 +1517,7 @@ module.exports = {
   cancelViewingScheduleTenant,
   declineViewingScheduleTenant,
   createContractFromViewing,
+  sendContractOtp,
   signContract,
   getTenantContracts,
   cancelContract,

@@ -4,7 +4,7 @@ const { Op } = require('sequelize');
 const { OAuth2Client } = require('google-auth-library');
 const { sequelize, User, Role, OtpVerification } = require('../models');
 const generateOtp = require('../utils/generateOtp');
-const sendOtpEmail = require('../utils/sendEmail');
+const { sendOtpEmail } = require('../utils/sendEmail');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 

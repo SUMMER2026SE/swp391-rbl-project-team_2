@@ -149,6 +149,16 @@ export const rentalRequestService = {
     }
   },
 
+  sendContractOtp: async (contractId) => {
+    try {
+      const response = await httpClient.post(`/tenant/contracts/${contractId}/send-otp`);
+      return response;
+    } catch (error) {
+      console.error('Error sending contract OTP:', error);
+      throw error;
+    }
+  },
+
   signContract: async (contractId, data) => {
     try {
       const response = await httpClient.put(`/tenant/contracts/${contractId}/sign`, data);
