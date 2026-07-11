@@ -8,7 +8,8 @@ import './AIChatWidget.css';
 // =========================================================
 // CONSTANTS
 // =========================================================
-const STORAGE_KEY = 'ai-chat-history';
+const STORAGE_KEY_PREFIX = 'ai-chat-history';
+const getStorageKey = (userId) => `${STORAGE_KEY_PREFIX}-${userId || 'guest'}`;
 const WELCOME_MESSAGE = {
   role: 'assistant',
   content: 'Xin chào! 👋 Em là trợ lý ảo RentalWise. Em có thể giúp bạn tìm phòng trọ, giải đáp thắc mắc về chính sách thuê phòng, hoặc tư vấn lựa chọn phòng phù hợp nhé ạ! 😊'
@@ -26,30 +27,68 @@ const QUICK_REPLIES = [
 // =========================================================
 const MessageContent = ({ content }) => {
   const navigate = useNavigate();
+  const [checking, setChecking] = React.useState(false);
+
+  // Tiền xử lý: chuyển markdown link [text](url) thành plain URL
+  const preprocessed = content.replace(/\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g, '$2');
+
   const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = content.split(urlRegex);
+  const parts = preprocessed.split(urlRegex);
   urlRegex.lastIndex = 0;
+
+  // Hàm clean URL: loại bỏ ký tự thừa cuối URL (dấu ), ], dấu phẩy, dấu chấm...)
+  const cleanUrl = (url) => url.replace(/[)\],.;:!?]+$/, '');
+
+  const handleRoomClick = async (path) => {
+    // Trích xuất room ID từ path: /rooms/77 -> 77
+    const roomIdMatch = path.match(/\/rooms\/(\d+)/);
+    if (!roomIdMatch) {
+      navigate(path);
+      return;
+    }
+
+    const roomId = roomIdMatch[1];
+    setChecking(true);
+    try {
+      const response = await api.get(`/rooms/${roomId}`);
+      if (response && response.data) {
+        navigate(`/rooms/${roomId}`); // Dùng path đã clean thay vì path gốc
+      } else {
+        alert('⚠️ Phòng này không tồn tại hoặc đã bị xóa. Vui lòng tìm phòng khác trên trang Khám phá nhé!');
+      }
+    } catch (err) {
+      alert('⚠️ Phòng này không tồn tại hoặc đã bị xóa. Vui lòng tìm phòng khác trên trang Khám phá nhé!');
+    } finally {
+      setChecking(false);
+    }
+  };
 
   return (
     <span>
       {parts.map((part, i) => {
         if (/^https?:\/\//.test(part)) {
-          const isLocal = part.includes('localhost:5173');
+          const cleaned = cleanUrl(part);
+          // Kiểm tra nếu là link "không khả dụng" (đã bị backend loại bỏ)
+          if (cleaned.includes('[link không khả dụng]')) {
+            return <span key={i} className="ai-room-link-invalid">❌ Link không khả dụng</span>;
+          }
+          const isLocal = cleaned.includes('localhost:5173');
           if (isLocal) {
-            const path = part.replace(/https?:\/\/localhost:\d+/, '');
+            const path = cleaned.replace(/https?:\/\/localhost:\d+/, '');
             return (
               <button
                 key={i}
-                onClick={() => navigate(path)}
+                onClick={() => handleRoomClick(path)}
                 className="ai-room-link"
+                disabled={checking}
               >
-                🔗 Xem chi tiết phòng
+                {checking ? '⏳ Đang kiểm tra...' : '🔗 Xem chi tiết phòng'}
               </button>
             );
           }
           return (
-            <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="ai-room-link">
-              {part}
+            <a key={i} href={cleaned} target="_blank" rel="noopener noreferrer" className="ai-room-link">
+              {cleaned}
             </a>
           );
         }
@@ -66,28 +105,36 @@ const AIChatWidget = () => {
   const { user, isAuthenticated } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState(() => {
-    // Khôi phục lịch sử từ localStorage
+
+  // Helper: load chat history cho user hiện tại
+  const loadUserMessages = useCallback((userId) => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(getStorageKey(userId));
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) { /* ignore */ }
     return [WELCOME_MESSAGE];
-  });
+  }, []);
+
+  const [messages, setMessages] = useState(() => loadUserMessages(user?.user_id));
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Lưu lịch sử chat vào localStorage
+  // Khi user thay đổi (đăng nhập/đăng xuất), reload lịch sử chat riêng
   useEffect(() => {
-    if (messages.length > 1) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    setMessages(loadUserMessages(user?.user_id));
+  }, [user?.user_id, loadUserMessages]);
+
+  // Lưu lịch sử chat vào localStorage (theo user ID)
+  useEffect(() => {
+    if (messages.length > 1 && user?.user_id) {
+      localStorage.setItem(getStorageKey(user.user_id), JSON.stringify(messages));
     }
-  }, [messages]);
+  }, [messages, user?.user_id]);
 
   // Auto-scroll xuống cuối
   const scrollToBottom = useCallback(() => {
@@ -146,7 +193,7 @@ const AIChatWidget = () => {
   // -------------------------------------------------------
   const handleReset = () => {
     setMessages([WELCOME_MESSAGE]);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(getStorageKey(user?.user_id));
   };
 
   // -------------------------------------------------------

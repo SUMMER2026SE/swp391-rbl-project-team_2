@@ -249,6 +249,28 @@
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
+.ai-room-link:disabled {
+  background: rgba(156, 163, 175, 0.1);
+  color: #9ca3af;
+  border-color: rgba(156, 163, 175, 0.25);
+  cursor: wait;
+  transform: none;
+  box-shadow: none;
+}
+
+.ai-room-link-invalid {
+  display: inline-block;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
 /* =========================================================
    QUICK REPLIES
    ========================================================= */

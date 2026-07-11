@@ -200,16 +200,72 @@ async function searchRoomsDynamic(searchParams) {
 // =========================================================
 function formatRoomsForAI(rooms) {
   if (!rooms || rooms.length === 0) {
-    return 'Hiện tại không tìm thấy phòng nào phù hợp với yêu cầu trong cơ sở dữ liệu.';
+    return 'KHÔNG CÓ PHÒNG NÀO trong cơ sở dữ liệu phù hợp với yêu cầu. Bạn PHẢI thông báo cho khách là hiện tại không có phòng phù hợp. TUYỆT ĐỐI KHÔNG ĐƯỢC tự tạo ra phòng.';
   }
 
-  return `Dưới đây là ${rooms.length} phòng tìm thấy trong cơ sở dữ liệu. Hãy dùng CHÍNH XÁC thông tin này để trả lời khách. Với mỗi phòng giới thiệu, LUÔN kèm link xem chi tiết.\n` +
+  return `Dưới đây là ĐÚNG ${rooms.length} phòng tìm thấy trong cơ sở dữ liệu.\n⚠️ CHỈ ĐƯỢC giới thiệu CHÍNH XÁC các phòng trong danh sách này. KHÔNG ĐƯỢC bịa thêm phòng nào khác.\n⚠️ Sử dụng ĐÚNG Room ID, tên, giá, địa chỉ, link từ danh sách. KHÔNG ĐƯỢC thay đổi bất kỳ thông tin nào.\n` +
     rooms.map(r => {
       const facs = r.facilities ? r.facilities.map(f => f.facility_name).join(', ') : 'Chưa cập nhật';
       const link = `http://localhost:5173/rooms/${r.room_id}`;
       const price = r.price_per_month ? Number(r.price_per_month).toLocaleString('vi-VN') : '0';
       return `- Room ID: ${r.room_id} | Tên: "${r.title}" | Giá: ${price} VND/tháng | Địa chỉ: ${r.address}, ${r.district}, ${r.city} | Diện tích: ${r.area_sqm}m² | Tối đa: ${r.max_occupants} người | Tiện ích: ${facs} | Link: ${link}`;
     }).join('\n');
+}
+
+// =========================================================
+// (CHỐNG HALLUCINATION) HÀM VALIDATE RESPONSE CỦA AI
+// Loại bỏ mọi link phòng có ID không tồn tại trong DB
+// =========================================================
+async function validateAIResponse(reply, validRoomIds) {
+  try {
+    // Tìm tất cả link phòng trong response: http://localhost:5173/rooms/123
+    const roomLinkRegex = /http:\/\/localhost:\d+\/rooms\/([\w-]+)/g;
+    let match;
+    const foundIds = [];
+    
+    while ((match = roomLinkRegex.exec(reply)) !== null) {
+      foundIds.push(match[1]);
+    }
+
+    if (foundIds.length === 0) return reply; // Không có link phòng, trả về nguyên
+
+    // Nếu không có validRoomIds (trường hợp không search), query DB để kiểm tra
+    let validIds = validRoomIds;
+    if (!validIds || validIds.length === 0) {
+      const existingRooms = await Room.findAll({
+        where: { 
+          room_id: { [Op.in]: foundIds.map(id => parseInt(id)).filter(id => !isNaN(id)) },
+          is_deleted: false 
+        },
+        attributes: ['room_id']
+      });
+      validIds = existingRooms.map(r => String(r.room_id));
+    }
+
+    let cleanedReply = reply;
+    const validIdSet = new Set(validIds.map(String));
+
+    // Tìm và xóa các block phòng có link ID không hợp lệ
+    for (const id of foundIds) {
+      if (!validIdSet.has(String(id))) {
+        console.warn(`[AI VALIDATION] Removing hallucinated room link with ID: ${id}`);
+        // Xóa link giả: thay bằng text cảnh báo
+        const fakeLinkRegex = new RegExp(`http:\/\/localhost:\d+\/rooms\/${id}`, 'g');
+        cleanedReply = cleanedReply.replace(fakeLinkRegex, '[link không khả dụng]');
+      }
+    }
+
+    // Nếu TẤT CẢ link đều bị xóa (AI bịa hoàn toàn), thêm thông báo
+    const remainingLinks = /http:\/\/localhost:\d+\/rooms\/[\w-]+/g;
+    if (foundIds.length > 0 && !remainingLinks.test(cleanedReply)) {
+      cleanedReply += '\n\n⚠️ *Lưu ý: Một số thông tin phòng có thể không chính xác. Vui lòng sử dụng tính năng tìm kiếm trên trang Khám phá để xem các phòng thực tế nhé ạ!*';
+    }
+
+    return cleanedReply;
+  } catch (err) {
+    console.error('[AI VALIDATION] Error:', err.message);
+    return reply; // Nếu lỗi, trả về nguyên
+  }
 }
 
 
@@ -292,10 +348,12 @@ const aiController = {
       // (Ý tưởng 1) BƯỚC 2: Tìm kiếm phòng động từ Database
       // -------------------------------------------------------
       let roomDataString = '';
+      let validRoomIds = []; // Track valid room IDs for post-validation
       if (searchIntent.needsSearch) {
         const matchedRooms = await searchRoomsDynamic(searchIntent);
+        validRoomIds = matchedRooms.map(r => String(r.room_id));
         roomDataString = formatRoomsForAI(matchedRooms);
-        console.log(`[AI] Found ${matchedRooms.length} rooms matching search criteria`);
+        console.log(`[AI] Found ${matchedRooms.length} rooms matching search criteria. Valid IDs: [${validRoomIds.join(', ')}]`);
       } else {
         // Nếu chỉ chào hỏi hoặc hỏi chung, vẫn lấy vài phòng gần nhất để AI có thể gợi ý
         try {
@@ -305,6 +363,7 @@ const aiController = {
             order: [['created_at', 'DESC']],
             include: [{ model: Facility, as: 'facilities', attributes: ['facility_name'], through: { attributes: [] } }]
           });
+          validRoomIds = recentRooms.map(r => String(r.room_id));
           if (recentRooms.length > 0) {
             roomDataString = `Đây là một số phòng mới nhất trên hệ thống (chỉ đề cập khi khách hỏi về phòng):\n` +
               formatRoomsForAI(recentRooms);
@@ -330,17 +389,22 @@ This is your #1 rule. It overrides everything below.
 
 You are an AI assistant for the room rental platform "RentalWise" in Vietnam.
 
-=== IMPORTANT RULES ===
-1. NEVER invent, hallucinate, or suggest rooms that are NOT in the provided list below.
-2. If no rooms match the user's criteria, say so politely.
-3. When listing rooms, ALWAYS use the exact info from the list (Title, Price, Address, Link).
-4. FORMATTING: Use emojis. For EACH room, use this format:
-   🏠 **Room name**
-   📍 Address
-   💰 Price
+=== 🚨🚨🚨 CRITICAL ANTI-HALLUCINATION RULES 🚨🚨🚨 ===
+1. You can ONLY mention rooms that appear in the "ROOM DATA FROM DATABASE" section below.
+2. If the ROOM DATA section says "KHÔNG CÓ PHÒNG NÀO" or is empty, you MUST tell the customer that NO rooms are currently available matching their criteria. DO NOT make up any rooms.
+3. NEVER invent room names, addresses, prices, or links. Every piece of room information MUST come from the provided data.
+4. If only 1 room is found, show only that 1 room. Do NOT add more rooms.
+5. ONLY use links in the format http://localhost:5173/rooms/{room_id} where {room_id} matches a Room ID from the data below.
+6. If you cannot find suitable rooms in the data, suggest the customer try different search criteria or check the "Khám phá" (Explore) page.
+
+=== FORMATTING RULES ===
+Use emojis. For EACH room from the database, use this format:
+   🏠 **Room name** (use exact title from data)
+   📍 Address (use exact address from data)
+   💰 Price (use exact price from data)
    🛋️ Amenities
    📐 Area | 👥 Max occupants
-   🔗 Link: [URL]
+   🔗 Link: [exact URL from data]
    (Separate rooms with blank lines)
 
 ${PERSONA_PROMPT}
@@ -348,7 +412,7 @@ ${PERSONA_PROMPT}
 ${FAQ_KNOWLEDGE}
 
 === ROOM DATA FROM DATABASE ===
-${roomDataString || 'No room data available at this time.'}
+${roomDataString || 'KHÔNG CÓ PHÒNG NÀO trong cơ sở dữ liệu. Hãy thông báo cho khách rằng hiện tại không tìm thấy phòng phù hợp.'}
 `;
 
       // -------------------------------------------------------
@@ -388,9 +452,15 @@ ${roomDataString || 'No room data available at this time.'}
         temperature: 0.2,
       });
 
-      const reply = chatCompletion.choices[0]?.message?.content || "Sorry, I didn't understand that. Could you please rephrase?";
+      let reply = chatCompletion.choices[0]?.message?.content || "Sorry, I didn't understand that. Could you please rephrase?";
 
-      res.json({ success: true, reply: reply.trim() });
+      // -------------------------------------------------------
+      // BƯỚC 6: Validate response - loại bỏ link phòng giả
+      // -------------------------------------------------------
+      reply = await validateAIResponse(reply.trim(), validRoomIds);
+      console.log(`[AI] Validated response. Valid room IDs were: [${validRoomIds.join(', ')}]`);
+
+      res.json({ success: true, reply });
     } catch (error) {
       console.error('AI Chat Error (Groq):', error);
       res.status(500).json({ success: false, message: error.message });
