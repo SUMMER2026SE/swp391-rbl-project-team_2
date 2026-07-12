@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
   CheckCheck,
@@ -16,6 +17,7 @@ const MOCK_NOTIFICATIONS = [];
 
 
 const LandlordNotificationsPage = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('All Alerts');
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
 
@@ -42,13 +44,13 @@ const LandlordNotificationsPage = () => {
       {/* Notifications Header */}
       <header className="notifications-header">
         <div className="header-titles">
-          <h1 className="notifications-title">Notifications</h1>
-          <p className="notifications-subtitle">Stay updated on your properties and resident activity.</p>
+          <h1 className="notifications-title">{t('landlordNotifications.notifications', 'Notifications')}</h1>
+          <p className="notifications-subtitle">{t('landlordNotifications.stayUpdatedOnYourProperties', 'Stay updated on your properties and resident activity.')}</p>
         </div>
 
         <button className="btn-mark-all" onClick={handleMarkAllRead}>
           <CheckCheck size={16} />
-          <span>Mark all as read</span>
+          <span>{t('landlordNotifications.markAllAsRead', 'Mark all as read')}</span>
         </button>
       </header>
 
@@ -133,8 +135,8 @@ const LandlordNotificationsPage = () => {
         ) : (
           <div className="empty-notifications">
             <Sparkles size={48} className="empty-icon" />
-            <h3>All caught up!</h3>
-            <p>No new notifications in this category.</p>
+            <h3>{t('landlordNotifications.allCaughtUp', 'All caught up!')}</h3>
+            <p>{t('landlordNotifications.noNewNotificationsInThis', 'No new notifications in this category.')}</p>
           </div>
         )}
       </div>

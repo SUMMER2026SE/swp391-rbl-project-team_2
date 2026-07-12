@@ -4,9 +4,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import StatCard from '../components/StatCard';
 import { formatCurrency } from '../../../utils/format';
 import adminService from '../../../services/adminService';
+import { useTranslation } from 'react-i18next';
 import './DashboardPage.css';
 
 const DashboardPage = () => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     totalRevenue: 0,
     activeTenants: 0,
@@ -42,19 +44,19 @@ const DashboardPage = () => {
   };
 
   if (loading) {
-    return <div className="admin-page-container"><div className="loading-state">Loading dashboard...</div></div>;
+    return <div className="admin-page-container"><div className="loading-state">{t('adminDashboard.loading', 'Loading dashboard...')}</div></div>;
   }
 
   return (
     <div className="admin-page-container">
       <div className="admin-page-header">
-        <h1 className="admin-page-title">Dashboard</h1>
-        <p className="admin-page-subtitle">Welcome back! Here's what's happening today.</p>
+        <h1 className="admin-page-title">{t('adminDashboard.title', 'Dashboard')}</h1>
+        <p className="admin-page-subtitle">{t('adminDashboard.subtitle', "Welcome back! Here's what's happening today.")}</p>
       </div>
 
       <div className="stats-grid">
         <StatCard
-          title="Total Revenue (This Month)"
+          title={t('adminDashboard.totalRevenue', 'Total Revenue (This Month)')}
           value={formatCurrency(stats.totalRevenue)}
           icon={<DollarSign size={24} />}
           trend="up"
@@ -62,28 +64,28 @@ const DashboardPage = () => {
           isCurrency
         />
         <StatCard
-          title="Active Tenants"
+          title={t('adminDashboard.activeTenants', 'Active Tenants')}
           value={stats.activeTenants}
           icon={<Users size={24} />}
           trend="up"
           trendValue="4.2%"
         />
         <StatCard
-          title="Total Listings"
+          title={t('adminDashboard.totalListings', 'Total Listings')}
           value={stats.totalListings}
           icon={<Home size={24} />}
           trend="up"
           trendValue="2"
         />
         <StatCard
-          title="Pending Approvals"
+          title={t('adminDashboard.pendingApprovals', 'Pending Approvals')}
           value={stats.pendingListings}
           icon={<Clock size={24} color="#e11d48" />}
           trend={stats.pendingListings > 0 ? "up" : "none"}
-          trendValue={stats.pendingListings > 0 ? "Action needed" : "All clear"}
+          trendValue={stats.pendingListings > 0 ? t('adminDashboard.actionNeeded', "Action needed") : t('adminDashboard.allClear', "All clear")}
         />
         <StatCard
-          title="Occupancy Rate"
+          title={t('adminDashboard.occupancyRate', 'Occupancy Rate')}
           value={stats.occupancyRate}
           icon={<TrendingUp size={24} />}
           trend="up"
@@ -95,9 +97,9 @@ const DashboardPage = () => {
         {/* Revenue Chart */}
         <div className="chart-card chart-large">
           <div className="chart-header">
-            <h3>Revenue Overview</h3>
+            <h3>{t('adminDashboard.revenueOverview', 'Revenue Overview')}</h3>
             <select className="chart-filter">
-              <option>This Year</option>
+              <option>{t('adminDashboard.thisYear', 'This Year')}</option>
             </select>
           </div>
           <div className="chart-body">
@@ -120,22 +122,37 @@ const DashboardPage = () => {
         {/* Recent Activity */}
         <div className="activity-card">
           <div className="chart-header">
-            <h3>Recent Activity</h3>
+            <h3>{t('adminDashboard.recentActivity', 'Recent Activity')}</h3>
           </div>
           <ul className="activity-list">
             {recentActivity.length > 0 ? (
-              recentActivity.map((item) => (
-                <li key={item.id} className="activity-item">
-                  <div className="activity-dot" />
-                  <div className="activity-content">
-                    <span className="activity-type">{item.type}</span>
-                    <p className="activity-message">{item.message}</p>
-                    <span className="activity-time">{item.time}</span>
-                  </div>
-                </li>
-              ))
+              recentActivity.map((item) => {
+                let activityMessage = item.message;
+                if (item.type === 'Request') {
+                  const match = item.message.match(/^(.*?) submitted a rental request for (.*?)$/);
+                  if (match) {
+                    activityMessage = t('adminDashboard.requestActivity', '{{name}} submitted a rental request for {{room}}', { name: match[1], room: match[2] });
+                  }
+                } else if (item.type === 'Payment') {
+                  const match = item.message.match(/^(.*?) paid rent for (.*?)$/);
+                  if (match) {
+                    activityMessage = t('adminDashboard.paymentActivity', '{{name}} paid rent for {{room}}', { name: match[1], room: match[2] });
+                  }
+                }
+                
+                return (
+                  <li key={item.id} className="activity-item">
+                    <div className="activity-dot" />
+                    <div className="activity-content">
+                      <span className="activity-type">{item.type}</span>
+                      <p className="activity-message">{activityMessage}</p>
+                      <span className="activity-time">{item.time}</span>
+                    </div>
+                  </li>
+                );
+              })
             ) : (
-              <p className="text-gray-500 text-sm py-4 text-center">No recent activity.</p>
+              <p className="text-gray-500 text-sm py-4 text-center">{t('adminDashboard.noActivity', 'No recent activity.')}</p>
             )}
           </ul>
         </div>

@@ -29,9 +29,9 @@ const getDashboardStatistics = async (req, res, next) => {
       where: { landlord_id: landlordId, status: 'active' },
     });
 
-    // Total revenue (completed payouts)
+    // Total revenue (earned)
     const totalRevenue = await Payment.sum('net_amount', {
-      where: { landlord_id: landlordId, payout_status: 'completed' },
+      where: { landlord_id: landlordId, status: 'completed' },
     });
 
     // Pending payments
@@ -173,8 +173,8 @@ const getRevenueChart = async (req, res, next) => {
       const revenue = await Payment.sum('net_amount', {
         where: {
           landlord_id: landlordId,
-          payout_status: 'completed',
-          payout_date: {
+          status: 'completed',
+          paid_date: {
             [Op.between]: [date, nextDate],
           },
         },

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { 
   LayoutGrid, AlertTriangle, Search, Calendar, ChevronDown, 
@@ -16,6 +17,7 @@ const MOCK_LOGS = [
 ];
 
 const SystemLogsPage = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,9 +25,9 @@ const SystemLogsPage = () => {
 
   const renderBadge = (severity) => {
     switch (severity) {
-      case 'CRITICAL': return <span className="badge critical"><AlertTriangle size={12}/> CRITICAL</span>;
-      case 'WARN': return <span className="badge warn"><AlertTriangle size={12}/> WARN</span>;
-      case 'INFO': return <span className="badge info"><Info size={12}/> INFO</span>;
+      case 'CRITICAL': return <span className="badge critical"><AlertTriangle size={12}/>{t('systemLogs.critical', 'CRITICAL')}</span>;
+      case 'WARN': return <span className="badge warn"><AlertTriangle size={12}/>{t('systemLogs.warn', 'WARN')}</span>;
+      case 'INFO': return <span className="badge info"><Info size={12}/>{t('systemLogs.info', 'INFO')}</span>;
       default: return <span className="badge info">{severity}</span>;
     }
   };
@@ -52,8 +54,8 @@ const SystemLogsPage = () => {
       {/* Header & Stats */}
       <div className="system-logs-header">
         <div className="logs-title-section">
-          <h1>System Logs & Activity</h1>
-          <p>Live telemetry and security audit trail across the Smart Stay ecosystem.</p>
+          <h1>{t('systemLogs.systemLogsActivity', 'System Logs & Activity')}</h1>
+          <p>{t('systemLogs.liveTelemetryAndSecurityAudit', 'Live telemetry and security audit trail across the Smart Stay ecosystem.')}</p>
         </div>
         <div className="logs-stats-section">
           <div className="stat-card">
@@ -61,7 +63,7 @@ const SystemLogsPage = () => {
               <LayoutGrid size={24} />
             </div>
             <div className="stat-info">
-              <span>EVENTS TODAY</span>
+              <span>{t('systemLogs.eventsToday', 'EVENTS TODAY')}</span>
               <strong>14,208</strong>
             </div>
           </div>
@@ -70,7 +72,7 @@ const SystemLogsPage = () => {
               <AlertTriangle size={24} />
             </div>
             <div className="stat-info">
-              <span>CRITICAL ALERTS</span>
+              <span>{t('systemLogs.criticalAlerts', 'CRITICAL ALERTS')}</span>
               <strong className="text-red">3</strong>
             </div>
           </div>
@@ -84,36 +86,34 @@ const SystemLogsPage = () => {
             <Search size={18} />
             <input 
               type="text" 
-              placeholder="Search by IP, User, or Action" 
+              placeholder={t('systemLogs.searchByIpUserOrPlaceholder', 'Search by IP, User, or Action')} 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="filter-severity">
-            <span>Severity:</span>
+            <span>{t('systemLogs.severity', 'Severity:')}</span>
             <span 
               className={`severity-pill info ${severityFilter === 'INFO' ? 'active' : ''}`}
               onClick={() => toggleSeverity('INFO')}
-            >Info</span>
+            >{t('systemLogs.info', 'Info')}</span>
             <span 
               className={`severity-pill warning ${severityFilter === 'WARN' ? 'active' : ''}`}
               onClick={() => toggleSeverity('WARN')}
-            >Warning</span>
+            >{t('systemLogs.warning', 'Warning')}</span>
             <span 
               className={`severity-pill critical ${severityFilter === 'CRITICAL' ? 'active' : ''}`}
               onClick={() => toggleSeverity('CRITICAL')}
-            >Critical</span>
+            >{t('systemLogs.critical', 'Critical')}</span>
           </div>
         </div>
         <div className="filter-right">
           <div className="filter-date">
             <Calendar size={16} />
-            <span>Last 24 Hours</span>
+            <span>{t('systemLogs.last24Hours', 'Last 24 Hours')}</span>
             <ChevronDown size={16} />
           </div>
-          <button className="btn-filter" onClick={() => { setSearchQuery(''); setSeverityFilter('ALL'); setCurrentPage(1); }}>
-            Clear Filters
-          </button>
+          <button className="btn-filter" onClick={() => { setSearchQuery(''); setSeverityFilter('ALL'); setCurrentPage(1); }}>{t('systemLogs.clearFilters', 'Clear Filters')}</button>
         </div>
       </div>
 
@@ -123,21 +123,19 @@ const SystemLogsPage = () => {
         {/* Table Area */}
         <div className="logs-table-card">
           <div className="logs-table-header">
-            <h2>Live Event Stream</h2>
+            <h2>{t('systemLogs.liveEventStream', 'Live Event Stream')}</h2>
             <div className="live-badge">
-              <span className="live-dot"></span>
-              Live Updates On
-            </div>
+              <span className="live-dot"></span>{t('systemLogs.liveUpdatesOn', 'Live Updates On')}</div>
           </div>
           
           <table className="logs-table">
             <thead>
               <tr>
-                <th>Timestamp</th>
-                <th>Severity</th>
-                <th>User / Actor</th>
-                <th>Action Description</th>
-                <th>IP Address</th>
+                <th>{t('systemLogs.timestamp', 'Timestamp')}</th>
+                <th>{t('systemLogs.severity', 'Severity')}</th>
+                <th>{t('systemLogs.userActor', 'User / Actor')}</th>
+                <th>{t('systemLogs.actionDescription', 'Action Description')}</th>
+                <th>{t('systemLogs.ipAddress', 'IP Address')}</th>
               </tr>
             </thead>
             <tbody>
@@ -151,9 +149,7 @@ const SystemLogsPage = () => {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
-                    No logs match the current filters.
-                  </td>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>{t('systemLogs.noLogsMatchTheCurrent', 'No logs match the current filters.')}</td>
                 </tr>
               )}
             </tbody>
@@ -165,11 +161,11 @@ const SystemLogsPage = () => {
               <button 
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-              >Prev</button>
+              >{t('systemLogs.prev', 'Prev')}</button>
               <button 
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-              >Next</button>
+              >{t('systemLogs.next', 'Next')}</button>
             </div>
           </div>
         </div>
@@ -180,48 +176,48 @@ const SystemLogsPage = () => {
             <div className="timeline-icon-wrap">
               <Shield size={20} />
             </div>
-            <h3>Security Audit Timeline</h3>
+            <h3>{t('systemLogs.securityAuditTimeline', 'Security Audit Timeline')}</h3>
           </div>
           
           <div className="timeline-list">
             <div className="timeline-item">
               <div className="timeline-dot critical"><ShieldAlert size={12}/></div>
               <div className="timeline-content">
-                <span className="timeline-time">10:45:02 UTC</span>
-                <div className="timeline-title">Multiple Auth Failures</div>
-                <div className="timeline-desc">Root access attempted via SSH. IP addresses blocked temporarily.</div>
+                <span className="timeline-time">{t('systemLogs.104502Utc', '10:45:02 UTC')}</span>
+                <div className="timeline-title">{t('systemLogs.multipleAuthFailures', 'Multiple Auth Failures')}</div>
+                <div className="timeline-desc">{t('systemLogs.rootAccessAttemptedViaSsh', 'Root access attempted via SSH. IP addresses blocked temporarily.')}</div>
               </div>
             </div>
             
             <div className="timeline-item">
               <div className="timeline-dot info"><User size={12}/></div>
               <div className="timeline-content">
-                <span className="timeline-time">08:12:44 UTC</span>
-                <div className="timeline-title">Admin Role Elevated</div>
-                <div className="timeline-desc">User 'c.williams' granted SuperAdmin privileges by 'a.admin'.</div>
+                <span className="timeline-time">{t('systemLogs.081244Utc', '08:12:44 UTC')}</span>
+                <div className="timeline-title">{t('systemLogs.adminRoleElevated', 'Admin Role Elevated')}</div>
+                <div className="timeline-desc">{t('systemLogs.userCwilliamsGrantedSuperadminPrivileges', 'User \'c.williams\' granted SuperAdmin privileges by \'a.admin\'.')}</div>
               </div>
             </div>
 
             <div className="timeline-item">
               <div className="timeline-dot warn"><Settings size={12}/></div>
               <div className="timeline-content">
-                <span className="timeline-time">Yesterday, 22:30 UTC</span>
-                <div className="timeline-title">Global Policy Change</div>
-                <div className="timeline-desc">Default cancellation policy updated for all new listings.</div>
+                <span className="timeline-time">{t('systemLogs.yesterday2230Utc', 'Yesterday, 22:30 UTC')}</span>
+                <div className="timeline-title">{t('systemLogs.globalPolicyChange', 'Global Policy Change')}</div>
+                <div className="timeline-desc">{t('systemLogs.defaultCancellationPolicyUpdatedFor', 'Default cancellation policy updated for all new listings.')}</div>
               </div>
             </div>
 
             <div className="timeline-item">
               <div className="timeline-dot neutral"><Database size={12}/></div>
               <div className="timeline-content">
-                <span className="timeline-time">Yesterday, 14:05 UTC</span>
-                <div className="timeline-title">System Backup Verified</div>
-                <div className="timeline-desc">Weekly encrypted off-site backup integrity check passed.</div>
+                <span className="timeline-time">{t('systemLogs.yesterday1405Utc', 'Yesterday, 14:05 UTC')}</span>
+                <div className="timeline-title">{t('systemLogs.systemBackupVerified', 'System Backup Verified')}</div>
+                <div className="timeline-desc">{t('systemLogs.weeklyEncryptedOffsiteBackupIntegrity', 'Weekly encrypted off-site backup integrity check passed.')}</div>
               </div>
             </div>
           </div>
 
-          <button className="btn-full-audit">View Full Audit Log</button>
+          <button className="btn-full-audit">{t('systemLogs.viewFullAuditLog', 'View Full Audit Log')}</button>
         </div>
       </div>
     </div>

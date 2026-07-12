@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Building2,
   Plus,
@@ -15,6 +16,7 @@ import toast from 'react-hot-toast';
 import './PropertiesPage.css';
 
 const PropertiesPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,15 +71,15 @@ const PropertiesPage = () => {
       {/* Header */}
       <div className="properties-page-header">
         <div>
-          <h1>My Properties</h1>
-          <p>Manage your buildings, houses and their rooms</p>
+          <h1>{t('landlord.properties.title', 'My Properties')}</h1>
+          <p>{t('landlord.properties.subtitle', 'Manage your buildings, houses and their rooms')}</p>
         </div>
         <button
           className="btn-add-property"
           onClick={() => navigate(ROUTES.LANDLORD.NEW_PROPERTY)}
         >
           <Plus size={18} />
-          <span>Add New Property</span>
+          <span>{t('landlord.properties.addNewProperty', 'Add New Property')}</span>
         </button>
       </div>
 
@@ -87,14 +89,14 @@ const PropertiesPage = () => {
           <div className="empty-icon">
             <Building2 size={36} />
           </div>
-          <h3>No Properties Yet</h3>
-          <p>Create your first property to start managing your rooms by building, floor, and unit.</p>
+          <h3>{t('landlord.properties.empty.title', 'No Properties Yet')}</h3>
+          <p>{t('landlord.properties.empty.subtitle', 'Create your first property to start managing your rooms by building, floor, and unit.')}</p>
           <button
             className="btn-add-property"
             onClick={() => navigate(ROUTES.LANDLORD.NEW_PROPERTY)}
           >
             <Plus size={18} />
-            <span>Add Your First Property</span>
+            <span>{t('landlord.properties.empty.btn', 'Add Your First Property')}</span>
           </button>
         </div>
       ) : (
@@ -137,22 +139,22 @@ const PropertiesPage = () => {
                   <div className="property-card-stats">
                     <div className="property-stat-item">
                       <div className="property-stat-value">{stats.totalRooms || 0}</div>
-                      <div className="property-stat-label">Total</div>
+                      <div className="property-stat-label">{t("landlord.properties.total", "TOTAL")}</div>
                     </div>
                     <div className="property-stat-item">
                       <div className="property-stat-value available">{stats.availableRooms || 0}</div>
-                      <div className="property-stat-label">Available</div>
+                      <div className="property-stat-label">{t("landlord.properties.available", "AVAILABLE")}</div>
                     </div>
                     <div className="property-stat-item">
                       <div className="property-stat-value rented">{stats.rentedRooms || 0}</div>
-                      <div className="property-stat-label">Rented</div>
+                      <div className="property-stat-label">{t("landlord.properties.rented", "RENTED")}</div>
                     </div>
                   </div>
 
                   {/* Occupancy Bar */}
                   <div className="occupancy-bar-wrapper">
                     <div className="occupancy-bar-header">
-                      <span>Occupancy Rate</span>
+                      <span>{t('landlord.properties.occupancyRate', 'Occupancy Rate')}</span>
                       <span>{occupancy}%</span>
                     </div>
                     <div className="occupancy-bar-track">
@@ -183,7 +185,7 @@ const PropertiesPage = () => {
                       onClick={() => navigate(`/landlord/properties/${property.propertyId}/dashboard`)}
                     >
                       <BarChart3 size={16} />
-                      <span>Dashboard</span>
+                      <span>{t('landlord.properties.dashboardBtn', 'Dashboard')}</span>
                     </button>
                     <button
                       className="btn-edit-property"

@@ -4,9 +4,11 @@ import { Sparkles, Loader, Search, ChevronDown, ChevronUp, Check, RotateCcw, Fil
 import PropertyCard from '../components/PropertyCard';
 import { roomService } from '../services/roomService';
 import useAuthStore from '../../../store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 import './SearchPage.css';
 
 const SearchPage = () => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Keyword mapping from URL or local state
@@ -270,11 +272,11 @@ const SearchPage = () => {
             <div className="sidebar-header">
               <div className="flex items-center gap-2">
                 <Filter size={18} className="text-indigo" />
-                <h3>Filters</h3>
+                <h3>{t('search.filters', 'Filters')}</h3>
               </div>
               <button className="clear-all-btn flex items-center gap-1" onClick={handleReset}>
                 <RotateCcw size={14} />
-                <span>Reset</span>
+                <span>{t('search.reset', 'Reset')}</span>
               </button>
             </div>
 
@@ -285,23 +287,23 @@ const SearchPage = () => {
                 className="accordion-trigger"
                 onClick={() => toggleSection('basic')}
               >
-                <span>Basic Criteria</span>
+                <span>{t('search.basicCriteria', 'Basic Criteria')}</span>
                 {sectionsExpanded.basic ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
 
               {sectionsExpanded.basic && (
                 <div className="accordion-content animate-slide-down">
                   <div className="filter-item-group">
-                    <label className="filter-item-label">Location</label>
+                    <label className="filter-item-label">{t('search.location', 'Location')}</label>
                     <div className="flex flex-col gap-2">
                       <select className="w-full p-2 border border-gray-300 rounded select-input" value={city} onChange={e => { setCity(e.target.value); setDistrict(''); }}>
-                        <option value="">Select City / Province</option>
+                        <option value="">{t('search.selectCity', 'Select City / Province')}</option>
                         {provincesList.map((prov, index) => (
                           <option key={index} value={prov.full_name}>{prov.full_name}</option>
                         ))}
                       </select>
                       <select className="w-full p-2 border border-gray-300 rounded select-input" value={district} onChange={e => setDistrict(e.target.value)} disabled={!city || districtsList.length === 0}>
-                        <option value="">Select District / Ward</option>
+                        <option value="">{t('search.selectDistrict', 'Select District / Ward')}</option>
                         {districtsList.map((dist, index) => (
                           <option key={index} value={dist.full_name}>{dist.full_name}</option>
                         ))}
@@ -310,38 +312,38 @@ const SearchPage = () => {
                   </div>
 
                   <div className="filter-item-group">
-                    <label className="filter-item-label">Price Range</label>
+                    <label className="filter-item-label">{t('search.priceRange', 'Price Range')}</label>
                     <select className="w-full p-2 border border-gray-300 rounded select-input" value={priceRange} onChange={handlePriceChange}>
-                      <option value="-">Any Price</option>
-                      <option value="0-1000000">&lt; 1 million VNĐ</option>
-                      <option value="1000000-2000000">1 - 2 million VNĐ</option>
-                      <option value="2000000-3000000">2 - 3 million VNĐ</option>
-                      <option value="3000000-4000000">3 - 4 million VNĐ</option>
-                      <option value="4000000-5000000">4 - 5 million VNĐ</option>
-                      <option value="5000000-">&gt; 5 million VNĐ</option>
+                      <option value="-">{t('search.anyPrice', 'Any Price')}</option>
+                      <option value="0-1000000">{t('search.price1', '< 1 million VNĐ')}</option>
+                      <option value="1000000-2000000">{t('search.price2', '1 - 2 million VNĐ')}</option>
+                      <option value="2000000-3000000">{t('search.price3', '2 - 3 million VNĐ')}</option>
+                      <option value="3000000-4000000">{t('search.price4', '3 - 4 million VNĐ')}</option>
+                      <option value="4000000-5000000">{t('search.price5', '4 - 5 million VNĐ')}</option>
+                      <option value="5000000-">{t('search.price6', '> 5 million VNĐ')}</option>
                     </select>
                   </div>
 
                   <div className="filter-item-group">
-                    <label className="filter-item-label">Area Range</label>
+                    <label className="filter-item-label">{t('search.areaRange', 'Area Range')}</label>
                     <select className="w-full p-2 border border-gray-300 rounded select-input" value={areaRange} onChange={handleAreaChange}>
-                      <option value="-">Any Area</option>
-                      <option value="0-20">&lt; 20 m²</option>
-                      <option value="20-30">20 - 30 m²</option>
-                      <option value="30-40">30 - 40 m²</option>
-                      <option value="40-">&gt; 40 m²</option>
+                      <option value="-">{t('search.anyArea', 'Any Area')}</option>
+                      <option value="0-20">{t('search.area1', '< 20 m²')}</option>
+                      <option value="20-30">{t('search.area2', '20 - 30 m²')}</option>
+                      <option value="30-40">{t('search.area3', '30 - 40 m²')}</option>
+                      <option value="40-">{t('search.area4', '> 40 m²')}</option>
                     </select>
                   </div>
 
                   <div className="filter-item-group">
-                    <label className="filter-item-label">Max occupant</label>
+                    <label className="filter-item-label">{t('search.maxOccupant', 'Max occupant')}</label>
                     <select className="w-full p-2 border border-gray-300 rounded select-input" value={maxOccupants} onChange={(e) => setMaxOccupants(e.target.value)}>
-                      <option value="">Any</option>
-                      <option value="1">1 Person</option>
-                      <option value="2">2 People</option>
-                      <option value="3">3 People</option>
-                      <option value="4">4 People</option>
-                      <option value="5">5+ People</option>
+                      <option value="">{t('search.any', 'Any')}</option>
+                      <option value="1">{t('search.person1', '1 Person')}</option>
+                      <option value="2">{t('search.person2', '2 People')}</option>
+                      <option value="3">{t('search.person3', '3 People')}</option>
+                      <option value="4">{t('search.person4', '4 People')}</option>
+                      <option value="5">{t('search.person5', '5+ People')}</option>
                     </select>
                   </div>
 
@@ -356,7 +358,7 @@ const SearchPage = () => {
                 className="accordion-trigger"
                 onClick={() => toggleSection('facilities')}
               >
-                <span>Room Facilities</span>
+                <span>{t('search.roomFacilities', 'Room Facilities')}</span>
                 {sectionsExpanded.facilities ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
 
@@ -373,7 +375,7 @@ const SearchPage = () => {
                           onClick={() => toggleArrayItem(setFacilities, facilities, fac)}
                         >
                           {isSelected && <Check size={12} />}
-                          <span>{fac}</span>
+                          <span>{t(`facilities.${fac}`, fac)}</span>
                         </button>
                       );
                     })}
@@ -389,7 +391,7 @@ const SearchPage = () => {
                 className="accordion-trigger"
                 onClick={() => toggleSection('nearby')}
               >
-                <span>Nearby Facilities</span>
+                <span>{t('search.nearbyFacilities', 'Nearby Facilities')}</span>
                 {sectionsExpanded.nearby ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
 
@@ -406,7 +408,7 @@ const SearchPage = () => {
                           onClick={() => toggleArrayItem(setNearbyFacilities, nearbyFacilities, fac)}
                         >
                           {isSelected && <Check size={12} />}
-                          <span>{fac}</span>
+                          <span>{t(`facilities.${fac}`, fac)}</span>
                         </button>
                       );
                     })}
@@ -423,7 +425,7 @@ const SearchPage = () => {
               <Search className="sparkles-icon" size={20} style={{ color: '#6B7280' }} />
               <input
                 type="text"
-                placeholder="Search by keyword (e.g. Da Nang, title, address)"
+                placeholder={t('search.searchPlaceholder', 'Search by keyword (e.g. Da Nang, title, address)')}
                 value={searchInput}
                 onChange={(e) => {
                   setSearchInput(e.target.value);
@@ -431,25 +433,25 @@ const SearchPage = () => {
                 }}
                 className="ask-ai-input"
               />
-              <button type="submit" className="ask-ai-btn">Search</button>
+              <button type="submit" className="ask-ai-btn" onClick={handleSearchSubmit}>{t('search.searchBtn', 'Search')}</button>
             </form>
 
             <div className="results-header flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-2xl font-bold">Available Properties</h2>
+                <h2 className="text-2xl font-bold">{t('search.availableProperties', 'Available Properties')}</h2>
                 {loading && page === 1 ? (
-                  <p className="text-gray-500">Loading...</p>
+                  <p className="text-gray-500">{t('search.loading', 'Loading...')}</p>
                 ) : (
-                  <p className="text-gray-500">Showing {rooms.length} results</p>
+                  <p className="text-gray-500">{t('search.showingResults', { count: rooms.length, defaultValue: `Showing ${rooms.length} results` })}</p>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <label className="font-medium">Sort by:</label>
+                <label className="font-medium">{t('search.sortBy', 'Sort by:')}</label>
                 <select className="p-2 border border-gray-300 rounded" value={sort} onChange={(e) => { setSort(e.target.value); setTimeout(handleApplyFilters, 0); }}>
-                  <option value="newest">Newest</option>
-                  <option value="price_asc">Lowest Price</option>
-                  <option value="price_desc">Highest Price</option>
-                  <option value="area_desc">Largest Area</option>
+                  <option value="newest">{t('search.sortNewest', 'Newest')}</option>
+                  <option value="price_asc">{t('search.sortPriceAsc', 'Lowest Price')}</option>
+                  <option value="price_desc">{t('search.sortPriceDesc', 'Highest Price')}</option>
+                  <option value="area_desc">{t('search.sortAreaDesc', 'Largest Area')}</option>
                 </select>
               </div>
             </div>
@@ -462,7 +464,7 @@ const SearchPage = () => {
                   <PropertyCard key={prop.id} property={prop} />
                 ))
               ) : (
-                !loading && <div className="col-span-full py-12 text-center text-gray-500">No properties found matching your criteria. Try adjusting your filters.</div>
+                !loading && <div className="col-span-full py-12 text-center text-gray-500">{t('search.noPropertiesFound', 'No properties found matching your criteria. Try adjusting your filters.')}</div>
               )}
             </div>
 

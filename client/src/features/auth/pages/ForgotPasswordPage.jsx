@@ -5,9 +5,11 @@ import { authService } from '../services/authService';
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import Input from '../../../components/common/Input';
+import { useTranslation } from 'react-i18next';
 import './ForgotPasswordPage.css';
 
 const ForgotPasswordPage = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -17,11 +19,11 @@ const ForgotPasswordPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) {
-      setError('Please enter your email address');
+      setError(t('auth.forgotPassword.errorEmptyEmail', 'Please enter your email address'));
       return;
     }
     if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('Please enter a valid email address');
+      setError(t('auth.login.invalidEmail', 'Please enter a valid email address'));
       return;
     }
 
@@ -34,7 +36,7 @@ const ForgotPasswordPage = () => {
 
       navigate(ROUTES.VERIFY_OTP, { state: { email, type: 'forgot_password' } });
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Failed to send reset link';
+      const msg = err.response?.data?.message || err.message || t('auth.forgotPassword.errorSendFailed', 'Failed to send reset link');
       setError(msg);
     } finally {
       setIsSubmitting(false);
@@ -47,18 +49,18 @@ const ForgotPasswordPage = () => {
         <div className="icon-circle">
           <RotateCcw size={28} />
         </div>
-        <h1>Forgot Password</h1>
+        <h1>{t('auth.forgotPassword.title', 'Forgot Password')}</h1>
         <p>
-          Enter your email to reset your password.<br />
-          We'll send you a secure OTP code to create a new one.
+          {t('auth.forgotPassword.subtitle1', 'Enter your email to reset your password.')}<br />
+          {t('auth.forgotPassword.subtitle2', "We'll send you a secure OTP code to create a new one.")}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="forgot-password-form">
         <Input
-          label="Email Address"
+          label={t('auth.login.emailLabel', 'Email Address')}
           type="email"
-          placeholder="name@example.com"
+          placeholder={t('auth.login.emailPlaceholder', 'name@example.com')}
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
@@ -75,7 +77,7 @@ const ForgotPasswordPage = () => {
           isLoading={isSubmitting}
           className="submit-btn"
         >
-          <span>Reset Password</span>
+          <span>{t('auth.forgotPassword.resetBtn', 'Reset Password')}</span>
           <ArrowRight size={18} />
         </Button>
       </form>
@@ -83,7 +85,7 @@ const ForgotPasswordPage = () => {
       <div className="forgot-password-footer">
         <Link to={ROUTES.LOGIN} className="return-login-link">
           <ArrowLeft size={16} />
-          <span>Return to Login</span>
+          <span>{t('auth.forgotPassword.returnToLogin', 'Return to Login')}</span>
         </Link>
       </div>
     </div>

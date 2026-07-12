@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -26,6 +27,7 @@ const buildingAmenities = [
 ];
 
 const AddPropertyPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -148,11 +150,9 @@ const AddPropertyPage = () => {
       {/* Header */}
       <div className="add-property-page-header">
         <button className="add-property-page-back" onClick={() => navigate(ROUTES.LANDLORD.PROPERTIES)}>
-          <ArrowLeft size={16} />
-          Back to Properties
-        </button>
-        <h1>Add New Property</h1>
-        <p>Create a new building or house to start managing rooms.</p>
+          <ArrowLeft size={16} />{t('addProperty.backToProperties', 'Back to Properties')}</button>
+        <h1>{t('addProperty.addNewProperty', 'Add New Property')}</h1>
+        <p>{t('addProperty.createANewBuildingOr', 'Create a new building or house to start managing rooms.')}</p>
       </div>
 
       {/* Form */}
@@ -160,19 +160,16 @@ const AddPropertyPage = () => {
         {/* Basic Info */}
         <div className="add-property-form-section">
           <h3 className="add-property-section-title">
-            <Building2 size={18} />
-            Basic Information
-          </h3>
+            <Building2 size={18} />{t('addProperty.basicInformation', 'Basic Information')}</h3>
 
           <div className="ap-form-group">
-            <label className="ap-form-label">
-              Property Name <span className="required">*</span>
+            <label className="ap-form-label">{t('addProperty.propertyName', 'Property Name')}<span className="required">*</span>
             </label>
             <input
               type="text"
               name="name"
               className={`ap-form-input ${errors.name ? 'error' : ''}`}
-              placeholder="e.g. Nhà trọ Bình Minh, Chung cư mini A..."
+              placeholder={t('addProperty.egNhTrBnhMinhPlaceholder', 'e.g. Nhà trọ Bình Minh, Chung cư mini A...')}
               value={formData.name}
               onChange={handleChange}
             />
@@ -180,11 +177,11 @@ const AddPropertyPage = () => {
           </div>
 
           <div className="ap-form-group">
-            <label className="ap-form-label">Description</label>
+            <label className="ap-form-label">{t('addProperty.description', 'Description')}</label>
             <textarea
               name="description"
               className="ap-form-textarea"
-              placeholder="Describe your property..."
+              placeholder={t('addProperty.describeYourPropertyPlaceholder', 'Describe your property...')}
               value={formData.description}
               onChange={handleChange}
               rows={4}
@@ -192,8 +189,7 @@ const AddPropertyPage = () => {
           </div>
 
           <div className="ap-form-group">
-            <label className="ap-form-label">
-              Number of Floors <span className="required">*</span>
+            <label className="ap-form-label">{t('addProperty.numberOfFloors', 'Number of Floors')}<span className="required">*</span>
             </label>
             <input
               type="number"
@@ -211,19 +207,16 @@ const AddPropertyPage = () => {
         {/* Location */}
         <div className="add-property-form-section">
           <h3 className="add-property-section-title">
-            <MapPin size={18} />
-            Location
-          </h3>
+            <MapPin size={18} />{t('addProperty.location', 'Location')}</h3>
 
           <div className="ap-form-group">
-            <label className="ap-form-label">
-              Street Address <span className="required">*</span>
+            <label className="ap-form-label">{t('addProperty.streetAddress', 'Street Address')}<span className="required">*</span>
             </label>
             <input
               type="text"
               name="address"
               className={`ap-form-input ${errors.address ? 'error' : ''}`}
-              placeholder="e.g. 123 Nguyen Van Linh St"
+              placeholder={t('addProperty.eg123NguyenVanLinhPlaceholder', 'e.g. 123 Nguyen Van Linh St')}
               value={formData.address}
               onChange={handleChange}
             />
@@ -232,8 +225,7 @@ const AddPropertyPage = () => {
 
           <div className="ap-form-row">
             <div className="ap-form-group">
-              <label className="ap-form-label">
-                City / Province <span className="required">*</span>
+              <label className="ap-form-label">{t('addProperty.cityProvince', 'City / Province')}<span className="required">*</span>
               </label>
               <select
                 name="city"
@@ -241,7 +233,7 @@ const AddPropertyPage = () => {
                 value={formData.city}
                 onChange={handleChange}
               >
-                <option value="">Select City / Province</option>
+                <option value="">{t('addProperty.selectCityProvince', 'Select City / Province')}</option>
                 {provincesList.map((city, idx) => (
                   <option key={idx} value={city.full_name}>{city.full_name}</option>
                 ))}
@@ -250,7 +242,7 @@ const AddPropertyPage = () => {
             </div>
 
             <div className="ap-form-group">
-              <label className="ap-form-label">District / Ward</label>
+              <label className="ap-form-label">{t('addProperty.districtWard', 'District / Ward')}</label>
               <select
                 name="district"
                 className="ap-form-select"
@@ -258,7 +250,7 @@ const AddPropertyPage = () => {
                 onChange={handleChange}
                 disabled={!formData.city || districtsList.length === 0}
               >
-                <option value="">Select District</option>
+                <option value="">{t('addProperty.selectDistrict', 'Select District')}</option>
                 {districtsList.map((d, idx) => (
                   <option key={idx} value={d.full_name}>{d.full_name}</option>
                 ))}
@@ -270,9 +262,7 @@ const AddPropertyPage = () => {
         {/* Building Amenities */}
         <div className="add-property-form-section">
           <h3 className="add-property-section-title">
-            <Shield size={18} />
-            Building Amenities
-          </h3>
+            <Shield size={18} />{t('addProperty.buildingAmenities', 'Building Amenities')}</h3>
           <div className="ap-amenity-chips">
             {buildingAmenities.map(amenity => (
               <div
@@ -291,9 +281,7 @@ const AddPropertyPage = () => {
         {/* Photo */}
         <div className="add-property-form-section">
           <h3 className="add-property-section-title">
-            <Upload size={18} />
-            Property Photo
-          </h3>
+            <Upload size={18} />{t('addProperty.propertyPhoto', 'Property Photo')}</h3>
 
           {previewUrl ? (
             <div style={{ position: 'relative', marginBottom: '1rem' }}>
@@ -325,7 +313,7 @@ const AddPropertyPage = () => {
               />
               <label htmlFor="property-photo-upload" style={{ cursor: 'pointer' }}>
                 <Upload size={32} />
-                <p><span className="bold">Click to upload</span> a photo of your property</p>
+                <p><span className="bold">{t('addProperty.clickToUpload', 'Click to upload')}</span>{t('addProperty.aPhotoOfYourProperty', 'a photo of your property')}</p>
               </label>
             </div>
           )}
@@ -333,9 +321,7 @@ const AddPropertyPage = () => {
 
         {/* Actions */}
         <div className="ap-form-actions">
-          <button className="btn-ap-cancel" onClick={() => navigate(ROUTES.LANDLORD.PROPERTIES)}>
-            Cancel
-          </button>
+          <button className="btn-ap-cancel" onClick={() => navigate(ROUTES.LANDLORD.PROPERTIES)}>{t('addProperty.cancel', 'Cancel')}</button>
           <button
             className="btn-ap-submit"
             onClick={handleSubmit}
@@ -343,9 +329,7 @@ const AddPropertyPage = () => {
           >
             {isSubmitting ? 'Creating...' : (
               <>
-                <Check size={16} />
-                Create Property
-              </>
+                <Check size={16} />{t('addProperty.createProperty', 'Create Property')}</>
             )}
           </button>
         </div>

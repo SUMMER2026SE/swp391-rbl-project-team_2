@@ -1,53 +1,54 @@
 import toast from 'react-hot-toast';
 import React from 'react';
 import { BedDouble, CheckCircle2, AlertCircle, Clock3, RotateCw, FileText, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './DepositHistoryPage.css';
 import './PaymentReturnPage.css';
 
 import api from '../../../services/api';
 
-const getStatusBadge = (status) => {
+const getStatusBadge = (status, t) => {
   switch (status) {
     case 'Success':
       return (
         <span className="status-badge status-success">
           <CheckCircle2 size={14} />
-          <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+          <span>{t('depositHistory.completed', 'Completed')}</span>
         </span>
       );
     case 'completed':
       return (
         <span className="status-badge status-success">
           <CheckCircle2 size={14} />
-          <span>Completed</span>
+          <span>{t('depositHistory.completed', 'Completed')}</span>
         </span>
       );
     case 'pending':
       return (
         <span className="status-badge status-pending">
           <Clock3 size={14} />
-          <span>Pending</span>
+          <span>{t('depositHistory.pending', 'Pending')}</span>
         </span>
       );
     case 'failed':
       return (
         <span className="status-badge status-failed">
           <AlertCircle size={14} />
-          <span>Failed</span>
+          <span>{t('depositHistory.failed', 'Failed')}</span>
         </span>
       );
     case 'cancelled':
       return (
         <span className="status-badge status-failed">
           <AlertCircle size={14} />
-          <span>Cancelled</span>
+          <span>{t('depositHistory.cancelled', 'Cancelled')}</span>
         </span>
       );
     case 'refunded':
       return (
         <span className="status-badge status-pending" style={{ color: '#059669', backgroundColor: '#d1fae5', borderColor: '#a7f3d0' }}>
           <RotateCw size={14} />
-          <span>Refunded</span>
+          <span>{t('depositHistory.refunded', 'Refunded')}</span>
         </span>
       );
     default:
@@ -55,7 +56,7 @@ const getStatusBadge = (status) => {
   }
 };
 
-const getInvoiceAction = (payment, onViewInvoice) => {
+const getInvoiceAction = (payment, onViewInvoice, t) => {
   const status = payment.status?.toLowerCase();
   if (status === 'completed' || status === 'success') {
     return (
@@ -65,14 +66,15 @@ const getInvoiceAction = (payment, onViewInvoice) => {
         style={{ color: '#0ea5e9', backgroundColor: '#e0f2fe', borderColor: '#bae6fd', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
       >
         <FileText size={16} />
-        <span>View Invoice</span>
+        <span>{t('depositHistory.viewInvoice', 'View Invoice')}</span>
       </button>
     );
   }
-  return <span className="action-text-muted">Not available</span>;
+  return <span className="action-text-muted">{t('depositHistory.notAvailable', 'Not available')}</span>;
 };
 
 const DepositHistoryPage = () => {
+  const { t } = useTranslation();
   const [payments, setPayments] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [invoiceModalOpen, setInvoiceModalOpen] = React.useState(false);
@@ -107,19 +109,19 @@ const DepositHistoryPage = () => {
       <div className="container">
         
         <div className="page-header">
-          <h1>Deposit History</h1>
-          <p>Review your past payments, deposits, and transaction statuses.</p>
+          <h1>{t('depositHistory.title', 'Deposit History')}</h1>
+          <p>{t('depositHistory.subtitle', 'Review your past payments, deposits, and transaction statuses.')}</p>
         </div>
 
         <div className="table-container">
           <table className="deposit-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Room Name</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th className="align-right">Invoice</th>
+                <th>{t('depositHistory.date', 'Date')}</th>
+                <th>{t('depositHistory.roomName', 'Room Name')}</th>
+                <th>{t('depositHistory.amount', 'Amount')}</th>
+                <th>{t('depositHistory.status', 'Status')}</th>
+                <th className="align-right">{t('depositHistory.invoice', 'Invoice')}</th>
               </tr>
             </thead>
             <tbody>
@@ -136,15 +138,15 @@ const DepositHistoryPage = () => {
                     {parseFloat(payment.amount).toLocaleString(undefined, { maximumFractionDigits: 0 })}VNĐ
                   </td>
                   <td className="col-status">
-                    {getStatusBadge(payment.status)}
+                    {getStatusBadge(payment.status, t)}
                   </td>
                   <td className="col-invoice align-right">
-                    {getInvoiceAction(payment, handleViewInvoice)}
+                    {getInvoiceAction(payment, handleViewInvoice, t)}
                   </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="5" className="text-center py-4">No deposits found.</td>
+                  <td colSpan="5" className="text-center py-4">{t('depositHistory.noDeposits', 'No deposits found.')}</td>
                 </tr>
               )}
             </tbody>
@@ -164,7 +166,7 @@ const DepositHistoryPage = () => {
           >
             <div className="premium-invoice" style={{ margin: 0, width: '100%', maxWidth: 'none', border: 'none', boxShadow: 'none', borderRadius: '16px 16px 0 0' }}>
               <div className="invoice-header">
-                <div className="text-sm font-medium text-blue-100 uppercase tracking-wider" style={{fontSize: '0.875rem', color: '#dbeafe'}}>Payment Receipt</div>
+                <div className="text-sm font-medium text-blue-100 uppercase tracking-wider" style={{fontSize: '0.875rem', color: '#dbeafe'}}>{t('depositHistory.paymentReceipt', 'Payment Receipt')}</div>
                 <div className="invoice-amount" style={{fontSize: '2.5rem', fontWeight: 800, marginTop: '0.5rem', color: 'white'}}>
                   {parseFloat(selectedInvoice.amount).toLocaleString('vi-VN')}<span style={{fontSize: '1rem', fontWeight: 500, opacity: 0.8, marginLeft: '4px'}}>VND</span>
                 </div>
@@ -175,17 +177,17 @@ const DepositHistoryPage = () => {
                 <div className="invoice-divider"></div>
                 
                 <div className="invoice-row mt-4">
-                  <span className="invoice-label">Transaction ID</span>
+                  <span className="invoice-label">{t('depositHistory.transactionId', 'Transaction ID')}</span>
                   <span className="invoice-value text-blue-600 font-mono">{selectedInvoice.transaction_id || selectedInvoice.payment_id}</span>
                 </div>
                 
                 <div className="invoice-row">
-                  <span className="invoice-label">Payment Type</span>
-                  <span className="invoice-pill capitalize">{selectedInvoice.payment_type?.replace('_', ' ') || 'Deposit'}</span>
+                  <span className="invoice-label">{t('depositHistory.paymentType', 'Payment Type')}</span>
+                  <span className="invoice-pill capitalize">{selectedInvoice.payment_type?.replace('_', ' ') || t('depositHistory.deposit', 'Deposit')}</span>
                 </div>
                 
                 <div className="invoice-section">
-                  <div className="invoice-section-title">Room Details</div>
+                  <div className="invoice-section-title">{t('depositHistory.roomDetails', 'Room Details')}</div>
                   <div className="text-gray-900 font-semibold text-base mb-1" style={{color: '#111827', fontWeight: 600, fontSize: '1rem', marginBottom: '4px'}}>{selectedInvoice.room?.title}</div>
                   <div className="text-gray-500 text-xs leading-relaxed" style={{color: '#6b7280', fontSize: '0.75rem'}}>
                     {[selectedInvoice.room?.address, selectedInvoice.room?.ward, selectedInvoice.room?.district, selectedInvoice.room?.city].filter(Boolean).join(', ')}
@@ -199,7 +201,7 @@ const DepositHistoryPage = () => {
                 onClick={() => setInvoiceModalOpen(false)}
                 style={{ width: '100%', padding: '12px 16px', backgroundColor: '#4f46e5', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', marginTop: '16px' }}
               >
-                Close
+                {t('depositHistory.close', 'Close')}
               </button>
             </div>
           </div>

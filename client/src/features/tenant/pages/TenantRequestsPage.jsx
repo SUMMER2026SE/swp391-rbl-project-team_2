@@ -33,9 +33,11 @@ import { rentalRequestService } from '../services/rentalRequestService';
 import Button from '../../../components/common/Button';
 import { ROUTES } from '../../../constants';
 import ContractDocument from '../../../components/ContractDocument';
+import { useTranslation } from 'react-i18next';
 import './TenantRequestsPage.css';
 
 const TenantRequestsPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState('viewing'); // 'viewing', 'requests', or 'contracts'
   const [viewingSchedules, setViewingSchedules] = useState([]);
@@ -73,14 +75,11 @@ const TenantRequestsPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (activeTab === 'viewing') {
-      fetchViewingSchedules();
-    } else if (activeTab === 'requests') {
-      fetchRentalRequests();
-    } else {
-      fetchContracts();
-    }
-  }, [activeTab]);
+    // Fetch all initially to get counts for badges
+    fetchViewingSchedules();
+    fetchRentalRequests();
+    fetchContracts();
+  }, []);
 
   const fetchViewingSchedules = async () => {
     try {
@@ -444,7 +443,7 @@ const TenantRequestsPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-transparent">
         <div className="flex flex-col items-center gap-3 text-primary">
           <Loader size={40} className="animate-spin" />
-          <p className="font-medium animate-pulse">Loading your requests...</p>
+          <p className="font-medium animate-pulse">{t('tenantRequests.loading', 'Loading your requests...')}</p>
         </div>
       </div>
     );
@@ -469,8 +468,8 @@ const TenantRequestsPage = () => {
         
         {/* Header Section */}
         <div className="page-header">
-          <h1>My Requests</h1>
-          <p>Track room viewings, deposits, contracts and rental applications.</p>
+          <h1>{t('tenantRequests.title', 'My Requests')}</h1>
+          <p>{t('tenantRequests.subtitle', 'Track room viewings, deposits, contracts and rental applications.')}</p>
         </div>
 
         {/* Tabs */}
@@ -478,20 +477,32 @@ const TenantRequestsPage = () => {
           <button 
             className={`tab-btn ${activeTab === 'viewing' ? 'active' : ''}`}
             onClick={() => setActiveTab('viewing')}
+            style={{ position: 'relative' }}
           >
-            <Eye size={16} /> Lịch xem phòng
+            <Eye size={16} /> {t('tenantRequests.tabViewing', 'Lịch xem phòng')}
+            {viewingSchedules.some(s => s.status === 'pending_payment' || s.status === 'confirmed') && (
+              <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
+            )}
           </button>
           <button 
             className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`}
             onClick={() => setActiveTab('requests')}
+            style={{ position: 'relative' }}
           >
-            <Home size={16} /> Yêu cầu thuê
+            <Home size={16} /> {t('tenantRequests.tabRequests', 'Yêu cầu thuê')}
+            {rentalRequests.some(r => r.status === 'approved') && (
+              <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
+            )}
           </button>
           <button 
             className={`tab-btn ${activeTab === 'contracts' ? 'active' : ''}`}
             onClick={() => setActiveTab('contracts')}
+            style={{ position: 'relative' }}
           >
-            <FileText size={16} /> Hợp đồng
+            <FileText size={16} /> {t('tenantRequests.tabContracts', 'Hợp đồng')}
+            {contracts.some(c => c.status === 'pending_tenant_signature') && (
+              <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
+            )}
           </button>
         </div>
         
@@ -502,10 +513,10 @@ const TenantRequestsPage = () => {
             <div className="empty-icon-wrapper">
               <Calendar size={40} />
             </div>
-            <h3>No viewing schedules</h3>
-            <p>You haven't requested any room viewings yet. Browse rooms and schedule a visit!</p>
+            <h3>{t('tenantRequests.noViewing', 'No viewing schedules')}</h3>
+            <p>{t('tenantRequests.noViewingDesc', "You haven't requested any room viewings yet. Browse rooms and schedule a visit!")}</p>
             <Button onClick={() => navigate(ROUTES.ROOMS)} className="btn-browse">
-              Browse Rooms
+              {t('tenantRequests.browseRooms', 'Browse Rooms')}
             </Button>
           </div>
         ) : (
@@ -559,17 +570,17 @@ const TenantRequestsPage = () => {
                         >
                           {schedule.room?.title || 'Unknown Room'}
                         </h3>
-                        <span className="request-date">Requested on {requestDate}</span>
+                        <span className="request-date">{t('tenantRequests.requestedOn', 'Requested on')} {requestDate}</span>
                       </div>
                       <div className="address-row">
                         <MapPin size={14} />
-                        <span>{[schedule.room?.address, schedule.room?.ward, schedule.room?.district, schedule.room?.city].filter(Boolean).join(', ') || 'Address not available'}</span>
+                        <span>{[schedule.room?.address, schedule.room?.ward, schedule.room?.district, schedule.room?.city].filter(Boolean).join(', ') || t('tenantRequests.addressNotAvailable', 'Address not available')}</span>
                       </div>
                     </div>
 
                     <div className="key-details-box">
                       <div className="detail-item">
-                        <p className="detail-label">Viewing Date</p>
+                        <p className="detail-label">{t('tenantRequests.viewingDate', 'Viewing Date')}</p>
                         <div className="detail-value">
                           <Calendar size={16} />
                           {viewingDateOnly}
@@ -578,7 +589,7 @@ const TenantRequestsPage = () => {
 
                       {viewingTimeOnly && (
                         <div className="detail-item">
-                          <p className="detail-label">Viewing Time</p>
+                          <p className="detail-label">{t('tenantRequests.viewingTime', 'Viewing Time')}</p>
                           <div className="detail-value">
                             <Clock size={16} />
                             {viewingTimeOnly}
@@ -588,7 +599,7 @@ const TenantRequestsPage = () => {
 
                       {schedule.status === 'pending_payment' && schedule.paymentDeadline && (
                         <div className="detail-item">
-                          <p className="detail-label">Payment Deadline</p>
+                          <p className="detail-label">{t('tenantRequests.paymentDeadline', 'Payment Deadline')}</p>
                           <div className="detail-value deadline-value">
                             <Timer size={16} />
                             <CountdownTimer deadline={schedule.paymentDeadline} />
@@ -603,10 +614,10 @@ const TenantRequestsPage = () => {
                         {schedule.status === 'pending_payment' && (
                           <>
                             <button onClick={() => handlePayDeposit(schedule.scheduleId)} className="btn-action btn-pay">
-                              <CreditCard size={16} /> Pay Deposit
+                              <CreditCard size={16} /> {t('tenantRequests.payDeposit', 'Pay Deposit')}
                             </button>
                             <button onClick={() => handleCancelViewing(schedule.scheduleId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
-                              <X size={16} /> Cancel
+                              <X size={16} /> {t('tenantRequests.cancel', 'Cancel')}
                             </button>
                           </>
                         )}
@@ -614,7 +625,7 @@ const TenantRequestsPage = () => {
                         {/* Cancel button for pending/scheduled */}
                         {(schedule.status === 'pending' || schedule.status === 'scheduled') && (
                           <button onClick={() => handleCancelViewing(schedule.scheduleId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
-                            <X size={16} /> Cancel Schedule
+                            <X size={16} /> {t('tenantRequests.cancelSchedule', 'Cancel Schedule')}
                           </button>
                         )}
 
@@ -622,13 +633,13 @@ const TenantRequestsPage = () => {
                         {(schedule.status === 'confirmed' || schedule.status === 'completed') && (
                           <>
                             <button onClick={() => handleOpenContractRequest(schedule)} className="btn-action btn-contract">
-                              <FileSignature size={16} /> Request Contract
+                              <FileSignature size={16} /> {t('tenantRequests.requestContract', 'Request Contract')}
                             </button>
                             <button onClick={() => handleDeclineToRent(schedule.scheduleId)} className="btn-action" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
-                              <Ban size={16} /> Decline
+                              <Ban size={16} /> {t('tenantRequests.decline', 'Decline')}
                             </button>
                             <button onClick={() => handleOpenDispute(schedule)} className="btn-action btn-dispute">
-                              <MessageSquare size={16} /> Report Issue
+                              <MessageSquare size={16} /> {t('tenantRequests.reportIssue', 'Report Issue')}
                             </button>
                           </>
                         )}
@@ -636,14 +647,14 @@ const TenantRequestsPage = () => {
                         {/* Contract requested — waiting for landlord */}
                         {schedule.status === 'contract_requested' && (
                           <div className="status-message-inline">
-                            <Clock size={14} /> Waiting for landlord to create contract...
+                            <Clock size={14} /> {t('tenantRequests.waitingForLandlord', 'Waiting for landlord to create contract...')}
                           </div>
                         )}
 
                         {/* Disputed — waiting for admin */}
                         {schedule.status === 'disputed' && (
                           <div className="status-message-inline warning">
-                            <Shield size={14} /> Dispute under admin review
+                            <Shield size={14} /> {t('tenantRequests.disputeUnderReview', 'Dispute under admin review')}
                           </div>
                         )}
 
@@ -663,10 +674,10 @@ const TenantRequestsPage = () => {
             <div className="empty-icon-wrapper">
               <Home size={40} />
             </div>
-            <h3>No rental requests</h3>
-            <p>You haven't submitted any rental requests yet. Browse rooms and send a request!</p>
+            <h3>{t('tenantRequests.noRequests', 'No rental requests')}</h3>
+            <p>{t('tenantRequests.noRequestsDesc', "You haven't submitted any rental requests yet. Browse rooms and send a request!")}</p>
             <Button onClick={() => navigate(ROUTES.ROOMS)} className="btn-browse">
-              Browse Rooms
+              {t('tenantRequests.browseRooms', 'Browse Rooms')}
             </Button>
           </div>
         ) : (
@@ -705,17 +716,17 @@ const TenantRequestsPage = () => {
                         >
                           {request.room?.title || 'Unknown Room'}
                         </h3>
-                        <span className="request-date">Requested on {requestDate}</span>
+                        <span className="request-date">{t('tenantRequests.requestedOn', 'Requested on')} {requestDate}</span>
                       </div>
                       <div className="address-row">
                         <MapPin size={14} />
-                        <span>{[request.room?.address, request.room?.ward, request.room?.district, request.room?.city].filter(Boolean).join(', ') || 'Address not available'}</span>
+                        <span>{[request.room?.address, request.room?.ward, request.room?.district, request.room?.city].filter(Boolean).join(', ') || t('tenantRequests.addressNotAvailable', 'Address not available')}</span>
                       </div>
                     </div>
 
                     <div className="key-details-box">
                       <div className="detail-item">
-                        <p className="detail-label">Move-in Date</p>
+                        <p className="detail-label">{t('tenantRequests.moveInDate', 'Move-in Date')}</p>
                         <div className="detail-value">
                           <Calendar size={16} />
                           {request.requestedMoveInDate ? new Date(request.requestedMoveInDate).toLocaleDateString('en-US') : 'TBD'}
@@ -723,10 +734,10 @@ const TenantRequestsPage = () => {
                       </div>
 
                       <div className="detail-item">
-                        <p className="detail-label">Duration</p>
+                        <p className="detail-label">{t('tenantRequests.duration', 'Duration')}</p>
                         <div className="detail-value">
                           <Clock size={16} />
-                          {request.leaseDurationMonths || 6} months
+                          {request.leaseDurationMonths || 6} {t('tenantRequests.months', 'months')}
                         </div>
                       </div>
                     </div>
@@ -735,19 +746,19 @@ const TenantRequestsPage = () => {
                       <div className="action-buttons">
                         {request.status === 'pending' && (
                           <button onClick={() => handleCancelRequest(request.requestId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
-                            <X size={16} /> Cancel Request
+                            <X size={16} /> {t('tenantRequests.cancelRequest', 'Cancel Request')}
                           </button>
                         )}
 
                         {request.status === 'approved' && (
                           <button onClick={() => handleOpenContractRequest(request)} className="btn-action btn-contract">
-                            <FileSignature size={16} /> Request Contract
+                            <FileSignature size={16} /> {t('tenantRequests.requestContract', 'Request Contract')}
                           </button>
                         )}
                         
                         {request.status === 'contract_requested' && (
                           <div className="status-message-inline">
-                            <Clock size={14} /> Waiting for landlord to create contract...
+                            <Clock size={14} /> {t('tenantRequests.waitingForLandlord', 'Waiting for landlord to create contract...')}
                           </div>
                         )}
                       </div>
@@ -765,10 +776,10 @@ const TenantRequestsPage = () => {
             <div className="empty-icon-wrapper">
               <FileText size={40} />
             </div>
-            <h3>No contracts yet</h3>
-            <p>You don't have any rental contracts yet. View rooms and complete the booking process to get started.</p>
+            <h3>{t('tenantRequests.noContracts', 'No contracts yet')}</h3>
+            <p>{t('tenantRequests.noContractsDesc', "You don't have any rental contracts yet. View rooms and complete the booking process to get started.")}</p>
             <Button onClick={() => navigate(ROUTES.ROOMS)} className="btn-browse">
-              Browse Rooms
+              {t('tenantRequests.browseRooms', 'Browse Rooms')}
             </Button>
           </div>
         ) : (
@@ -776,12 +787,12 @@ const TenantRequestsPage = () => {
             <table className="contracts__table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <tr>
-                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Landlord</th>
-                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Room</th>
-                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Move-in Date</th>
-                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Duration</th>
-                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Status</th>
-                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Actions</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('tenantRequests.landlord', 'Landlord')}</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('tenantRequests.room', 'Room')}</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('tenantRequests.moveInDate', 'Move-in Date')}</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('tenantRequests.duration', 'Duration')}</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('tenantRequests.status', 'Status')}</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('tenantRequests.actions', 'Actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -832,7 +843,7 @@ const TenantRequestsPage = () => {
                         {startDate}
                       </td>
                       <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
-                        {duration} months
+                        {duration} {t('tenantRequests.months', 'months')}
                       </td>
                       <td style={{ padding: '16px' }}>
                         <div className={`status-badge ${contract.status}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: statusInfo.bg, color: statusInfo.color, fontWeight: '600', fontSize: '12px', border: `1px solid ${statusInfo.color}33` }}>
@@ -852,7 +863,7 @@ const TenantRequestsPage = () => {
                               fontSize: '13px', cursor: 'pointer', fontWeight: 500
                             }}
                           >
-                            <FileText size={14} /> View Contract
+                            <FileText size={14} /> {t('tenantRequests.viewContract', 'View Contract')}
                           </button>
                           {contract.status === 'pending_payment' && (
                             <button
@@ -865,7 +876,7 @@ const TenantRequestsPage = () => {
                                 fontSize: '13px', cursor: 'pointer', fontWeight: 500
                               }}
                             >
-                              <CreditCard size={14} /> Pay Deposit
+                              <CreditCard size={14} /> {t('tenantRequests.payDeposit', 'Pay Deposit')}
                             </button>
                           )}
                         </div>

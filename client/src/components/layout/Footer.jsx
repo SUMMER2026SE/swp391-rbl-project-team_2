@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './Footer.css';
 
 const Footer = () => {
+  const { t } = useTranslation();
   return (
     <footer className="footer-main">
       <div className="container footer-content">
@@ -38,27 +40,27 @@ const Footer = () => {
               <span className="logo-text">RentWise</span>
             </Link>
             <p className="footer-description">
-              Hệ thống tìm phòng trọ uy tín. <br/>
-              Tìm nhanh · Lọc thông minh · Liên hệ tức thì.
+              {t('footer.systemDesc', 'Hệ thống tìm phòng trọ uy tín.')} <br/>
+              {t('footer.features', 'Tìm nhanh · Lọc thông minh · Liên hệ tức thì.')}
             </p>
           </div>
 
           <div className="footer-links-section">
             <div className="footer-column">
-              <h4 className="footer-heading">Thông tin</h4>
+              <h4 className="footer-heading">{t('footer.information', 'Thông tin')}</h4>
               <ul className="footer-links-list">
-                <li><Link to="/about">Về chúng tôi</Link></li>
-                <li><Link to="/privacy">Chính sách bảo mật</Link></li>
-                <li><Link to="/terms">Điều khoản sử dụng</Link></li>
+                <li><Link to="/about">{t('footer.aboutUs', 'Về chúng tôi')}</Link></li>
+                <li><Link to="/privacy">{t('footer.privacyPolicy', 'Chính sách bảo mật')}</Link></li>
+                <li><Link to="/terms">{t('footer.termsOfService', 'Điều khoản sử dụng')}</Link></li>
               </ul>
             </div>
 
             <div className="footer-column">
-              <h4 className="footer-heading">Hỗ trợ khách hàng</h4>
+              <h4 className="footer-heading">{t('footer.customerSupport', 'Hỗ trợ khách hàng')}</h4>
               <ul className="footer-links-list">
-                <li><Link to="/faq">Câu hỏi thường gặp</Link></li>
-                <li><Link to="/guide">Hướng dẫn thuê phòng</Link></li>
-                <li><Link to="/report">Báo cáo vi phạm</Link></li>
+                <li><Link to="/faq">{t('footer.faq', 'Câu hỏi thường gặp')}</Link></li>
+                <li><Link to="/guide">{t('footer.rentalGuide', 'Hướng dẫn thuê phòng')}</Link></li>
+                <li><Link to="/report">{t('footer.reportViolation', 'Báo cáo vi phạm')}</Link></li>
               </ul>
             </div>
           </div>
@@ -66,7 +68,7 @@ const Footer = () => {
 
         <div className="footer-bottom">
           <p className="footer-copyright">
-            &copy; 2026 RentWise — Hệ thống tìm phòng trọ uy tín
+            {t('footer.copyright', '© 2026 RentWise — Hệ thống tìm phòng trọ uy tín')}
           </p>
         </div>
       </div>

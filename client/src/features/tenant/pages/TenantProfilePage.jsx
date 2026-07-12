@@ -8,11 +8,13 @@ import {
 import useAuthStore from '../../../store/useAuthStore';
 import { authService } from '../../auth/services/authService';
 import { API_URL } from '../../../config';
+import { useTranslation } from 'react-i18next';
 import './TenantProfilePage.css';
 
 // Mock requests removed
 
 const TenantProfilePage = () => {
+  const { t } = useTranslation();
   const { user, updateUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -36,7 +38,7 @@ const TenantProfilePage = () => {
     const newErrors = {};
     if (formData.phone) {
       if (!/^0\d{9}$/.test(formData.phone)) {
-        newErrors.phone = 'Phone number must be exactly 10 digits and start with 0';
+        newErrors.phone = t('profile.phoneFormatError', 'Phone number must be exactly 10 digits and start with 0');
       }
     }
     setErrors(newErrors);
@@ -55,9 +57,9 @@ const TenantProfilePage = () => {
       updateUser(response.data);
       setIsEditing(false);
       setErrors({});
-      toast.success("Profile updated successfully!");
+      toast.success(t('profile.updateSuccess', "Profile updated successfully!"));
     } catch (error) {
-      const msg = error.response?.data?.message || error.message || 'Error updating profile';
+      const msg = error.response?.data?.message || error.message || t('profile.updateError', 'Error updating profile');
       toast.error(msg);
     } finally {
       setIsSaving(false);
@@ -79,9 +81,9 @@ const TenantProfilePage = () => {
       const response = await authService.uploadAvatar(formData);
       if (!response.success) throw new Error(response.message);
       updateUser({ avatarUrl: response.data.avatarUrl });
-      toast.success('Avatar updated successfully!');
+      toast.success(t('profile.avatarSuccess', 'Avatar updated successfully!'));
     } catch (error) {
-      const msg = error.response?.data?.message || error.message || 'Error uploading avatar';
+      const msg = error.response?.data?.message || error.message || t('profile.avatarError', 'Error uploading avatar');
       toast.error(msg);
     }
   };
@@ -100,9 +102,9 @@ const TenantProfilePage = () => {
   };
 
   const getJoinDate = () => {
-    if (!user?.createdAt) return 'Member';
+    if (!user?.createdAt) return t('profile.memberSince', 'Member');
     const date = new Date(user.createdAt);
-    return `Member since ${date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+    return `${t('profile.memberSince', 'Member since')} ${date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
   };
 
   return (
@@ -135,7 +137,7 @@ const TenantProfilePage = () => {
               />
             </div>
             <div className="profile-details">
-              <h1 className="profile-name">{user?.fullName || 'User Name'}</h1>
+              <h1 className="profile-name">{user?.fullName || t('profile.defaultUserName', 'User Name')}</h1>
               <p className="profile-member-since">
                 <Calendar size={16} />
                 <span>{getJoinDate()}</span>
@@ -143,11 +145,11 @@ const TenantProfilePage = () => {
               <div className="profile-badges">
                 <div className="badge-blue">
                   <ShieldCheck size={16} />
-                  <span>Verified Tenant</span>
+                  <span>{t('profile.verifiedTenant', 'Verified Tenant')}</span>
                 </div>
                 <div className="badge-gray">
                   <Star size={16} className="star-icon" />
-                  <span>Excellent Rating</span>
+                  <span>{t('profile.excellentRating', 'Excellent Rating')}</span>
                 </div>
               </div>
             </div>
@@ -163,7 +165,7 @@ const TenantProfilePage = () => {
             {/* Personal Information */}
             <div className="profile-card personal-info-card">
               <div className="card-header">
-                <h2>Personal Information</h2>
+                <h2>{t('profile.personalInfo', 'Personal Information')}</h2>
                 {!isEditing && (
                   <button className="icon-btn" aria-label="Edit personal info" onClick={() => setIsEditing(true)}>
                     <Edit size={18} />
@@ -172,7 +174,7 @@ const TenantProfilePage = () => {
               </div>
               <div className="info-list">
                 <div className="info-item">
-                  <span className="info-label">Full Name</span>
+                  <span className="info-label">{t('profile.fullName', 'Full Name')}</span>
                   {isEditing ? (
                     <input 
                       type="text" 
@@ -182,15 +184,15 @@ const TenantProfilePage = () => {
                       style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd', width: '100%' }}
                     />
                   ) : (
-                    <span className="info-value">{user?.fullName || 'Not provided'}</span>
+                    <span className="info-value">{user?.fullName || t('profile.notProvided', 'Not provided')}</span>
                   )}
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Email Address</span>
-                  <span className="info-value" style={{ color: '#6b7280' }}>{user?.email || 'Not provided'} (Cannot change)</span>
+                  <span className="info-label">{t('profile.emailAddress', 'Email Address')}</span>
+                  <span className="info-value" style={{ color: '#6b7280' }}>{user?.email || t('profile.notProvided', 'Not provided')} ({t('profile.cannotChange', 'Cannot change')})</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Phone Number</span>
+                  <span className="info-label">{t('profile.phoneNumber', 'Phone Number')}</span>
                   {isEditing ? (
                     <div>
                       <input 
@@ -200,7 +202,7 @@ const TenantProfilePage = () => {
                           const val = e.target.value;
                           setFormData({...formData, phone: val});
                           if (val && !/^0\d{9}$/.test(val)) {
-                            setErrors({...errors, phone: 'Phone number must be exactly 10 digits and start with 0'});
+                            setErrors({...errors, phone: t('profile.phoneFormatError', 'Phone number must be exactly 10 digits and start with 0')});
                           } else {
                             const newErrors = { ...errors };
                             delete newErrors.phone;
@@ -217,23 +219,23 @@ const TenantProfilePage = () => {
                       )}
                     </div>
                   ) : (
-                    <span className="info-value">{user?.phone || 'Not provided'}</span>
+                    <span className="info-value">{user?.phone || t('profile.notProvided', 'Not provided')}</span>
                   )}
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Role</span>
-                  <span className="info-value" style={{ textTransform: 'capitalize' }}>{user?.role || 'Tenant'}</span>
+                  <span className="info-label">{t('profile.role', 'Role')}</span>
+                  <span className="info-value" style={{ textTransform: 'capitalize' }}>{user?.role || t('auth.register.roleTenant', 'Tenant')}</span>
                 </div>
               </div>
               {isEditing && (
                 <div style={{ display: 'flex', gap: '10px', marginTop: '1.5rem', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
                   <button className="edit-profile-btn" onClick={() => { setIsEditing(false); setErrors({}); }} style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' }}>
                     <X size={16} />
-                    <span>Cancel</span>
+                    <span>{t('profile.cancel', 'Cancel')}</span>
                   </button>
                   <button className="edit-profile-btn" onClick={handleSaveProfile} disabled={isSaving} style={{ background: '#2563eb', color: 'white', border: 'none' }}>
                     <Save size={16} />
-                    <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                    <span>{isSaving ? t('profile.saving', 'Saving...') : t('profile.saveChanges', 'Save Changes')}</span>
                   </button>
                 </div>
               )}

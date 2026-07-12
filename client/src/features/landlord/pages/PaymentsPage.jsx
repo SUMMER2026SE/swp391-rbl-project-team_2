@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
   Search,
@@ -19,6 +20,7 @@ import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
 import './PaymentsPage.css';
 
 const PaymentsPage = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -58,8 +60,8 @@ const PaymentsPage = () => {
       {/* Header */}
       <div className="payments__header">
         <div>
-          <h1 className="payments__title">Payments</h1>
-          <p className="payments__subtitle">Track and manage all rental payments</p>
+          <h1 className="payments__title">{t('payments.payments', 'Payments')}</h1>
+          <p className="payments__subtitle">{t('payments.trackAndManageAllRental', 'Track and manage all rental payments')}</p>
         </div>
       </div>
 
@@ -76,7 +78,7 @@ const PaymentsPage = () => {
         <div className="payments__stats-grid">
           <div className="stat-card">
             <div className="stat-card__header">
-              <h4>Total Revenue</h4>
+              <h4>{t('payments.totalRevenue', 'Total Revenue')}</h4>
               <DollarSign size={20} className="stat-icon" />
             </div>
             <div className="stat-card__value">
@@ -89,7 +91,7 @@ const PaymentsPage = () => {
 
           <div className="stat-card">
             <div className="stat-card__header">
-              <h4>Pending Payments</h4>
+              <h4>{t('payments.pendingPayments', 'Pending Payments')}</h4>
               <AlertCircle size={20} className="stat-icon stat-icon--warning" />
             </div>
             <div className="stat-card__value">
@@ -102,7 +104,7 @@ const PaymentsPage = () => {
 
           <div className="stat-card">
             <div className="stat-card__header">
-              <h4>This Month</h4>
+              <h4>{t('payments.thisMonth', 'This Month')}</h4>
               <TrendingUp size={20} className="stat-icon stat-icon--success" />
             </div>
             <div className="stat-card__value">
@@ -115,13 +117,13 @@ const PaymentsPage = () => {
 
           <div className="stat-card">
             <div className="stat-card__header">
-              <h4>Average Payment</h4>
+              <h4>{t('payments.averagePayment', 'Average Payment')}</h4>
               <DollarSign size={20} className="stat-icon stat-icon--info" />
             </div>
             <div className="stat-card__value">
               ${statistics.averagePayment?.toLocaleString() || '0'}
             </div>
-            <div className="stat-card__subtitle">Per transaction</div>
+            <div className="stat-card__subtitle">{t('payments.perTransaction', 'Per transaction')}</div>
           </div>
         </div>
       )}
@@ -132,7 +134,7 @@ const PaymentsPage = () => {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search by tenant, room, or transaction ID..."
+            placeholder={t('payments.searchByTenantRoomOrPlaceholder', 'Search by tenant, room, or transaction ID...')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -165,9 +167,7 @@ const PaymentsPage = () => {
         </div>
 
         <Button variant="secondary">
-          <Download size={16} />
-          Export
-        </Button>
+          <Download size={16} />{t('payments.export', 'Export')}</Button>
       </div>
 
       {/* Payments Table */}
@@ -176,12 +176,12 @@ const PaymentsPage = () => {
           <table className="payments__table">
             <thead>
               <tr>
-                <th>Tenant</th>
-                <th>Room</th>
-                <th>Amount</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t('payments.tenant', 'Tenant')}</th>
+                <th>{t('payments.room', 'Room')}</th>
+                <th>{t('payments.amount', 'Amount')}</th>
+                <th>{t('payments.date', 'Date')}</th>
+                <th>{t('payments.status', 'Status')}</th>
+                <th>{t('payments.actions', 'Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -228,9 +228,7 @@ const PaymentsPage = () => {
                         setShowDetailModal(true);
                       }}
                     >
-                      <Eye size={14} />
-                      View
-                    </button>
+                      <Eye size={14} />{t('payments.view', 'View')}</button>
                   </td>
                 </tr>
               ))}
@@ -250,7 +248,7 @@ const PaymentsPage = () => {
         <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Payment Details</h3>
+              <h3>{t('payments.paymentDetails', 'Payment Details')}</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setShowDetailModal(false)}
@@ -271,28 +269,28 @@ const PaymentsPage = () => {
 
               {/* Payment Info */}
               <div className="detail-section">
-                <h4 className="section-title">Payment Information</h4>
+                <h4 className="section-title">{t('payments.paymentInformation', 'Payment Information')}</h4>
                 <div className="detail-grid">
                   <div className="detail-item">
-                    <label>Transaction ID</label>
+                    <label>{t('payments.transactionId', 'Transaction ID')}</label>
                     <div className="detail-value">{selectedPayment.transactionId}</div>
                   </div>
                   <div className="detail-item">
-                    <label>Amount</label>
+                    <label>{t('payments.amount', 'Amount')}</label>
                     <div className="detail-value">
                       <DollarSign size={14} />
                       ${selectedPayment.amount?.toLocaleString()}
                     </div>
                   </div>
                   <div className="detail-item">
-                    <label>Payment Date</label>
+                    <label>{t('payments.paymentDate', 'Payment Date')}</label>
                     <div className="detail-value">
                       <Calendar size={14} />
                       {new Date(selectedPayment.paymentDate).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="detail-item">
-                    <label>Payment Method</label>
+                    <label>{t('payments.paymentMethod', 'Payment Method')}</label>
                     <div className="detail-value">{selectedPayment.paymentMethod}</div>
                   </div>
                 </div>
@@ -300,14 +298,14 @@ const PaymentsPage = () => {
 
               {/* Tenant Info */}
               <div className="detail-section">
-                <h4 className="section-title">Tenant Information</h4>
+                <h4 className="section-title">{t('payments.tenantInformation', 'Tenant Information')}</h4>
                 <div className="detail-grid">
                   <div className="detail-item">
-                    <label>Name</label>
+                    <label>{t('payments.name', 'Name')}</label>
                     <div className="detail-value">{selectedPayment.tenantName}</div>
                   </div>
                   <div className="detail-item">
-                    <label>Email</label>
+                    <label>{t('payments.email', 'Email')}</label>
                     <div className="detail-value">{selectedPayment.tenantEmail}</div>
                   </div>
                 </div>
@@ -315,14 +313,14 @@ const PaymentsPage = () => {
 
               {/* Room Info */}
               <div className="detail-section">
-                <h4 className="section-title">Room Information</h4>
+                <h4 className="section-title">{t('payments.roomInformation', 'Room Information')}</h4>
                 <div className="detail-grid">
                   <div className="detail-item">
-                    <label>Room</label>
+                    <label>{t('payments.room', 'Room')}</label>
                     <div className="detail-value">{selectedPayment.roomTitle}</div>
                   </div>
                   <div className="detail-item">
-                    <label>Rental Period</label>
+                    <label>{t('payments.rentalPeriod', 'Rental Period')}</label>
                     <div className="detail-value">
                       {new Date(selectedPayment.rentalStartDate).toLocaleDateString()} -{' '}
                       {new Date(selectedPayment.rentalEndDate).toLocaleDateString()}
@@ -334,20 +332,16 @@ const PaymentsPage = () => {
               {/* Notes */}
               {selectedPayment.notes && (
                 <div className="detail-section">
-                  <h4 className="section-title">Notes</h4>
+                  <h4 className="section-title">{t('payments.notes', 'Notes')}</h4>
                   <div className="notes-box">{selectedPayment.notes}</div>
                 </div>
               )}
             </div>
 
             <div className="modal-footer">
-              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
-                Close
-              </Button>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>{t('payments.close', 'Close')}</Button>
               <Button variant="primary">
-                <Download size={16} />
-                Download Receipt
-              </Button>
+                <Download size={16} />{t('payments.downloadReceipt', 'Download Receipt')}</Button>
             </div>
           </div>
         </div>

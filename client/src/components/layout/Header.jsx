@@ -4,6 +4,7 @@ import { Search, Menu, Bell, MessageSquare, Home } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
 import { ROUTES } from '../../constants';
+import { useTranslation } from 'react-i18next';
 import ThemeToggle from '../ui/ThemeToggle';
 import { API_URL } from '../../config';
 import { getAvatarUrl as getGlobalAvatar } from '../../utils/format';
@@ -17,6 +18,12 @@ const Header = ({ toggleSidebar }) => {
   const keywordParam = searchParams.get('keyword') || '';
   const [quickSearch, setQuickSearch] = React.useState(keywordParam);
   const [hasUnreadNotifications, setHasUnreadNotifications] = React.useState(false);
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language.startsWith('vi') ? 'en' : 'vi';
+    i18n.changeLanguage(newLang);
+  };
 
   React.useEffect(() => {
     setQuickSearch(keywordParam);
@@ -91,14 +98,14 @@ const Header = ({ toggleSidebar }) => {
             </>
           ) : (
             <>
-              <Link to={ROUTES.HOME} className={`tab-link ${location.pathname === ROUTES.HOME ? 'active' : ''}`}>Trang chủ</Link>
-              <Link to={ROUTES.ROOMS} className={`tab-link ${location.pathname === ROUTES.ROOMS ? 'active' : ''}`}>Khám phá</Link>
+              <Link to={ROUTES.HOME} className={`tab-link ${location.pathname === ROUTES.HOME ? 'active' : ''}`}>{t('header.home', 'Trang chủ')}</Link>
+              <Link to={ROUTES.ROOMS} className={`tab-link ${location.pathname === ROUTES.ROOMS ? 'active' : ''}`}>{t('header.explore', 'Khám phá')}</Link>
               
               {isAuthenticated && user?.role !== 'ADMIN' && (
                 <>
-                  <Link to={ROUTES.TENANT.FAVORITES} className={`tab-link ${location.pathname === ROUTES.TENANT.FAVORITES ? 'active' : ''}`}>Yêu thích</Link>
+                  <Link to={ROUTES.TENANT.FAVORITES} className={`tab-link ${location.pathname === ROUTES.TENANT.FAVORITES ? 'active' : ''}`}>{t('header.favorites', 'Yêu thích')}</Link>
                   <Link to="/tenant/requests" className={`tab-link ${location.pathname === '/tenant/requests' ? 'active' : ''}`} style={{ position: 'relative' }}>
-                    Yêu cầu
+                    {t('header.requests', 'Yêu cầu')}
                     {hasUnreadTenantRequests && (
                       <span style={{ 
                         width: '8px', 
@@ -111,7 +118,7 @@ const Header = ({ toggleSidebar }) => {
                       }}></span>
                     )}
                   </Link>
-                  <Link to="/guide" className={`tab-link ${location.pathname === '/guide' ? 'active' : ''}`}>Hướng dẫn</Link>
+                  <Link to="/guide" className={`tab-link ${location.pathname === '/guide' ? 'active' : ''}`}>{t('header.guidelines', 'Hướng dẫn')}</Link>
                 </>
               )}
             </>
@@ -120,6 +127,21 @@ const Header = ({ toggleSidebar }) => {
 
         <div className="header-right">
           <ThemeToggle />
+          <button 
+            onClick={toggleLanguage} 
+            className="lang-toggle-btn"
+            style={{ 
+              background: 'transparent', 
+              border: '1px solid var(--border-color)', 
+              color: 'var(--text-main)', 
+              padding: '4px 8px', 
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '0.85rem'
+            }}>
+            {i18n.language?.startsWith('vi') ? 'EN' : 'VI'}
+          </button>
           {isAuthenticated && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {user?.role === 'LANDLORD' && (
@@ -165,7 +187,7 @@ const Header = ({ toggleSidebar }) => {
                 className="sign-in-btn"
                 style={{ background: 'transparent', color: '#6C3AED', border: '1px solid #6C3AED', cursor: 'pointer' }}
               >
-                Đăng xuất
+                {t('header.logout', 'Đăng xuất')}
               </button>
             </div>
           )}

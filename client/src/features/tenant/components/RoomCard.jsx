@@ -5,9 +5,11 @@ import { Star, MapPin, Heart, BedDouble, Bath, Maximize } from 'lucide-react';
 import { clsx } from 'clsx';
 import { favoriteService } from '../services/favoriteService';
 import useAuthStore from '../../../store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 import './RoomCard.css';
 
 const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const { id, title, price, rating, location, distance, tags = [], imageTags = [], specs = [], isFavorite: initialFavorite, image } = room;
@@ -23,7 +25,7 @@ const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
   const handleFavoriteClick = async (e) => {
     e.stopPropagation();
     if (!isAuthenticated) {
-      toast.error("Please login to save favorites");
+      toast.error(t('roomCard.loginRequired', "Please login to save favorites"));
       return;
     }
     
@@ -38,7 +40,7 @@ const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
         if (onFavoriteToggle) onFavoriteToggle(id, true);
       }
     } catch (err) {
-      toast.error("Failed to toggle favorite");
+      toast.error(t('roomCard.toggleFailed', "Failed to toggle favorite"));
     }
   };
 
@@ -73,7 +75,7 @@ const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
         {/* Floating price for chat and standard variants */}
         {(variant === 'chat' || variant === 'standard') && (
           <div className="chat-floating-price">
-            {price.toLocaleString('vi-VN')} vnđ/mo
+            {price.toLocaleString('vi-VN')} {t('roomCard.currency', 'vnđ')}/{t('roomCard.mo', 'mo')}
           </div>
         )}
 
@@ -125,7 +127,7 @@ const RoomCard = ({ room, variant = 'standard', onFavoriteToggle }) => {
             <div className="room-card-header favorite-header">
               <h3 className="room-card-title">{title}</h3>
               <p className="room-card-price">
-                <span>{price.toLocaleString('vi-VN')} vnđ</span><span className="price-period">/mo</span>
+                <span>{price.toLocaleString('vi-VN')} {t('roomCard.currency', 'vnđ')}</span><span className="price-period">/{t('roomCard.mo', 'mo')}</span>
               </p>
             </div>
             <div className="room-card-location">

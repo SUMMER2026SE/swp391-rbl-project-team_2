@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
   Search,
@@ -20,6 +21,7 @@ import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
 import './ComplaintsPage.css';
 
 const ComplaintsPage = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [priorityFilter, setPriorityFilter] = useState('All');
@@ -101,8 +103,8 @@ const ComplaintsPage = () => {
       {/* Header */}
       <div className="complaints__header">
         <div>
-          <h1 className="complaints__title">Complaints</h1>
-          <p className="complaints__subtitle">Manage tenant complaints and issues</p>
+          <h1 className="complaints__title">{t('complaints.complaints', 'Complaints')}</h1>
+          <p className="complaints__subtitle">{t('complaints.manageTenantComplaintsAndIssues', 'Manage tenant complaints and issues')}</p>
         </div>
       </div>
 
@@ -120,7 +122,7 @@ const ComplaintsPage = () => {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search by tenant, room, or title..."
+            placeholder={t('complaints.searchByTenantRoomOrPlaceholder', 'Search by tenant, room, or title...')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -185,13 +187,13 @@ const ComplaintsPage = () => {
           <table className="complaints__table">
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Tenant</th>
-                <th>Room</th>
-                <th>Date</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t('complaints.title', 'Title')}</th>
+                <th>{t('complaints.tenant', 'Tenant')}</th>
+                <th>{t('complaints.room', 'Room')}</th>
+                <th>{t('complaints.date', 'Date')}</th>
+                <th>{t('complaints.priority', 'Priority')}</th>
+                <th>{t('complaints.status', 'Status')}</th>
+                <th>{t('complaints.actions', 'Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -235,9 +237,7 @@ const ComplaintsPage = () => {
                         setShowDetailModal(true);
                       }}
                     >
-                      <Eye size={14} />
-                      View
-                    </button>
+                      <Eye size={14} />{t('complaints.view', 'View')}</button>
                   </td>
                 </tr>
               ))}
@@ -257,7 +257,7 @@ const ComplaintsPage = () => {
         <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}>
           <div className="modal-content modal-content--large" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Complaint Details</h3>
+              <h3>{t('complaints.complaintDetails', 'Complaint Details')}</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setShowDetailModal(false)}
@@ -275,25 +275,25 @@ const ComplaintsPage = () => {
 
               {/* Complaint Info */}
               <div className="detail-section">
-                <h4 className="section-title">Complaint Information</h4>
+                <h4 className="section-title">{t('complaints.complaintInformation', 'Complaint Information')}</h4>
                 <div className="detail-grid">
                   <div className="detail-item">
-                    <label>Tenant</label>
+                    <label>{t('complaints.tenant', 'Tenant')}</label>
                     <div className="detail-value">{selectedComplaint.tenantName}</div>
                   </div>
                   <div className="detail-item">
-                    <label>Room</label>
+                    <label>{t('complaints.room', 'Room')}</label>
                     <div className="detail-value">{selectedComplaint.roomTitle}</div>
                   </div>
                   <div className="detail-item">
-                    <label>Date Reported</label>
+                    <label>{t('complaints.dateReported', 'Date Reported')}</label>
                     <div className="detail-value">
                       <Calendar size={14} />
                       {new Date(selectedComplaint.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="detail-item">
-                    <label>Category</label>
+                    <label>{t('complaints.category', 'Category')}</label>
                     <div className="detail-value">{selectedComplaint.category}</div>
                   </div>
                 </div>
@@ -301,45 +301,41 @@ const ComplaintsPage = () => {
 
               {/* Status & Priority Update */}
               <div className="detail-section">
-                <h4 className="section-title">Update Status & Priority</h4>
+                <h4 className="section-title">{t('complaints.updateStatusPriority', 'Update Status & Priority')}</h4>
                 <div className="update-grid">
                   <div className="update-item">
-                    <label>Status</label>
+                    <label>{t('complaints.status', 'Status')}</label>
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
                     >
-                      <option value="OPEN">Open</option>
-                      <option value="IN_PROGRESS">In Progress</option>
-                      <option value="RESOLVED">Resolved</option>
-                      <option value="CLOSED">Closed</option>
+                      <option value="OPEN">{t('complaints.open', 'Open')}</option>
+                      <option value="IN_PROGRESS">{t('complaints.inProgress', 'In Progress')}</option>
+                      <option value="RESOLVED">{t('complaints.resolved', 'Resolved')}</option>
+                      <option value="CLOSED">{t('complaints.closed', 'Closed')}</option>
                     </select>
                     <Button
                       variant="secondary"
                       size="small"
                       onClick={handleStatusUpdate}
-                    >
-                      Update Status
-                    </Button>
+                    >{t('complaints.updateStatus', 'Update Status')}</Button>
                   </div>
 
                   <div className="update-item">
-                    <label>Priority</label>
+                    <label>{t('complaints.priority', 'Priority')}</label>
                     <select
                       value={newPriority}
                       onChange={(e) => setNewPriority(e.target.value)}
                     >
-                      <option value="LOW">Low</option>
-                      <option value="MEDIUM">Medium</option>
-                      <option value="HIGH">High</option>
+                      <option value="LOW">{t('complaints.low', 'Low')}</option>
+                      <option value="MEDIUM">{t('complaints.medium', 'Medium')}</option>
+                      <option value="HIGH">{t('complaints.high', 'High')}</option>
                     </select>
                     <Button
                       variant="secondary"
                       size="small"
                       onClick={handlePriorityUpdate}
-                    >
-                      Update Priority
-                    </Button>
+                    >{t('complaints.updatePriority', 'Update Priority')}</Button>
                   </div>
                 </div>
               </div>
@@ -347,7 +343,7 @@ const ComplaintsPage = () => {
               {/* Notes */}
               {selectedComplaint.notes && (
                 <div className="detail-section">
-                  <h4 className="section-title">Notes</h4>
+                  <h4 className="section-title">{t('complaints.notes', 'Notes')}</h4>
                   <div className="notes-box">{selectedComplaint.notes}</div>
                 </div>
               )}
@@ -355,7 +351,7 @@ const ComplaintsPage = () => {
               {/* Timeline */}
               {selectedComplaint.timeline && selectedComplaint.timeline.length > 0 && (
                 <div className="detail-section">
-                  <h4 className="section-title">Timeline</h4>
+                  <h4 className="section-title">{t('complaints.timeline', 'Timeline')}</h4>
                   <div className="timeline">
                     {selectedComplaint.timeline.map((event, idx) => (
                       <div key={idx} className="timeline-item">
@@ -380,9 +376,7 @@ const ComplaintsPage = () => {
               <Button
                 variant="secondary"
                 onClick={() => setShowDetailModal(false)}
-              >
-                Close
-              </Button>
+              >{t('complaints.close', 'Close')}</Button>
             </div>
           </div>
         </div>
