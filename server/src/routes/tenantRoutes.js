@@ -10,6 +10,12 @@ const paymentController = require('../controllers/paymentController');
 const viewingScheduleController = require('../controllers/viewingScheduleController');
 
 // =========================================================
+// PUBLIC PAYMENT ROUTES (No Auth required for webhooks / mock checkout)
+// =========================================================
+router.post('/payments/payos-webhook', paymentController.payosWebhook);
+router.get('/payments/mock-payos-checkout', paymentController.mockPayosCheckout);
+
+// =========================================================
 // MIDDLEWARE
 // =========================================================
 router.use(authMiddleware);
@@ -36,6 +42,7 @@ router.post('/rental-requests/:requestId/request-contract', tenantRentalRequestC
 // =========================================================
 router.post('/payments/create_payment_url', paymentController.createPaymentUrl);
 router.get('/payments/vnpay_return', paymentController.vnpayReturn);
+router.get('/payments/payos_return', paymentController.payosReturn);
 router.get('/payments', paymentController.getMyPayments);
 router.put('/payments/:id/cancel', paymentController.cancelPayment);
 
