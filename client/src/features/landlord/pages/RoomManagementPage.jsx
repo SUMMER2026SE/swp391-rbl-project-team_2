@@ -58,9 +58,11 @@ const RoomManagementPage = () => {
   const filteredRooms = rooms.map(room => {
     let coverImg = '';
     if (room.images && room.images.length > 0) {
-      coverImg = room.images[0].url;
-    } else if (room.thumbnailUrl) {
-      coverImg = room.thumbnailUrl;
+      const url = room.images[0].url || room.images[0].image_url;
+      coverImg = url?.startsWith('http') ? url : `http://localhost:5000${url?.startsWith('/') ? '' : '/'}${url?.replace(/\\/g, '/')}`;
+    } else if (room.thumbnailUrl || room.thumbnail_url) {
+      const url = room.thumbnailUrl || room.thumbnail_url;
+      coverImg = url?.startsWith('http') ? url : `http://localhost:5000${url?.startsWith('/') ? '' : '/'}${url?.replace(/\\/g, '/')}`;
     }
 
     return {

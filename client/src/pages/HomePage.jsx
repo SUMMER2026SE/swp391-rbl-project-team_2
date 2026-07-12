@@ -42,8 +42,10 @@ import canthoImg from '../assets/images/cantho.png';
 import haiphongImg from '../assets/images/haiphong.png';
 import { roomService } from '../features/tenant/services/roomService';
 import PropertyCard from '../features/tenant/components/PropertyCard';
+import { useTranslation } from 'react-i18next';
 
 const HomePage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
 
@@ -180,11 +182,11 @@ const HomePage = () => {
 
         <div className="container hero-search-content">
           <h1 className="hero-search-title">
-            Tìm phòng trọ ưng ý <br />
-            <span style={{ color: '#2563EB' }}>nhanh chóng, dễ dàng</span>
+            {t('home.heroTitle1', 'Tìm phòng trọ ưng ý')} <br />
+            <span style={{ color: '#2563EB' }}>{t('home.heroTitle2', 'nhanh chóng, dễ dàng')}</span>
           </h1>
           <p className="hero-search-subtitle">
-            Tìm kiếm nhanh · Lọc thông minh · Không mất phí môi giới
+            {t('home.heroSubtitle', 'Tìm kiếm nhanh · Lọc thông minh · Không mất phí môi giới')}
           </p>
 
           <div className="search-widget-glass">
@@ -193,7 +195,7 @@ const HomePage = () => {
                <Search className="search-icon-blue" size={24} color="#2563EB" />
                <input 
                  type="text" 
-                 placeholder="Bạn muốn tìm phòng ở đâu?" 
+                 placeholder={t('home.searchPlaceholder', 'Bạn muốn tìm phòng ở đâu?')} 
                  className="search-input-main" 
                  value={keyword}
                  onChange={(e) => setKeyword(e.target.value)}
@@ -208,7 +210,7 @@ const HomePage = () => {
                <div className="filter-select-wrapper">
                  <MapPin className="filter-icon" size={18} color="#2563EB" />
                  <select className="filter-select" value={city} onChange={e => { setCity(e.target.value); setDistrict(''); }}>
-                   <option value="">Tỉnh / Thành</option>
+                   <option value="">{t('home.province', 'Tỉnh / Thành')}</option>
                    {provincesList.map((prov, index) => (
                      <option key={index} value={prov.full_name}>{prov.full_name}</option>
                    ))}
@@ -218,7 +220,7 @@ const HomePage = () => {
                <div className="filter-select-wrapper">
                  <MapPin className="filter-icon" size={18} color="#2563EB" />
                  <select className="filter-select" value={district} onChange={e => setDistrict(e.target.value)} disabled={!city || districtsList.length === 0}>
-                   <option value="">Quận / Huyện</option>
+                   <option value="">{t('home.district', 'Quận / Huyện')}</option>
                    {districtsList.map((dist, index) => (
                      <option key={index} value={dist.full_name}>{dist.full_name}</option>
                    ))}
@@ -228,20 +230,20 @@ const HomePage = () => {
                <div className="filter-select-wrapper">
                  <DollarSign className="filter-icon" size={18} color="#2563EB" />
                  <select className="filter-select" value={priceRange} onChange={e => setPriceRange(e.target.value)}>
-                    <option value="-">Mọi mức giá</option>
-                    <option value="0-1000000">&lt; 1 triệu VNĐ</option>
-                    <option value="1000000-2000000">1 - 2 triệu VNĐ</option>
-                    <option value="2000000-3000000">2 - 3 triệu VNĐ</option>
-                    <option value="3000000-4000000">3 - 4 triệu VNĐ</option>
-                    <option value="4000000-5000000">4 - 5 triệu VNĐ</option>
-                    <option value="5000000-">&gt; 5 triệu VNĐ</option>
+                    <option value="-">{t('home.allPrices', 'Mọi mức giá')}</option>
+                    <option value="0-1000000">{t('home.price1', '< 1 triệu VNĐ')}</option>
+                    <option value="1000000-2000000">{t('home.price2', '1 - 2 triệu VNĐ')}</option>
+                    <option value="2000000-3000000">{t('home.price3', '2 - 3 triệu VNĐ')}</option>
+                    <option value="3000000-4000000">{t('home.price4', '3 - 4 triệu VNĐ')}</option>
+                    <option value="4000000-5000000">{t('home.price5', '4 - 5 triệu VNĐ')}</option>
+                    <option value="5000000-">{t('home.price6', '> 5 triệu VNĐ')}</option>
                  </select>
                </div>
 
                <div className="filter-dropdown-wrapper" ref={facilitiesRef}>
                  <div className="filter-dropdown-btn" onClick={() => setShowFacilities(!showFacilities)}>
                    <Grid className="filter-icon" size={18} color="#2563EB" />
-                   <span className="dropdown-label">Tiện ích {facilities.length > 0 && `(${facilities.length})`}</span>
+                   <span className="dropdown-label">{t('home.amenities', 'Tiện ích')} {facilities.length > 0 && `(${facilities.length})`}</span>
                    <ChevronDown className="dropdown-icon" size={16} />
                  </div>
                  {showFacilities && (
@@ -256,7 +258,7 @@ const HomePage = () => {
                              else setFacilities(facilities.filter(x => x !== f));
                            }}
                          />
-                         {f}
+                         {t(`facilities.${f}`, f)}
                        </label>
                      ))}
                    </div>
@@ -266,7 +268,7 @@ const HomePage = () => {
                <div className="filter-dropdown-wrapper" ref={nearbyRef}>
                  <div className="filter-dropdown-btn" onClick={() => setShowNearbyFacilities(!showNearbyFacilities)}>
                    <TreePine className="filter-icon" size={18} color="#2563EB" />
-                   <span className="dropdown-label">Lân cận {nearbyFacilities.length > 0 && `(${nearbyFacilities.length})`}</span>
+                   <span className="dropdown-label">{t('home.nearby', 'Lân cận')} {nearbyFacilities.length > 0 && `(${nearbyFacilities.length})`}</span>
                    <ChevronDown className="dropdown-icon" size={16} />
                  </div>
                  {showNearbyFacilities && (
@@ -281,7 +283,7 @@ const HomePage = () => {
                              else setNearbyFacilities(nearbyFacilities.filter(x => x !== f));
                            }}
                          />
-                         {f}
+                         {t(`facilities.${f}`, f)}
                        </label>
                      ))}
                    </div>
@@ -289,7 +291,7 @@ const HomePage = () => {
                </div>
 
                <button className="search-submit-btn" onClick={handleSearchSubmit}>
-                 <Search size={20} /> Tìm Kiếm
+                 <Search size={20} /> {t('home.searchBtn', 'Tìm Kiếm')}
                </button>
              </div>
           </div>
@@ -315,7 +317,7 @@ const HomePage = () => {
                       className="amenity-tag" 
                       onClick={() => navigate(`${ROUTES.ROOMS}?${paramKey}=${encodeURIComponent(amenity)}`)}
                     >
-                      {amenity}
+                      {t(`facilities.${amenity}`, amenity)}
                     </span>
                   );
                 })}
@@ -336,8 +338,8 @@ const HomePage = () => {
       <section className="trending-locations-section">
         <div className="container">
           <div className="section-header text-center">
-            <h2>Địa điểm nổi bật</h2>
-            <p>Khám phá các phòng trọ tại các thành phố lớn</p>
+            <h2>{t('home.trendingTitle', 'Địa điểm nổi bật')}</h2>
+            <p>{t('home.trendingSubtitle', 'Khám phá các phòng trọ tại các thành phố lớn')}</p>
           </div>
           
           <div className="locations-carousel-wrapper">
@@ -383,12 +385,12 @@ const HomePage = () => {
       <section className="new-rooms-section">
         <div className="container">
           <div className="section-header text-center mb-10">
-            <h2>New Room Listings</h2>
-            <p>Discover the latest properties added to our platform</p>
+            <h2>{t('home.newRoomsTitle', 'New Room Listings')}</h2>
+            <p>{t('home.newRoomsSubtitle', 'Discover the latest properties added to our platform')}</p>
           </div>
           
           {loadingRooms ? (
-            <div className="loading-state py-12 text-center text-gray-500">Loading new rooms...</div>
+            <div className="loading-state py-12 text-center text-gray-500">{t('home.loadingRooms', 'Loading new rooms...')}</div>
           ) : newRooms.length > 0 ? (
             <div className="new-rooms-grid">
               {newRooms.map(prop => (
@@ -396,7 +398,7 @@ const HomePage = () => {
               ))}
             </div>
           ) : (
-            <div className="empty-state py-12 text-center text-gray-500">No new rooms available right now.</div>
+            <div className="empty-state py-12 text-center text-gray-500">{t('home.noNewRooms', 'No new rooms available right now.')}</div>
           )}
 
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2.5rem' }}>
@@ -420,7 +422,7 @@ const HomePage = () => {
               onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#eff6ff'; }}
               onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
-              View All Rooms <ChevronRight size={18} />
+              {t('home.viewAllRooms', 'View All Rooms')} <ChevronRight size={18} />
             </button>
           </div>
         </div>
@@ -430,8 +432,8 @@ const HomePage = () => {
       <section className="how-it-works-section">
         <div className="container">
           <div className="section-header text-center">
-            <h2>How It Works</h2>
-            <p>Find your perfect room in 3 simple steps</p>
+            <h2>{t('home.howItWorksTitle', 'How It Works')}</h2>
+            <p>{t('home.howItWorksSubtitle', 'Find your perfect room in 3 simple steps')}</p>
           </div>
           <div className="steps-grid">
             <div className="step-card">
@@ -440,8 +442,8 @@ const HomePage = () => {
               <div className="step-icon-inner bg-indigo-light text-indigo">
                 <Search size={24} />
               </div>
-              <h3>Search & Filter</h3>
-              <p>Tell our AI what you need or use our advanced filters to browse verified listings.</p>
+              <h3>{t('home.step1Title', 'Search & Filter')}</h3>
+              <p>{t('home.step1Desc', 'Tell our AI what you need or use our advanced filters to browse verified listings.')}</p>
             </div>
             <div className="step-card">
               <div className="step-decor-line"></div>
@@ -449,16 +451,16 @@ const HomePage = () => {
               <div className="step-icon-inner bg-amber-light text-amber">
                 <Calendar size={24} />
               </div>
-              <h3>Schedule a Viewing</h3>
-              <p>Book a time to see the room in person completely for free.</p>
+              <h3>{t('home.step2Title', 'Schedule a Viewing')}</h3>
+              <p>{t('home.step2Desc', 'Book a time to see the room in person completely for free.')}</p>
             </div>
             <div className="step-card">
               <div className="step-number">3</div>
               <div className="step-icon-inner bg-green-light text-green">
                 <Check size={24} />
               </div>
-              <h3>Move In</h3>
-              <p>Sign the contract, pay the rent, and move into your new home with peace of mind.</p>
+              <h3>{t('home.step3Title', 'Move In')}</h3>
+              <p>{t('home.step3Desc', 'Sign the contract, pay the rent, and move into your new home with peace of mind.')}</p>
             </div>
           </div>
         </div>
@@ -468,30 +470,30 @@ const HomePage = () => {
       <section className="benefits-section">
         <div className="container">
           <div className="section-header text-center">
-            <h2>Why Choose Us</h2>
-            <p>We make renting easier and safer for everyone.</p>
+            <h2>{t('home.whyChooseUsTitle', 'Why Choose Us')}</h2>
+            <p>{t('home.whyChooseUsSubtitle', 'We make renting easier and safer for everyone.')}</p>
           </div>
           <div className="benefits-grid">
             <div className="benefit-item">
               <div className="benefit-icon-wrapper">
                 <Sparkles size={24} className="benefit-icon" />
               </div>
-              <h4>AI-Powered Matching</h4>
-              <p>Our smart system finds the best rooms that fit your lifestyle and budget instantly.</p>
+              <h4>{t('home.benefit1Title', 'AI-Powered Matching')}</h4>
+              <p>{t('home.benefit1Desc', 'Our smart system finds the best rooms that fit your lifestyle and budget instantly.')}</p>
             </div>
             <div className="benefit-item">
               <div className="benefit-icon-wrapper">
                 <ShieldCheck size={24} className="benefit-icon" />
               </div>
-              <h4>Verified Landlords</h4>
-              <p>Every landlord is vetted to ensure you have a safe and reliable renting experience.</p>
+              <h4>{t('home.benefit2Title', 'Verified Landlords')}</h4>
+              <p>{t('home.benefit2Desc', 'Every landlord is vetted to ensure you have a safe and reliable renting experience.')}</p>
             </div>
             <div className="benefit-item">
               <div className="benefit-icon-wrapper">
                 <Coins size={24} className="benefit-icon" />
               </div>
-              <h4>Transparent Pricing</h4>
-              <p>No hidden fees. What you see is what you pay. Protect your deposits with our secure platform.</p>
+              <h4>{t('home.benefit3Title', 'Transparent Pricing')}</h4>
+              <p>{t('home.benefit3Desc', 'No hidden fees. What you see is what you pay. Protect your deposits with our secure platform.')}</p>
             </div>
           </div>
         </div>
@@ -501,15 +503,15 @@ const HomePage = () => {
       <section className="cta-section">
         <div className="container">
           <div className="cta-content">
-            <h2>Ready to find your next home?</h2>
-            <p>Join thousands of users who have already found their perfect space.</p>
+            <h2>{t('home.ctaTitle', 'Ready to find your next home?')}</h2>
+            <p>{t('home.ctaSubtitle', 'Join thousands of users who have already found their perfect space.')}</p>
             <div className="cta-buttons">
               <Button variant="primary" size="large" onClick={() => navigate(ROUTES.ROOMS)} className="btn-cta-primary">
-                Browse Rooms Now
+                {t('home.ctaBrowseBtn', 'Browse Rooms Now')}
               </Button>
               {!isAuthenticated && (
                 <Button variant="outline" size="large" onClick={() => navigate('/register')} className="btn-cta-outline">
-                  Sign Up for Free
+                  {t('home.ctaSignupBtn', 'Sign Up for Free')}
                 </Button>
               )}
             </div>

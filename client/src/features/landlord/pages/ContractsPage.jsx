@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import {
   Plus,
@@ -27,6 +28,7 @@ import toast from 'react-hot-toast';
 import './ContractsPage.css';
 
 const ContractsPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState(location.state?.search || '');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -134,13 +136,11 @@ const ContractsPage = () => {
       {/* Header */}
       <div className="contracts__header">
         <div>
-          <h1 className="contracts__title">Contracts</h1>
-          <p className="contracts__subtitle">Manage rental contracts and agreements</p>
+          <h1 className="contracts__title">{t('contracts.contracts', 'Contracts')}</h1>
+          <p className="contracts__subtitle">{t('contracts.manageRentalContractsAndAgreements', 'Manage rental contracts and agreements')}</p>
         </div>
         <Button variant="primary">
-          <Plus size={18} />
-          New Contract
-        </Button>
+          <Plus size={18} />{t('contracts.newContract', 'New Contract')}</Button>
       </div>
 
       {/* Error Alert */}
@@ -157,19 +157,19 @@ const ContractsPage = () => {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search by tenant, room, or contract number..."
+            placeholder={t('contracts.searchByTenantRoomOrPlaceholder', 'Search by tenant, room, or contract number...')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
         <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>From:</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>{t('contracts.from', 'From:')}</span>
           <input type="date" lang="en-GB" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
         </div>
 
         <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>To:</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>{t('contracts.to', 'To:')}</span>
           <input type="date" lang="en-GB" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
         </div>
 
@@ -183,8 +183,8 @@ const ContractsPage = () => {
           </button>
           {showSortDropdown && (
             <div className="filter-dropdown-menu">
-              <button className={`filter-dropdown-item ${sortOrder === 'newest' ? 'active' : ''}`} onClick={() => { setSortOrder('newest'); setShowSortDropdown(false); }}>Newest First</button>
-              <button className={`filter-dropdown-item ${sortOrder === 'oldest' ? 'active' : ''}`} onClick={() => { setSortOrder('oldest'); setShowSortDropdown(false); }}>Oldest First</button>
+              <button className={`filter-dropdown-item ${sortOrder === 'newest' ? 'active' : ''}`} onClick={() => { setSortOrder('newest'); setShowSortDropdown(false); }}>{t('contracts.newestFirst', 'Newest First')}</button>
+              <button className={`filter-dropdown-item ${sortOrder === 'oldest' ? 'active' : ''}`} onClick={() => { setSortOrder('oldest'); setShowSortDropdown(false); }}>{t('contracts.oldestFirst', 'Oldest First')}</button>
             </div>
           )}
         </div>
@@ -222,12 +222,12 @@ const ContractsPage = () => {
           <table className="contracts__table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
               <tr>
-                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Tenant</th>
-                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Room</th>
-                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Move-in Date</th>
-                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Duration</th>
-                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Status</th>
-                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Actions</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('contracts.tenant', 'Tenant')}</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('contracts.room', 'Room')}</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('contracts.moveinDate', 'Move-in Date')}</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('contracts.duration', 'Duration')}</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('contracts.status', 'Status')}</th>
+                <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>{t('contracts.actions', 'Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -298,8 +298,7 @@ const ContractsPage = () => {
                         borderRadius: '6px', color: '#475569', fontSize: '13px', cursor: 'pointer', fontWeight: 500
                       }}
                     >
-                      <FileText size={14} /> View Contract
-                    </button>
+                      <FileText size={14} />{t('contracts.viewContract', 'View Contract')}</button>
                   </td>
                 </tr>
               ))}
@@ -319,7 +318,7 @@ const ContractsPage = () => {
         <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}>
           <div className="modal-content modal-content--large" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Contract Details</h3>
+              <h3>{t('contracts.contractDetails', 'Contract Details')}</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setShowDetailModal(false)}
@@ -355,22 +354,20 @@ const ContractsPage = () => {
               {/* Room Info */}
               {selectedContract.room && (
                 <div className="detail-section">
-                  <h4 className="section-title">Room Information</h4>
+                  <h4 className="section-title">{t('contracts.roomInformation', 'Room Information')}</h4>
                   <div className="detail-grid">
                     <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
-                      <label>Address</label>
+                      <label>{t('contracts.address', 'Address')}</label>
                       <div className="detail-value" style={{ fontSize: '0.9rem' }}>
                         {[selectedContract.room.address, selectedContract.room.ward, selectedContract.room.district, selectedContract.room.city].filter(Boolean).join(', ')}
                       </div>
                     </div>
                     <div className="detail-item">
-                      <label>Room Type</label>
-                      <div className="detail-value" style={{ textTransform: 'capitalize' }}>
-                        Phòng cá nhân
-                      </div>
+                      <label>{t('contracts.roomType', 'Room Type')}</label>
+                      <div className="detail-value" style={{ textTransform: 'capitalize' }}>{t('contracts.phngCNhn', 'Phòng cá nhân')}</div>
                     </div>
                     <div className="detail-item">
-                      <label>Assigned Room</label>
+                      <label>{t('contracts.assignedRoom', 'Assigned Room')}</label>
                       <div className="detail-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {selectedContract.assignedRoomNumber || 'Chưa gán số'}
                         <button
@@ -396,11 +393,11 @@ const ContractsPage = () => {
                       </div>
                     </div>
                     <div className="detail-item">
-                      <label>Max Occupants</label>
+                      <label>{t('contracts.maxOccupants', 'Max Occupants')}</label>
                       <div className="detail-value">{selectedContract.room.max_occupants}</div>
                     </div>
                     <div className="detail-item">
-                      <label>Area</label>
+                      <label>{t('contracts.area', 'Area')}</label>
                       <div className="detail-value">{selectedContract.room.area_sqm} m²</div>
                     </div>
                   </div>
@@ -409,18 +406,18 @@ const ContractsPage = () => {
 
               {/* Tenant Info */}
               <div className="detail-section">
-                <h4 className="section-title">Tenant Information</h4>
+                <h4 className="section-title">{t('contracts.tenantInformation', 'Tenant Information')}</h4>
                 <div className="detail-grid">
                   <div className="detail-item">
-                    <label>Name</label>
+                    <label>{t('contracts.name', 'Name')}</label>
                     <div className="detail-value">{selectedContract.tenantName}</div>
                   </div>
                   <div className="detail-item">
-                    <label>Email</label>
+                    <label>{t('contracts.email', 'Email')}</label>
                     <div className="detail-value">{selectedContract.tenantEmail}</div>
                   </div>
                   <div className="detail-item">
-                    <label>Phone</label>
+                    <label>{t('contracts.phone', 'Phone')}</label>
                     <div className="detail-value">{selectedContract.tenantPhone}</div>
                   </div>
                 </div>
@@ -428,28 +425,28 @@ const ContractsPage = () => {
 
               {/* Contract Terms */}
               <div className="detail-section">
-                <h4 className="section-title">Contract Terms</h4>
+                <h4 className="section-title">{t('contracts.contractTerms', 'Contract Terms')}</h4>
                 <div className="detail-grid">
                   <div className="detail-item">
-                    <span className="detail-label">Start Date</span>
+                    <span className="detail-label">{t('contracts.startDate', 'Start Date')}</span>
                     <span className="detail-value">
                       <Calendar size={14} />
                       {new Date(selectedContract.startDate).toLocaleDateString('en-GB')}
                     </span>
                   </div>
                   <div className="detail-item">
-                    <span className="detail-label">End Date</span>
+                    <span className="detail-label">{t('contracts.endDate', 'End Date')}</span>
                     <span className="detail-value">
                       <Calendar size={14} />
                       {new Date(selectedContract.endDate).toLocaleDateString('en-GB')}
                     </span>
                   </div>
                   <div className="detail-item">
-                    <label>Duration</label>
+                    <label>{t('contracts.duration', 'Duration')}</label>
                     <div className="detail-value">{selectedContract.duration} months</div>
                   </div>
                   <div className="detail-item">
-                    <label>Monthly Rent</label>
+                    <label>{t('contracts.monthlyRent', 'Monthly Rent')}</label>
                     <div className="detail-value">{selectedContract.monthlyRent?.toLocaleString()} đ</div>
                   </div>
                 </div>
@@ -458,7 +455,7 @@ const ContractsPage = () => {
               {/* Additional Terms */}
               {selectedContract.terms && (
                 <div className="detail-section">
-                  <h4 className="section-title">Additional Terms</h4>
+                  <h4 className="section-title">{t('contracts.additionalTerms', 'Additional Terms')}</h4>
                   <div className="terms-box">{selectedContract.terms}</div>
                 </div>
               )}
@@ -498,7 +495,7 @@ const ContractsPage = () => {
         <div className="modal-backdrop" onClick={() => setShowRenewModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Renew Contract</h3>
+              <h3>{t('contracts.renewContract', 'Renew Contract')}</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setShowRenewModal(false)}
@@ -526,15 +523,11 @@ const ContractsPage = () => {
               <Button
                 variant="secondary"
                 onClick={() => setShowRenewModal(false)}
-              >
-                Cancel
-              </Button>
+              >{t('contracts.cancel', 'Cancel')}</Button>
               <Button
                 variant="primary"
                 onClick={handleRenew}
-              >
-                Renew Contract
-              </Button>
+              >{t('contracts.renewContract', 'Renew Contract')}</Button>
             </div>
           </div>
         </div>
@@ -545,7 +538,7 @@ const ContractsPage = () => {
         <div className="modal-backdrop" onClick={() => setShowTerminateModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Terminate Contract</h3>
+              <h3>{t('contracts.terminateContract', 'Terminate Contract')}</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setShowTerminateModal(false)}
@@ -555,12 +548,10 @@ const ContractsPage = () => {
             </div>
 
             <div className="modal-body">
-              <p className="terminate-info">
-                Please provide a reason for terminating this contract.
-              </p>
+              <p className="terminate-info">{t('contracts.pleaseProvideAReasonFor', 'Please provide a reason for terminating this contract.')}</p>
               <textarea
                 className="terminate-textarea"
-                placeholder="Enter termination reason..."
+                placeholder={t('contracts.enterTerminationReasonPlaceholder', 'Enter termination reason...')}
                 value={terminateReason}
                 onChange={(e) => setTerminateReason(e.target.value)}
                 rows="5"
@@ -571,15 +562,11 @@ const ContractsPage = () => {
               <Button
                 variant="secondary"
                 onClick={() => setShowTerminateModal(false)}
-              >
-                Cancel
-              </Button>
+              >{t('contracts.cancel', 'Cancel')}</Button>
               <Button
                 variant="danger"
                 onClick={handleTerminate}
-              >
-                Terminate Contract
-              </Button>
+              >{t('contracts.terminateContract', 'Terminate Contract')}</Button>
             </div>
           </div>
         </div>

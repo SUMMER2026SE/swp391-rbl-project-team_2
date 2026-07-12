@@ -347,16 +347,7 @@ const createContractFromRequest = async (req, res, next) => {
     contract.status = 'pending_signature';
     await contract.save();
 
-    const roomToUpdate = rentalRequest.room;
-    if (roomToUpdate.available_quantity !== null) {
-      roomToUpdate.available_quantity -= 1;
-      if (roomToUpdate.available_quantity <= 0) {
-        roomToUpdate.status = 'rented';
-      }
-    } else {
-      roomToUpdate.status = 'rented';
-    }
-    await roomToUpdate.save();
+
 
     const safeNow = new Date().toISOString().replace('T', ' ').substring(0, 19);
     rentalRequest.status = 'contract_created';

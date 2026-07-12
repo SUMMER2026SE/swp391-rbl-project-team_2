@@ -11,12 +11,20 @@ import { ROUTES } from '../constants';
 import useAuthStore from '../store/useAuthStore';
 import { supabase } from '../config/supabase';
 import { API_URL } from '../config';
+import { useTranslation } from 'react-i18next';
 import './AdminLayout.css';
 
 const AdminLayout = () => {
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthStore();
+  
+  const toggleLanguage = () => {
+    const newLang = i18n.language?.startsWith('vi') ? 'en' : 'vi';
+    i18n.changeLanguage(newLang);
+    localStorage.setItem('language', newLang);
+  };
   
   const handleLogout = async () => {
     try {
@@ -105,16 +113,34 @@ const AdminLayout = () => {
             {isLandlord && (
               <div className="topbar-center-actions" style={{ display: 'flex', justifyContent: 'center' }}>
                 <div className="topbar-nav-links" style={{ marginLeft: 0 }}>
-                  <NavLink to={ROUTES.LANDLORD.LISTINGS} className="topbar-nav-link">Listing</NavLink>
-                  <NavLink to={ROUTES.LANDLORD.SCHEDULES} className="topbar-nav-link">Viewing Schedule</NavLink>
-                  <NavLink to={ROUTES.LANDLORD.DEPOSITS} className="topbar-nav-link">Deposit</NavLink>
-                  <NavLink to={ROUTES.LANDLORD.CONTRACTS} className="topbar-nav-link">Contract</NavLink>
+                  <NavLink to={ROUTES.LANDLORD.LISTINGS} className="topbar-nav-link">{t('adminLayout.listing', 'Listing')}</NavLink>
+                  <NavLink to={ROUTES.LANDLORD.SCHEDULES} className="topbar-nav-link">{t('adminLayout.viewingSchedule', 'Viewing Schedule')}</NavLink>
+                  <NavLink to={ROUTES.LANDLORD.DEPOSITS} className="topbar-nav-link">{t('adminLayout.deposit', 'Deposit')}</NavLink>
+                  <NavLink to={ROUTES.LANDLORD.CONTRACTS} className="topbar-nav-link">{t('adminLayout.contract', 'Contract')}</NavLink>
                 </div>
               </div>
             )}
 
             <div className="topbar-actions" style={{ flex: 1, justifyContent: 'flex-end' }}>
               <ThemeToggle />
+              
+              <button 
+                onClick={toggleLanguage} 
+                className="lang-toggle-btn"
+                style={{ 
+                  background: 'transparent', 
+                  border: '1px solid var(--border-color)', 
+                  color: 'var(--text-main)', 
+                  padding: '4px 8px', 
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '0.85rem',
+                  marginLeft: '0.5rem',
+                  marginRight: '0.5rem'
+                }}>
+                {i18n.language?.startsWith('vi') ? 'EN' : 'VI'}
+              </button>
 
               {/* Chat Icon */}
               <Link
@@ -134,7 +160,7 @@ const AdminLayout = () => {
                 onClick={handleLogout}
                 style={{ background: 'transparent', color: '#6C3AED', border: '1px solid #6C3AED', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', marginLeft: '0.5rem' }}
               >
-                Logout
+                {t('header.logout', 'Logout')}
               </button>
             </div>
           </header>

@@ -15,9 +15,11 @@ import toast from 'react-hot-toast';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import api from '../../../services/api';
 import RoomCard from '../components/RoomCard';
+import { useTranslation } from 'react-i18next';
 import './RoomDetailPage.css';
 
 const RoomDetailPage = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,12 +42,12 @@ const RoomDetailPage = () => {
       const payload = { ...editForm, pricePerMonth: Number(editForm.pricePerMonth) };
       const response = await api.put(`/landlord/rooms/${id}`, payload);
       if (response.success) {
-        toast.success("Room updated successfully!");
+        toast.success(t('roomDetail.roomUpdated', "Room updated successfully!"));
         setRoomData({ ...roomData, ...payload, price_per_month: payload.pricePerMonth });
         setIsEditing(false);
       }
     } catch (e) {
-      toast.error(e.message || "Failed to update room!");
+      toast.error(e.message || t('roomDetail.updateFailed', "Failed to update room!"));
     }
   };
   
@@ -110,10 +112,10 @@ const RoomDetailPage = () => {
                 price: room.pricePerMonth || room.price_per_month || 0,
                 location: [room.address, room.district, room.city].filter(Boolean).join(', '),
                 specs: [
-                  { icon: 'bed', text: `${room.bedrooms || 1} Giường` },
+                  { icon: 'bed', text: `${room.bedrooms || 1} ${t('roomDetail.bed', 'Giường')}` },
                   { icon: 'square', text: `${room.areaSqm || room.area_sqm || 0} m²` }
                 ],
-                imageTags: [{ text: 'Còn phòng', type: 'primary' }],
+                imageTags: [{ text: t('roomDetail.statusAvailable', 'Còn phòng'), type: 'primary' }],
                 isFavorite: false, // We'd need to check this properly if needed, but default false is fine
                 image: imgUrl ? (imgUrl.startsWith('http') ? imgUrl : `http://localhost:5000${imgUrl}`) : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60'
               };
@@ -177,15 +179,15 @@ const RoomDetailPage = () => {
       }
 
       if (!viewingDate) {
-        toast.error('Please select a viewing date.');
+        toast.error(t('roomDetail.selectDate', 'Please select a viewing date.'));
         return;
       }
       if (!viewingTime) {
-        toast.error('Please select a viewing time.');
+        toast.error(t('roomDetail.selectTime', 'Please select a viewing time.'));
         return;
       }
       if (viewingDate < todayDate) {
-        toast.error('Viewing date must be today or a future date.');
+        toast.error(t('roomDetail.invalidDate', 'Viewing date must be today or a future date.'));
         return;
       }
 
@@ -198,12 +200,12 @@ const RoomDetailPage = () => {
         scheduledDate: combinedDateTime,
       });
       if (response.success) {
-        toast.success('Viewing schedule requested successfully!');
+        toast.success(t('roomDetail.scheduleSuccess', 'Viewing schedule requested successfully!'));
         setShowDateModal(false);
         navigate(ROUTES.TENANT.REQUESTS);
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to schedule viewing');
+      toast.error(err.response?.data?.message || t('roomDetail.scheduleFailed', 'Failed to schedule viewing'));
     }
   };
 
@@ -220,12 +222,12 @@ const RoomDetailPage = () => {
       });
 
       if (response.success) {
-        toast.success("Rental request submitted successfully!");
+        toast.success(t('roomDetail.requestSuccess', "Rental request submitted successfully!"));
         setShowRentalRequestModal(false);
         navigate(ROUTES.TENANT.REQUESTS);
       }
     } catch (err) {
-      toast.error('Failed to submit request: ' + (err.response?.data?.message || err.message));
+      toast.error(t('roomDetail.requestFailed', 'Failed to submit request:') + ' ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -239,7 +241,7 @@ const RoomDetailPage = () => {
       // First, get or create conversation
       const landlordId = roomData.landlordId ?? roomData.landlord?.user_id;
       if (!landlordId) {
-        toast.error('Failed to start chat. Landlord information is unavailable.');
+        toast.error(t('roomDetail.startChatFailed', 'Failed to start chat. Landlord information is unavailable.'));
         return;
       }
       const response = await axios.post('http://localhost:5000/api/chat/conversations', {
@@ -257,8 +259,8 @@ const RoomDetailPage = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
-  if (error || !roomData) return <div className="p-8 text-center text-red-500">{error || 'Listing not found'}</div>;
+  if (loading) return <div className="p-8 text-center">{t('search.loading', 'Loading...')}</div>;
+  if (error || !roomData) return <div className="p-8 text-center text-red-500">{error || t('propertyDetail.propertyNotFound', 'Listing not found')}</div>;
 
   const roomFacilities = roomData.facilities?.filter(f => f.category === 'room' || !f.category) || [];
   const nearbyFacilities = roomData.facilities?.filter(f => f.category === 'nearby') || [];
@@ -287,8 +289,8 @@ const RoomDetailPage = () => {
       >
         <ChevronLeft size={18} />
         {location.state?.from === 'viewing_schedule' 
-          ? 'Quay lại Lịch hẹn' 
-          : (isAuthenticated && user?.role === 'LANDLORD' ? 'Quay lại danh sách phòng' : 'Quay lại Khám phá')
+          ? t('roomDetail.backToSchedule', 'Quay lại Lịch hẹn') 
+          : (isAuthenticated && user?.role === 'LANDLORD' ? t('roomDetail.backToListings', 'Quay lại danh sách phòng') : t('propertyDetail.backToExplore', 'Quay lại Khám phá'))
         }
       </Button>
 
@@ -343,7 +345,7 @@ const RoomDetailPage = () => {
               <h1 className="room-detail-title">{roomData.title}</h1>
             )}
             {roomData.roomNumber && (
-              <p className="room-detail-address" style={{ marginTop: '0.2rem', marginBottom: '0.5rem', fontWeight: '500', color: '#4f46e5' }}>Phòng: {roomData.roomNumber}</p>
+              <p className="room-detail-address" style={{ marginTop: '0.2rem', marginBottom: '0.5rem', fontWeight: '500', color: '#4f46e5' }}>{t('propertyDetail.roomPrefix', 'Phòng:')} {roomData.roomNumber}</p>
             )}
             <p className="room-detail-address"><MapPin size={16}/> {[roomData.address, roomData.ward, roomData.district, roomData.city].filter(Boolean).join(', ')}</p>
           </div>
@@ -352,12 +354,12 @@ const RoomDetailPage = () => {
             <div className="feature-card">
               <Bed className="feature-icon" />
               <span className="feature-value">{roomData.bedrooms || 1}</span>
-              <span className="feature-label">Giường</span>
+              <span className="feature-label">{t('roomDetail.bed', 'Giường')}</span>
             </div>
             <div className="feature-card">
               <Users className="feature-icon" />
               <span className="feature-value">{roomData.maxOccupants || roomData.max_occupants || 1}</span>
-              <span className="feature-label">Người tối đa</span>
+              <span className="feature-label">{t('roomDetail.maxOccupants', 'Người tối đa')}</span>
             </div>
             <div className="feature-card">
               <Maximize className="feature-icon" />
@@ -367,9 +369,9 @@ const RoomDetailPage = () => {
             <div className="feature-card">
               <Home className="feature-icon" />
               <span className="feature-value" style={{ textTransform: 'capitalize' }}>
-                Phòng cá nhân
+                {t('roomDetail.privateRoom', 'Phòng cá nhân')}
               </span>
-              <span className="feature-label">Loại phòng</span>
+              <span className="feature-label">{t('roomDetail.roomType', 'Loại phòng')}</span>
             </div>
           </div>
 
@@ -379,19 +381,32 @@ const RoomDetailPage = () => {
 
           {/* About Section */}
           <section className="about-section">
-            <h2>Thông tin chi tiết</h2>
+            <h2>{t('roomDetail.details', 'Thông tin chi tiết')}</h2>
             <div className={`about-text ${showMoreAbout ? 'expanded' : ''}`}>
               {isEditing ? (
                  <textarea name="description" value={editForm.description} onChange={handleEditChange} className="form-control" rows={6} />
               ) : (
-                 <p style={{ whiteSpace: 'pre-wrap' }}>{roomData.description}</p>
+                 <p style={{ whiteSpace: 'pre-wrap' }}>
+                   {(() => {
+                      const desc = roomData.description || '';
+                      const isDefaultGeneratedVi = desc.includes('là chỗ nghỉ lý tưởng tọa lạc tại') && desc.includes('Khu trọ có thiết kế sạch sẽ, hiện đại và an ninh đảm bảo');
+                      if (isDefaultGeneratedVi) {
+                         return `${t('propertyDetail.defaultDescP1', {
+                            title: roomData.title,
+                            district: roomData.district || roomData.property?.district || 'trung tâm',
+                            city: roomData.city || roomData.property?.city || 'thành phố'
+                         })}\n\n${t('propertyDetail.defaultDescP2', 'Khu trọ có thiết kế sạch sẽ, hiện đại và an ninh đảm bảo. Tại đây, bạn sẽ dễ dàng di chuyển đến các khu vực trung tâm, các trường đại học và khu tiện ích xung quanh.')}\n\n${t('propertyDetail.defaultDescP3', 'Đặc biệt phù hợp cho người đi làm và sinh viên cần một không gian yên tĩnh, an toàn để nghỉ ngơi sau một ngày căng thẳng.')}`;
+                      }
+                      return desc;
+                   })()}
+                 </p>
               )}
             </div>
             <button 
               className="show-more-link" 
               onClick={() => setShowMoreAbout(!showMoreAbout)}
             >
-              {showMoreAbout ? 'Thu gọn' : 'Xem thêm'}
+              {showMoreAbout ? t('roomDetail.collapse', 'Thu gọn') : t('roomDetail.seeMore', 'Xem thêm')}
             </button>
           </section>
 
@@ -399,7 +414,7 @@ const RoomDetailPage = () => {
 
           {/* Amenities Section */}
           <section className="amenities-section">
-            <h2>Tiện nghi & Dịch vụ</h2>
+            <h2>{t('roomDetail.amenities', 'Tiện nghi & Dịch vụ')}</h2>
             
             {roomFacilities.length > 0 && (
               <div style={{ marginTop: '1rem' }}>
@@ -408,7 +423,7 @@ const RoomDetailPage = () => {
                   {roomFacilities.map((amenity, idx) => (
                     <div className="amenity-item" key={`room-${idx}`}>
                       <CheckCircle size={20} className="amenity-icon" />
-                      <span>{amenity.facility_name}</span>
+                      <span>{t(`facilities.${amenity.facility_name}`, amenity.facility_name)}</span>
                     </div>
                   ))}
                 </div>
@@ -417,12 +432,12 @@ const RoomDetailPage = () => {
 
             {nearbyFacilities.length > 0 && (
               <div style={{ marginTop: '1.5rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>Tiện ích xung quanh</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>{t('roomDetail.nearbyAmenities', 'Tiện ích xung quanh')}</h3>
                 <div className="amenities-grid">
                   {nearbyFacilities.map((amenity, idx) => (
                     <div className="amenity-item" key={`nearby-${idx}`}>
                       <MapPin size={20} className="amenity-icon" />
-                      <span>{amenity.facility_name}</span>
+                      <span>{t(`facilities.${amenity.facility_name}`, amenity.facility_name)}</span>
                     </div>
                   ))}
                 </div>
@@ -430,7 +445,7 @@ const RoomDetailPage = () => {
             )}
 
             {roomFacilities.length === 0 && nearbyFacilities.length === 0 && (
-              <p style={{ color: '#64748b' }}>Chưa có thông tin tiện ích.</p>
+              <p style={{ color: '#64748b' }}>{t('roomDetail.noAmenities', 'Chưa có thông tin tiện ích.')}</p>
             )}
           </section>
         </div>
@@ -446,22 +461,22 @@ const RoomDetailPage = () => {
                   ) : (
                     <span className="price-value">{roomData.pricePerMonth?.toLocaleString('vi-VN') || roomData.price_per_month?.toLocaleString('vi-VN')} đ</span>
                   )}
-                  <span className="price-unit">/ tháng</span>
+                  <span className="price-unit">{t('roomDetail.perMonth', '/ tháng')}</span>
                 </div>
                 <span className={`status-badge ${roomData.status || 'available'}`}>
-                  {roomData.status === 'available' ? 'Còn phòng' : (roomData.status === 'rented' ? 'Đã thuê' : (roomData.status === 'occupied' ? 'Đang ở' : 'Trống'))}
+                  {roomData.status === 'available' ? t('roomDetail.statusAvailable', 'Còn phòng') : (roomData.status === 'rented' ? t('roomDetail.statusRented', 'Đã thuê') : (roomData.status === 'occupied' ? t('roomDetail.statusOccupied', 'Đang ở') : t('roomDetail.statusUnavailable', 'Trống')))}
                 </span>
               </div>
               <div className="booking-info-row">
                 <div className="info-col">
-                  <span className="info-label">Phí xem phòng</span>
+                  <span className="info-label">{t('roomDetail.viewingFee', 'Phí xem phòng')}</span>
                   <span className="info-val" style={{ color: '#059669', fontWeight: 700 }}>
-                    Miễn phí
+                    {t('roomDetail.free', 'Miễn phí')}
                   </span>
                 </div>
                 <div className="info-col">
-                  <span className="info-label">Thời hạn thuê</span>
-                  <span className="info-val">Thỏa thuận</span>
+                  <span className="info-label">{t('roomDetail.leaseTerm', 'Thời hạn thuê')}</span>
+                  <span className="info-val">{t('roomDetail.negotiable', 'Thỏa thuận')}</span>
                 </div>
               </div>
               <hr className="my-4 border-gray-200" style={{ margin: '1.5rem 0', borderColor: '#e2e8f0' }} />
@@ -480,17 +495,17 @@ const RoomDetailPage = () => {
                   <span className="host-status-dot"></span>
                 </div>
                 <div className="host-text">
-                  <h3>Quản lý bởi {roomData.landlord?.full_name || 'Chủ trọ'}</h3>
-                  <p>SĐT: {roomData.landlord?.phone || 'Đang cập nhật'}</p>
+                  <h3>{t('roomDetail.managedBy', 'Quản lý bởi')} {roomData.landlord?.full_name || 'Chủ trọ'}</h3>
+                  <p>{t('roomDetail.hostPhone', 'SĐT:')} {roomData.landlord?.phone || 'Đang cập nhật'}</p>
                   <div className="flex gap-4 mt-1 text-sm text-gray-600">
-                    <span>Số phòng đăng: <strong>{roomData.landlord?.postCount || 0}</strong></span>
-                    <span>Phòng đã thuê: <strong>{roomData.landlord?.rentedRoomCount || 0}</strong></span>
+                    <span>{t('roomDetail.postedRooms', 'Số phòng đăng:')} <strong>{roomData.landlord?.postCount || 0}</strong></span>
+                    <span>{t('roomDetail.rentedRooms', 'Phòng đã thuê:')} <strong>{roomData.landlord?.rentedRoomCount || 0}</strong></span>
                   </div>
                 </div>
               </div>
               {!(isAuthenticated && (user?.userId === roomData.landlordId || user?.userId === roomData.landlord?.user_id)) && (
                 <button className="contact-host-btn flex items-center justify-center gap-2" style={{ marginBottom: '1.5rem', width: '100%' }} onClick={handleChatWithLandlord}>
-                  <MessageSquare size={18} /> Chat với chủ trọ
+                  <MessageSquare size={18} /> {t('roomDetail.chatWithHost', 'Chat với chủ trọ')}
                 </button>
               )}
               
@@ -498,15 +513,15 @@ const RoomDetailPage = () => {
               {isAuthenticated && user?.role === 'LANDLORD' && (roomData.landlordId === user?.userId || roomData.landlord?.user_id === user?.userId) ? (
                 ['pending', 'maintenance', 'rented', 'occupied', 'unavailable'].includes((roomData.status || '').toLowerCase()) ? (
                   <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
-                    Không thể sửa phòng đang có khách/chờ
+                    {t('roomDetail.cannotEditOccupied', 'Không thể sửa phòng đang có khách/chờ')}
                   </button>
                 ) : isEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <button className="btn-schedule-viewing" onClick={handleSaveEdit} style={{ background: '#10B981' }}>
-                      Lưu thay đổi
+                      {t('roomDetail.saveChanges', 'Lưu thay đổi')}
                     </button>
                     <button className="btn-schedule-viewing" onClick={() => setIsEditing(false)} style={{ background: '#EF4444' }}>
-                      Hủy bỏ
+                      {t('roomDetail.cancel', 'Hủy bỏ')}
                     </button>
                   </div>
                 ) : (
@@ -518,21 +533,21 @@ const RoomDetailPage = () => {
                       });
                       setIsEditing(true);
                     }} style={{ background: '#2563EB' }}>
-                    Chỉnh sửa phòng trực tiếp
+                    {t('roomDetail.editRoom', 'Chỉnh sửa phòng trực tiếp')}
                   </button>
                 )
               ) : roomData.status === 'available' ? (
                 <>
                   <button className="btn-schedule-viewing" onClick={() => setShowDateModal(true)}>
-                    Đặt lịch xem phòng
+                    {t('roomDetail.scheduleViewing', 'Đặt lịch xem phòng')}
                   </button>
                   <button className="btn-schedule-viewing mt-2" onClick={() => setShowRentalRequestModal(true)} style={{ background: '#10B981' }}>
-                    Gửi yêu cầu thuê phòng
+                    {t('roomDetail.sendRentalRequest', 'Gửi yêu cầu thuê phòng')}
                   </button>
                 </>
               ) : (
                 <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
-                  {roomData.status === 'rented' ? 'Phòng đã được cho thuê' : (roomData.status === 'occupied' ? 'Phòng đang có người ở' : 'Phòng hiện không trống')}
+                  {roomData.status === 'rented' ? t('roomDetail.roomIsRented', 'Phòng đã được cho thuê') : (roomData.status === 'occupied' ? t('roomDetail.roomIsOccupied', 'Phòng đang có người ở') : t('roomDetail.roomUnavailable', 'Phòng hiện không trống'))}
                 </button>
               )}
             </div>
@@ -544,8 +559,8 @@ const RoomDetailPage = () => {
       {suggestedRooms.length > 0 && (
         <div className="suggested-rooms-section" style={{ marginTop: '5rem', marginBottom: '2rem' }}>
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold mb-3" style={{ color: '#2563eb' }}>Gợi ý thêm cho bạn</h2>
-            <p className="text-gray-500 text-lg">Các phòng trọ có thể bạn sẽ quan tâm</p>
+            <h2 className="text-3xl font-bold mb-3" style={{ color: '#2563eb' }}>{t('roomDetail.suggestions', 'Gợi ý thêm cho bạn')}</h2>
+            <p className="text-gray-500 text-lg">{t('roomDetail.suggestionsSub', 'Các phòng trọ có thể bạn sẽ quan tâm')}</p>
           </div>
           <div className="suggested-rooms-grid">
             {suggestedRooms.map(room => (
@@ -572,7 +587,7 @@ const RoomDetailPage = () => {
               onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#2563eb'; e.currentTarget.style.color = '#fff'; }}
               onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#2563eb'; }}
             >
-              Xem thêm các phòng khác
+              {t('roomDetail.viewOtherRooms', 'Xem thêm các phòng khác')}
             </button>
           </div>
         </div>
@@ -581,20 +596,20 @@ const RoomDetailPage = () => {
       {showDateModal && (
         <div className="modal-overlay" onClick={() => setShowDateModal(false)}>
           <div className="modal-container" onClick={e => e.stopPropagation()}>
-            <h2>Đặt lịch xem phòng</h2>
+            <h2>{t('roomDetail.scheduleViewing', 'Đặt lịch xem phòng')}</h2>
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
               <p style={{ margin: 0, fontSize: '14px', color: '#166534', lineHeight: 1.6 }}>
-                <strong>Tiền cọc xem phòng:</strong>{' '}
+                <strong>{t('roomDetail.viewingDeposit', 'Tiền cọc xem phòng:')}</strong>{' '}
                 <span style={{ fontSize: '18px', fontWeight: 700 }}>
-                  Miễn phí
+                  {t('roomDetail.free', 'Miễn phí')}
                 </span>
                 <br />
-                <span style={{ fontSize: '12px' }}>Chỉ thanh toán khi kí hợp đồng thuê phòng thành công.</span>
+                <span style={{ fontSize: '12px' }}>{t('roomDetail.payOnSuccess', 'Chỉ thanh toán khi kí hợp đồng thuê phòng thành công.')}</span>
               </p>
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Ngày xem</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>{t('roomDetail.viewingDate', 'Ngày xem')}</label>
                 <input 
                   type="date" 
                   value={viewingDate} 
@@ -604,7 +619,7 @@ const RoomDetailPage = () => {
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Giờ xem</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>{t('roomDetail.viewingTime', 'Giờ xem')}</label>
                 <input 
                   type="time" 
                   value={viewingTime} 
@@ -614,8 +629,8 @@ const RoomDetailPage = () => {
               </div>
             </div>
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setShowDateModal(false)}>Hủy</button>
-              <button className="btn-confirm" onClick={handleScheduleViewing}>Đặt lịch</button>
+              <button className="btn-cancel" onClick={() => setShowDateModal(false)}>{t('roomDetail.cancel', 'Hủy')}</button>
+              <button className="btn-confirm" onClick={handleScheduleViewing}>{t('roomDetail.bookSchedule', 'Đặt lịch')}</button>
             </div>
           </div>
         </div>
@@ -624,22 +639,22 @@ const RoomDetailPage = () => {
       {showRentalRequestModal && (
         <div className="modal-overlay" onClick={() => setShowRentalRequestModal(false)}>
           <div className="modal-container" onClick={e => e.stopPropagation()}>
-            <h2>Gửi yêu cầu thuê phòng</h2>
+            <h2>{t('roomDetail.rentalRequestTitle', 'Gửi yêu cầu thuê phòng')}</h2>
             <p style={{ color: '#64748b', marginBottom: '16px', fontSize: '14px' }}>
-              Bạn sắp gửi yêu cầu thuê phòng đến chủ trọ. Sau khi được phê duyệt, bạn có thể yêu cầu tạo hợp đồng.
+              {t('roomDetail.rentalRequestDesc', 'Bạn sắp gửi yêu cầu thuê phòng đến chủ trọ. Sau khi được phê duyệt, bạn có thể yêu cầu tạo hợp đồng.')}
             </p>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Lời nhắn cho Chủ trọ (Tùy chọn)</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>{t('roomDetail.msgForHost', 'Lời nhắn cho Chủ trọ (Tùy chọn)')}</label>
               <textarea 
                 value={rentalRequestMessage}
                 onChange={(e) => setRentalRequestMessage(e.target.value)}
-                placeholder="Giới thiệu ngắn gọn về bản thân và các yêu cầu cụ thể..."
+                placeholder={t('roomDetail.msgPlaceholder', 'Giới thiệu ngắn gọn về bản thân và các yêu cầu cụ thể...')}
                 style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', minHeight: '100px' }}
               />
             </div>
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setShowRentalRequestModal(false)}>Hủy</button>
-              <button className="btn-confirm" onClick={handleSendRentalRequest} style={{ background: '#10B981' }}>Gửi yêu cầu</button>
+              <button className="btn-cancel" onClick={() => setShowRentalRequestModal(false)}>{t('roomDetail.cancel', 'Hủy')}</button>
+              <button className="btn-confirm" onClick={handleSendRentalRequest} style={{ background: '#10B981' }}>{t('roomDetail.sendRequest', 'Gửi yêu cầu')}</button>
             </div>
           </div>
         </div>

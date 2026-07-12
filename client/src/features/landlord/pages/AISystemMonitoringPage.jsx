@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { 
   MessageCircle, Target, AlertCircle, Clock, Cpu, 
@@ -6,6 +7,7 @@ import {
 import './AISystemMonitoringPage.css';
 
 const AISystemMonitoringPage = () => {
+  const { t } = useTranslation();
   const failedLogs = [
     {
       id: 1,
@@ -45,39 +47,39 @@ const AISystemMonitoringPage = () => {
     <div className="ai-monitor-container">
       {/* Header */}
       <div className="ai-monitor-header">
-        <h1>AI System Monitoring</h1>
-        <p>Real-time performance metrics and diagnostics for the Smart Stay intelligence engine.</p>
+        <h1>{t('aISystemMonitoring.aiSystemMonitoring', 'AI System Monitoring')}</h1>
+        <p>{t('aISystemMonitoring.realtimePerformanceMetricsAndDiagnostics', 'Real-time performance metrics and diagnostics for the Smart Stay intelligence engine.')}</p>
       </div>
 
       {/* Stats Cards Row */}
       <div className="ai-stats-row">
         <div className="ai-stat-card">
-          <div className="ai-stat-card-title">CHATBOT SATISFACTION RATE</div>
+          <div className="ai-stat-card-title">{t('aISystemMonitoring.chatbotSatisfactionRate', 'CHATBOT SATISFACTION RATE')}</div>
           <div className="ai-stat-card-value-row">
             <span className="ai-stat-card-value">94.2%</span>
             <span className="trend-badge positive">↗+2.1%</span>
           </div>
-          <p className="ai-stat-card-sub">Based on post-interaction surveys this week.</p>
+          <p className="ai-stat-card-sub">{t('aISystemMonitoring.basedOnPostinteractionSurveysThis', 'Based on post-interaction surveys this week.')}</p>
           <MessageCircle size={64} className="ai-stat-icon-bg" />
         </div>
 
         <div className="ai-stat-card">
-          <div className="ai-stat-card-title">SUCCESSFUL RECOMMENDATIONS</div>
+          <div className="ai-stat-card-title">{t('aISystemMonitoring.successfulRecommendations', 'SUCCESSFUL RECOMMENDATIONS')}</div>
           <div className="ai-stat-card-value-row">
             <span className="ai-stat-card-value">12,450</span>
             <span className="trend-badge positive">↗+8%</span>
           </div>
-          <p className="ai-stat-card-sub">Property and amenity matches accepted by users.</p>
+          <p className="ai-stat-card-sub">{t('aISystemMonitoring.propertyAndAmenityMatchesAccepted', 'Property and amenity matches accepted by users.')}</p>
           <Target size={64} className="ai-stat-icon-bg" />
         </div>
 
         <div className="ai-stat-card">
-          <div className="ai-stat-card-title">FAILED REQUEST RATE</div>
+          <div className="ai-stat-card-title">{t('aISystemMonitoring.failedRequestRate', 'FAILED REQUEST RATE')}</div>
           <div className="ai-stat-card-value-row">
             <span className="ai-stat-card-value">1.8%</span>
             <span className="trend-badge negative">↘-0.4%</span>
           </div>
-          <p className="ai-stat-card-sub">Queries requiring human fallback or resulting in errors.</p>
+          <p className="ai-stat-card-sub">{t('aISystemMonitoring.queriesRequiringHumanFallbackOr', 'Queries requiring human fallback or resulting in errors.')}</p>
           <AlertCircle size={64} className="ai-stat-icon-bg" />
         </div>
       </div>
@@ -88,25 +90,23 @@ const AISystemMonitoringPage = () => {
         {/* Chart Card */}
         <div className="ai-chart-card">
           <div className="ai-chart-header">
-            <h3>Daily AI Volume</h3>
+            <h3>{t('aISystemMonitoring.dailyAiVolume', 'Daily AI Volume')}</h3>
             <div className="ai-chart-legend">
               <div className="legend-item">
-                <span className="legend-dot primary"></span> Total Queries
-              </div>
+                <span className="legend-dot primary"></span>{t('aISystemMonitoring.totalQueries', 'Total Queries')}</div>
               <div className="legend-item">
-                <span className="legend-dot secondary"></span> Complex Tasks
-              </div>
+                <span className="legend-dot secondary"></span>{t('aISystemMonitoring.complexTasks', 'Complex Tasks')}</div>
             </div>
           </div>
           
           <div className="ai-chart-mock-area">
             {/* Y Axis Labels */}
             <div className="chart-y-axis">
-              <span>5k</span>
-              <span>4k</span>
-              <span>3k</span>
-              <span>2k</span>
-              <span>1k</span>
+              <span>{t('aISystemMonitoring.5k', '5k')}</span>
+              <span>{t('aISystemMonitoring.4k', '4k')}</span>
+              <span>{t('aISystemMonitoring.3k', '3k')}</span>
+              <span>{t('aISystemMonitoring.2k', '2k')}</span>
+              <span>{t('aISystemMonitoring.1k', '1k')}</span>
               <span>0</span>
             </div>
             
@@ -122,13 +122,13 @@ const AISystemMonitoringPage = () => {
 
             {/* X Axis Labels */}
             <div className="chart-x-axis">
-              <span>Mon</span>
-              <span>Tue</span>
-              <span>Wed</span>
-              <span>Thu</span>
-              <span>Fri</span>
-              <span>Sat</span>
-              <span>Sun</span>
+              <span>{t('aISystemMonitoring.mon', 'Mon')}</span>
+              <span>{t('aISystemMonitoring.tue', 'Tue')}</span>
+              <span>{t('aISystemMonitoring.wed', 'Wed')}</span>
+              <span>{t('aISystemMonitoring.thu', 'Thu')}</span>
+              <span>{t('aISystemMonitoring.fri', 'Fri')}</span>
+              <span>{t('aISystemMonitoring.sat', 'Sat')}</span>
+              <span>{t('aISystemMonitoring.sun', 'Sun')}</span>
             </div>
 
             {/* Mock Data Bars */}
@@ -174,19 +174,19 @@ const AISystemMonitoringPage = () => {
 
         {/* Efficiency Metrics */}
         <div className="ai-efficiency-panel">
-          <h3 className="efficiency-title">Efficiency Metrics</h3>
+          <h3 className="efficiency-title">{t('aISystemMonitoring.efficiencyMetrics', 'Efficiency Metrics')}</h3>
           
           <div className="ai-metric-card">
             <div className="metric-card-header">
-              <span className="metric-card-title">Avg. Response Time</span>
+              <span className="metric-card-title">{t('aISystemMonitoring.avgResponseTime', 'Avg. Response Time')}</span>
               <Clock size={16} className="metric-icon" />
             </div>
-            <div className="metric-card-value">1.2s</div>
+            <div className="metric-card-value">{t('aISystemMonitoring.12s', '1.2s')}</div>
           </div>
 
           <div className="ai-metric-card">
             <div className="metric-card-header">
-              <span className="metric-card-title">Automation Rate</span>
+              <span className="metric-card-title">{t('aISystemMonitoring.automationRate', 'Automation Rate')}</span>
               <Cpu size={16} className="metric-icon" />
             </div>
             <div className="metric-card-value">88.5%</div>
@@ -198,9 +198,7 @@ const AISystemMonitoringPage = () => {
           </div>
 
           <button className="btn-adjust-params">
-            <SlidersHorizontal size={18} />
-            Adjust Parameters
-          </button>
+            <SlidersHorizontal size={18} />{t('aISystemMonitoring.adjustParameters', 'Adjust Parameters')}</button>
         </div>
       </div>
 
@@ -208,22 +206,21 @@ const AISystemMonitoringPage = () => {
       <div className="ai-table-card">
         <div className="ai-table-header">
           <div className="table-header-info">
-            <h2>Failed Requests Log</h2>
-            <p>Recent interactions requiring attention or debugging.</p>
+            <h2>{t('aISystemMonitoring.failedRequestsLog', 'Failed Requests Log')}</h2>
+            <p>{t('aISystemMonitoring.recentInteractionsRequiringAttentionOr', 'Recent interactions requiring attention or debugging.')}</p>
           </div>
           <button className="btn-export">
-            <Download size={16} /> Export CSV
-          </button>
+            <Download size={16} />{t('aISystemMonitoring.exportCsv', 'Export CSV')}</button>
         </div>
 
         <table className="ai-table">
           <thead>
             <tr>
-              <th>TIMESTAMP</th>
-              <th>USER QUERY FRAGMENT</th>
-              <th>PREDICTED INTENT</th>
-              <th>STATUS / ERROR CODE</th>
-              <th>ACTION</th>
+              <th>{t('aISystemMonitoring.timestamp', 'TIMESTAMP')}</th>
+              <th>{t('aISystemMonitoring.userQueryFragment', 'USER QUERY FRAGMENT')}</th>
+              <th>{t('aISystemMonitoring.predictedIntent', 'PREDICTED INTENT')}</th>
+              <th>{t('aISystemMonitoring.statusErrorCode', 'STATUS / ERROR CODE')}</th>
+              <th>{t('aISystemMonitoring.action', 'ACTION')}</th>
             </tr>
           </thead>
           <tbody>
@@ -240,7 +237,7 @@ const AISystemMonitoringPage = () => {
                   </span>
                 </td>
                 <td>
-                  <span className="action-link">Review</span>
+                  <span className="action-link">{t('aISystemMonitoring.review', 'Review')}</span>
                 </td>
               </tr>
             ))}
@@ -248,8 +245,7 @@ const AISystemMonitoringPage = () => {
         </table>
 
         <div className="ai-table-footer">
-          <a href="#" className="view-all-link">
-            View All Logs <ArrowRight size={16} />
+          <a href="#" className="view-all-link">{t('aISystemMonitoring.viewAllLogs', 'View All Logs')}<ArrowRight size={16} />
           </a>
         </div>
       </div>

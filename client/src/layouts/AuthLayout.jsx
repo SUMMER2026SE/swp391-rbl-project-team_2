@@ -1,11 +1,13 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { ROUTES } from '../constants';
-import { MapPin, Shield, Star, Home } from 'lucide-react';
+import { MapPin, Shield, Star, Home, Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import authRoomHero from '../assets/images/auth-room-hero.png';
 import './AuthLayout.css';
 
 const AuthLayout = () => {
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const isLogin = location.pathname === ROUTES.LOGIN;
 
@@ -56,31 +58,30 @@ const AuthLayout = () => {
           <div className="brand-hero">
             <h1 className="brand-title">
               {isLogin ? (
-                <>Chào mừng bạn quay lại <br /> <span className="brand-title-accent">với RentWise.</span></>
+                <>{t('auth.layout.welcomeBackText', 'Chào mừng bạn quay lại')} <br /> <span className="brand-title-accent">{t('auth.layout.welcomeBackAccent', 'với RentWise.')}</span></>
               ) : (
-                <>Bắt đầu hành trình <br /> <span className="brand-title-accent">cùng RentWise</span></>
+                <>{t('auth.layout.startJourneyText', 'Bắt đầu hành trình')} <br /> <span className="brand-title-accent">{t('auth.layout.startJourneyAccent', 'cùng RentWise')}</span></>
               )}
             </h1>
             <p className="brand-subtitle">
               {isLogin 
-                ? "Khám phá hàng ngàn phòng trọ chất lượng, kết nối trực tiếp với chủ nhà một cách nhanh chóng và an toàn."
-                : "Tạo tài khoản để khám phá không gian sống lý tưởng hoặc đăng tin cho thuê phòng trọ của bạn dễ dàng."}
+                ? t('auth.layout.welcomeBackSubtitle', "Khám phá hàng ngàn phòng trọ chất lượng, kết nối trực tiếp với chủ nhà một cách nhanh chóng và an toàn.")
+                : t('auth.layout.startJourneySubtitle', "Tạo tài khoản để khám phá không gian sống lý tưởng hoặc đăng tin cho thuê phòng trọ của bạn dễ dàng.")}
             </p>
           </div>
 
-          {/* Feature pills */}
           <div className="brand-features">
             <div className="brand-feature-pill">
               <Shield size={14} />
-              Verified Listings
+              {t('auth.layout.verifiedListings', 'Verified Listings')}
             </div>
             <div className="brand-feature-pill">
               <MapPin size={14} />
-              Prime Locations
+              {t('auth.layout.primeLocations', 'Prime Locations')}
             </div>
             <div className="brand-feature-pill">
               <Star size={14} />
-              Trusted Reviews
+              {t('auth.layout.trustedReviews', 'Trusted Reviews')}
             </div>
           </div>
         </div>
@@ -89,7 +90,31 @@ const AuthLayout = () => {
       </div>
 
       {/* ════════ RIGHT FORM PANEL ════════ */}
-      <div className="auth-form-panel">
+      <div className="auth-form-panel" style={{ position: 'relative' }}>
+        {/* Language Switcher */}
+        <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
+          <button 
+            onClick={() => i18n.changeLanguage(i18n.language === 'vi' ? 'en' : 'vi')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 12px',
+              borderRadius: '20px',
+              border: '1px solid #e2e8f0',
+              background: 'white',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: '14px',
+              color: '#334155',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}
+          >
+            <Globe size={16} />
+            {i18n.language === 'vi' ? 'VI' : 'EN'}
+          </button>
+        </div>
+
         <div className="auth-form-inner">
           <div className="auth-card">
             <Outlet />

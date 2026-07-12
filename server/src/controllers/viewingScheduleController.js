@@ -187,6 +187,12 @@ const getLandlordViewingSchedules = async (req, res, next) => {
         });
       }
 
+      if (schedule.status === 'pending' && new Date(schedule.scheduled_date) < new Date()) {
+        schedule.status = 'expired';
+        schedule.notes = (schedule.notes ? schedule.notes + '\n' : '') + '[SYSTEM]: Viewing schedule expired due to no response from landlord.';
+        await schedule.save();
+      }
+
       return {
         scheduleId: schedule.schedule_id,
         roomId: schedule.room_id,
@@ -562,9 +568,13 @@ const getTenantViewingSchedules = async (req, res, next) => {
       order: [['created_at', 'DESC']],
     });
 
-    return res.status(200).json({
-      success: true,
-      data: rows.map(schedule => ({
+    const enhancedRows = await Promise.all(rows.map(async (schedule) => {
+      if (schedule.status === 'pending' && new Date(schedule.scheduled_date) < new Date()) {
+        schedule.status = 'expired';
+        schedule.notes = (schedule.notes ? schedule.notes + '\n' : '') + '[SYSTEM]: Viewing schedule expired due to no response from landlord.';
+        await schedule.save();
+      }
+      return {
         scheduleId: schedule.schedule_id,
         roomId: schedule.room_id,
         landlordId: schedule.landlord_id,
@@ -579,7 +589,12 @@ const getTenantViewingSchedules = async (req, res, next) => {
         landlord: schedule.landlordSchedule,
         payments: schedule.payments,
         createdAt: schedule.created_at,
-      })),
+      };
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: enhancedRows,
       pagination: {
         total: count,
         page: parseInt(page),
@@ -1193,16 +1208,7 @@ const createContractFromViewing = async (req, res, next) => {
       });
     }
 
-    const roomToUpdate = schedule.room;
-    if (roomToUpdate.available_quantity !== null) {
-      roomToUpdate.available_quantity -= 1;
-      if (roomToUpdate.available_quantity <= 0) {
-        roomToUpdate.status = 'rented';
-      }
-    } else {
-      roomToUpdate.status = 'rented';
-    }
-    await roomToUpdate.save();
+
 
     schedule.status = 'contract_created';
     schedule.updated_at = new Date();

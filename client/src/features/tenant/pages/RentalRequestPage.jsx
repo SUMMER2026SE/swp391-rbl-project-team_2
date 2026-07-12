@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { MapPin, ShieldCheck, Wifi, Waves, Dumbbell, Lock } from 'lucide-react';
 import axios from 'axios';
-import { API_URL } from '../../../config';
 import { rentalRequestService } from '../services/rentalRequestService';
+import { useTranslation } from 'react-i18next';
 import './RentalRequestPage.css';
 
 const RentalRequestPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -57,7 +58,7 @@ const RentalRequestPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.agreeToTerms) {
-      toast.error("Please agree to the Terms of Service to continue.");
+      toast.error(t('rentalRequest.errorTerms', "Please agree to the Terms of Service to continue."));
       return;
     }
     
@@ -70,11 +71,11 @@ const RentalRequestPage = () => {
       });
 
       if (response.success) {
-        toast.success("Rental request submitted successfully!");
+        toast.success(t('rentalRequest.success', "Rental request submitted successfully!"));
         navigate('/tenant/requests');
       }
     } catch (err) {
-      toast.error('Failed to submit request: ' + (err.response?.data?.message || err.message));
+      toast.error(t('rentalRequest.errorSubmit', 'Failed to submit request: ') + (err.response?.data?.message || err.message));
     }
   };
 
@@ -91,8 +92,8 @@ const RentalRequestPage = () => {
       <div className="container">
         
         <div className="request-header">
-          <h1>Review & Submit Request</h1>
-          <p>Almost there! Confirm your details to send your application to the landlord.</p>
+          <h1>{t('rentalRequest.title', 'Review & Submit Request')}</h1>
+          <p>{t('rentalRequest.subtitle', 'Almost there! Confirm your details to send your application to the landlord.')}</p>
         </div>
 
         <div className="request-content">
@@ -114,10 +115,10 @@ const RentalRequestPage = () => {
                 <hr className="divider" />
                 
                 <div className="property-price-section">
-                  <span className="price-label">MONTHLY RENT</span>
+                  <span className="price-label">{t('rentalRequest.monthlyRent', 'MONTHLY RENT')}</span>
                   <div className="price-value">
                     <span className="amount">{property.pricePerMonth?.toLocaleString()} đ</span>
-                    <span className="period"> / mo</span>
+                    <span className="period">{t('rentalRequest.perMonth', ' / mo')}</span>
                   </div>
                 </div>
                 
@@ -137,8 +138,8 @@ const RentalRequestPage = () => {
                 <ShieldCheck size={24} />
               </div>
               <div className="trust-content">
-                <h3>Landlord Verified</h3>
-                <p>This property is managed by a RentWise certified partner. Your security deposit is protected through our platform.</p>
+                <h3>{t('rentalRequest.landlordVerified', 'Landlord Verified')}</h3>
+                <p>{t('rentalRequest.landlordVerifiedDesc', 'This property is managed by a RentWise certified partner. Your security deposit is protected through our platform.')}</p>
               </div>
             </div>
           </div>
@@ -146,12 +147,12 @@ const RentalRequestPage = () => {
           {/* Right Column: Application Form */}
           <div className="request-right">
             <div className="application-form-card">
-              <h2 className="form-title">Application Details</h2>
+              <h2 className="form-title">{t('rentalRequest.applicationDetails', 'Application Details')}</h2>
               
               <form onSubmit={handleSubmit}>
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Move-in Date</label>
+                    <label>{t('rentalRequest.moveInDate', 'Move-in Date')}</label>
                     <input 
                       type="date" 
                       name="moveInDate"
@@ -161,7 +162,7 @@ const RentalRequestPage = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Move-out Date</label>
+                    <label>{t('rentalRequest.moveOutDate', 'Move-out Date')}</label>
                     <input 
                       type="date" 
                       name="moveOutDate"
@@ -171,34 +172,34 @@ const RentalRequestPage = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="occupants">Number of Occupants</label>
+                    <label htmlFor="occupants">{t('rentalRequest.occupants', 'Number of Occupants')}</label>
                     <select 
                       id="occupants"
                       name="occupants" 
                       value={formData.occupants}
                       onChange={handleChange}
                     >
-                      <option value="1 Adult">1 Adult</option>
-                      <option value="2 Adults">2 Adults</option>
-                      <option value="1 Adult, 1 Child">1 Adult, 1 Child</option>
-                      <option value="Family">Family</option>
+                      <option value="1 Adult">{t('rentalRequest.adult1', '1 Adult')}</option>
+                      <option value="2 Adults">{t('rentalRequest.adult2', '2 Adults')}</option>
+                      <option value="1 Adult, 1 Child">{t('rentalRequest.adult1child1', '1 Adult, 1 Child')}</option>
+                      <option value="Family">{t('rentalRequest.family', 'Family')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="message">Message to Landlord</label>
+                  <label htmlFor="message">{t('rentalRequest.message', 'Message to Landlord')}</label>
                   <textarea 
                     id="message"
                     name="message"
-                    placeholder="Briefly introduce yourself and mention any specific requirements or questions you might have..."
+                    placeholder={t('rentalRequest.messagePlaceholder', 'Briefly introduce yourself and mention any specific requirements or questions you might have...')}
                     value={formData.message}
                     onChange={handleChange}
                     rows="5"
                     maxLength={500}
                   ></textarea>
                   <div className="char-count">
-                    {formData.message.length} / 500 characters
+                    {formData.message.length} / 500 {t('rentalRequest.characters', 'characters')}
                   </div>
                 </div>
 
@@ -212,17 +213,17 @@ const RentalRequestPage = () => {
                     required
                   />
                   <label htmlFor="agreeToTerms">
-                    I agree to the <a href="#">Terms of Service</a> and acknowledge the <a href="#">Privacy Policy</a>. I understand that submitting this request does not guarantee a lease agreement.
+                    {t('rentalRequest.agreeTerms', 'I agree to the Terms of Service and acknowledge the Privacy Policy. I understand that submitting this request does not guarantee a lease agreement.')}
                   </label>
                 </div>
 
                 <button type="submit" className="btn btn-primary btn-submit-request">
-                  Send Rental Request
+                  {t('rentalRequest.sendRequest', 'Send Rental Request')}
                 </button>
                 
                 <div className="security-notice">
                   <Lock size={14} />
-                  <span>Your personal information is secure and encrypted.</span>
+                  <span>{t('rentalRequest.securityNotice', 'Your personal information is secure and encrypted.')}</span>
                 </div>
               </form>
             </div>

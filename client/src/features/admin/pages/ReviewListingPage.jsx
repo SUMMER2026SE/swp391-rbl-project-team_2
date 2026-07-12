@@ -132,9 +132,9 @@ const ReviewListingPage = () => {
   const nearbyFacilities = roomData.facilities?.filter(f => f.category === 'nearby') || [];
 
   const images = roomData.images?.length > 0
-    ? roomData.images.map(img => img.image_url.startsWith('http') ? img.image_url : `http://localhost:5000${img.image_url}`)
+    ? roomData.images.map(img => img.image_url.startsWith('http') ? img.image_url : `http://localhost:5000${img.image_url.startsWith('/') ? '' : '/'}${img.image_url.replace(/\\/g, '/')}`)
     : (roomData.thumbnailUrl
-      ? [roomData.thumbnailUrl.startsWith('http') ? roomData.thumbnailUrl : `http://localhost:5000${roomData.thumbnailUrl}`]
+      ? [roomData.thumbnailUrl.startsWith('http') ? roomData.thumbnailUrl : `http://localhost:5000${roomData.thumbnailUrl.startsWith('/') ? '' : '/'}${roomData.thumbnailUrl.replace(/\\/g, '/')}`]
       : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&auto=format&fit=crop&q=60']);
 
   return (

@@ -1,6 +1,7 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ROUTES } from '../../../constants';
 import {
   Building2,
@@ -89,6 +90,7 @@ const INITIAL_LISTINGS = [
 ];
 
 const ManageListingsPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { rooms, loading: roomsLoading, error: roomsError, createRoom, updateRoom, deleteRoom, uploadImage, deleteImage } = useRooms({ limit: 100 });
@@ -106,10 +108,10 @@ const ManageListingsPage = () => {
         if (room.images && room.images.length > 0) {
           const primary = room.images.find(img => img.is_primary || img.isPrimary);
           const imgUrl = primary ? (primary.image_url || primary.url) : (room.images[0].image_url || room.images[0].url);
-          coverImg = imgUrl && imgUrl.startsWith('http') ? imgUrl : `http://localhost:5000${imgUrl}`;
+          coverImg = imgUrl && imgUrl.startsWith('http') ? imgUrl : `http://localhost:5000${imgUrl?.startsWith('/') ? '' : '/'}${imgUrl?.replace(/\\/g, '/')}`;
         } else if (room.thumbnailUrl || room.thumbnail_url) {
           const thumb = room.thumbnailUrl || room.thumbnail_url;
-          coverImg = thumb && thumb.startsWith('http') ? thumb : `http://localhost:5000${thumb}`;
+          coverImg = thumb && thumb.startsWith('http') ? thumb : `http://localhost:5000${thumb?.startsWith('/') ? '' : '/'}${thumb?.replace(/\\/g, '/')}`;
         }
 
         // Facilities mapping
@@ -414,7 +416,7 @@ const ManageListingsPage = () => {
           <Search size={18} className="filter-search__icon" />
           <input
             type="text"
-            placeholder="Search by address, ID, or title..."
+            placeholder={t('landlord.manageListings.searchPlaceholder', 'Search by address, ID, or title...')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="filter-search__input"
@@ -461,7 +463,7 @@ const ManageListingsPage = () => {
           title="Reset all filters"
         >
           <SlidersHorizontal size={16} />
-          <span>More Filters</span>
+          <span>{t('landlord.manageListings.moreFilters', 'More Filters')}</span>
         </button>
       </div>
 
@@ -500,13 +502,13 @@ const ManageListingsPage = () => {
                   {/* Status Badge */}
                   <div className={`listing-card__badge-status status-${listing.status.toLowerCase()}`}>
                     <span className="badge-status-dot"></span>
-                    <span>{listing.status}</span>
+                    <span>{t(`landlord.manageListings.statuses.${listing.status.toLowerCase()}`, listing.status)}</span>
                   </div>
 
                   {/* Price Tag */}
                   <div className="listing-card__badge-price">
                     <span className="price-amount">{listing.price.toLocaleString('vi-VN')} VNĐ</span>
-                    <span className="price-unit">/tháng</span>
+                    <span className="price-unit">{t('landlord.manageListings.perMonth', '/tháng')}</span>
                   </div>
                 </div>
 
@@ -544,7 +546,7 @@ const ManageListingsPage = () => {
                     className="btn-performance-link"
                     onClick={() => navigate(`/rooms/${listing.id}`)}
                   >
-                    <span>View Room Listing</span>
+                    <span>{t('landlord.manageListings.viewRoomListing', 'View Room Listing')}</span>
                     <ArrowUpRight size={16} />
                   </button>
 

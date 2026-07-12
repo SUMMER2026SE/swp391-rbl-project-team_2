@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -22,6 +23,7 @@ import './AddNewPropertyPage.css';
 
 
 const AddNewPropertyPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
@@ -117,26 +119,26 @@ const AddNewPropertyPage = () => {
 
   // Room Amenities
   const roomAmenitiesList = [
-    { id: 'wifi', label: 'WiFi', icon: <Wifi size={18} />, dbType: 'utility' },
-    { id: 'airConditioner', label: 'Air Conditioner', icon: <Sparkles size={18} />, dbType: 'appliance' },
-    { id: 'parking', label: 'Parking', icon: <Layers size={18} />, dbType: 'utility' },
-    { id: 'privateBathroom', label: 'Private Bathroom', icon: <Info size={18} />, dbType: 'utility' },
-    { id: 'balcony', label: 'Balcony', icon: <MapPin size={18} />, dbType: 'utility' },
-    { id: 'bed', label: 'Bed', icon: <FileText size={18} />, dbType: 'furniture' },
-    { id: 'wardrobe', label: 'Wardrobe', icon: <Layers size={18} />, dbType: 'furniture' },
-    { id: 'kitchen', label: 'Kitchen', icon: <FileText size={18} />, dbType: 'utility' },
-    { id: 'securityCamera', label: 'Security Camera', icon: <Shield size={18} />, dbType: 'security' },
+    { id: 'wifi', label: t('amenity.wifi', 'WiFi'), icon: <Wifi size={18} />, dbType: 'utility' },
+    { id: 'airConditioner', label: t('amenity.airConditioner', 'Air Conditioner'), icon: <Sparkles size={18} />, dbType: 'appliance' },
+    { id: 'parking', label: t('amenity.parking', 'Parking'), icon: <Layers size={18} />, dbType: 'utility' },
+    { id: 'privateBathroom', label: t('amenity.privateBathroom', 'Private Bathroom'), icon: <Info size={18} />, dbType: 'utility' },
+    { id: 'balcony', label: t('amenity.balcony', 'Balcony'), icon: <MapPin size={18} />, dbType: 'utility' },
+    { id: 'bed', label: t('amenity.bed', 'Bed'), icon: <FileText size={18} />, dbType: 'furniture' },
+    { id: 'wardrobe', label: t('amenity.wardrobe', 'Wardrobe'), icon: <Layers size={18} />, dbType: 'furniture' },
+    { id: 'kitchen', label: t('amenity.kitchen', 'Kitchen'), icon: <FileText size={18} />, dbType: 'utility' },
+    { id: 'securityCamera', label: t('amenity.securityCamera', 'Security Camera'), icon: <Shield size={18} />, dbType: 'security' },
   ];
 
   // Nearby Amenities
   const nearbyAmenitiesList = [
-    { id: 'nearUniversity', label: 'Near University', icon: <MapPin size={18} />, dbType: 'education' },
-    { id: 'nearHospital', label: 'Near Hospital', icon: <MapPin size={18} />, dbType: 'hospital' },
-    { id: 'nearSupermarket', label: 'Near Supermarket', icon: <MapPin size={18} />, dbType: 'shopping' },
-    { id: 'nearBusStation', label: 'Near Bus Station', icon: <MapPin size={18} />, dbType: 'transport' },
-    { id: 'nearMarket', label: 'Near Market', icon: <MapPin size={18} />, dbType: 'shopping' },
-    { id: 'nearPark', label: 'Near Park', icon: <MapPin size={18} />, dbType: 'recreation' },
-    { id: 'nearConvenienceStore', label: 'Near Convenience Store', icon: <MapPin size={18} />, dbType: 'shopping' },
+    { id: 'nearUniversity', label: t('amenity.nearUniversity', 'Near University'), icon: <MapPin size={18} />, dbType: 'education' },
+    { id: 'nearHospital', label: t('amenity.nearHospital', 'Near Hospital'), icon: <MapPin size={18} />, dbType: 'hospital' },
+    { id: 'nearSupermarket', label: t('amenity.nearSupermarket', 'Near Supermarket'), icon: <MapPin size={18} />, dbType: 'shopping' },
+    { id: 'nearBusStation', label: t('amenity.nearBusStation', 'Near Bus Station'), icon: <MapPin size={18} />, dbType: 'transport' },
+    { id: 'nearMarket', label: t('amenity.nearMarket', 'Near Market'), icon: <MapPin size={18} />, dbType: 'shopping' },
+    { id: 'nearPark', label: t('amenity.nearPark', 'Near Park'), icon: <MapPin size={18} />, dbType: 'recreation' },
+    { id: 'nearConvenienceStore', label: t('amenity.nearConvenienceStore', 'Near Convenience Store'), icon: <MapPin size={18} />, dbType: 'shopping' },
   ];
 
   const handleInputChange = (e) => {
@@ -301,8 +303,8 @@ const AddNewPropertyPage = () => {
 
       {/* Header Section */}
       <div className="add-property-header">
-        <h1 className="add-property-main-title">Add New Listing</h1>
-        <p className="add-property-subtitle">Provide detailed information to attract the right tenants.</p>
+        <h1 className="add-property-main-title">{t('addNewProperty.mainTitle', 'Add New Listing')}</h1>
+        <p className="add-property-subtitle">{t('addNewProperty.mainSubtitle', 'Provide detailed information to attract the right tenants.')}</p>
       </div>
 
       {/* Stepper Wizard Indicator (New Style) */}
@@ -333,67 +335,67 @@ const AddNewPropertyPage = () => {
         {currentStep === 1 && (
           <div className="form-step-content animation-fade-in">
             <div className="form-step-header">
-              <h2 className="form-step-title">Basic Information</h2>
-              <p className="form-step-subtitle">Start with the essential details of the property.</p>
+              <h2 className="form-step-title">{t('addNewProperty.step1Title', 'Basic Information')}</h2>
+              <p className="form-step-subtitle">{t('addNewProperty.step1Subtitle', 'Start with the essential details of the property.')}</p>
             </div>
 
             <div className="form-row-double-cols">
               <div className="form-group-field">
-                <label className="form-input-label">Listing Title <span className="text-danger">*</span></label>
+                <label className="form-input-label">{t('addNewProperty.listingTitle', 'Listing Title')} <span className="text-danger">*</span></label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
                   className={`form-input-text ${formErrors.title ? 'error' : ''}`}
-                  placeholder="e.g. Spacious Studio in Downtown"
+                  placeholder={t('addNewProperty.listingTitlePlaceholder', 'e.g. Spacious Studio in Downtown')}
                 />
                 {formErrors.title && <span className="form-field-error-msg">{formErrors.title}</span>}
               </div>
 
               <div className="form-group-field">
-                <label className="form-input-label">Room Number</label>
+                <label className="form-input-label">{t('addNewProperty.roomNumber', 'Room Number')}</label>
                 <input
                   type="text"
                   name="roomNumber"
                   value={formData.roomNumber}
                   onChange={handleInputChange}
                   className="form-input-text"
-                  placeholder="e.g. 101, A2"
+                  placeholder={t('addNewProperty.roomNumberPlaceholder', 'e.g. 101, A2')}
                 />
               </div>
             </div>
 
             <div className="form-group-field">
-              <label className="form-input-label">Property Description <span className="text-danger">*</span></label>
+              <label className="form-input-label">{t('addNewProperty.propertyDescription', 'Property Description')} <span className="text-danger">*</span></label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
                 className={`form-textarea-field ${formErrors.description ? 'error' : ''}`}
                 rows={5}
-                placeholder="Describe the property's key features, atmosphere, and neighborhood..."
+                placeholder={t('addNewProperty.propertyDescriptionPlaceholder', "Describe the property's key features, atmosphere, and neighborhood...")}
               />
               {formErrors.description && <span className="form-field-error-msg">{formErrors.description}</span>}
             </div>
 
             <div className="form-row-double-cols">
               <div className="form-group-field">
-                <label className="form-input-label">Size (m<sup>2</sup>)</label>
+                <label className="form-input-label">{t('addNewProperty.size', 'Size')} (m<sup>2</sup>)</label>
                 <input
                   type="number"
                   name="size"
                   value={formData.size}
                   onChange={handleInputChange}
                   className={`form-input-text ${formErrors.size ? 'error' : ''}`}
-                  placeholder="e.g. 25"
+                  placeholder={t('addNewProperty.sizePlaceholder', 'e.g. 25')}
                   min="0"
                 />
                 {formErrors.size && <span className="form-field-error-msg">{formErrors.size}</span>}
               </div>
 
               <div className="form-group-field">
-                <label className="form-input-label">Max Occupants <span className="text-danger">*</span></label>
+                <label className="form-input-label">{t('addNewProperty.maxOccupants', 'Max Occupants')} <span className="text-danger">*</span></label>
                 <div className="form-select-wrapper">
                   <select
                     name="maxOccupants"
@@ -401,7 +403,7 @@ const AddNewPropertyPage = () => {
                     onChange={handleInputChange}
                     className={`form-input-select ${formErrors.maxOccupants ? 'error' : ''}`}
                   >
-                    <option value="">Select Max Occupants</option>
+                    <option value="">{t('addNewProperty.selectMaxOccupants', 'Select Max Occupants')}</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
@@ -418,25 +420,25 @@ const AddNewPropertyPage = () => {
         {currentStep === 2 && (
           <div className="form-step-content animation-fade-in">
             <div className="form-step-header">
-              <h2 className="form-step-title">Location &amp; Price</h2>
-              <p className="form-step-subtitle">Specify where your rental is situated and set your pricing.</p>
+              <h2 className="form-step-title">{t('addNewProperty.step2Title', 'Location & Price')}</h2>
+              <p className="form-step-subtitle">{t('addNewProperty.step2Subtitle', 'Specify where your rental is situated and set your pricing.')}</p>
               {propertyInherited && (
                 <div className="inherited-property-banner" style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#eff6ff', color: '#1e40af', borderRadius: '6px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <MapPin size={16} />
-                  <span>The address is automatically inherited from the parent property.</span>
+                  <span>{t('addNewProperty.inheritedAddress', 'The address is automatically inherited from the parent property.')}</span>
                 </div>
               )}
             </div>
 
             <div className="form-group-field">
-              <label className="form-input-label">Street Address <span className="text-danger">*</span></label>
+              <label className="form-input-label">{t('addNewProperty.streetAddress', 'Street Address')} <span className="text-danger">*</span></label>
               <input
                 type="text"
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
                 className={`form-input-text ${formErrors.address ? 'error' : ''} ${propertyInherited ? 'disabled-input' : ''}`}
-                placeholder="e.g., 123 Nguyen Van Linh St"
+                placeholder={t('addNewProperty.streetAddressPlaceholder', 'e.g., 123 Nguyen Van Linh St')}
                 disabled={propertyInherited}
                 style={propertyInherited ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : {}}
               />
@@ -445,7 +447,7 @@ const AddNewPropertyPage = () => {
 
             <div className="form-row-double-cols">
               <div className="form-group-field">
-                <label className="form-input-label">City/ Province <span className="text-danger">*</span></label>
+                <label className="form-input-label">{t('addNewProperty.cityProvince', 'City/ Province')} <span className="text-danger">*</span></label>
                 <div className="form-select-wrapper">
                   <select
                     name="city"
@@ -455,7 +457,7 @@ const AddNewPropertyPage = () => {
                     disabled={propertyInherited}
                     style={propertyInherited ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : {}}
                   >
-                    <option value="">Select City / Province</option>
+                    <option value="">{t('addNewProperty.selectCityProvince', 'Select City / Province')}</option>
                     {provincesList.map((city, index) => (
                       <option key={index} value={city.full_name}>{city.full_name}</option>
                     ))}
@@ -465,7 +467,7 @@ const AddNewPropertyPage = () => {
               </div>
 
               <div className="form-group-field">
-                <label className="form-input-label">District / Ward <span className="text-danger">*</span></label>
+                <label className="form-input-label">{t('addNewProperty.districtWard', 'District / Ward')} <span className="text-danger">*</span></label>
                 <div className="form-select-wrapper">
                   <select
                     name="district"
@@ -475,7 +477,7 @@ const AddNewPropertyPage = () => {
                     disabled={propertyInherited || !formData.city || districtsList.length === 0}
                     style={propertyInherited ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : {}}
                   >
-                    <option value="">Select District / Ward</option>
+                    <option value="">{t('addNewProperty.selectDistrictWard', 'Select District / Ward')}</option>
                     {districtsList.map((district, index) => (
                       <option key={index} value={district.full_name}>{district.full_name}</option>
                     ))}
@@ -486,7 +488,7 @@ const AddNewPropertyPage = () => {
             </div>
 
             <div className="form-group-field">
-              <label className="form-input-label">Monthly Rent (VNĐ) <span className="text-danger">*</span></label>
+              <label className="form-input-label">{t('addNewProperty.monthlyRent', 'Monthly Rent (VNĐ)')} <span className="text-danger">*</span></label>
               <div className="form-input-currency-wrapper">
                 <span className="currency-prefix-symbol">VNĐ</span>
                 <input
@@ -507,12 +509,12 @@ const AddNewPropertyPage = () => {
         {currentStep === 3 && (
           <div className="form-step-content animation-fade-in">
             <div className="form-step-header">
-              <h2 className="form-step-title">Amenities &amp; Photos</h2>
-              <p className="form-step-subtitle">Select features and upload high-quality images of your property.</p>
+              <h2 className="form-step-title">{t('addNewProperty.step3Title', 'Amenities & Photos')}</h2>
+              <p className="form-step-subtitle">{t('addNewProperty.step3Subtitle', 'Select features and upload high-quality images of your property.')}</p>
             </div>
 
             <div className="form-group-field" style={{ marginBottom: '2rem' }}>
-              <label className="form-input-label">Room Amenities</label>
+              <label className="form-input-label">{t('addNewProperty.roomAmenities', 'Room Amenities')}</label>
               <div className="amenities-selection-grid">
                 {roomAmenitiesList.map(amenity => (
                   <div
@@ -533,7 +535,7 @@ const AddNewPropertyPage = () => {
             </div>
 
             <div className="form-group-field" style={{ marginBottom: '2rem' }}>
-              <label className="form-input-label">Nearby Amenities</label>
+              <label className="form-input-label">{t('addNewProperty.nearbyAmenities', 'Nearby Amenities')}</label>
               <div className="amenities-selection-grid">
                 {nearbyAmenitiesList.map(amenity => (
                   <div
@@ -554,7 +556,7 @@ const AddNewPropertyPage = () => {
             </div>
 
             <div className="form-group-field">
-              <label className="form-input-label">Property Photos</label>
+              <label className="form-input-label">{t('addNewProperty.propertyPhotos', 'Property Photos')}</label>
               <div className="media-drag-drop-zone">
                 <input
                   type="file"
@@ -569,15 +571,15 @@ const AddNewPropertyPage = () => {
                     <Upload size={32} />
                   </div>
                   <div className="drag-drop-text-instructions">
-                    <span className="bold-instruction-text">Click to upload</span> or drag and drop
+                    <span className="bold-instruction-text">{t('addNewProperty.clickToUpload', 'Click to upload')}</span> or drag and drop
                   </div>
-                  <span className="upload-limit-info">PNG, JPG, JPEG up to 10MB</span>
+                  <span className="upload-limit-info">{t('addNewProperty.uploadLimitInfo', 'PNG, JPG, JPEG up to 10MB')}</span>
                 </label>
               </div>
 
               {formData.images.length > 0 && (
                 <div className="media-preview-container">
-                  <h4 className="preview-section-title">Uploaded Images ({formData.images.length})</h4>
+                  <h4 className="preview-section-title">{t('addNewProperty.uploadedImages', 'Uploaded Images')} ({formData.images.length})</h4>
                   <div className="media-previews-grid">
                     {formData.images.map((src, idx) => (
                       <div className="preview-image-card" key={idx}>
@@ -589,7 +591,7 @@ const AddNewPropertyPage = () => {
                         >
                           <X size={14} />
                         </button>
-                        {idx === 0 && <span className="featured-image-tag">Cover</span>}
+                        {idx === 0 && <span className="featured-image-tag">{t('addNewProperty.cover', 'Cover')}</span>}
                       </div>
                     ))}
                   </div>
@@ -622,7 +624,7 @@ const AddNewPropertyPage = () => {
 
           {currentStep < 3 ? (
             <Button variant="primary" onClick={handleNext}>
-              <span>Next Step</span>
+              <span>{t('addNewProperty.nextStep', 'Next Step')}</span>
               <ArrowRight size={16} />
             </Button>
           ) : (
@@ -631,7 +633,7 @@ const AddNewPropertyPage = () => {
               onClick={handlePublish}
               isLoading={isSubmitting}
             >
-              <span>Publish Listing</span>
+              <span>{t('addNewProperty.publishListing', 'Publish Listing')}</span>
               <Check size={16} />
             </Button>
           )}
@@ -646,7 +648,7 @@ const AddNewPropertyPage = () => {
             <div className="success-modal-icon-circle">
               <Check size={32} />
             </div>
-            <h2 className="success-modal-title">Listing Published!</h2>
+            <h2 className="success-modal-title">{t('addNewProperty.successTitle', 'Listing Published!')}</h2>
             <p className="success-modal-message">
               Your new room listing has been successfully published and is now visible to potential tenants.
             </p>

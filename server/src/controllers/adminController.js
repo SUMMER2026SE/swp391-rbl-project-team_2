@@ -250,7 +250,9 @@ const getAllRooms = async (req, res, next) => {
         city: room.city,
         room_type: room.room_type,
         price: room.price_per_month,
-        image: room.thumbnail_url || 'https://via.placeholder.com/200',
+        image: room.thumbnail_url 
+          ? (room.thumbnail_url.startsWith('http') ? room.thumbnail_url : `${process.env.BASE_URL || 'http://localhost:5000'}${room.thumbnail_url.startsWith('/') ? '' : '/'}${room.thumbnail_url.replace(/\\/g, '/')}`)
+          : 'https://via.placeholder.com/200',
         landlord: { name: room.landlord?.full_name, type: 'Verified Host' },
         status: room.status.charAt(0).toUpperCase() + room.status.slice(1),
         performance: { views: Math.floor(Math.random() * 2000), inquiries: Math.floor(Math.random() * 50) }

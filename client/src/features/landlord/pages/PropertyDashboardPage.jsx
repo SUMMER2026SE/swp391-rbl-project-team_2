@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -22,6 +23,7 @@ import toast from 'react-hot-toast';
 import './PropertyDashboardPage.css';
 
 const PropertyDashboardPage = () => {
+  const { t } = useTranslation();
   const { propertyId } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
@@ -113,7 +115,7 @@ const PropertyDashboardPage = () => {
   if (!data) {
     return (
       <div className="property-dashboard">
-        <p>Property not found.</p>
+        <p>{t('propertyDashboard.propertyNotFound', 'Property not found.')}</p>
       </div>
     );
   }
@@ -130,9 +132,7 @@ const PropertyDashboardPage = () => {
       <div className="property-dashboard-header">
         <div className="property-header-info">
           <button className="property-header-back" onClick={() => navigate(ROUTES.LANDLORD.PROPERTIES)}>
-            <ArrowLeft size={16} />
-            Back to Properties
-          </button>
+            <ArrowLeft size={16} />{t('propertyDashboard.backToProperties', 'Back to Properties')}</button>
           <h1>{property.name}</h1>
           <div className="property-header-address">
             <MapPin size={14} />
@@ -148,9 +148,7 @@ const PropertyDashboardPage = () => {
             className="btn-add-room"
             onClick={() => navigate(`${ROUTES.LANDLORD.NEW_LISTING}?propertyId=${propertyId}&floor=1`)}
           >
-            <Plus size={16} />
-            Add Room
-          </button>
+            <Plus size={16} />{t('propertyDashboard.addRoom', 'Add Room')}</button>
         </div>
       </div>
 
@@ -162,7 +160,7 @@ const PropertyDashboardPage = () => {
           </div>
           <div className="property-stat-info">
             <h3>{stats.totalRooms}</h3>
-            <span>Total Rooms</span>
+            <span>{t('propertyDashboard.totalRooms', 'Total Rooms')}</span>
           </div>
         </div>
         <div className="property-stat-card">
@@ -171,7 +169,7 @@ const PropertyDashboardPage = () => {
           </div>
           <div className="property-stat-info">
             <h3>{stats.availableRooms}</h3>
-            <span>Available</span>
+            <span>{t('propertyDashboard.available', 'Available')}</span>
           </div>
         </div>
         <div className="property-stat-card">
@@ -180,7 +178,7 @@ const PropertyDashboardPage = () => {
           </div>
           <div className="property-stat-info">
             <h3>{stats.rentedRooms}</h3>
-            <span>Rented</span>
+            <span>{t('propertyDashboard.rented', 'Rented')}</span>
           </div>
         </div>
         <div className="property-stat-card">
@@ -189,7 +187,7 @@ const PropertyDashboardPage = () => {
           </div>
           <div className="property-stat-info">
             <h3>{stats.occupancyRate}%</h3>
-            <span>Occupancy</span>
+            <span>{t('propertyDashboard.occupancy', 'Occupancy')}</span>
           </div>
         </div>
         <div className="property-stat-card">
@@ -198,7 +196,7 @@ const PropertyDashboardPage = () => {
           </div>
           <div className="property-stat-info">
             <h3>{formatCurrency(stats.totalRevenue)}</h3>
-            <span>Total Revenue</span>
+            <span>{t('propertyDashboard.totalRevenue', 'Total Revenue')}</span>
           </div>
         </div>
         <div className="property-stat-card">
@@ -207,7 +205,7 @@ const PropertyDashboardPage = () => {
           </div>
           <div className="property-stat-info">
             <h3>{stats.activeContracts}</h3>
-            <span>Active Contracts</span>
+            <span>{t('propertyDashboard.activeContracts', 'Active Contracts')}</span>
           </div>
         </div>
       </div>
@@ -215,40 +213,36 @@ const PropertyDashboardPage = () => {
       {/* Floor Plan */}
       <div className="floor-plan-section">
         <h2 className="floor-plan-title">
-          <Building2 size={20} />
-          Floor Plan — Room Status
-        </h2>
+          <Building2 size={20} />{t('propertyDashboard.floorPlanRoomStatus', 'Floor Plan — Room Status')}</h2>
 
         <div className="floor-plan-legend">
           <div className="legend-item">
             <div className="legend-dot available" />
-            <span>Available</span>
+            <span>{t('propertyDashboard.available', 'Available')}</span>
           </div>
           <div className="legend-item">
             <div className="legend-dot rented" />
-            <span>Rented</span>
+            <span>{t('propertyDashboard.rented', 'Rented')}</span>
           </div>
           <div className="legend-item">
             <div className="legend-dot pending" />
-            <span>Pending</span>
+            <span>{t('propertyDashboard.pending', 'Pending')}</span>
           </div>
           <div className="legend-item">
             <div className="legend-dot maintenance" />
-            <span>Maintenance</span>
+            <span>{t('propertyDashboard.maintenance', 'Maintenance')}</span>
           </div>
         </div>
 
         {floorKeys.length === 0 ? (
           <div className="floor-plan-empty">
             <Layers size={48} />
-            <p>No rooms added yet. Add your first room to see the floor plan!</p>
+            <p>{t('propertyDashboard.noRoomsAddedYetAdd', 'No rooms added yet. Add your first room to see the floor plan!')}</p>
             <button
               className="btn-add-room"
               onClick={() => navigate(`${ROUTES.LANDLORD.NEW_LISTING}?propertyId=${propertyId}&floor=1`)}
             >
-              <Plus size={16} />
-              Add First Room
-            </button>
+              <Plus size={16} />{t('propertyDashboard.addFirstRoom', 'Add First Room')}</button>
           </div>
         ) : (
           floorKeys.map(floor => (
@@ -310,9 +304,7 @@ const PropertyDashboardPage = () => {
       {revenueChart && revenueChart.length > 0 && (
         <div className="revenue-chart-section">
           <h2 className="revenue-chart-title">
-            <TrendingUp size={20} />
-            Revenue — This Property Only
-          </h2>
+            <TrendingUp size={20} />{t('propertyDashboard.revenueThisPropertyOnly', 'Revenue — This Property Only')}</h2>
           <div className="revenue-chart-bars">
             {revenueChart.map((item, idx) => (
               <div className="revenue-bar-col" key={idx}>
@@ -335,12 +327,8 @@ const PropertyDashboardPage = () => {
         <div className="duplicate-modal-overlay" onClick={() => setShowDuplicateModal(false)}>
           <div className="duplicate-modal" onClick={e => e.stopPropagation()}>
             <h3>
-              <Copy size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-              Duplicate Room
-            </h3>
-            <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '1rem' }}>
-              Create copies of this room with the same specifications and amenities.
-            </p>
+              <Copy size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />{t('propertyDashboard.duplicateRoom', 'Duplicate Room')}</h3>
+            <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '1rem' }}>{t('propertyDashboard.createCopiesOfThisRoom', 'Create copies of this room with the same specifications and amenities.')}</p>
             <div className="duplicate-modal-field">
               <label>Target Room Numbers (Optional)</label>
               <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '-4px', marginBottom: '8px' }}>
@@ -348,7 +336,7 @@ const PropertyDashboardPage = () => {
               </p>
               <input
                 type="text"
-                placeholder="e.g. 203, 205"
+                placeholder={t('propertyDashboard.eg203205Placeholder', 'e.g. 203, 205')}
                 value={duplicateForm.roomNumbers}
                 onChange={e => setDuplicateForm(prev => ({ ...prev, roomNumbers: e.target.value }))}
               />
@@ -371,7 +359,7 @@ const PropertyDashboardPage = () => {
               />
             </div>
             <div className="duplicate-modal-field">
-              <label>Target Floor</label>
+              <label>{t('propertyDashboard.targetFloor', 'Target Floor')}</label>
               <input
                 type="number"
                 min="1"
@@ -386,9 +374,7 @@ const PropertyDashboardPage = () => {
               />
             </div>
             <div className="duplicate-modal-actions">
-              <button className="btn-duplicate-cancel" onClick={() => setShowDuplicateModal(false)}>
-                Cancel
-              </button>
+              <button className="btn-duplicate-cancel" onClick={() => setShowDuplicateModal(false)}>{t('propertyDashboard.cancel', 'Cancel')}</button>
               <button className="btn-duplicate-confirm" onClick={handleConfirmDuplicate}>
                 Duplicate {duplicateForm.roomNumbers ? (duplicateForm.roomNumbers.split(',').filter(n => n.trim()).length || 0) : duplicateForm.count} Room(s)
               </button>

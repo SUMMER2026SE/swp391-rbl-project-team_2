@@ -447,7 +447,15 @@ const vnpayReturn = async (req, res, next) => {
               
               const room = await Room.findByPk(contract.room_id);
               if (room) {
-                await room.update({ status: 'rented' });
+                if (room.available_quantity !== null) {
+                  room.available_quantity -= 1;
+                  if (room.available_quantity <= 0) {
+                    room.status = 'rented';
+                  }
+                } else {
+                  room.status = 'rented';
+                }
+                await room.save();
               }
               
               const { ViewingSchedule, Notification } = require('../models');
@@ -560,7 +568,15 @@ const vnpayReturn = async (req, res, next) => {
 
             const room = await Room.findByPk(payment.room_id);
             if (room) {
-              await room.update({ status: 'rented' });
+              if (room.available_quantity !== null) {
+                room.available_quantity -= 1;
+                if (room.available_quantity <= 0) {
+                  room.status = 'rented';
+                }
+              } else {
+                room.status = 'rented';
+              }
+              await room.save();
 
               // Cancel all other active viewing schedules for this room
               const { ViewingSchedule, Contract, Notification } = require('../models');
@@ -789,7 +805,15 @@ const processPaymentSuccess = async (payment, transactionId) => {
       
       const room = await Room.findByPk(contract.room_id);
       if (room) {
-        await room.update({ status: 'rented' });
+        if (room.available_quantity !== null) {
+          room.available_quantity -= 1;
+          if (room.available_quantity <= 0) {
+            room.status = 'rented';
+          }
+        } else {
+          room.status = 'rented';
+        }
+        await room.save();
       }
       
       const { ViewingSchedule, Notification } = require('../models');
@@ -877,14 +901,6 @@ const processPaymentSuccess = async (payment, transactionId) => {
         notification_type: 'contract',
         related_id: contract.contract_id,
       });
-      
-      const total = parseFloat(payment.amount);
-      await payment.update({
-          platform_fee: total * 0.05,
-          net_amount: total * 0.95,
-          refund_amount: 0,
-          payout_status: 'pending'
-      });
     }
   } else {
     const { RentalRequest, Notification } = require('../models');
@@ -902,7 +918,15 @@ const processPaymentSuccess = async (payment, transactionId) => {
 
     const room = await Room.findByPk(payment.room_id);
     if (room) {
-      await room.update({ status: 'rented' });
+      if (room.available_quantity !== null) {
+        room.available_quantity -= 1;
+        if (room.available_quantity <= 0) {
+          room.status = 'rented';
+        }
+      } else {
+        room.status = 'rented';
+      }
+      await room.save();
 
       const { ViewingSchedule } = require('../models');
       const otherSchedules = await ViewingSchedule.findAll({
@@ -970,6 +994,15 @@ const processPaymentSuccess = async (payment, transactionId) => {
       }
     }
   }
+
+  const total = parseFloat(payment.amount);
+  await payment.update({
+      platform_fee: total * 0.05,
+      net_amount: total * 0.95,
+      refund_amount: 0,
+      payout_status: 'completed',
+      payout_date: new Date()
+  });
 
   const updatedPayment = await Payment.findByPk(payment.payment_id, {
     include: [

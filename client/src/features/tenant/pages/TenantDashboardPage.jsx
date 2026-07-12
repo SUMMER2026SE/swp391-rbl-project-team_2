@@ -3,16 +3,18 @@ import { Link } from 'react-router-dom';
 import { ClipboardList, Heart, MessageSquare, Home } from 'lucide-react';
 import useAuthStore from '../../../store/useAuthStore';
 import { ROUTES } from '../../../constants';
+import { useTranslation } from 'react-i18next';
 import './TenantDashboardPage.css';
 
 const TenantDashboardPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
 
   return (
     <div className="tenant-dashboard-page">
       <div className="dashboard-header">
-        <h1>Welcome back, {user?.fullName || 'Tenant'}!</h1>
-        <p>Here is an overview of your rental activity.</p>
+        <h1>{t('tenantDashboard.welcomeBack', 'Welcome back')}, {user?.fullName || 'Tenant'}!</h1>
+        <p>{t('tenantDashboard.overview', 'Here is an overview of your rental activity.')}</p>
       </div>
 
       <div className="stats-grid">
@@ -21,8 +23,8 @@ const TenantDashboardPage = () => {
             <ClipboardList size={24} />
           </div>
           <div className="stat-info">
-            <h3>My Requests</h3>
-            <p>View maintenance requests</p>
+            <h3>{t('tenantDashboard.myRequests', 'My Requests')}</h3>
+            <p>{t('tenantDashboard.viewRequests', 'View maintenance/rental requests')}</p>
           </div>
         </Link>
 
@@ -31,8 +33,8 @@ const TenantDashboardPage = () => {
             <Heart size={24} />
           </div>
           <div className="stat-info">
-            <h3>Saved Rooms</h3>
-            <p>View your favorite properties</p>
+            <h3>{t('tenantDashboard.savedRooms', 'Saved Rooms')}</h3>
+            <p>{t('tenantDashboard.viewFavorites', 'View your favorite properties')}</p>
           </div>
         </Link>
 
@@ -41,8 +43,8 @@ const TenantDashboardPage = () => {
             <MessageSquare size={24} />
           </div>
           <div className="stat-info">
-            <h3>Messages</h3>
-            <p>Chat with landlords</p>
+            <h3>{t('tenantDashboard.messages', 'Messages')}</h3>
+            <p>{t('tenantDashboard.chatLandlords', 'Chat with landlords')}</p>
           </div>
         </Link>
 
@@ -51,8 +53,8 @@ const TenantDashboardPage = () => {
             <Home size={24} />
           </div>
           <div className="stat-info">
-            <h3>Explore</h3>
-            <p>Find your next home</p>
+            <h3>{t('tenantDashboard.explore', 'Explore')}</h3>
+            <p>{t('tenantDashboard.findHome', 'Find your next home')}</p>
           </div>
         </Link>
       </div>

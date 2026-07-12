@@ -32,42 +32,43 @@ import { supabase } from '../../config/supabase';
 import { API_URL } from '../../config';
 import adminService from '../../services/adminService';
 import { landlordService } from '../../features/landlord/services/landlordService';
+import { useTranslation } from 'react-i18next';
 import './Sidebar.css';
 
 // ── Menu configs per role ──
 const LANDLORD_NAV = [
-  { icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: ROUTES.LANDLORD.DASHBOARD },
-  { icon: <Building2 size={20} />, label: 'Khu trọ', path: ROUTES.LANDLORD.PROPERTIES },
-  { icon: <Home size={20} />, label: 'Phòng của tôi', path: ROUTES.LANDLORD.LISTINGS },
-  { icon: <CreditCard size={20} />, label: 'Tiền cọc', path: ROUTES.LANDLORD.DEPOSITS },
-  { icon: <FileText size={20} />, label: 'Hợp đồng', path: ROUTES.LANDLORD.CONTRACTS },
-  { icon: <ClipboardList size={20} />, label: 'Yêu cầu thuê', path: ROUTES.LANDLORD.REQUESTS },
-  { icon: <Calendar size={20} />, label: 'Lịch xem phòng', path: ROUTES.LANDLORD.SCHEDULES },
-  { icon: <MessageSquare size={20} />, label: 'Tin nhắn', path: ROUTES.LANDLORD.MESSAGES },
-  { icon: <UserCircle size={20} />, label: 'Hồ sơ', path: ROUTES.LANDLORD.PROFILE },
-  { icon: <Settings size={20} />, label: 'Cài đặt', path: ROUTES.LANDLORD.SETTINGS },
+  { icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', tKey: 'sidebar.dashboard', path: ROUTES.LANDLORD.DASHBOARD },
+  { icon: <Building2 size={20} />, label: 'Khu trọ', tKey: 'sidebar.properties', path: ROUTES.LANDLORD.PROPERTIES },
+  { icon: <Home size={20} />, label: 'Phòng của tôi', tKey: 'sidebar.myListings', path: ROUTES.LANDLORD.LISTINGS },
+  { icon: <CreditCard size={20} />, label: 'Tiền cọc', tKey: 'sidebar.deposits', path: ROUTES.LANDLORD.DEPOSITS },
+  { icon: <FileText size={20} />, label: 'Hợp đồng', tKey: 'sidebar.contracts', path: ROUTES.LANDLORD.CONTRACTS },
+  { icon: <ClipboardList size={20} />, label: 'Yêu cầu thuê', tKey: 'sidebar.rentalRequests', path: ROUTES.LANDLORD.REQUESTS },
+  { icon: <Calendar size={20} />, label: 'Lịch xem phòng', tKey: 'sidebar.viewings', path: ROUTES.LANDLORD.SCHEDULES },
+  { icon: <MessageSquare size={20} />, label: 'Tin nhắn', tKey: 'sidebar.messages', path: ROUTES.LANDLORD.MESSAGES },
+  { icon: <UserCircle size={20} />, label: 'Hồ sơ', tKey: 'sidebar.profile', path: ROUTES.LANDLORD.PROFILE },
+  { icon: <Settings size={20} />, label: 'Cài đặt', tKey: 'sidebar.settings', path: ROUTES.LANDLORD.SETTINGS },
 ];
 
 const ADMIN_NAV = [
-  { icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', path: ROUTES.ADMIN.DASHBOARD },
-  { icon: <Building2 size={20} />, label: 'Quản lý phòng', path: ROUTES.ADMIN.LISTINGS },
-  { icon: <Users size={20} />, label: 'Người dùng', path: ROUTES.ADMIN.USERS },
-  { icon: <ShieldCheck size={20} />, label: 'Kiểm duyệt', path: ROUTES.ADMIN.MODERATION },
-  { icon: <BarChart3 size={20} />, label: 'Thống kê', path: ROUTES.ADMIN.ANALYTICS },
-  { icon: <Receipt size={20} />, label: 'Giao dịch', path: ROUTES.ADMIN.TRANSACTIONS },
-  { icon: <Wallet size={20} />, label: 'Thanh toán', path: ROUTES.ADMIN.PAYOUTS },
-  { icon: <Settings size={20} />, label: 'Cài đặt', path: ROUTES.ADMIN.SETTINGS },
+  { icon: <LayoutDashboard size={20} />, label: 'Bảng điều khiển', tKey: 'sidebar.dashboard', path: ROUTES.ADMIN.DASHBOARD },
+  { icon: <Building2 size={20} />, label: 'Quản lý phòng', tKey: 'sidebar.listingsManagement', path: ROUTES.ADMIN.LISTINGS },
+  { icon: <Users size={20} />, label: 'Người dùng', tKey: 'sidebar.users', path: ROUTES.ADMIN.USERS },
+  { icon: <ShieldCheck size={20} />, label: 'Kiểm duyệt', tKey: 'sidebar.moderation', path: ROUTES.ADMIN.MODERATION },
+  { icon: <BarChart3 size={20} />, label: 'Thống kê', tKey: 'sidebar.analytics', path: ROUTES.ADMIN.ANALYTICS },
+  { icon: <Receipt size={20} />, label: 'Giao dịch', tKey: 'sidebar.transactions', path: ROUTES.ADMIN.TRANSACTIONS },
+  { icon: <Wallet size={20} />, label: 'Thanh toán', tKey: 'sidebar.payouts', path: ROUTES.ADMIN.PAYOUTS },
+  { icon: <Settings size={20} />, label: 'Cài đặt', tKey: 'sidebar.settings', path: ROUTES.ADMIN.SETTINGS },
 ];
 
 const TENANT_NAV = [
-  { icon: <Home size={20} />, label: 'Trang chủ', path: ROUTES.HOME },
-  { icon: <Compass size={20} />, label: 'Khám phá', path: ROUTES.ROOMS },
-  { icon: <ClipboardList size={20} />, label: 'Yêu cầu', path: '/tenant/requests' },
-  { icon: <CreditCard size={20} />, label: 'Lịch sử cọc', path: ROUTES.TENANT.DEPOSIT_HISTORY },
-  { icon: <Heart size={20} />, label: 'Yêu thích', path: ROUTES.TENANT.FAVORITES },
-  { icon: <MessageSquare size={20} />, label: 'Tin nhắn', path: '/messages' },
-  { icon: <UserCircle size={20} />, label: 'Hồ sơ', path: ROUTES.TENANT.PROFILE },
-  { icon: <Settings size={20} />, label: 'Cài đặt', path: ROUTES.TENANT.SETTINGS },
+  { icon: <Home size={20} />, label: 'Trang chủ', tKey: 'sidebar.home', path: ROUTES.HOME },
+  { icon: <Compass size={20} />, label: 'Khám phá', tKey: 'sidebar.explore', path: ROUTES.ROOMS },
+  { icon: <ClipboardList size={20} />, label: 'Yêu cầu', tKey: 'sidebar.requests', path: '/tenant/requests' },
+  { icon: <CreditCard size={20} />, label: 'Lịch sử cọc', tKey: 'sidebar.depositHistory', path: ROUTES.TENANT.DEPOSIT_HISTORY },
+  { icon: <Heart size={20} />, label: 'Yêu thích', tKey: 'sidebar.favorites', path: ROUTES.TENANT.FAVORITES },
+  { icon: <MessageSquare size={20} />, label: 'Tin nhắn', tKey: 'sidebar.messages', path: '/messages' },
+  { icon: <UserCircle size={20} />, label: 'Hồ sơ', tKey: 'sidebar.profile', path: ROUTES.TENANT.PROFILE },
+  { icon: <Settings size={20} />, label: 'Cài đặt', tKey: 'sidebar.settings', path: ROUTES.TENANT.SETTINGS },
 ];
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
@@ -78,6 +79,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const [pendingSchedules, setPendingSchedules] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const { t } = useTranslation();
 
   // Listen for new messages
   useEffect(() => {
@@ -205,7 +207,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const profilePath = isLandlord ? ROUTES.LANDLORD.PROFILE : isAdmin ? ROUTES.ADMIN.SETTINGS : ROUTES.TENANT.PROFILE;
 
   const brandTitle = user?.fullName || 'User';
-  const brandSubtitle = isLandlord ? 'Kênh Chủ Trọ' : isAdmin ? 'Kênh Quản Trị' : 'Kênh Người Thuê';
+  const brandSubtitle = isLandlord ? t('sidebar.landlordChannel', 'Kênh Chủ Trọ') : isAdmin ? t('sidebar.adminChannel', 'Kênh Quản Trị') : t('sidebar.tenantChannel', 'Kênh Người Thuê');
 
   const isActive = (path) => location.pathname === path;
 
@@ -236,12 +238,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               <Link
                 to={link.path}
                 className={`sidebar-link ${isActive(link.path) ? 'active' : ''}`}
-                title={isCollapsed ? link.label : ''}
+                title={isCollapsed ? t(link.tKey, link.label) : ''}
               >
                 {link.icon}
                 {!isCollapsed && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
-                    <span>{link.label}</span>
+                    <span>{t(link.tKey, link.label)}</span>
                     {isAdmin && link.label === 'Quản lý phòng' && pendingCount > 0 && (
                       <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
                         {pendingCount}
@@ -295,7 +297,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           ) : (
             <a href="#" onClick={handleLogout} className="btn-support-center" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}>
               <LogOut size={18} style={{ transform: 'rotate(180deg)' }} />
-              Đăng xuất
+              {t('sidebar.logout', 'Đăng xuất')}
             </a>
           )}
         </div>

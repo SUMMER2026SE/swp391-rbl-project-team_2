@@ -2,9 +2,11 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Building, Info } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useTranslation } from 'react-i18next';
 import './RoomCard.css';
 
 const PropertyCard = ({ property }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { 
     id, title, address, district, city, 
@@ -36,12 +38,12 @@ const PropertyCard = ({ property }) => {
             "image-tag", 
             availableRooms > 0 ? "primary-tag" : "danger-tag"
           )}>
-            {availableRooms > 0 ? `${availableRooms} phòng trống` : 'Hết phòng'}
+            {availableRooms > 0 ? `${availableRooms} ${t('propertyCard.roomsAvailable', 'phòng trống')}` : t('propertyCard.soldOut', 'Hết phòng')}
           </span>
         </div>
 
         <div className="chat-floating-price">
-          {priceDisplay}/mo
+          {priceDisplay}/{t('propertyCard.mo', 'mo')}
         </div>
       </div>
       
@@ -56,11 +58,11 @@ const PropertyCard = ({ property }) => {
         <div className="room-card-specs" style={{ margin: '0 0 0.75rem 0' }}>
           <div className="spec-item">
             <Building size={14} />
-            <span>Tổng số {totalRooms} phòng</span>
+            <span>{t('propertyCard.totalRoomsPrefix', 'Tổng số')} {totalRooms} {t('propertyCard.totalRoomsSuffix', 'phòng')}</span>
           </div>
           <div className="spec-item">
             <Info size={14} />
-            <span>Nhấn để xem các phòng</span>
+            <span>{t('propertyCard.clickToView', 'Nhấn để xem các phòng')}</span>
           </div>
         </div>
       </div>

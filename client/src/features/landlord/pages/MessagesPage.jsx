@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
@@ -16,6 +17,7 @@ import { useConversations } from '../hooks/useConversations';
 import './MessagesPage.css';
 
 const MessagesPage = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const initialConversationId = searchParams.get('conversationId');
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,7 +87,7 @@ const MessagesPage = () => {
     return (
       <div className="messages-loading">
         <Loader size={32} className="spinner" />
-        <p>Loading messages...</p>
+        <p>{t('messages.loadingMessages', 'Loading messages...')}</p>
       </div>
     );
   }
@@ -95,7 +97,7 @@ const MessagesPage = () => {
       {/* LEFT PANEL */}
       <div className="sidebar">
         <div className="sidebar-header">
-          <h2>Messages</h2>
+          <h2>{t('messages.messages', 'Messages')}</h2>
           <button className="btn-new-message" title="New Message">
             <SquarePen size={18} />
           </button>
@@ -105,7 +107,7 @@ const MessagesPage = () => {
           <Search size={16} />
           <input
             type="text"
-            placeholder="Search conversations..."
+            placeholder={t('messages.searchConversationsPlaceholder', 'Search conversations...')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -143,7 +145,7 @@ const MessagesPage = () => {
             })
           ) : (
             <div className="empty-conversations">
-              <p>No conversations found</p>
+              <p>{t('messages.noConversationsFound', 'No conversations found')}</p>
             </div>
           )}
         </div>
@@ -191,7 +193,7 @@ const MessagesPage = () => {
                 ))
               ) : (
                 <div className="empty-messages">
-                  <p>No messages yet. Say hello!</p>
+                  <p>{t('messages.noMessagesYetSayHello', 'No messages yet. Say hello!')}</p>
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -202,7 +204,7 @@ const MessagesPage = () => {
               <input
                 type="text"
                 className="message-input"
-                placeholder="Type your message..."
+                placeholder={t('messages.typeYourMessagePlaceholder', 'Type your message...')}
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 disabled={isSending}
@@ -219,8 +221,8 @@ const MessagesPage = () => {
         ) : (
           <div className="empty-chat-panel">
             <Sparkles size={48} className="empty-icon" />
-            <h2>Select a conversation</h2>
-            <p>Choose a conversation from the sidebar to start chatting.</p>
+            <h2>{t('messages.selectAConversation', 'Select a conversation')}</h2>
+            <p>{t('messages.chooseAConversationFromThe', 'Choose a conversation from the sidebar to start chatting.')}</p>
           </div>
         )}
       </div>

@@ -19,6 +19,7 @@ import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import useAuthStore from '../../../store/useAuthStore';
 import { useLandlordStats } from '../hooks/useLandlordStats';
+import { useTranslation } from 'react-i18next';
 import './LandlordDashboard.css';
 
 // SVG Revenue Column Chart Component
@@ -149,6 +150,7 @@ const RevenueChart = ({ activeMonth, setActiveMonth, data, months }) => {
 };
 
 const LandlordDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [activeMonth, setActiveMonth] = useState(5);
@@ -160,46 +162,46 @@ const LandlordDashboard = () => {
   // Stats matching Figma design precisely
   const stats = [
     {
-      label: 'Total Rooms',
+      label: t('landlord.dashboard.stats.totalRooms', 'Total Rooms'),
       value: loading ? '...' : (statsData?.rooms?.total || 0).toString(),
       icon: <Building2 size={20} />,
       iconClass: 'dashboard-stat-icon--blue',
       badge: (
         <span className="dashboard-stat-badge dashboard-stat-badge--success">
-          <TrendingUp size={12} /> Live
+          <TrendingUp size={12} /> {t('landlord.dashboard.stats.live', 'Live')}
         </span>
       ),
     },
     {
-      label: 'Available Units',
+      label: t('landlord.dashboard.stats.availableUnits', 'Available Units'),
       value: loading ? '...' : (statsData?.rooms?.available || 0).toString(),
       icon: <Key size={20} />,
       iconClass: 'dashboard-stat-icon--purple',
       badge: (
         <span className="dashboard-stat-badge dashboard-stat-badge--success">
-          Active
+          {t('landlord.dashboard.stats.active', 'Active')}
         </span>
       ),
     },
     {
-      label: 'Currently Rented',
+      label: t('landlord.dashboard.stats.currentlyRented', 'Currently Rented'),
       value: loading ? '...' : (statsData?.rooms?.rented || 0).toString(),
       icon: <Bed size={20} />,
       iconClass: 'dashboard-stat-icon--green',
       badge: (
         <span className="dashboard-stat-badge dashboard-stat-badge--success">
-          Occupied
+          {t('landlord.dashboard.stats.occupied', 'Occupied')}
         </span>
       ),
     },
     {
-      label: 'Pending Requests',
+      label: t('landlord.dashboard.stats.pendingRequests', 'Pending Requests'),
       value: loading ? '...' : (statsData?.requests?.pending || 0).toString(),
       icon: <Hourglass size={20} />,
       iconClass: 'dashboard-stat-icon--orange',
       badge: (
         <span className="dashboard-stat-badge dashboard-stat-badge--warning">
-          Action Needed
+          {t('landlord.dashboard.stats.actionNeeded', 'Action Needed')}
         </span>
       ),
     },
@@ -213,14 +215,14 @@ const LandlordDashboard = () => {
         id: `req-${r.requestId}`,
         icon: <ClipboardList size={18} />,
         iconClass: 'activity-icon-container--orange',
-        text: `New rental request received.`,
+        text: t('landlord.dashboard.recentActivity.newRequest', 'New rental request received.'),
         date: new Date(r.createdAt)
       })),
       ...(recentActivity.recentPayments || []).map(p => ({
         id: `pay-${p.paymentId}`,
         icon: <CreditCard size={18} />,
         iconClass: 'activity-icon-container--blue',
-        text: `Rent payment processed for ${p.amount?.toLocaleString('vi-VN') || p.amount} VNĐ.`,
+        text: t('landlord.dashboard.recentActivity.rentPaid', 'Rent payment processed for {{amount}} VNĐ.', { amount: p.amount?.toLocaleString('vi-VN') || p.amount }),
         date: new Date(p.createdAt)
       })),
       ...(recentActivity.recentComplaints || []).map(c => ({
@@ -237,9 +239,9 @@ const LandlordDashboard = () => {
     return allActivities.slice(0, 5).map(act => {
       const diffHrs = Math.floor((new Date() - act.date) / 3600000);
       let timeStr = act.date.toLocaleDateString();
-      if (diffHrs === 0) timeStr = 'Just now';
-      else if (diffHrs < 24) timeStr = `${diffHrs} hours ago`;
-      else if (diffHrs < 48) timeStr = 'Yesterday';
+      if (diffHrs === 0) timeStr = t('landlord.dashboard.recentActivity.justNow', 'Just now');
+      else if (diffHrs < 24) timeStr = t('landlord.dashboard.recentActivity.hoursAgo', '{{count}} hours ago', { count: diffHrs });
+      else if (diffHrs < 48) timeStr = t('landlord.dashboard.recentActivity.yesterday', 'Yesterday');
       return { ...act, time: timeStr };
     });
   };
@@ -259,7 +261,7 @@ const LandlordDashboard = () => {
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
   const activeRevenue = activeMonth !== null ? revenueChartData[activeMonth] || 0 : 0;
-  const isProjected = activeMonth === revenueChartData.length - 1;
+  const isProjected = false; // The user wants actual revenue for the current month
 
   return (
     <div className="dashboard-container" id="landlord-dashboard">
@@ -268,10 +270,10 @@ const LandlordDashboard = () => {
       <div className="dashboard-header-block">
         <div className="dashboard-title-box">
           <h1 className="dashboard-main-title" style={{ fontSize: '2rem', fontWeight: '800', color: '#1E293B', letterSpacing: '-0.025em' }}>
-            Welcome back, {user?.fullName || 'Landlord'}! 👋
+            {t('landlord.dashboard.welcomeBack', 'Welcome back, {{name}}! 👋', { name: user?.fullName || 'Landlord' })}
           </h1>
           <p className="dashboard-sub-title" style={{ color: '#64748B', fontSize: '0.975rem', marginTop: '0.25rem' }}>
-            Here's what's happening with your properties today.
+            {t('landlord.dashboard.subtitle', "Here's what's happening with your properties today.")}
           </p>
         </div>
         
@@ -303,7 +305,7 @@ const LandlordDashboard = () => {
           
           <Button variant="primary" onClick={() => navigate(ROUTES.LANDLORD.NEW_LISTING)}>
             <Plus size={16} />
-            <span>New Listing</span>
+            <span>{t('landlord.manageListings.addNewListing', 'New Listing')}</span>
           </Button>
         </div>
       </div>
@@ -337,8 +339,7 @@ const LandlordDashboard = () => {
         <div className="dashboard-chart-card">
           <div className="dashboard-chart-header">
             <div className="dashboard-chart-title-block">
-              <h3 className="chart-card-title">Revenue Summary</h3>
-              <p className="chart-card-subtitle">Monthly gross income vs projections</p>
+              <h3 className="chart-card-title">{t('landlord.dashboard.revenueSummary.title', 'Revenue Summary')}</h3>
             </div>
             
             <div className="dashboard-chart-menu-box">
@@ -356,11 +357,7 @@ const LandlordDashboard = () => {
             <span className="tooltip-value-indicator">
               {activeRevenue.toLocaleString('vi-VN')} đ
             </span>
-            {isProjected ? (
-              <span className="tooltip-projected-tag">Projected</span>
-            ) : (
-              <span className="tooltip-actual-tag">Actual</span>
-            )}
+            <span className="tooltip-actual-tag">{t('landlord.dashboard.revenueSummary.actual', 'Actual')}</span>
           </div>
 
           <div className="dashboard-chart-container">
@@ -375,11 +372,7 @@ const LandlordDashboard = () => {
           <div className="chart-legend-row">
             <div className="legend-item">
               <div style={{ width: '14px', height: '14px', background: 'linear-gradient(to bottom, rgba(37, 99, 235, 0.8), rgba(37, 99, 235, 0.4))', borderRadius: '3px' }}></div>
-              <span className="legend-label">Actual Income</span>
-            </div>
-            <div className="legend-item">
-              <div style={{ width: '14px', height: '14px', background: 'linear-gradient(to bottom, rgba(37, 99, 235, 0.4), rgba(37, 99, 235, 0.1))', border: '1px dashed #2563EB', borderRadius: '3px' }}></div>
-              <span className="legend-label">Projections</span>
+              <span className="legend-label">{t('landlord.dashboard.revenueSummary.actualIncome', 'Actual Income')}</span>
             </div>
           </div>
         </div>
@@ -387,9 +380,9 @@ const LandlordDashboard = () => {
         {/* Right Column: Recent Activity */}
         <div className="dashboard-activity-card">
           <div className="dashboard-activity-header">
-            <h3 className="activity-card-title">Recent Activity</h3>
+            <h3 className="activity-card-title">{t('landlord.dashboard.recentActivity.title', 'Recent Activity')}</h3>
             <Link to={ROUTES.LANDLORD.REQUESTS} className="activity-view-all-link">
-              View All
+              {t('landlord.dashboard.recentActivity.viewAll', 'View All')}
             </Link>
           </div>
           

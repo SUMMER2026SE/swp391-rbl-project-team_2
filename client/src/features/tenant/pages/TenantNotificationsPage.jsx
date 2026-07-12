@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
 import { Home, CreditCard, Wrench, Clipboard, CheckCircle, Bell, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './TenantNotificationsPage.css';
 
 const INITIAL_NOTIFICATIONS = [];
 
 
 const TenantNotificationsPage = () => {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [activeFilter, setActiveFilter] = useState('All');
 
   const filters = ['All', 'Requests', 'Payments', 'System'];
+  
+  const getFilterLabel = (filter) => {
+    switch(filter) {
+      case 'All': return t('tenantNotifications.filterAll', 'All');
+      case 'Requests': return t('tenantNotifications.filterRequests', 'Requests');
+      case 'Payments': return t('tenantNotifications.filterPayments', 'Payments');
+      case 'System': return t('tenantNotifications.filterSystem', 'System');
+      default: return filter;
+    }
+  };
 
   const handleMarkAllRead = (e) => {
     e.preventDefault();
@@ -30,11 +42,11 @@ const TenantNotificationsPage = () => {
       {/* Title & Top Section */}
       <div className="notifications-page-header">
         <div className="header-text-block">
-          <h1 className="notifications-main-title">Notifications</h1>
-          <p className="notifications-main-subtitle">Stay updated with your latest activity.</p>
+          <h1 className="notifications-main-title">{t('tenantNotifications.title', 'Notifications')}</h1>
+          <p className="notifications-main-subtitle">{t('tenantNotifications.subtitle', 'Stay updated with your latest activity.')}</p>
         </div>
         <a href="#" className="mark-all-read-link" onClick={handleMarkAllRead}>
-          Mark all as read
+          {t('tenantNotifications.markAllRead', 'Mark all as read')}
         </a>
       </div>
 
@@ -46,7 +58,7 @@ const TenantNotificationsPage = () => {
             className={`filter-pill-btn ${activeFilter === filter ? 'active' : ''}`}
             onClick={() => setActiveFilter(filter)}
           >
-            {filter}
+            {getFilterLabel(filter)}
           </button>
         ))}
       </div>
@@ -87,8 +99,8 @@ const TenantNotificationsPage = () => {
         ) : (
           <div className="notifications-empty-state">
             <Sparkles size={48} className="empty-state-sparkles" />
-            <h3 className="empty-state-title">All caught up!</h3>
-            <p className="empty-state-desc">No new notifications in the {activeFilter.toLowerCase()} category.</p>
+            <h3 className="empty-state-title">{t('tenantNotifications.allCaughtUp', 'All caught up!')}</h3>
+            <p className="empty-state-desc">{t('tenantNotifications.noNewNotifs', 'No new notifications in the')} {getFilterLabel(activeFilter).toLowerCase()} category.</p>
           </div>
         )}
       </div>
