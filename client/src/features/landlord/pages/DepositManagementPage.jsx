@@ -11,7 +11,8 @@ import {
   ArrowUpRight,
   CheckCircle2,
   XCircle,
-  Building
+  Building,
+  TrendingUp
 } from 'lucide-react';
 import api from '../../../services/api';
 import { landlordService } from '../services/landlordService';
@@ -149,14 +150,14 @@ const DepositManagementPage = () => {
       setSubmitting(true);
       const res = await landlordService.createWithdrawal(amountNum);
       if (res.success) {
-        toast.success('Gửi yêu cầu rút tiền thành công!');
+        toast.success('Rút tiền thành công! Tiền đã được chuyển vào tài khoản ngân hàng của bạn.');
         setShowWithdrawModal(false);
         setWithdrawAmount('');
         // Refresh data
         fetchData();
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi tạo yêu cầu rút tiền.');
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi rút tiền.');
     } finally {
       setSubmitting(false);
     }
@@ -187,7 +188,7 @@ const DepositManagementPage = () => {
         <div className="deposit-header-actions">
           <button className="btn-withdraw-action" onClick={() => setShowWithdrawModal(true)}>
             <PlusCircle size={16} />
-            <span>Yêu cầu rút tiền</span>
+            <span>Rút tiền về</span>
           </button>
           <button className="btn-export-csv" onClick={() => toast.success('Đang xuất báo cáo dữ liệu dạng CSV...')}>
             <Download size={16} />
@@ -216,15 +217,15 @@ const DepositManagementPage = () => {
         <div className="deposit-stat-card">
           <div className="stat-card-main-row">
             <div>
-              <span className="deposit-stat-label">ĐANG XỬ LÝ RÚT</span>
-              <h2 className="deposit-stat-value" style={{ color: '#d97706' }}>{stats.pendingWithdrawals.toLocaleString('vi-VN')} đ</h2>
+              <span className="deposit-stat-label">TỔNG THU NHẬP (95%)</span>
+              <h2 className="deposit-stat-value" style={{ color: '#d97706' }}>{stats.totalRevenue.toLocaleString('vi-VN')} đ</h2>
             </div>
-            <div className="deposit-stat-icon-box clock-gold">
-              <Clock size={20} />
+            <div className="deposit-stat-icon-box clock-gold" style={{ backgroundColor: '#fffbeb', color: '#d97706' }}>
+              <TrendingUp size={20} />
             </div>
           </div>
           <div className="deposit-stat-footer">
-            <span className="stat-normal-desc">Số tiền đang nằm trong các yêu cầu chờ Admin duyệt</span>
+            <span className="stat-normal-desc">Tổng doanh thu ròng tích lũy trên hệ thống</span>
           </div>
         </div>
 
@@ -441,7 +442,7 @@ const DepositManagementPage = () => {
         <div className="modal-overlay" onClick={() => !submitting && setShowWithdrawModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
             <div className="modal-header">
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>Tạo yêu cầu rút tiền</h3>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>Rút tiền về tài khoản ngân hàng</h3>
               <button 
                 className="btn-close" 
                 onClick={() => setShowWithdrawModal(false)}
@@ -460,7 +461,7 @@ const DepositManagementPage = () => {
                   Chưa thiết lập ngân hàng thụ hưởng
                 </h4>
                 <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
-                  Bạn phải cấu hình thông tin tài khoản ngân hàng nhận tiền trong phần cài đặt Cá nhân trước khi có thể gửi yêu cầu rút tiền.
+                  Bạn phải cấu hình thông tin tài khoản ngân hàng nhận tiền trong phần cài đặt Cá nhân trước khi có thể thực hiện rút tiền.
                 </p>
                 <button 
                   className="btn-primary-withdraw"
@@ -546,7 +547,7 @@ const DepositManagementPage = () => {
                     disabled={submitting || !withdrawAmount}
                     style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#4f46e5', color: '#fff', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                   >
-                    {submitting ? 'Đang gửi...' : 'Gửi yêu cầu'} <ArrowUpRight size={16} />
+                    {submitting ? 'Đang rút...' : 'Rút tiền ngay'} <ArrowUpRight size={16} />
                   </button>
                 </div>
               </form>

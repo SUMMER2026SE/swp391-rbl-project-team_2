@@ -182,14 +182,17 @@ const createWithdrawal = async (req, res, next) => {
       });
     }
 
-    // Create withdrawal request
+    // Create withdrawal request (Automatically completed in simulated demo mode)
     const withdrawal = await WithdrawalRequest.create({
       user_id: userId,
       amount: requestAmount,
       bank_name: bankDetails.bank_name,
       account_number: bankDetails.account_number,
       account_holder_name: bankDetails.account_holder_name,
-      status: 'pending',
+      status: 'completed',
+      transaction_proof_url: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg',
+      admin_notes: 'Hệ thống tự động duyệt giải ngân (Môi trường thử nghiệm).',
+      payout_date: new Date(),
     }, { transaction });
 
     // Associate completed payments that are not currently associated with a withdrawal request
@@ -205,17 +208,28 @@ const createWithdrawal = async (req, res, next) => {
 
     for (const payment of eligiblePayments) {
       await payment.update({
-        payout_status: 'processing',
+        payout_status: 'completed',
+        payout_date: new Date(),
         withdrawal_id: withdrawal.withdrawal_id,
       }, { transaction });
     }
+
+    // Create system notification for the user
+    const { Notification } = require('../models');
+    await Notification.create({
+      user_id: userId,
+      title: 'Rút tiền tự động thành công',
+      message: `Yêu cầu rút tiền ${requestAmount.toLocaleString('vi-VN')} đ của bạn đã được hệ thống tự động xử lý và chuyển về tài khoản ngân hàng thành công.`,
+      notification_type: 'system',
+      related_id: withdrawal.withdrawal_id,
+    }, { transaction });
 
     await transaction.commit();
 
     return res.status(201).json({
       success: true,
       data: withdrawal,
-      message: 'Withdrawal request submitted successfully.',
+      message: 'Rút tiền thành công! Giao dịch đã được hệ thống tự động xử lý.',
     });
   } catch (error) {
     await transaction.rollback();
