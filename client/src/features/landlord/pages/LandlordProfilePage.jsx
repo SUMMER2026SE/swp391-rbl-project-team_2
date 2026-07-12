@@ -30,12 +30,35 @@ import httpClient from '../../../services/httpClient';
 import { API_URL } from '../../../config';
 import './LandlordProfilePage.css';
 
+const VIETNAMESE_BANKS = [
+  { code: 'Vietcombank', name: 'Vietcombank (VCB)' },
+  { code: 'Techcombank', name: 'Techcombank (TCB)' },
+  { code: 'MB Bank', name: 'MB Bank (Military Bank)' },
+  { code: 'BIDV', name: 'BIDV' },
+  { code: 'VietinBank', name: 'VietinBank' },
+  { code: 'Agribank', name: 'Agribank' },
+  { code: 'Sacombank', name: 'Sacombank' },
+  { code: 'VPBank', name: 'VPBank' },
+  { code: 'ACB', name: 'ACB' },
+  { code: 'TPBank', name: 'TPBank' },
+  { code: 'VIB', name: 'VIB' },
+  { code: 'HDBank', name: 'HDBank' },
+  { code: 'SHB', name: 'SHB' }
+];
+
 const LandlordProfilePage = () => {
   const navigate = useNavigate();
   const { user, updateUser } = useAuthStore();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Bank details state
+  const [bankDetails, setBankDetails] = useState(null);
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [bankForm, setBankForm] = useState({ bank_name: '', account_number: '', account_holder_name: '', branch: '' });
+  const [bankLoading, setBankLoading] = useState(false);
+  const [bankError, setBankError] = useState('');
 
   // Edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -96,8 +119,20 @@ const LandlordProfilePage = () => {
     }
   };
 
+  const fetchBankDetails = async () => {
+    try {
+      const response = await landlordService.getBankDetails();
+      if (response.success) {
+        setBankDetails(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching bank details:', err);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
+    fetchBankDetails();
   }, []);
 
   const handleEditProfileClick = () => {
@@ -114,6 +149,36 @@ const LandlordProfilePage = () => {
     setPhoneError('');
     setEditSuccess('');
     setShowEditModal(true);
+  };
+
+  const handleEditBankClick = () => {
+    setBankForm({
+      bank_name: bankDetails?.bank_name || '',
+      account_number: bankDetails?.account_number || '',
+      account_holder_name: bankDetails?.account_holder_name || '',
+      branch: bankDetails?.branch || '',
+    });
+    setBankError('');
+    setShowBankModal(true);
+  };
+
+  const handleBankSubmit = async (e) => {
+    e.preventDefault();
+    setBankLoading(true);
+    setBankError('');
+
+    try {
+      const response = await landlordService.saveBankDetails(bankForm);
+      if (response.success) {
+        setBankDetails(response.data);
+        toast.success('Cập nhật tài khoản ngân hàng thành công!');
+        setShowBankModal(false);
+      }
+    } catch (err) {
+      setBankError(err.response?.data?.message || err.message || 'Lỗi lưu thông tin ngân hàng');
+    } finally {
+      setBankLoading(false);
+    }
   };
 
   const handlePhoneChange = (e) => {
@@ -418,6 +483,83 @@ const LandlordProfilePage = () => {
               </div>
             </div>
           </div>
+
+          {/* Bank Details Config */}
+          <div className="profile-section-card" style={{ marginTop: '1.5rem' }}>
+            <div className="section-card-header">
+              <div className="card-header-left">
+                <Landmark size={20} className="header-icon-blue" />
+                <h2 className="section-card-title">Tài khoản Ngân hàng (Nhận tiền)</h2>
+              </div>
+              <button className="btn-icon-action" onClick={handleEditBankClick}>
+                <Pencil size={16} />
+              </button>
+            </div>
+
+            <div className="section-card-body pt-1">
+              {bankDetails ? (
+                <div className="contact-info-list">
+                  <div className="contact-info-item">
+                    <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      🏦
+                    </div>
+                    <div>
+                      <span className="contact-label">Ngân hàng</span>
+                      <span className="contact-val" style={{ fontWeight: 'bold' }}>{bankDetails.bank_name}</span>
+                    </div>
+                  </div>
+                  <div className="contact-info-item">
+                    <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      💳
+                    </div>
+                    <div>
+                      <span className="contact-label">Số tài khoản</span>
+                      <span className="contact-val" style={{ fontWeight: 'bold' }}>{bankDetails.account_number}</span>
+                    </div>
+                  </div>
+                  <div className="contact-info-item">
+                    <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      👤
+                    </div>
+                    <div>
+                      <span className="contact-label">Chủ tài khoản</span>
+                      <span className="contact-val" style={{ fontWeight: 'bold' }}>{bankDetails.account_holder_name}</span>
+                    </div>
+                  </div>
+                  {bankDetails.branch && (
+                    <div className="contact-info-item">
+                      <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        📍
+                      </div>
+                      <div>
+                        <span className="contact-label">Chi nhánh</span>
+                        <span className="contact-val">{bankDetails.branch}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                  <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '1rem' }}>Chưa cấu hình ngân hàng thụ hưởng.</p>
+                  <button 
+                    onClick={handleEditBankClick}
+                    style={{
+                      padding: '8px 16px',
+                      background: '#4f46e5',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Thiết lập tài khoản ngân hàng
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -535,6 +677,89 @@ const LandlordProfilePage = () => {
                 </button>
                 <button type="submit" className="edit-btn-save" disabled={editLoading}>
                   {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Bank Details Modal */}
+      {showBankModal && (
+        <div className="edit-profile-overlay" onClick={() => !bankLoading && setShowBankModal(false)}>
+          <div className="edit-profile-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="edit-modal-header">
+              <h2>Cấu hình tài khoản thụ hưởng</h2>
+              <button className="edit-modal-close" onClick={() => setShowBankModal(false)} disabled={bankLoading}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleBankSubmit} className="edit-modal-form">
+              <div className="edit-form-group">
+                <label>Tên Ngân hàng</label>
+                <select
+                  value={bankForm.bank_name}
+                  onChange={(e) => setBankForm(prev => ({ ...prev, bank_name: e.target.value }))}
+                  required
+                  disabled={bankLoading}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', background: '#fff', fontSize: '14px' }}
+                >
+                  <option value="">-- Chọn ngân hàng thụ hưởng --</option>
+                  {VIETNAMESE_BANKS.map(bank => (
+                    <option key={bank.code} value={bank.code}>{bank.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="edit-form-group">
+                <label>Số tài khoản</label>
+                <input
+                  type="text"
+                  value={bankForm.account_number}
+                  onChange={(e) => setBankForm(prev => ({ ...prev, account_number: e.target.value.replace(/\D/g, '') }))}
+                  placeholder="Nhập số tài khoản ngân hàng"
+                  required
+                  disabled={bankLoading}
+                />
+              </div>
+
+              <div className="edit-form-group">
+                <label>Tên chủ tài khoản (Viết hoa không dấu)</label>
+                <input
+                  type="text"
+                  value={bankForm.account_holder_name}
+                  onChange={(e) => setBankForm(prev => ({ ...prev, account_holder_name: e.target.value.toUpperCase() }))}
+                  placeholder="Ví dụ: NGUYEN VAN A"
+                  required
+                  disabled={bankLoading}
+                />
+              </div>
+
+              <div className="edit-form-group">
+                <label>Chi nhánh (Không bắt buộc)</label>
+                <input
+                  type="text"
+                  value={bankForm.branch}
+                  onChange={(e) => setBankForm(prev => ({ ...prev, branch: e.target.value }))}
+                  placeholder="Ví dụ: Chi nhánh Hà Nội"
+                  disabled={bankLoading}
+                />
+              </div>
+
+              {bankError && (
+                <div className="edit-msg edit-msg-error">
+                  <AlertCircle size={16} />
+                  <span>{bankError}</span>
+                </div>
+              )}
+
+              <div className="edit-modal-actions">
+                <button type="button" className="edit-btn-cancel" onClick={() => setShowBankModal(false)} disabled={bankLoading}>
+                  Hủy
+                </button>
+                <button type="submit" className="edit-btn-save" disabled={bankLoading}>
+                  {bankLoading ? 'Đang lưu...' : 'Lưu lại'}
                 </button>
               </div>
             </form>

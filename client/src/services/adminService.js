@@ -69,6 +69,39 @@ export const adminService = {
     const response = await api.post(`/admin/disputes/${scheduleId}/resolve`, { outcome });
     return response;
   },
+
+  // Withdrawals Management
+  getWithdrawals: async () => {
+    const response = await api.get('/admin/withdrawals');
+    return response;
+  },
+
+  processWithdrawal: async (id) => {
+    const response = await api.put(`/admin/withdrawals/${id}/process`);
+    return response;
+  },
+
+  completeWithdrawal: async (id, data) => {
+    const response = await api.put(`/admin/withdrawals/${id}/complete`, data);
+    return response;
+  },
+
+  rejectWithdrawal: async (id, data) => {
+    const response = await api.put(`/admin/withdrawals/${id}/reject`, data);
+    return response;
+  },
+
+  getFinanceStats: async () => {
+    const response = await api.get('/admin/finance/statistics');
+    return response;
+  },
+
+  uploadProof: async (formData) => {
+    const response = await api.post('/admin/withdrawals/upload-proof', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response;
+  },
 };
 
 export default adminService;

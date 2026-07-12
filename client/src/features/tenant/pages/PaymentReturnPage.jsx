@@ -13,12 +13,19 @@ const PaymentReturnPage = () => {
   const [invoiceData, setInvoiceData] = useState(null);
 
   useEffect(() => {
-    const processPaymentReturn = async () => {
+    const isVnPay = !!searchParams.get('vnp_ResponseCode');
+    const isPayOS = !!searchParams.get('orderCode') || !!searchParams.get('status');
+
+    const verifyPayment = async () => {
       try {
         const queryParams = searchParams.toString();
-        const response = await api.get(`/tenant/payments/vnpay_return?${queryParams}`);
+        const endpoint = isVnPay 
+          ? `/tenant/payments/vnpay_return?${queryParams}` 
+          : `/tenant/payments/payos_return?${queryParams}`;
+
+        const response = await api.get(endpoint);
         
-        if (response.success && response.code === '00') {
+        if (response.success && (response.code === '00' || response.code === 'PAID')) {
           setStatus('success');
           setMessage('Deposit payment completed successfully!');
           setInvoiceData(response.data);
@@ -33,8 +40,8 @@ const PaymentReturnPage = () => {
       }
     };
 
-    if (searchParams.get('vnp_ResponseCode')) {
-      processPaymentReturn();
+    if (isVnPay || isPayOS) {
+      verifyPayment();
     } else {
       setStatus('error');
       setMessage('Invalid payment response.');

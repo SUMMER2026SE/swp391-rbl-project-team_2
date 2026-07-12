@@ -27,7 +27,7 @@
 /* Stats Cards */
 .stats-cards-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
@@ -216,6 +216,11 @@
 .payout-badge.warning {
   background: #E0E7FF;
   color: #4338CA;
+}
+
+.payout-badge.danger {
+  background: #FEE2E2;
+  color: #EF4444;
 }
 
 .btn-process {

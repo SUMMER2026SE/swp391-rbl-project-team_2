@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 require('dotenv').config();
-
+// Trigger nodemon restart v2
 const { sequelize } = require('./models');
 const errorHandler = require('./middlewares/errorHandler');
 const initDatabase = require('./config/initDatabase');

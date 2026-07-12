@@ -603,4 +603,46 @@ export const landlordService = {
       throw error;
     }
   },
+
+  // ===== BANK DETAILS =====
+  getBankDetails: async () => {
+    try {
+      const response = await httpClient.get('/landlord/bank-details');
+      return response;
+    } catch (error) {
+      console.error('Error fetching bank details:', error);
+      throw error;
+    }
+  },
+
+  saveBankDetails: async (data) => {
+    try {
+      const response = await httpClient.post('/landlord/bank-details', data);
+      return response;
+    } catch (error) {
+      console.error('Error saving bank details:', error);
+      throw error;
+    }
+  },
+
+  // ===== WITHDRAWALS =====
+  getWithdrawals: async () => {
+    try {
+      const response = await httpClient.get('/landlord/withdrawals');
+      return response;
+    } catch (error) {
+      console.error('Error fetching withdrawals:', error);
+      throw error;
+    }
+  },
+
+  createWithdrawal: async (amount) => {
+    try {
+      const response = await httpClient.post('/landlord/withdrawals', { amount });
+      return response;
+    } catch (error) {
+      console.error('Error creating withdrawal request:', error);
+      throw error;
+    }
+  },
 };

@@ -53,6 +53,7 @@ const DepositPaymentPage = () => {
         amount: Math.round(totalAmount), // VNPay needs integer amount in VND
         roomId: roomId,
         contractId: contractId,
+        paymentMethod: paymentMethod,
         bankCode: 'NCB', // Default for sandbox
         language: 'vn'
       });
@@ -172,14 +173,23 @@ const DepositPaymentPage = () => {
             <div className="payment-form-card">
               <h2 className="form-title">Payment Method</h2>
               
-              <div className="payment-methods">
+              <div className="payment-methods" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <button 
                   className={`method-tab ${paymentMethod === 'vnpay' ? 'active' : ''}`}
                   onClick={() => setPaymentMethod('vnpay')}
-                  style={{ fontWeight: paymentMethod === 'vnpay' ? 'bold' : 'normal' }}
+                  style={{ fontWeight: paymentMethod === 'vnpay' ? 'bold' : 'normal', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', border: paymentMethod === 'vnpay' ? '2px solid #2563eb' : '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', background: '#fff', width: '100%' }}
                 >
                   <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR-1.png" alt="VNPay" style={{ height: 24, objectFit: 'contain' }} />
                   <span>VNPay (Sandbox)</span>
+                </button>
+
+                <button 
+                  className={`method-tab ${paymentMethod === 'payos' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('payos')}
+                  style={{ fontWeight: paymentMethod === 'payos' ? 'bold' : 'normal', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', border: paymentMethod === 'payos' ? '2px solid #2563eb' : '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', background: '#fff', width: '100%' }}
+                >
+                  <img src="https://payos.vn/assets/img/logo.svg" alt="PayOS" style={{ height: 24, objectFit: 'contain' }} onError={(e) => { e.target.src = 'https://img.vietqr.io/assets/images/vietqr-logo.png'; }} />
+                  <span>VietQR / PayOS (Thanh toán thật)</span>
                 </button>
               </div>
 

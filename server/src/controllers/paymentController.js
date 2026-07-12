@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { Payment, Contract, Room, User, RentalRequest, ViewingSchedule } = require('../models');
+const payos = require('../utils/payos');
 
 const vnp_TmnCode = process.env.VNP_TMN_CODE || '98KLJQXT';
 const vnp_HashSecret = process.env.VNP_HASH_SECRET || '7HVTWYRFWK4H9EMWOLX9R7GH8VXKGKI8';
@@ -288,6 +289,8 @@ const createPaymentUrl = async (req, res, next) => {
       });
     }
 
+    const paymentMethod = req.body.paymentMethod || 'vnpay';
+
     if (!payment) {
       payment = await Payment.create({
         room_id: roomId,
@@ -296,15 +299,40 @@ const createPaymentUrl = async (req, res, next) => {
         landlord_id: room.landlord_id,
         amount: amount,
         payment_type: 'deposit',
-        payment_method: 'vnpay',
+        payment_method: paymentMethod,
         status: 'pending',
         created_at: new Date(),
         updated_at: new Date()
       });
     } else {
       payment.amount = amount;
+      payment.payment_method = paymentMethod;
       payment.updated_at = new Date();
       await payment.save();
+    }
+
+    if (paymentMethod === 'payos') {
+      const orderCode = payment.payment_id;
+      const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : 'http://localhost:5173');
+      const cancelUrl = `${origin}/tenant/payment/return?cancel=true&status=CANCELLED&orderCode=${orderCode}`;
+      const returnUrl = `${origin}/tenant/payment/return?status=PAID&orderCode=${orderCode}`;
+      const description = `Coc phong ${roomId}`.substring(0, 25);
+
+      const paymentData = {
+        orderCode,
+        amount: Math.round(amount),
+        description,
+        cancelUrl,
+        returnUrl,
+      };
+
+      const result = await payos.createPaymentLink(paymentData);
+      
+      await payment.update({
+        transaction_id: result.paymentLinkId,
+      });
+
+      return res.status(200).json({ success: true, url: result.checkoutUrl });
     }
 
     const ipAddr = req.headers['x-forwarded-for'] ||
@@ -724,6 +752,516 @@ const cancelPayment = async (req, res, next) => {
   }
 };
 
+const processPaymentSuccess = async (payment, transactionId) => {
+  if (payment.status === 'completed') {
+    return payment;
+  }
+
+  await payment.update({ 
+    status: 'completed', 
+    transaction_id: transactionId,
+    paid_date: new Date(),
+    updated_at: new Date()
+  });
+
+  // Cancel all other pending payments for this room
+  await Payment.update(
+    { status: 'cancelled', updated_at: new Date() },
+    { 
+      where: { 
+        room_id: payment.room_id, 
+        payment_id: { [Op.ne]: payment.payment_id },
+        status: 'pending' 
+      } 
+    }
+  );
+
+  if (payment.payment_type === 'viewing_deposit' && payment.viewing_schedule_id) {
+    const { ViewingSchedule } = require('../models');
+    await ViewingSchedule.update(
+      { status: 'scheduled' }, 
+      { where: { schedule_id: payment.viewing_schedule_id } }
+    );
+  } else if (payment.contract_id) {
+    const contract = await Contract.findByPk(payment.contract_id);
+    if (contract) {
+      await contract.update({ status: 'active', tenant_agreed: true });
+      
+      const room = await Room.findByPk(contract.room_id);
+      if (room) {
+        await room.update({ status: 'rented' });
+      }
+      
+      const { ViewingSchedule, Notification } = require('../models');
+      const viewingSchedule = await ViewingSchedule.findOne({
+        where: { room_id: contract.room_id, tenant_id: payment.tenant_id, status: 'contract_created' }
+      });
+      
+      if (viewingSchedule) {
+        await viewingSchedule.update({ status: 'completed', tenant_decision: 'rented' });
+      }
+
+      // Cancel all other active viewing schedules for this room
+      const otherSchedules = await ViewingSchedule.findAll({
+        where: {
+          room_id: contract.room_id,
+          status: { [Op.in]: ['pending', 'scheduled', 'confirmed', 'completed', 'contract_requested', 'contract_created'] },
+          schedule_id: { [Op.ne]: viewingSchedule ? viewingSchedule.schedule_id : null }
+        }
+      });
+
+      for (const sched of otherSchedules) {
+        await sched.update({
+          status: 'cancelled',
+          notes: (sched.notes ? sched.notes + '\n' : '') + '[SYSTEM]: Room has been rented by another tenant.'
+        });
+        
+        await Notification.create({
+          user_id: sched.tenant_id,
+          title: 'Viewing Cancelled',
+          message: `Your viewing schedule for "${room ? room.title : 'room'}" has been cancelled because the room was just rented by another tenant.`,
+          notification_type: 'viewing_schedule',
+          related_id: sched.schedule_id,
+        });
+      }
+
+      // Cancel all other active rental requests for this room
+      const { RentalRequest } = require('../models');
+      const otherRequests = await RentalRequest.findAll({
+        where: {
+          room_id: contract.room_id,
+          status: { [Op.in]: ['pending', 'approved', 'contract_requested', 'contract_created'] }
+        }
+      });
+
+      for (const req of otherRequests) {
+        await req.update({
+          status: 'cancelled',
+          rejection_reason: '[SYSTEM]: Room has been rented by another tenant.'
+        });
+        
+        await Notification.create({
+          user_id: req.tenant_id,
+          title: 'Request Cancelled',
+          message: `Your rental request for "${room ? room.title : 'room'}" has been cancelled because the room was just rented by another tenant.`,
+          notification_type: 'rental_request',
+          related_id: req.request_id,
+        });
+      }
+
+      // Cancel all other active contracts for this room
+      const otherContracts = await Contract.findAll({
+        where: {
+          room_id: contract.room_id,
+          status: { [Op.in]: ['draft', 'pending_signature'] },
+          contract_id: { [Op.ne]: contract.contract_id }
+        }
+      });
+
+      for (const otherC of otherContracts) {
+        await otherC.update({ status: 'cancelled' });
+        
+        await Notification.create({
+          user_id: otherC.tenant_id,
+          title: 'Contract Cancelled',
+          message: `Your rental contract for "${room ? room.title : 'room'}" has been cancelled because the room was just rented by another tenant.`,
+          notification_type: 'contract',
+          related_id: otherC.contract_id,
+        });
+      }
+
+      await Notification.create({
+        user_id: contract.landlord_id,
+        title: 'Contract Signed & Paid',
+        message: `Tenant has signed the rental contract and paid the deposit + 1st month rent for "${room ? room.title : 'room'}". The rental is now active.`,
+        notification_type: 'contract',
+        related_id: contract.contract_id,
+      });
+      
+      const total = parseFloat(payment.amount);
+      await payment.update({
+          platform_fee: total * 0.05,
+          net_amount: total * 0.95,
+          refund_amount: 0,
+          payout_status: 'pending'
+      });
+    }
+  } else {
+    const { RentalRequest, Notification } = require('../models');
+    const rentalRequest = await RentalRequest.findOne({
+      where: {
+        room_id: payment.room_id,
+        tenant_id: payment.tenant_id,
+        status: 'approved'
+      }
+    });
+
+    if (rentalRequest) {
+      await rentalRequest.update({ status: 'deposit_paid' });
+    }
+
+    const room = await Room.findByPk(payment.room_id);
+    if (room) {
+      await room.update({ status: 'rented' });
+
+      const { ViewingSchedule } = require('../models');
+      const otherSchedules = await ViewingSchedule.findAll({
+        where: {
+          room_id: payment.room_id,
+          status: { [Op.in]: ['pending', 'scheduled', 'confirmed', 'completed', 'contract_requested', 'contract_created'] }
+        }
+      });
+
+      for (const sched of otherSchedules) {
+        await sched.update({
+          status: 'cancelled',
+          notes: (sched.notes ? sched.notes + '\n' : '') + '[SYSTEM]: Room has been rented by another tenant.'
+        });
+        
+        await Notification.create({
+          user_id: sched.tenant_id,
+          title: 'Viewing Cancelled',
+          message: `Your viewing schedule for "${room.title}" has been cancelled because the room was just rented by another tenant.`,
+          notification_type: 'viewing_schedule',
+          related_id: sched.schedule_id,
+        });
+      }
+
+      const otherRequests = await RentalRequest.findAll({
+        where: {
+          room_id: payment.room_id,
+          status: { [Op.in]: ['pending', 'approved', 'contract_requested', 'contract_created'] },
+          request_id: { [Op.ne]: rentalRequest ? rentalRequest.request_id : null }
+        }
+      });
+
+      for (const req of otherRequests) {
+        await req.update({
+          status: 'cancelled',
+          rejection_reason: '[SYSTEM]: Room has been rented by another tenant.'
+        });
+        
+        await Notification.create({
+          user_id: req.tenant_id,
+          title: 'Request Cancelled',
+          message: `Your rental request for "${room.title}" has been cancelled because the room was just rented by another tenant.`,
+          notification_type: 'rental_request',
+          related_id: req.request_id,
+        });
+      }
+
+      const otherContracts = await Contract.findAll({
+        where: {
+          room_id: payment.room_id,
+          status: { [Op.in]: ['draft', 'pending_signature'] }
+        }
+      });
+
+      for (const otherC of otherContracts) {
+        await otherC.update({ status: 'cancelled' });
+        
+        await Notification.create({
+          user_id: otherC.tenant_id,
+          title: 'Contract Cancelled',
+          message: `Your rental contract for "${room.title}" has been cancelled because the room was just rented by another tenant.`,
+          notification_type: 'contract',
+          related_id: otherC.contract_id,
+        });
+      }
+    }
+  }
+
+  const updatedPayment = await Payment.findByPk(payment.payment_id, {
+    include: [
+      { model: Room, as: 'room', attributes: ['title', 'address', 'ward', 'district', 'city'] },
+      { model: User, as: 'landlordPayment', attributes: ['full_name', 'email', 'phone'] }
+    ]
+  });
+
+  return updatedPayment;
+};
+
+const payosReturn = async (req, res, next) => {
+  try {
+    const { status, orderCode } = req.query;
+
+    const payment = await Payment.findByPk(orderCode);
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment not found' });
+    }
+
+    if (status === 'PAID' || req.query.code === '00') {
+      const updatedPayment = await processPaymentSuccess(payment, payment.transaction_id || `payos_${orderCode}_${Date.now()}`);
+
+      const paymentData = updatedPayment.toJSON();
+      paymentData.landlord = paymentData.landlordPayment;
+      delete paymentData.landlordPayment;
+
+      return res.status(200).json({
+        success: true,
+        message: 'Payment success',
+        code: '00',
+        payment_id: orderCode,
+        data: paymentData
+      });
+    } else {
+      await payment.update({
+        status: 'failed',
+        updated_at: new Date()
+      });
+
+      return res.status(200).json({
+        success: false,
+        message: 'Payment cancelled or failed',
+        code: '99',
+        payment_id: orderCode
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+const payosWebhook = async (req, res, next) => {
+  try {
+    const verifiedData = payos.verifyPaymentWebhookData(req.body);
+    const { orderCode, status } = verifiedData;
+
+    const payment = await Payment.findByPk(orderCode);
+    if (payment && (status === 'PAID' || status === 'completed')) {
+      await processPaymentSuccess(payment, payment.transaction_id || `payos_webhook_${orderCode}`);
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('PayOS webhook processing error:', error);
+    return res.status(200).json({ success: false, message: error.message });
+  }
+};
+
+const mockPayosCheckout = async (req, res, next) => {
+  try {
+    const { paymentId, amount } = req.query;
+    const payment = await Payment.findByPk(paymentId, {
+      include: [
+        { model: Room, as: 'room' },
+        { model: User, as: 'landlordPayment' }
+      ]
+    });
+
+    if (!payment) {
+      return res.status(404).send('<h1>Payment not found</h1>');
+    }
+
+    const formattedAmount = parseInt(amount).toLocaleString('vi-VN');
+    const roomTitle = payment.room?.title || 'Phòng Trọ';
+    const landlordName = payment.landlordPayment?.full_name || 'Smart Rental Partner';
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayOS VietQR Simulation Checkout</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .checkout-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 480px;
+      padding: 32px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+    .header {
+      margin-bottom: 24px;
+    }
+    .logo {
+      font-weight: 800;
+      font-size: 24px;
+      color: #6366f1;
+      letter-spacing: -0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-badge {
+      background: #4f46e5;
+      color: white;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 12px;
+      color: #f1f5f9;
+    }
+    .qr-container {
+      background: white;
+      padding: 16px;
+      border-radius: 16px;
+      display: inline-block;
+      margin: 20px 0;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .qr-image {
+      width: 220px;
+      height: 220px;
+      display: block;
+    }
+    .details-box {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .detail-row:last-child {
+      margin-bottom: 0;
+    }
+    .detail-label {
+      color: #94a3b8;
+    }
+    .detail-value {
+      color: #f1f5f9;
+      font-weight: 600;
+    }
+    .amount {
+      font-size: 24px;
+      color: #10b981;
+      font-weight: 800;
+      text-align: center;
+      margin: 12px 0 6px 0;
+    }
+    .buttons-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .btn {
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      width: 100%;
+    }
+    .btn-primary {
+      background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.05);
+      color: #f1f5f9;
+    }
+    .instruction {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 16px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="checkout-card">
+    <div class="header">
+      <div class="logo">
+        <span>payOS</span>
+        <span class="logo-badge">VietQR Simulation</span>
+      </div>
+      <h2 class="title">Cổng Thanh Toán Mô Phỏng</h2>
+    </div>
+
+    <div class="qr-container">
+      <img src="https://img.vietqr.io/image/vietinbank-1133224455-compact.png?amount=${amount}&addInfo=Coc%20phong%20${paymentId}&accountName=${encodeURIComponent(landlordName)}" alt="VietQR Code" class="qr-image">
+    </div>
+
+    <div class="amount">${formattedAmount} đ</div>
+
+    <div class="details-box">
+      <div class="detail-row">
+        <span class="detail-label">Nhà cung cấp</span>
+        <span class="detail-value">RentWise Escrow</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Mã hóa đơn</span>
+        <span class="detail-value">#PAY-${paymentId}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Phòng trọ</span>
+        <span class="detail-value">${roomTitle}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Nội dung CK</span>
+        <span class="detail-value">Coc phong ${paymentId}</span>
+      </div>
+    </div>
+
+    <div class="buttons-container">
+      <button class="btn btn-primary" onclick="triggerSuccess()">Xác Nhận Thanh Toán Thành Công</button>
+      <button class="btn btn-secondary" onclick="triggerCancel()">Hủy Giao Dịch</button>
+    </div>
+
+    <div class="instruction">
+      Mã VietQR ở trên được tạo tự động cho mục đích thử nghiệm.<br>
+      Bấm nút "Xác Nhận Thanh Toán" để giả lập giao dịch chuyển khoản thành công từ phía khách hàng.
+    </div>
+  </div>
+
+  <script>
+    function triggerSuccess() {
+      window.location.href = "http://localhost:5173/tenant/payment/return?status=PAID&orderCode=${paymentId}&code=00";
+    }
+
+    function triggerCancel() {
+      window.location.href = "http://localhost:5173/tenant/payment/return?status=CANCELLED&orderCode=${paymentId}&cancel=true&code=99";
+    }
+  </script>
+</body>
+</html>
+    `;
+    return res.status(200).send(html);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getLandlordPayments,
   getPaymentDetails,
@@ -732,5 +1270,8 @@ module.exports = {
   createPaymentUrl,
   vnpayReturn,
   getMyPayments,
-  cancelPayment
+  cancelPayment,
+  payosReturn,
+  payosWebhook,
+  mockPayosCheckout
 };

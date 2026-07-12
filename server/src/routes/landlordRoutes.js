@@ -18,6 +18,7 @@ const notificationController = require('../controllers/notificationController');
 const dashboardController = require('../controllers/dashboardController');
 const landlordProfileController = require('../controllers/landlordProfileController');
 const propertyController = require('../controllers/propertyController');
+const withdrawalController = require('../controllers/withdrawalController');
 
 // =========================================================
 // MULTER CONFIGURATION
@@ -48,6 +49,14 @@ router.use(authMiddleware);
 router.get('/profile', landlordProfileController.getLandlordProfile);
 router.put('/profile', landlordProfileController.updateLandlordProfile);
 router.put('/profile/avatar', upload.single('avatar'), landlordProfileController.updateAvatar);
+
+// =========================================================
+// BANK DETAILS & WITHDRAWAL ROUTES
+// =========================================================
+router.get('/bank-details', withdrawalController.getBankDetails);
+router.post('/bank-details', withdrawalController.saveBankDetails);
+router.get('/withdrawals', withdrawalController.getWithdrawals);
+router.post('/withdrawals', withdrawalController.createWithdrawal);
 router.post('/profile/avatar', upload.single('file'), landlordProfileController.updateAvatar);
 router.put('/profile/password', landlordProfileController.changePassword);
 router.post('/profile/change-password', landlordProfileController.changePassword);

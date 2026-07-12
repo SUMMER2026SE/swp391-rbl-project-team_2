@@ -5,7 +5,7 @@ const initDatabase = async () => {
     console.log('🔄 Initializing database...');
 
     // Import all models (without associations being defined yet)
-    const { Role, User, OtpVerification, Property, Room, RoomImage, Facility, RentalRequest, Payment, Contract, ViewingSchedule, Complaint, Conversation, Message, Notification, Booking, Favorite, defineAssociations } = require('../models');
+    const { Role, User, OtpVerification, Property, Room, RoomImage, Facility, RentalRequest, Payment, Contract, ViewingSchedule, Complaint, Conversation, Message, Notification, Booking, Favorite, UserBankDetail, WithdrawalRequest, defineAssociations } = require('../models');
 
     // Self-healing: Force the database back to MULTI_USER mode just in case it was stuck in SINGLE_USER mode
     try {
@@ -89,6 +89,54 @@ const initDatabase = async () => {
         IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('contracts') AND name = 'assigned_room_number')
         BEGIN
             ALTER TABLE contracts ADD assigned_room_number VARCHAR(50) NULL;
+        END
+      `);
+
+      // Create user_bank_details table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'user_bank_details')
+        BEGIN
+            CREATE TABLE user_bank_details (
+                id INT IDENTITY PRIMARY KEY,
+                user_id INT NOT NULL UNIQUE,
+                bank_name NVARCHAR(255) NOT NULL,
+                account_number VARCHAR(50) NOT NULL,
+                account_holder_name NVARCHAR(255) NOT NULL,
+                branch NVARCHAR(255) NULL,
+                created_at DATETIME DEFAULT GETDATE(),
+                updated_at DATETIME DEFAULT GETDATE(),
+                FOREIGN KEY (user_id) REFERENCES users(user_id)
+            );
+        END
+      `);
+
+      // Create withdrawal_requests table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'withdrawal_requests')
+        BEGIN
+            CREATE TABLE withdrawal_requests (
+                withdrawal_id INT IDENTITY PRIMARY KEY,
+                user_id INT NOT NULL,
+                amount DECIMAL(10, 2) NOT NULL,
+                bank_name NVARCHAR(255) NOT NULL,
+                account_number VARCHAR(50) NOT NULL,
+                account_holder_name NVARCHAR(255) NOT NULL,
+                status VARCHAR(50) DEFAULT 'pending',
+                transaction_proof_url NVARCHAR(500) NULL,
+                admin_notes NVARCHAR(MAX) NULL,
+                created_at DATETIME DEFAULT GETDATE(),
+                updated_at DATETIME DEFAULT GETDATE(),
+                FOREIGN KEY (user_id) REFERENCES users(user_id)
+            );
+        END
+      `);
+
+      // Add withdrawal_id to payments table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('payments') AND name = 'withdrawal_id')
+        BEGIN
+            ALTER TABLE payments ADD withdrawal_id INT NULL;
+            ALTER TABLE payments ADD CONSTRAINT FK_payments_withdrawal FOREIGN KEY (withdrawal_id) REFERENCES withdrawal_requests(withdrawal_id);
         END
       `);
 

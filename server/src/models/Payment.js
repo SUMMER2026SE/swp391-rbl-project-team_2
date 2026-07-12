@@ -79,6 +79,10 @@ const Payment = sequelize.define('Payment', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  withdrawal_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
