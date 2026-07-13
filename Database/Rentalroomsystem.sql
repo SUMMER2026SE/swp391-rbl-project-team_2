@@ -149,6 +149,7 @@ CREATE TABLE [dbo].[contracts](
 	[document_url] [nvarchar](500) NULL,
 	[is_renewed] [bit] NULL,
 	[renewal_contract_id] [int] NULL,
+	[assigned_room_number] [nvarchar](50) NULL,
 	[created_at] [datetime] NULL,
 	[updated_at] [datetime] NULL,
 	[tenant_name] [nvarchar](100) NULL,

@@ -168,13 +168,13 @@ const DepositManagementPage = () => {
   const getWithdrawalStatusBadge = (status) => {
     switch(status.toLowerCase()) {
       case 'completed':
-        return <span className="deposit-status-pill badge-completed">{t('depositManagement.thnhCng', 'Thành công')}</span>;
+        return <span className="deposit-status-pill badge-completed">{t('depositManagement.statusLabels.completed')}</span>;
       case 'processing':
-        return <span className="deposit-status-pill badge-processing">{t('depositManagement.angChuyn', 'Đang chuyển')}</span>;
+        return <span className="deposit-status-pill badge-processing">{t('depositManagement.statusLabels.processing')}</span>;
       case 'rejected':
-        return <span className="deposit-status-pill badge-failed">{t('depositManagement.tChi', 'Từ chối')}</span>;
+        return <span className="deposit-status-pill badge-failed">{t('depositManagement.statusLabels.rejected')}</span>;
       default:
-        return <span className="deposit-status-pill badge-pending">{t('depositManagement.chDuyt', 'Chờ duyệt')}</span>;
+        return <span className="deposit-status-pill badge-pending">{t('depositManagement.statusLabels.pending')}</span>;
     }
   };
 
@@ -184,17 +184,17 @@ const DepositManagementPage = () => {
       {/* Top Header Block */}
       <div className="deposit-header-row">
         <div>
-          <h1 className="deposit-main-title">{t('depositManagement.vDoanhThuPayouts', 'Ví doanh thu & Payouts')}</h1>
-          <p className="deposit-sub-title">Quản lý doanh thu cọc giữ hộ (escrow) và gửi yêu cầu rút tiền về tài khoản ngân hàng thực tế của bạn.</p>
+          <h1 className="deposit-main-title">{t('depositManagement.title')}</h1>
+          <p className="deposit-sub-title">{t('depositManagement.subtitle')}</p>
         </div>
         <div className="deposit-header-actions">
           <button className="btn-withdraw-action" onClick={() => setShowWithdrawModal(true)}>
             <PlusCircle size={16} />
-            <span>{t('depositManagement.rtTinV', 'Rút tiền về')}</span>
+            <span>{t('depositManagement.withdrawBtn')}</span>
           </button>
           <button className="btn-export-csv" onClick={() => toast.success('Đang xuất báo cáo dữ liệu dạng CSV...')}>
             <Download size={16} />
-            <span>{t('depositManagement.xutCsv', 'Xuất CSV')}</span>
+            <span>{t('depositManagement.exportCsv')}</span>
           </button>
         </div>
       </div>
@@ -204,7 +204,7 @@ const DepositManagementPage = () => {
         <div className="deposit-stat-card">
           <div className="stat-card-main-row">
             <div>
-              <span className="deposit-stat-label">SỐ DƯ KHẢ DỤNG (95%)</span>
+              <span className="deposit-stat-label">{t('depositManagement.availableBalance')}</span>
               <h2 className="deposit-stat-value" style={{ color: '#10b981' }}>{stats.availableBalance.toLocaleString('vi-VN')} đ</h2>
             </div>
             <div className="deposit-stat-icon-box check-blue" style={{ backgroundColor: '#ecfdf5', color: '#10b981' }}>
@@ -212,14 +212,14 @@ const DepositManagementPage = () => {
             </div>
           </div>
           <div className="deposit-stat-footer">
-            <span className="stat-normal-desc">{t('depositManagement.doanhThuRngBnC', 'Doanh thu ròng bạn có thể rút ngay lập tức')}</span>
+            <span className="stat-normal-desc">{t('depositManagement.availableBalanceDesc')}</span>
           </div>
         </div>
 
         <div className="deposit-stat-card">
           <div className="stat-card-main-row">
             <div>
-              <span className="deposit-stat-label">TỔNG THU NHẬP (95%)</span>
+              <span className="deposit-stat-label">{t('depositManagement.totalRevenue')}</span>
               <h2 className="deposit-stat-value" style={{ color: '#d97706' }}>{stats.totalRevenue.toLocaleString('vi-VN')} đ</h2>
             </div>
             <div className="deposit-stat-icon-box clock-gold" style={{ backgroundColor: '#fffbeb', color: '#d97706' }}>
@@ -227,14 +227,14 @@ const DepositManagementPage = () => {
             </div>
           </div>
           <div className="deposit-stat-footer">
-            <span className="stat-normal-desc">{t('depositManagement.tngDoanhThuRngTch', 'Tổng doanh thu ròng tích lũy trên hệ thống')}</span>
+            <span className="stat-normal-desc">{t('depositManagement.totalRevenueDesc')}</span>
           </div>
         </div>
 
         <div className="deposit-stat-card">
           <div className="stat-card-main-row">
             <div>
-              <span className="deposit-stat-label">{t('depositManagement.rtThnhCng', 'ĐÃ RÚT THÀNH CÔNG')}</span>
+              <span className="deposit-stat-label">{t('depositManagement.completedWithdrawals')}</span>
               <h2 className="deposit-stat-value" style={{ color: '#3b82f6' }}>{stats.completedWithdrawals.toLocaleString('vi-VN')} đ</h2>
             </div>
             <div className="deposit-stat-icon-box landmark-blue" style={{ backgroundColor: '#eff6ff', color: '#3b82f6' }}>
@@ -242,7 +242,7 @@ const DepositManagementPage = () => {
             </div>
           </div>
           <div className="deposit-stat-footer">
-            <span className="stat-normal-desc">{t('depositManagement.doanhThuCChuynKhon', 'Doanh thu đã được chuyển khoản thật về ngân hàng')}</span>
+            <span className="stat-normal-desc">{t('depositManagement.completedWithdrawalsDesc')}</span>
           </div>
         </div>
       </div>
@@ -252,11 +252,11 @@ const DepositManagementPage = () => {
         <button 
           className={`wallet-nav-item ${activeTab === 'deposits' ? 'active' : ''}`}
           onClick={() => { setActiveTab('deposits'); setSearchTerm(''); }}
-        >{t('depositManagement.doanhThuTCc', 'Doanh thu đặt cọc')}</button>
+        >{t('depositManagement.tabDeposits')}</button>
         <button 
           className={`wallet-nav-item ${activeTab === 'withdrawals' ? 'active' : ''}`}
           onClick={() => { setActiveTab('withdrawals'); setSearchTerm(''); }}
-        >{t('depositManagement.lchSRtTin', 'Lịch sử rút tiền')}</button>
+        >{t('depositManagement.tabWithdrawals')}</button>
       </div>
 
       {/* Search & Filter Tab Area */}
@@ -265,7 +265,7 @@ const DepositManagementPage = () => {
           <Search size={18} className="deposit-search-icon" />
           <input 
             type="text" 
-            placeholder={activeTab === 'deposits' ? "Tìm theo tên khách, phòng, hoặc mã hóa đơn..." : "Tìm theo ngân hàng, số tài khoản, mã yêu cầu..."}
+            placeholder={activeTab === 'deposits' ? t('depositManagement.searchDeposits') : t('depositManagement.searchWithdrawals')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)} 
           />
@@ -279,7 +279,7 @@ const DepositManagementPage = () => {
                 className={`deposit-tab-item ${depositFilter === tab ? 'active' : ''}`}
                 onClick={() => setDepositFilter(tab)}
               >
-                {tab === 'All' ? 'Tất cả' : tab}
+                {tab === 'All' ? t('depositManagement.statusAll') : t(`depositManagement.statusLabels.${tab.toLowerCase()}`)}
               </button>
             ))}
           </div>
@@ -292,7 +292,7 @@ const DepositManagementPage = () => {
                 onClick={() => setWithdrawalFilter(tab)}
                 style={{ textTransform: 'capitalize' }}
               >
-                {tab === 'All' ? 'Tất cả' : (tab === 'pending' ? 'Chờ duyệt' : (tab === 'processing' ? 'Đang chuyển' : (tab === 'completed' ? 'Thành công' : 'Từ chối')))}
+                {tab === 'All' ? t('depositManagement.statusAll') : t(`depositManagement.statusLabels.${tab.toLowerCase()}`)}
               </button>
             ))}
           </div>
@@ -301,20 +301,20 @@ const DepositManagementPage = () => {
 
       {/* Data Tables */}
       {loading ? (
-        <div className="table-loading-spinner" style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>{t('depositManagement.angTiDLiu', 'Đang tải dữ liệu...')}</div>
+        <div className="table-loading-spinner" style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>{t('depositManagement.loading')}</div>
       ) : activeTab === 'deposits' ? (
         /* Lease Deposits Table */
         <div className="deposit-table-wrapper">
           <table className="deposit-data-table">
             <thead>
               <tr>
-                <th>{t('depositManagement.ngyNhn', 'Ngày nhận')}</th>
-                <th>{t('depositManagement.ngiThuMGd', 'Người thuê & Mã GD')}</th>
-                <th>{t('depositManagement.phngTr', 'Phòng trọ')}</th>
-                <th>Tổng cọc (100%)</th>
-                <th>Phí Admin (5%)</th>
-                <th>Thu về (95%)</th>
-                <th>{t('depositManagement.trngThi', 'Trạng thái')}</th>
+                <th>{t('depositManagement.colDate')}</th>
+                <th>{t('depositManagement.colTenant')}</th>
+                <th>{t('depositManagement.colRoom')}</th>
+                <th>{t('depositManagement.colTotalDeposit')}</th>
+                <th>{t('depositManagement.colAdminFee')}</th>
+                <th>{t('depositManagement.colNetRevenue')}</th>
+                <th>{t('depositManagement.colStatus')}</th>
               </tr>
             </thead>
             <tbody>
@@ -345,7 +345,7 @@ const DepositManagementPage = () => {
                     <td className="deposit-amount-cell" style={{color: '#16a34a', fontWeight: 'bold'}}>{p.netAmount.toLocaleString('vi-VN')} đ</td>
                     <td className="deposit-status-cell">
                       <span className={`deposit-status-pill badge-${p.status.toLowerCase()}`}>
-                        {p.status === 'Completed' ? 'Đã thanh toán' : (p.status === 'Processing' ? 'Đang chuyển' : 'Chờ xử lý')}
+                        {t(`depositManagement.statusLabels.${p.status.toLowerCase()}`)}
                       </span>
                     </td>
                   </tr>
@@ -354,8 +354,8 @@ const DepositManagementPage = () => {
                 <tr>
                   <td colSpan={7} className="table-empty-row-state">
                     <div className="table-empty-box-icon">💼</div>
-                    <h3>{t('depositManagement.khngTmThyGiaoDch', 'Không tìm thấy giao dịch nào')}</h3>
-                    <p>{t('depositManagement.hyThThayIB', 'Hãy thử thay đổi bộ lọc tìm kiếm.')}</p>
+                    <h3>{t('depositManagement.noDepositsFound')}</h3>
+                    <p>{t('depositManagement.tryChangingFilters')}</p>
                   </td>
                 </tr>
               )}
@@ -368,12 +368,12 @@ const DepositManagementPage = () => {
           <table className="deposit-data-table">
             <thead>
               <tr>
-                <th>{t('depositManagement.mYuCuNgy', 'Mã yêu cầu / Ngày')}</th>
-                <th>{t('depositManagement.thngTinTiKhonNgn', 'Thông tin tài khoản ngân hàng thụ hưởng')}</th>
-                <th>{t('depositManagement.sTinRt', 'Số tiền rút')}</th>
-                <th>{t('depositManagement.trngThi', 'Trạng thái')}</th>
-                <th>{t('depositManagement.minhChng', 'Minh chứng')}</th>
-                <th>{t('depositManagement.ghiChAdmin', 'Ghi chú Admin')}</th>
+                <th>{t('depositManagement.colRequestId')}</th>
+                <th>{t('depositManagement.colBankInfo')}</th>
+                <th>{t('depositManagement.colAmount')}</th>
+                <th>{t('depositManagement.colStatus')}</th>
+                <th>{t('depositManagement.colProof')}</th>
+                <th>{t('depositManagement.colAdminNotes')}</th>
               </tr>
             </thead>
             <tbody>
@@ -390,7 +390,7 @@ const DepositManagementPage = () => {
                       <span className="tenant-display-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <Building size={14} color="#64748b" /> {w.bank_name}
                       </span>
-                      <span className="tenant-id-sub">{t('depositManagement.stk', 'STK:')}<strong>{w.account_number}</strong> | Tên: {w.account_holder_name}
+                      <span className="tenant-id-sub">{t('depositManagement.accountNumberPrefix')}<strong>{w.account_number}</strong> | {w.account_holder_name}
                       </span>
                     </td>
                     <td className="deposit-amount-cell" style={{ color: '#1e293b', fontWeight: 'bold' }}>
@@ -406,9 +406,9 @@ const DepositManagementPage = () => {
                           target="_blank" 
                           rel="noopener noreferrer"
                           style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '13px' }}
-                        >{t('depositManagement.xemChngT', 'Xem chứng từ')}</a>
+                        >{t('depositManagement.viewProof')}</a>
                       ) : (
-                        <span style={{ color: '#94a3b8', fontSize: '13px' }}>{t('depositManagement.chaC', 'Chưa có')}</span>
+                        <span style={{ color: '#94a3b8', fontSize: '13px' }}>{t('depositManagement.noProof')}</span>
                       )}
                     </td>
                     <td style={{ color: '#64748b', fontSize: '13px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -420,8 +420,8 @@ const DepositManagementPage = () => {
                 <tr>
                   <td colSpan={6} className="table-empty-row-state">
                     <div className="table-empty-box-icon">💸</div>
-                    <h3>{t('depositManagement.khngTmThyYuCu', 'Không tìm thấy yêu cầu rút tiền nào')}</h3>
-                    <p>{t('depositManagement.hyGiYuCuU', 'Hãy gửi yêu cầu đầu tiên của bạn bằng nút phía trên.')}</p>
+                    <h3>{t('depositManagement.noWithdrawalsFound')}</h3>
+                    <p>{t('depositManagement.sendFirstRequest')}</p>
                   </td>
                 </tr>
               )}
@@ -435,7 +435,7 @@ const DepositManagementPage = () => {
         <div className="modal-overlay" onClick={() => !submitting && setShowWithdrawModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
             <div className="modal-header">
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>{t('depositManagement.rtTinVTiKhon', 'Rút tiền về tài khoản ngân hàng')}</h3>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>{t('depositManagement.withdrawModalTitle')}</h3>
               <button 
                 className="btn-close" 
                 onClick={() => setShowWithdrawModal(false)}
@@ -450,8 +450,8 @@ const DepositManagementPage = () => {
               /* No Bank Details Configured UI */
               <div className="modal-body" style={{ padding: '20px', textAlign: 'center' }}>
                 <AlertCircle size={48} color="#ef4444" style={{ margin: '0 auto 16px auto' }} />
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>{t('depositManagement.chaThitLpNgnHng', 'Chưa thiết lập ngân hàng thụ hưởng')}</h4>
-                <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>{t('depositManagement.bnPhiCuHnhThng', 'Bạn phải cấu hình thông tin tài khoản ngân hàng nhận tiền trong phần cài đặt Cá nhân trước khi có thể thực hiện rút tiền.')}</p>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>{t('depositManagement.noBankConfigured')}</h4>
+                <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>{t('depositManagement.configureBankDesc')}</p>
                 <button 
                   className="btn-primary-withdraw"
                   onClick={() => {
@@ -459,14 +459,14 @@ const DepositManagementPage = () => {
                     navigate(ROUTES.LANDLORD.PROFILE);
                   }}
                   style={{ width: '100%', padding: '12px', border: 'none', borderRadius: '8px', background: '#4f46e5', color: '#fff', fontWeight: '600', cursor: 'pointer' }}
-                >{t('depositManagement.thitLpTiKhonNgn', 'Thiết lập tài khoản ngân hàng ngay')}</button>
+                >{t('depositManagement.setupBankNow')}</button>
               </div>
             ) : (
               /* Withdraw Form UI */
               <form onSubmit={handleWithdrawSubmit}>
                 <div className="modal-body" style={{ padding: '20px' }}>
                   <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>{t('depositManagement.sDKhDngHin', 'Số dư khả dụng hiện tại:')}</div>
+                    <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>{t('depositManagement.currentAvailableBalance')}</div>
                     <div style={{ fontSize: '24px', fontWeight: '800', color: '#10b981' }}>
                       {stats.availableBalance.toLocaleString('vi-VN')} đ
                     </div>
@@ -474,23 +474,23 @@ const DepositManagementPage = () => {
 
                   <div style={{ background: '#eff6ff', padding: '16px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #bfdbfe' }}>
                     <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#2563eb', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Building size={14} />{t('depositManagement.ngnHngThHng', 'Ngân hàng thụ hưởng:')}</div>
-                    <div style={{ fontSize: '14px', color: '#1e293b', marginBottom: '4px' }}>{t('depositManagement.ngnHng', 'Ngân hàng:')}<strong>{bankDetails.bank_name}</strong>
+                      <Building size={14} />{t('depositManagement.beneficiaryBank')}</div>
+                    <div style={{ fontSize: '14px', color: '#1e293b', marginBottom: '4px' }}>{t('depositManagement.bankName')}<strong>{bankDetails.bank_name}</strong>
                     </div>
-                    <div style={{ fontSize: '14px', color: '#1e293b', marginBottom: '4px' }}>{t('depositManagement.sTiKhon', 'Số tài khoản:')}<strong>{bankDetails.account_number}</strong>
+                    <div style={{ fontSize: '14px', color: '#1e293b', marginBottom: '4px' }}>{t('depositManagement.accountNumber')}<strong>{bankDetails.account_number}</strong>
                     </div>
-                    <div style={{ fontSize: '14px', color: '#1e293b' }}>{t('depositManagement.tnChTiKhon', 'Tên chủ tài khoản:')}<strong>{bankDetails.account_holder_name}</strong>
+                    <div style={{ fontSize: '14px', color: '#1e293b' }}>{t('depositManagement.accountHolder')}<strong>{bankDetails.account_holder_name}</strong>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#2563eb', marginTop: '8px' }}>{t('depositManagement.nuMunINgnHng', '*Nếu muốn đổi ngân hàng nhận, hãy chỉnh sửa trong trang Profile cá nhân.')}</div>
+                    <div style={{ fontSize: '12px', color: '#2563eb', marginTop: '8px' }}>{t('depositManagement.changeBankNote')}</div>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <label style={{ fontSize: '14px', fontWeight: '600', color: '#334155' }}>
-                      Số tiền rút (VND)
+                      {t('depositManagement.withdrawalAmount')}
                     </label>
                     <input 
                       type="number"
-                      placeholder={t('depositManagement.vD500000Placeholder', 'Ví dụ: 500000')}
+                      placeholder={t('depositManagement.amountPlaceholder')}
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
                       required
@@ -500,12 +500,12 @@ const DepositManagementPage = () => {
                       style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '16px', outline: 'none' }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                      <span style={{ fontSize: '12px', color: '#64748b' }}>{t('depositManagement.tiThiu1', 'Tối thiểu 1 đ')}</span>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>{t('depositManagement.minAmount')}</span>
                       <button 
                         type="button" 
                         onClick={() => setWithdrawAmount(stats.availableBalance.toString())}
                         style={{ background: 'none', border: 'none', color: '#4f46e5', fontSize: '12px', fontWeight: '600', cursor: 'pointer', padding: 0 }}
-                      >{t('depositManagement.rtTonB', 'Rút toàn bộ')}</button>
+                      >{t('depositManagement.withdrawAll')}</button>
                     </div>
                   </div>
                 </div>
@@ -517,14 +517,14 @@ const DepositManagementPage = () => {
                     onClick={() => setShowWithdrawModal(false)}
                     disabled={submitting}
                     style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', color: '#334155', fontWeight: '600', cursor: 'pointer' }}
-                  >{t('depositManagement.hy', 'Hủy')}</button>
+                  >{t('depositManagement.cancel')}</button>
                   <button 
                     type="submit" 
                     className="btn-primary" 
                     disabled={submitting || !withdrawAmount}
                     style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#4f46e5', color: '#fff', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                   >
-                    {submitting ? 'Đang rút...' : 'Rút tiền ngay'} <ArrowUpRight size={16} />
+                    {submitting ? t('depositManagement.withdrawing') : t('depositManagement.confirmWithdrawal')} <ArrowUpRight size={16} />
                   </button>
                 </div>
               </form>

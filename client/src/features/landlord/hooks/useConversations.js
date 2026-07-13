@@ -129,6 +129,18 @@ export const useConversations = (params = {}) => {
     }
   };
 
+  const createConversation = async (email) => {
+    try {
+      const response = await landlordService.createConversation({ email });
+      const newConv = response?.data || response;
+      await fetchConversations();
+      return newConv;
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+      throw err;
+    }
+  };
+
   return {
     conversations,
     currentConversation,
@@ -138,6 +150,7 @@ export const useConversations = (params = {}) => {
     fetchConversations,
     fetchConversationById,
     sendMessage,
+    createConversation,
   };
 };
 

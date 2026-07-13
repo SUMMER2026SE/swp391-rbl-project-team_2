@@ -30,9 +30,11 @@ import Badge from '../../../components/ui/Badge';
 import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
 import SignatureCanvas from 'react-signature-canvas';
 import useAuthStore from '../../../store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 import './RentalRequestsPage.css'; // Re-use the CSS
 
 const ViewingSchedulesPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [schedules, setSchedules] = useState([]);
@@ -328,19 +330,19 @@ const ViewingSchedulesPage = () => {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'pending_payment': return 'Pending Payment';
-      case 'scheduled': return 'Scheduled';
-      case 'confirmed': return 'Confirmed';
-      case 'contract_requested': return 'Contract Requested';
-      case 'contract_created': return 'Contract Created';
-      case 'completed': return 'Completed';
-      case 'cancelled': return 'Cancelled';
-      case 'rejected': return 'Rejected';
-      case 'no_show': return 'No Show';
-      case 'disputed': return 'Disputed';
-      case 'dispute_resolved': return 'Dispute Resolved';
-      case 'expired': return 'Expired';
-      default: return status?.charAt(0).toUpperCase() + status?.slice(1) || 'Unknown';
+      case 'pending_payment': return t('status.pendingPayment', 'Pending Payment');
+      case 'scheduled': return t('status.scheduled', 'Scheduled');
+      case 'confirmed': return t('status.confirmed', 'Confirmed');
+      case 'contract_requested': return t('status.contractRequested', 'Contract Requested');
+      case 'contract_created': return t('status.contractCreated', 'Contract Created');
+      case 'completed': return t('status.completed', 'Completed');
+      case 'cancelled': return t('status.cancelled', 'Cancelled');
+      case 'rejected': return t('status.rejected', 'Rejected');
+      case 'no_show': return t('status.noShow', 'No Show');
+      case 'disputed': return t('status.disputed', 'Disputed');
+      case 'dispute_resolved': return t('status.dispute_resolved', 'Dispute Resolved');
+      case 'expired': return t('status.expired', 'Expired');
+      default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown';
     }
   };
 
@@ -351,8 +353,8 @@ const ViewingSchedulesPage = () => {
       {/* Header */}
       <div className="rental-requests__header">
         <div>
-          <h1 className="rental-requests__title">Viewing Schedules</h1>
-          <p className="rental-requests__subtitle">Review and manage tenant viewing requests, confirm visits, and create contracts</p>
+          <h1 className="rental-requests__title">{t('landlordSchedules.title')}</h1>
+          <p className="rental-requests__subtitle">{t('landlordSchedules.subtitle')}</p>
         </div>
       </div>
 
@@ -370,19 +372,19 @@ const ViewingSchedulesPage = () => {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search by tenant name, email, or room..."
+            placeholder={t('landlordSchedules.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
         <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>From:</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>{t('landlordSchedules.from')}</span>
           <input type="date" lang="en-GB" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
         </div>
 
         <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>To:</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>{t('landlordSchedules.to')}</span>
           <input type="date" lang="en-GB" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
         </div>
 
@@ -391,13 +393,13 @@ const ViewingSchedulesPage = () => {
             className="filter-dropdown-btn"
             onClick={() => setShowSortDropdown(!showSortDropdown)}
           >
-            <span>{sortOrder === 'newest' ? 'Newest First' : 'Oldest First'}</span>
+            <span>{sortOrder === 'newest' ? t('landlordSchedules.newestFirst') : t('landlordSchedules.oldestFirst')}</span>
             <ChevronDown size={16} />
           </button>
           {showSortDropdown && (
             <div className="filter-dropdown-menu">
-              <button className={`filter-dropdown-item ${sortOrder === 'newest' ? 'active' : ''}`} onClick={() => { setSortOrder('newest'); setShowSortDropdown(false); }}>Newest First</button>
-              <button className={`filter-dropdown-item ${sortOrder === 'oldest' ? 'active' : ''}`} onClick={() => { setSortOrder('oldest'); setShowSortDropdown(false); }}>Oldest First</button>
+              <button className={`filter-dropdown-item ${sortOrder === 'newest' ? 'active' : ''}`} onClick={() => { setSortOrder('newest'); setShowSortDropdown(false); }}>{t('landlordSchedules.newestFirst')}</button>
+              <button className={`filter-dropdown-item ${sortOrder === 'oldest' ? 'active' : ''}`} onClick={() => { setSortOrder('oldest'); setShowSortDropdown(false); }}>{t('landlordSchedules.oldestFirst')}</button>
             </div>
           )}
         </div>
@@ -407,7 +409,7 @@ const ViewingSchedulesPage = () => {
             className="filter-dropdown-btn"
             onClick={() => setShowStatusDropdown(!showStatusDropdown)}
           >
-            <span>{statusFilter === 'All' ? 'All' : getStatusLabel(statusFilter)}</span>
+            <span>{statusFilter === 'All' ? t('landlordSchedules.all') : getStatusLabel(statusFilter)}</span>
             <ChevronDown size={16} />
           </button>
           {showStatusDropdown && (
@@ -421,7 +423,7 @@ const ViewingSchedulesPage = () => {
                     setShowStatusDropdown(false);
                   }}
                 >
-                  {status === 'All' ? 'All Statuses' : getStatusLabel(status)}
+                  {status === 'All' ? t('landlordSchedules.allStatuses') : getStatusLabel(status)}
                 </button>
               ))}
             </div>
@@ -436,12 +438,12 @@ const ViewingSchedulesPage = () => {
             <table className="rental-requests__table">
               <thead>
                 <tr>
-                  <th>Tenant</th>
-                  <th>Room</th>
-                  <th>Viewing Date</th>
-                  <th>Viewing Time</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>{t('landlordSchedules.tenant')}</th>
+                  <th>{t('landlordSchedules.room')}</th>
+                  <th>{t('landlordSchedules.viewingDate')}</th>
+                  <th>{t('landlordSchedules.viewingTime')}</th>
+                  <th>{t('landlordSchedules.status')}</th>
+                  <th>{t('landlordSchedules.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -495,7 +497,7 @@ const ViewingSchedulesPage = () => {
                         setShowDetailModal(true);
                       }}
                     >
-                      View Details
+                      {t('landlordSchedules.viewDetails')}
                     </button>
                   </td>
                 </tr>
@@ -510,17 +512,17 @@ const ViewingSchedulesPage = () => {
               disabled={currentPage === 1} 
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             >
-              Previous
+              {t('landlordSchedules.previous')}
             </button>
             <span className="pagination-info">
-              Page {currentPage} of {totalPages}
+              {t('landlordSchedules.pageOf', { currentPage, totalPages })}
             </span>
             <button 
               className={`btn-pagination ${currentPage === totalPages ? 'disabled' : ''}`}
               disabled={currentPage === totalPages} 
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             >
-              Next
+              {t('landlordSchedules.next')}
             </button>
           </div>
         )}
@@ -528,8 +530,8 @@ const ViewingSchedulesPage = () => {
       ) : (
         <EmptyState
           icon="📅"
-          title="No viewing schedules"
-          description="You don't have any viewing requests or schedules yet"
+          title={t('landlordSchedules.noSchedules')}
+          description={t('landlordSchedules.noSchedulesDesc')}
         />
       )}
 
@@ -538,7 +540,7 @@ const ViewingSchedulesPage = () => {
         <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}>
           <div className="modal-content modal-content--large" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Viewing Schedule Details</h3>
+              <h3>{t('landlordSchedules.scheduleDetails')}</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setShowDetailModal(false)}

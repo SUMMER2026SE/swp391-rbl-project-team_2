@@ -11,7 +11,8 @@ import {
   Send, 
   Building,
   Sparkles,
-  Loader
+  Loader,
+  X
 } from 'lucide-react';
 import { useConversations } from '../hooks/useConversations';
 import './MessagesPage.css';
@@ -24,6 +25,9 @@ const MessagesPage = () => {
   const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [newChatEmail, setNewChatEmail] = useState('');
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
   const messagesEndRef = useRef(null);
 
   const { 
@@ -31,7 +35,8 @@ const MessagesPage = () => {
     currentConversation, 
     loading, 
     fetchConversationById, 
-    sendMessage 
+    sendMessage,
+    createConversation
   } = useConversations();
 
   // Handle ?conversationId=xxx in URL
@@ -73,6 +78,24 @@ const MessagesPage = () => {
     }
   };
 
+  const handleCreateNewChat = async (e) => {
+    e.preventDefault();
+    if (!newChatEmail.trim()) return;
+    try {
+      setIsCreatingChat(true);
+      const conv = await createConversation(newChatEmail.trim());
+      setShowNewChatModal(false);
+      setNewChatEmail('');
+      handleSelectConversation(conv.conversationId || conv.id);
+      toast.success(t('messages.chatCreated', 'Conversation created successfully!'));
+    } catch (err) {
+      // Don't show toast if it's already handled, or just show error
+      // The API error message might already be in err.message
+    } finally {
+      setIsCreatingChat(false);
+    }
+  };
+
   const filteredConversations = conversations.filter(conv => {
     const otherParticipant = conv.participant_1_id === conv.userId 
       ? conv.participant2 
@@ -98,7 +121,7 @@ const MessagesPage = () => {
       <div className="sidebar">
         <div className="sidebar-header">
           <h2>{t('messages.messages', 'Messages')}</h2>
-          <button className="btn-new-message" title="New Message">
+          <button className="btn-new-message" title="New Message" onClick={() => setShowNewChatModal(true)}>
             <SquarePen size={18} />
           </button>
         </div>
@@ -226,6 +249,49 @@ const MessagesPage = () => {
           </div>
         )}
       </div>
+
+      {/* New Chat Modal */}
+      {showNewChatModal && (
+        <div className="modal-overlay">
+          <div className="modal-content new-chat-modal">
+            <div className="modal-header">
+              <h2>{t('messages.startNewChat', 'Start New Chat')}</h2>
+              <button className="btn-close" onClick={() => setShowNewChatModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleCreateNewChat} className="modal-body">
+              <div className="form-group">
+                <label>{t('messages.enterUserEmail', 'Enter User Email Address')}</label>
+                <input
+                  type="email"
+                  value={newChatEmail}
+                  onChange={(e) => setNewChatEmail(e.target.value)}
+                  placeholder="tenant@example.com"
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="modal-actions">
+                <button 
+                  type="button" 
+                  className="btn-cancel" 
+                  onClick={() => setShowNewChatModal(false)}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn-submit" 
+                  disabled={isCreatingChat || !newChatEmail.trim()}
+                >
+                  {isCreatingChat ? <Loader size={16} className="spinner" /> : t('messages.startChat', 'Start Chat')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

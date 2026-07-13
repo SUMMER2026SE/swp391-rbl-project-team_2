@@ -163,8 +163,8 @@ const Header = ({ toggleSidebar }) => {
           )}
           {!isAuthenticated ? (
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              <Link to={ROUTES.LOGIN} className="sign-in-btn" style={{ background: 'transparent', color: '#6C3AED', border: '1px solid #6C3AED', padding: '0.4rem 1rem' }}>Đăng nhập</Link>
-              <Link to={ROUTES.REGISTER} className="sign-in-btn" style={{ padding: '0.4rem 1rem' }}>Đăng ký</Link>
+              <Link to={ROUTES.LOGIN} className="sign-in-btn" style={{ background: 'transparent', color: '#6C3AED', border: '1px solid #6C3AED', padding: '0.4rem 1rem' }}>{t('header.login', 'Đăng nhập')}</Link>
+              <Link to={ROUTES.REGISTER} className="sign-in-btn" style={{ padding: '0.4rem 1rem' }}>{t('header.register', 'Đăng ký')}</Link>
             </div>
           ) : (
             <div className="user-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
