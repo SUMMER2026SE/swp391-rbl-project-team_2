@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageSquare, X, Send, Sparkles, RotateCcw, Minus } from 'lucide-react';
+import { X, Send, Sparkles, RotateCcw, Minus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import useAuthStore from '../../store/useAuthStore';
+import RentalWiseIcon from './RentalWiseIcon';
 import './AIChatWidget.css';
 
 // =========================================================
@@ -168,7 +169,7 @@ const AIChatWidget = () => {
       const response = await api.post('/ai/chat', {
         message: userMsg.content,
         history: messages.slice(-7) // Chỉ gửi 7 tin gần nhất (Ý tưởng 4)
-      });
+      }, { timeout: 60000 }); // Tăng timeout lên 60s cho request AI
 
       if (response.success) {
         setMessages(prev => [...prev, { role: 'assistant', content: response.reply }]);
@@ -211,7 +212,7 @@ const AIChatWidget = () => {
           <div className="ai-chat-header">
             <div className="ai-chat-header-info">
               <div className="ai-chat-avatar">
-                <Sparkles size={20} />
+                <RentalWiseIcon size={24} />
               </div>
               <div className="ai-chat-header-text">
                 <h4>RentalWise AI</h4>
@@ -303,7 +304,7 @@ const AIChatWidget = () => {
         </div>
       ) : (
         <button className="ai-chat-toggle" onClick={() => setIsOpen(true)} title="Chat với AI">
-          <MessageSquare size={26} />
+          <RentalWiseIcon size={32} />
         </button>
       )}
     </div>
