@@ -229,7 +229,7 @@ const LandlordDashboard = () => {
         id: `comp-${c.complaintId}`,
         icon: <AlertCircle size={18} />,
         iconClass: 'activity-icon-container--red',
-        text: `Complaint reported: ${c.title}`,
+        text: t('landlord.dashboard.recentActivity.complaintReported', 'Complaint reported: {{title}}', { title: c.title }),
         date: new Date(c.createdAt)
       }))
     ];

@@ -189,7 +189,7 @@ body.dark .bg-glow-secondary {
 .search-top-row {
   display: flex;
   align-items: center;
-  background: #ffffff;
+  background: var(--bg-card, #ffffff);
   border-radius: 12px;
   padding: 0 16px;
   height: 56px;
@@ -201,12 +201,12 @@ body.dark .bg-glow-secondary {
   background: transparent;
   padding: 0 16px;
   font-size: 1.05rem;
-  color: #1e293b;
+  color: var(--text-main, #1e293b);
   outline: none;
 }
 
 .search-input-main::placeholder {
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
 }
 
 .search-bottom-row {
@@ -219,7 +219,7 @@ body.dark .bg-glow-secondary {
   flex: 1;
   min-width: 140px;
   height: 50px;
-  background: #ffffff;
+  background: var(--bg-card, #ffffff);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -234,7 +234,7 @@ body.dark .bg-glow-secondary {
   outline: none;
   font-size: 0.95rem;
   font-weight: 500;
-  color: #334155;
+  color: var(--text-main, #334155);
   margin-left: 10px;
   cursor: pointer;
   appearance: none; /* Hide default arrow to rely on padding/custom style if needed */
@@ -242,7 +242,7 @@ body.dark .bg-glow-secondary {
 }
 
 .filter-select:disabled {
-  color: #94a3b8;
+  color: var(--text-muted, #94a3b8);
   cursor: not-allowed;
 }
 
@@ -255,14 +255,14 @@ body.dark .bg-glow-secondary {
 
 .filter-dropdown-btn {
   height: 50px;
-  background: #ffffff;
+  background: var(--bg-card, #ffffff);
   border-radius: 10px;
   display: flex;
   align-items: center;
   padding: 0 16px;
   cursor: pointer;
   transition: all 0.2s;
-  color: #334155;
+  color: var(--text-main, #334155);
   font-size: 0.95rem;
   font-weight: 500;
 }
@@ -290,7 +290,7 @@ body.dark .bg-glow-secondary {
   left: 0;
   margin-top: 8px;
   width: 250px;
-  background: #ffffff;
+  background: var(--bg-card, #ffffff);
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   padding: 12px;
@@ -300,20 +300,20 @@ body.dark .bg-glow-secondary {
   z-index: 50;
   max-height: 250px;
   overflow-y: auto;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-light, #e2e8f0);
 }
 
 .dropdown-section-title {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   margin: 4px 0;
   text-transform: uppercase;
 }
 
 .dropdown-divider {
   height: 1px;
-  background-color: #e2e8f0;
+  background-color: var(--border-light, #e2e8f0);
   margin: 6px 0;
 }
 
@@ -322,13 +322,13 @@ body.dark .bg-glow-secondary {
   align-items: center;
   gap: 10px;
   font-size: 0.95rem;
-  color: #334155;
+  color: var(--text-main, #334155);
   cursor: pointer;
   padding: 4px;
 }
 
 .facility-checkbox-label:hover {
-  background: #f8fafc;
+  background: var(--bg-hover, #f8fafc);
   border-radius: 6px;
 }
 
@@ -421,7 +421,7 @@ body.dark .bg-glow-secondary {
 /* --- Trending Locations Section --- */
 .trending-locations-section {
   padding: 60px 0;
-  background: #f8fafc;
+  background-color: transparent;
 }
 
 .locations-carousel-wrapper {
@@ -498,20 +498,20 @@ body.dark .bg-glow-secondary {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card, white);
+  border: 1px solid var(--border-light, #e2e8f0);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #334155;
+  color: var(--text-main, #334155);
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   transition: all 0.2s;
 }
 
 .location-arrow:hover {
-  background: #f8fafc;
-  color: #2563EB;
+  background: var(--bg-hover, #f8fafc);
+  color: var(--primary-color, #2563EB);
 }
 
 .location-arrow.left {

@@ -484,6 +484,16 @@ export const landlordService = {
     }
   },
 
+  createConversation: async (data) => {
+    try {
+      const response = await httpClient.post('/chat/conversations', data);
+      return response;
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      throw error;
+    }
+  },
+
   getConversationById: async (id) => {
     try {
       const response = await httpClient.get(`/chat/conversations/${id}`);

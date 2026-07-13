@@ -7,13 +7,32 @@ const { Conversation, Message, User, Notification } = require('../models');
 // =========================================================
 const createOrGetConversation = async (req, res, next) => {
   try {
-    const { participantId, roomId } = req.body;
+    const { participantId, roomId, email } = req.body;
     const userId = req.user.userId;
 
-    if (!participantId) {
+    let targetParticipantId = participantId;
+
+    if (!targetParticipantId && email) {
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy người dùng với email này / User not found with this email.',
+        });
+      }
+      if (user.user_id === userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bạn không thể tạo cuộc trò chuyện với chính mình / You cannot chat with yourself.',
+        });
+      }
+      targetParticipantId = user.user_id;
+    }
+
+    if (!targetParticipantId) {
       return res.status(400).json({
         success: false,
-        message: 'Participant ID is required.',
+        message: 'Participant ID or email is required.',
       });
     }
 
@@ -21,8 +40,8 @@ const createOrGetConversation = async (req, res, next) => {
     let conversation = await Conversation.findOne({
       where: {
         [Op.or]: [
-          { participant_1_id: userId, participant_2_id: participantId },
-          { participant_1_id: participantId, participant_2_id: userId },
+          { participant_1_id: userId, participant_2_id: targetParticipantId },
+          { participant_1_id: targetParticipantId, participant_2_id: userId },
         ],
         ...(roomId && { room_id: roomId }),
       },
@@ -32,7 +51,7 @@ const createOrGetConversation = async (req, res, next) => {
       // Create new conversation
       conversation = await Conversation.create({
         participant_1_id: userId,
-        participant_2_id: participantId,
+        participant_2_id: targetParticipantId,
         room_id: roomId || null,
         is_active: true,
       });
