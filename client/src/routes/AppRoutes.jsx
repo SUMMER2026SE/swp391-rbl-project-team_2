@@ -61,7 +61,6 @@ import {
   RequestsPage,
   SettingsPage as AdminSettingsPage,
   ViolationManagementPage,
-  PayoutsPage,
   AdminNotificationsPage,
 } from '../features/admin';
 
@@ -168,7 +167,6 @@ const AppRoutes = () => {
         <Route path={ROUTES.ADMIN.ANALYTICS} element={<AnalyticsPage />} />
         <Route path={ROUTES.ADMIN.LOGS} element={<SystemLogsPage />} />
         <Route path={ROUTES.ADMIN.TRANSACTIONS} element={<TransactionsPage />} />
-        <Route path={ROUTES.ADMIN.PAYOUTS} element={<PayoutsPage />} />
         <Route path={ROUTES.ADMIN.LISTINGS} element={<ListingsPage />} />
         <Route path="/admin/listings/:id/review" element={<ReviewListingPage />} />
         <Route path={ROUTES.ADMIN.USERS} element={<UsersPage />} />

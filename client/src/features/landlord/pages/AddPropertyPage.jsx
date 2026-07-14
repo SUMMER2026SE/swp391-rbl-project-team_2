@@ -34,21 +34,51 @@ const normalizeString = (str) => {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/đ/g, "d");
 };
 
+// Helper to remove administrative noise words for robust matching
+const cleanAdministrativeNoise = (str) => {
+  if (!str) return '';
+  return normalizeString(str)
+    .replace(/\b(quan|huyen|thanh pho|tp|phuong|xa|thi xa|thi tran|ward|district|city|town|commune|province)\b/g, '')
+    .trim();
+};
+
 const AddPropertyPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const propertyIdParam = searchParams.get('id') || searchParams.get('propertyId');
   const isEdit = !!propertyIdParam;
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Block unverified landlords from posting properties
+  // Block unverified landlords from posting properties (Real-time check)
   useEffect(() => {
-    if (user && (user.verificationStatus || user.verification_status) !== 'verified') {
-      toast.error('Tài khoản của bạn chưa được xác thực. Vui lòng hoàn tất xác thực thông tin cá nhân (CCCD) để có quyền tạo căn hộ/dự án.');
-      navigate(ROUTES.LANDLORD.PROFILE || '/landlord/profile');
-    }
-  }, [user, navigate]);
+    const checkVerification = async () => {
+      try {
+        const response = await landlordService.getProfile();
+        const profileData = response.data || response;
+        const status = profileData.verificationStatus || profileData.verification_status;
+        
+        // Sync to Zustand store to keep global state updated
+        updateUser({
+          verificationStatus: status,
+          verification_status: status,
+        });
+
+        if (status !== 'verified') {
+          toast.error('Tài khoản của bạn chưa được xác thực. Vui lòng hoàn tất xác thực thông tin cá nhân (CCCD) để có quyền tạo căn hộ/dự án.');
+          navigate(ROUTES.LANDLORD.PROFILE || '/landlord/profile');
+        } else {
+          setCheckingAuth(false);
+        }
+      } catch (err) {
+        console.error('Failed to verify landlord status:', err);
+        navigate(ROUTES.LANDLORD.PROFILE || '/landlord/profile');
+      }
+    };
+
+    checkVerification();
+  }, [navigate, updateUser]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -122,11 +152,11 @@ const AddPropertyPage = () => {
             
             // Asynchronously match the pending district after city loads its districts
             if (pendingDistrictRef.current) {
-              const normDistrictInput = normalizeString(pendingDistrictRef.current);
-              const matchedDist = data.data.find(d => 
-                normalizeString(d.full_name).includes(normDistrictInput) || 
-                normDistrictInput.includes(normalizeString(d.full_name))
-              );
+              const cleanPending = cleanAdministrativeNoise(pendingDistrictRef.current);
+              const matchedDist = data.data.find(d => {
+                const cleanDbDist = cleanAdministrativeNoise(d.full_name);
+                return cleanDbDist.includes(cleanPending) || cleanPending.includes(cleanDbDist);
+              });
               if (matchedDist) {
                 setFormData(prev => ({ ...prev, district: matchedDist.full_name }));
               }
@@ -220,6 +250,15 @@ const AddPropertyPage = () => {
     }
   };
 
+  if (checkingAuth) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', gap: '1rem', color: '#4f46e5' }}>
+        <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid #e0e7ff', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+        <p style={{ fontWeight: '600' }}>Đang xác thực quyền truy cập...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="add-property-page" id="add-property-page">
       {/* Header */}
@@ -308,15 +347,14 @@ const AddPropertyPage = () => {
                   if (matchedProv) {
                     matchedCityName = matchedProv.full_name;
                     if (rawDistrict) {
-                      if (formData.city === matchedCityName && districtsList.length > 0) {
-                        const normDistrictInput = normalizeString(rawDistrict);
-                        const matchedDist = districtsList.find(d => 
-                          normalizeString(d.full_name).includes(normDistrictInput) || 
-                          normDistrictInput.includes(normalizeString(d.full_name))
-                        );
-                        if (matchedDist) {
-                          matchedDistrictName = matchedDist.full_name;
-                        }
+                      // Compare using clean administrative noise names
+                      const cleanInput = cleanAdministrativeNoise(rawDistrict);
+                      const matchedDist = districtsList.find(d => {
+                        const cleanDb = cleanAdministrativeNoise(d.full_name);
+                        return cleanDb.includes(cleanInput) || cleanInput.includes(cleanDb);
+                      });
+                      if (matchedDist) {
+                        matchedDistrictName = matchedDist.full_name;
                       } else {
                         pendingDistrictRef.current = rawDistrict;
                       }

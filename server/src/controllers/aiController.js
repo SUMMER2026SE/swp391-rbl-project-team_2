@@ -7,7 +7,6 @@ const SQLSearchService = require('../ai/SQLSearchService');
 const StreamingService = require('../ai/StreamingService');
 const ResponseFormatter = require('../ai/ResponseFormatter');
 const CitationService = require('../ai/CitationService');
-const TavilyService = require('../ai/TavilyService');
 
 const groqApiKey = process.env.GROQ_API_KEY || 'dummy_key';
 

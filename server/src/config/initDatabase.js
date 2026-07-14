@@ -75,6 +75,19 @@ const initDatabase = async () => {
         END
       `);
 
+      // Add tenant identity columns to rental_requests
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rental_requests') AND name = 'tenant_name')
+        BEGIN
+            ALTER TABLE rental_requests ADD 
+                tenant_name NVARCHAR(100) NULL,
+                tenant_ic VARCHAR(20) NULL,
+                tenant_ic_issue_date DATE NULL,
+                tenant_ic_issue_place NVARCHAR(255) NULL,
+                tenant_permanent_address NVARCHAR(255) NULL;
+        END
+      `);
+
       // Add missing room columns
       await sequelize.query(`
         IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'quantity')

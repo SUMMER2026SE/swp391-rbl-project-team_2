@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { landlordService } from '../services/landlordService';
 
-export const useLandlordStats = () => {
+export const useLandlordStats = (period) => {
   const [stats, setStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState(null);
   const [revenueChart, setRevenueChart] = useState(null);
@@ -13,9 +13,9 @@ export const useLandlordStats = () => {
       try {
         setLoading(true);
         const [statsData, activityData, revenueData] = await Promise.all([
-          landlordService.getStats(),
-          landlordService.getRecentActivity(),
-          landlordService.getRevenueChart(),
+          landlordService.getStats({ period }),
+          landlordService.getRecentActivity({ period }),
+          landlordService.getRevenueChart({ period }),
         ]);
         setStats(statsData.data || statsData);
         setRecentActivity(activityData.data || activityData);
@@ -32,7 +32,7 @@ export const useLandlordStats = () => {
     };
 
     fetchStats();
-  }, []);
+  }, [period]);
 
   return { stats, recentActivity, revenueChart, loading, error };
 };
