@@ -47,6 +47,27 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(500),
     allowNull: true,
   },
+  cccd_front_url: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+  },
+  cccd_back_url: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+  },
+  face_photo_url: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+  },
+  verification_status: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: 'unverified',
+  },
+  verification_notes: {
+    type: DataTypes.STRING(1000),
+    allowNull: true,
+  },
   google_id: {
     type: DataTypes.STRING(255),
     allowNull: true,

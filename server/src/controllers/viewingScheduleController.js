@@ -616,6 +616,15 @@ const requestViewing = async (req, res, next) => {
     const { roomId, scheduledDate, notes } = req.body;
     const tenantId = req.user.userId;
 
+    // Verify tenant has a phone number
+    const tenant = await User.findByPk(tenantId);
+    if (!tenant || !tenant.phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bạn phải cập nhật số điện thoại trong trang cá nhân trước khi đặt lịch xem phòng.'
+      });
+    }
+
     if (!roomId || !scheduledDate) {
       return res.status(400).json({
         success: false,
@@ -1088,6 +1097,18 @@ const createContractFromViewing = async (req, res, next) => {
   try {
     const { scheduleId } = req.params;
     const landlordId = req.user.userId;
+
+    // Verify landlord's identity is verified
+    const landlord = await User.findOne({
+      where: { user_id: landlordId, is_deleted: false }
+    });
+
+    if (!landlord || landlord.verification_status !== 'verified') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn phải xác thực căn cước công dân trước khi có thể tạo hợp đồng.'
+      });
+    }
     const { 
       startDate, 
       endDate, 

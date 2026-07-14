@@ -16,6 +16,7 @@ import {
 import { ROUTES } from '../../../constants';
 import { landlordService } from '../services/landlordService';
 import toast from 'react-hot-toast';
+import GoogleMapPicker from '../../../components/common/GoogleMapPicker';
 import './AddPropertyPage.css';
 
 const buildingAmenities = [
@@ -44,6 +45,8 @@ const AddPropertyPage = () => {
     ward: '',
     totalFloors: 1,
     amenities: [],
+    latitude: null,
+    longitude: null,
   });
 
   const [errors, setErrors] = useState({});
@@ -123,6 +126,8 @@ const AddPropertyPage = () => {
       fd.append('district', formData.district);
       fd.append('ward', formData.ward);
       fd.append('totalFloors', formData.totalFloors);
+      if (formData.latitude) fd.append('latitude', formData.latitude);
+      if (formData.longitude) fd.append('longitude', formData.longitude);
 
       if (selectedFile) {
         fd.append('image', selectedFile);
@@ -212,13 +217,27 @@ const AddPropertyPage = () => {
           <div className="ap-form-group">
             <label className="ap-form-label">{t('addProperty.streetAddress', 'Street Address')}<span className="required">*</span>
             </label>
-            <input
-              type="text"
-              name="address"
-              className={`ap-form-input ${errors.address ? 'error' : ''}`}
+            <GoogleMapPicker
+              address={formData.address}
+              onAddressChange={(val) => {
+                setFormData(prev => ({ ...prev, address: val }));
+                if (errors.address) setErrors(prev => ({ ...prev, address: null }));
+              }}
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              onLocationChange={({ lat, lng, address: addr }) => {
+                setFormData(prev => ({
+                  ...prev,
+                  address: addr,
+                  latitude: lat,
+                  longitude: lng,
+                }));
+                if (errors.address) setErrors(prev => ({ ...prev, address: null }));
+              }}
               placeholder={t('addProperty.eg123NguyenVanLinhPlaceholder', 'e.g. 123 Nguyen Van Linh St')}
-              value={formData.address}
-              onChange={handleChange}
+              className={errors.address ? 'error' : ''}
+              height="280px"
+              inputId="property-address-input"
             />
             {errors.address && <span className="ap-form-error">{errors.address}</span>}
           </div>

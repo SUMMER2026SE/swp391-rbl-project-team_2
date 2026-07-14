@@ -87,4 +87,24 @@ export const adminService = {
       throw error;
     }
   },
+
+  getVerifications: async () => {
+    try {
+      const response = await httpClient.get('/api/admin/verifications');
+      return response.data || response;
+    } catch (error) {
+      console.error('Error fetching verifications:', error);
+      throw error;
+    }
+  },
+
+  processVerification: async (id, status, notes) => {
+    try {
+      const response = await httpClient.put(`/api/admin/verifications/${id}`, { status, notes });
+      return response.data || response;
+    } catch (error) {
+      console.error('Error processing verification:', error);
+      throw error;
+    }
+  },
 };

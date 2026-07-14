@@ -16,6 +16,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import api from '../../../services/api';
 import RoomCard from '../components/RoomCard';
 import { useTranslation } from 'react-i18next';
+import GoogleMapPicker from '../../../components/common/GoogleMapPicker';
 import './RoomDetailPage.css';
 
 const RoomDetailPage = () => {
@@ -447,6 +448,23 @@ const RoomDetailPage = () => {
             {roomFacilities.length === 0 && nearbyFacilities.length === 0 && (
               <p style={{ color: '#64748b' }}>{t('roomDetail.noAmenities', 'Chưa có thông tin tiện ích.')}</p>
             )}
+          </section>
+
+          <hr className="section-divider" />
+
+          {/* Google Maps Location Section */}
+          <section className="location-map-section" style={{ marginBottom: '2rem' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1rem', color: '#1e293b' }}>
+              <MapPin size={20} style={{ display: 'inline', marginRight: '8px', color: '#4f46e5' }} />
+              {t('roomDetail.locationMap', 'Vị trí trên bản đồ')}
+            </h2>
+            <GoogleMapPicker
+              address={[roomData.address, roomData.ward, roomData.district, roomData.city].filter(Boolean).join(', ')}
+              latitude={roomData.latitude}
+              longitude={roomData.longitude}
+              readOnly={true}
+              height="350px"
+            />
           </section>
         </div>
 

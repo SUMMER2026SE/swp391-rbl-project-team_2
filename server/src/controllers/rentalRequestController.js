@@ -275,6 +275,18 @@ const createContractFromRequest = async (req, res, next) => {
   try {
     const { requestId } = req.params;
     const landlordId = req.user.userId;
+
+    // Verify landlord's identity is verified
+    const landlord = await User.findOne({
+      where: { user_id: landlordId, is_deleted: false }
+    });
+
+    if (!landlord || landlord.verification_status !== 'verified') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn phải xác thực căn cước công dân trước khi có thể tạo hợp đồng.'
+      });
+    }
     const {
       termsAndConditions,
       landlordName,

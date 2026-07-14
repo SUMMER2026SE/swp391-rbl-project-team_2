@@ -15,7 +15,13 @@ const getLandlordProfile = async (req, res, next) => {
     console.log('📨 Querying User with landlordId:', landlordId);
     const user = await User.findOne({
       where: { user_id: landlordId, is_deleted: false },
-      attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url', 'ic_number', 'ic_issue_date', 'ic_issue_place', 'permanent_address', 'is_active', 'is_banned', 'created_at'],
+      attributes: [
+        'user_id', 'full_name', 'email', 'phone', 'avatar_url', 
+        'ic_number', 'ic_issue_date', 'ic_issue_place', 'permanent_address', 
+        'is_active', 'is_banned', 'created_at',
+        'cccd_front_url', 'cccd_back_url', 'face_photo_url', 
+        'verification_status', 'verification_notes'
+      ],
     });
 
     console.log('📨 User found:', user ? 'YES' : 'NO');
@@ -47,6 +53,11 @@ const getLandlordProfile = async (req, res, next) => {
         isActive: user.is_active,
         isBanned: user.is_banned,
         createdAt: user.created_at,
+        cccdFrontUrl: user.cccd_front_url,
+        cccdBackUrl: user.cccd_back_url,
+        facePhotoUrl: user.face_photo_url,
+        verificationStatus: user.verification_status,
+        verificationNotes: user.verification_notes,
       },
     });
   } catch (error) {
@@ -80,39 +91,68 @@ const updateLandlordProfile = async (req, res, next) => {
     const updateFields = [];
     const replacements = { userId: landlordId };
     
-    if (fullName) {
+    let identityChanged = false;
+
+    if (fullName && fullName !== user.full_name) {
       updateFields.push('full_name = :fullName');
       replacements.fullName = fullName;
+      identityChanged = true;
     }
-    if (phone) {
+    if (phone && phone !== user.phone) {
       updateFields.push('phone = :phone');
       replacements.phone = phone;
     }
-    if (icNumber !== undefined) {
+    if (icNumber !== undefined && icNumber !== user.ic_number) {
       updateFields.push('ic_number = :icNumber');
       replacements.icNumber = icNumber || null;
+      identityChanged = true;
     }
+    
+    const formatDate = (d) => {
+      if (!d) return null;
+      try {
+        return new Date(d).toISOString().split('T')[0];
+      } catch (e) {
+        return null;
+      }
+    };
+
     if (icIssueDate !== undefined) {
-      updateFields.push('ic_issue_date = :icIssueDate');
-      replacements.icIssueDate = icIssueDate || null;
+      const formattedInput = formatDate(icIssueDate);
+      const formattedDb = formatDate(user.ic_issue_date);
+      if (formattedInput !== formattedDb) {
+        updateFields.push('ic_issue_date = :icIssueDate');
+        replacements.icIssueDate = icIssueDate || null;
+        identityChanged = true;
+      }
     }
-    if (icIssuePlace !== undefined) {
+    if (icIssuePlace !== undefined && icIssuePlace !== user.ic_issue_place) {
       updateFields.push('ic_issue_place = :icIssuePlace');
       replacements.icIssuePlace = icIssuePlace || null;
+      identityChanged = true;
     }
-    if (permanentAddress !== undefined) {
+    if (permanentAddress !== undefined && permanentAddress !== user.permanent_address) {
       updateFields.push('permanent_address = :permanentAddress');
       replacements.permanentAddress = permanentAddress || null;
+      identityChanged = true;
     }
+
+    if (identityChanged) {
+      updateFields.push("verification_status = 'unverified'");
+      updateFields.push("verification_notes = NULL");
+    }
+
     updateFields.push('updated_at = SYSDATETIMEOFFSET()');
 
-    await sequelize.query(
-      `UPDATE users SET ${updateFields.join(', ')} WHERE user_id = :userId`,
-      {
-        replacements,
-        type: sequelize.QueryTypes.UPDATE
-      }
-    );
+    if (updateFields.length > 1) { // more than just updated_at
+      await sequelize.query(
+        `UPDATE users SET ${updateFields.join(', ')} WHERE user_id = :userId`,
+        {
+          replacements,
+          type: sequelize.QueryTypes.UPDATE
+        }
+      );
+    }
 
     const updatedUser = await User.findOne({
       where: { user_id: landlordId },
@@ -131,6 +171,8 @@ const updateLandlordProfile = async (req, res, next) => {
         icIssueDate: updatedUser.ic_issue_date,
         icIssuePlace: updatedUser.ic_issue_place,
         permanentAddress: updatedUser.permanent_address,
+        verificationStatus: updatedUser.verification_status,
+        verificationNotes: updatedUser.verification_notes,
       },
     });
   } catch (error) {
@@ -258,9 +300,104 @@ const changePassword = async (req, res, next) => {
   }
 };
 
+// =========================================================
+// POST /api/landlord/profile/verify
+// Submit Landlord identity verification
+// =========================================================
+const submitVerification = async (req, res, next) => {
+  try {
+    const landlordId = req.user.userId;
+    const { icNumber, icIssueDate, icIssuePlace, permanentAddress } = req.body;
+
+    const user = await User.findOne({
+      where: { user_id: landlordId, is_deleted: false },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found.',
+      });
+    }
+
+    if (user.verification_status === 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Yêu cầu xác thực của bạn đang chờ duyệt. Không thể gửi thêm yêu cầu.',
+      });
+    }
+
+    if (user.verification_status === 'verified') {
+      return res.status(400).json({
+        success: false,
+        message: 'Tài khoản của bạn đã được xác thực thành công.',
+      });
+    }
+
+    // Check uploaded files
+    const cccdFrontFile = req.files && req.files['cccdFront'] ? req.files['cccdFront'][0] : null;
+    const cccdBackFile = req.files && req.files['cccdBack'] ? req.files['cccdBack'][0] : null;
+    const facePhotoFile = req.files && req.files['facePhoto'] ? req.files['facePhoto'][0] : null;
+
+    if (!cccdFrontFile || !cccdBackFile || !facePhotoFile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp đầy đủ: Mặt trước CCCD, Mặt sau CCCD và Ảnh chân dung.',
+      });
+    }
+
+    if (!icNumber || !icIssueDate || !icIssuePlace || !permanentAddress) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng điền đầy đủ các thông tin CCCD (Số CCCD, Ngày cấp, Nơi cấp, Địa chỉ thường trú).',
+      });
+    }
+
+    const cccdFrontUrl = cccdFrontFile.path;
+    const cccdBackUrl = cccdBackFile.path;
+    const facePhotoUrl = facePhotoFile.path;
+
+    await sequelize.query(
+      `UPDATE users SET 
+        ic_number = :icNumber, 
+        ic_issue_date = :icIssueDate, 
+        ic_issue_place = :icIssuePlace, 
+        permanent_address = :permanentAddress,
+        cccd_front_url = :cccdFrontUrl,
+        cccd_back_url = :cccdBackUrl,
+        face_photo_url = :facePhotoUrl,
+        verification_status = 'pending',
+        verification_notes = NULL,
+        updated_at = SYSDATETIMEOFFSET()
+       WHERE user_id = :userId`,
+      {
+        replacements: {
+          icNumber,
+          icIssueDate,
+          icIssuePlace,
+          permanentAddress,
+          cccdFrontUrl,
+          cccdBackUrl,
+          facePhotoUrl,
+          userId: landlordId
+        },
+        type: sequelize.QueryTypes.UPDATE
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Hồ sơ xác thực đã được gửi đi thành công! Vui lòng chờ quản trị viên duyệt.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getLandlordProfile,
   updateLandlordProfile,
   updateAvatar,
   changePassword,
+  submitVerification,
 };

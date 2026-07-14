@@ -5,11 +5,15 @@ import PropertyCard from '../components/PropertyCard';
 import { roomService } from '../services/roomService';
 import useAuthStore from '../../../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
+import api from '../../../services/api';
 import './SearchPage.css';
 
 const SearchPage = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [isAIMode, setIsAIMode] = useState(false);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiLoadingMessage, setAiLoadingMessage] = useState('');
 
   // Keyword mapping from URL or local state
   const initialKeyword = searchParams.get('keyword') || '';
@@ -174,9 +178,89 @@ const SearchPage = () => {
     fetchRooms(1, false);
   };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setKeyword(searchInput);
+  const handleSearchSubmit = async (e) => {
+    if (e) e.preventDefault();
+    
+    if (isAIMode) {
+      if (!searchInput.trim()) return;
+      
+      setLoadingAI(true);
+      setAiLoadingMessage('AI đang phân tích yêu cầu...');
+      
+      try {
+        const response = await api.post('/ai/search', { query: searchInput });
+        
+        if (response.success) {
+          if (response.isConversational) {
+            setAiLoadingMessage('Đang mở trợ lý ảo trả lời...');
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('inject-ai-message', {
+                detail: { query: searchInput, reply: response.reply }
+              }));
+              setLoadingAI(false);
+            }, 800);
+          } else {
+            setAiLoadingMessage('Đã tìm thấy bộ lọc phù hợp!');
+            const data = response.data || {};
+            
+            // Cập nhật local filter states
+            if (data.keyword !== undefined) {
+              setKeyword(data.keyword || '');
+              setSearchInput(data.keyword || '');
+            }
+            if (data.city !== undefined) setCity(data.city || '');
+            if (data.district !== undefined) setDistrict(data.district || '');
+            
+            if (data.priceMin !== undefined || data.priceMax !== undefined) {
+              setMinPrice(data.priceMin || '');
+              setMaxPrice(data.priceMax || '');
+            }
+            
+            if (data.facilities !== undefined) {
+              setFacilities(data.facilities || []);
+            }
+            
+            if (data.nearbyFacilities !== undefined) {
+              setNearbyFacilities(data.nearbyFacilities || []);
+            }
+            
+            // Xây dựng URL params để update URL và đồng bộ với chatbot
+            let params = new URLSearchParams();
+            if (data.keyword) params.append('keyword', data.keyword);
+            if (data.city) params.append('city', data.city);
+            if (data.district) params.append('district', data.district);
+            if (data.priceMin) params.append('minPrice', data.priceMin);
+            if (data.priceMax) params.append('maxPrice', data.priceMax);
+            
+            if (data.facilities && data.facilities.length > 0) {
+              params.append('facilities', data.facilities.join(','));
+            }
+            if (data.nearbyFacilities && data.nearbyFacilities.length > 0) {
+              params.append('nearbyFacilities', data.nearbyFacilities.join(','));
+            }
+            
+            // Thêm aiQuery để kích hoạt chatbot
+            params.append('aiQuery', searchInput);
+            setSearchParams(params, { replace: true });
+            
+            setTimeout(() => {
+              setLoadingAI(false);
+            }, 800);
+          }
+        } else {
+          throw new Error('AI Search failed');
+        }
+      } catch (err) {
+        console.error("SearchPage AI Search Error", err);
+        setAiLoadingMessage('Lỗi tìm kiếm AI. Đang chuyển về tìm kiếm từ khóa...');
+        setTimeout(() => {
+          setLoadingAI(false);
+          setKeyword(searchInput);
+        }, 1200);
+      }
+    } else {
+      setKeyword(searchInput);
+    }
   };
 
   useEffect(() => {
@@ -421,20 +505,44 @@ const SearchPage = () => {
           {/* Main Results Area */}
           <div className="search-results-area">
             {/* Top Search Bar Row */}
-            <form className="ask-ai-container" onSubmit={(e) => e.preventDefault()}>
-              <Search className="sparkles-icon" size={20} style={{ color: '#6B7280' }} />
+            <form className={`ask-ai-container ${isAIMode ? 'ai-active' : ''}`} onSubmit={handleSearchSubmit}>
+              <Search className={isAIMode ? "sparkles-icon text-pink-500" : "sparkles-icon"} size={20} style={{ color: isAIMode ? '#EC4899' : '#6B7280' }} />
               <input
                 type="text"
-                placeholder={t('search.searchPlaceholder', 'Search by keyword (e.g. Da Nang, title, address)')}
+                placeholder={isAIMode ? t('search.searchPlaceholderAI', 'Mô tả phòng bạn muốn tìm bằng AI (ví dụ: phòng dưới 4 triệu quận 1 có điều hòa)...') : t('search.searchPlaceholder', 'Search by keyword (e.g. Da Nang, title, address)')}
                 value={searchInput}
                 onChange={(e) => {
                   setSearchInput(e.target.value);
-                  setKeyword(e.target.value);
                 }}
                 className="ask-ai-input"
+                disabled={loadingAI}
               />
-              <button type="submit" className="ask-ai-btn" onClick={handleSearchSubmit}>{t('search.searchBtn', 'Search')}</button>
+              <button 
+                type="button" 
+                className={`ai-toggle-pill-inline ${isAIMode ? 'active' : ''}`}
+                onClick={() => setIsAIMode(!isAIMode)}
+                disabled={loadingAI}
+                title="Chuyển chế độ tìm kiếm AI"
+              >
+                <Sparkles size={14} className={isAIMode ? 'sparkle-pulse' : ''} />
+                <span>AI Mode</span>
+              </button>
+              <button type="submit" className={isAIMode ? "ask-ai-btn ai-btn-glowing" : "ask-ai-btn"} disabled={loadingAI}>
+                {isAIMode ? <Sparkles size={16} className={loadingAI ? 'animate-spin' : ''} /> : null}
+                <span>{isAIMode ? t('search.searchBtnAI', 'AI Search') : t('search.searchBtn', 'Search')}</span>
+              </button>
             </form>
+
+            {/* SearchPage loading overlay */}
+            {loadingAI && (
+              <div className="searchpage-ai-loading-overlay animate-fade-in mb-6">
+                <div className="ai-loading-scanner"></div>
+                <div className="ai-loading-text flex items-center gap-2 justify-center py-4">
+                  <Sparkles className="animate-spin text-pink-500" size={18} />
+                  <span>{aiLoadingMessage}</span>
+                </div>
+              </div>
+            )}
 
             <div className="results-header flex justify-between items-center mb-6">
               <div>

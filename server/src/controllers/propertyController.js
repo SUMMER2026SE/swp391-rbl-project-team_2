@@ -7,7 +7,7 @@ const { sequelize, Property, Room, RoomImage, Facility, RoomFacility, Contract, 
 // =========================================================
 const createProperty = async (req, res, next) => {
   try {
-    const { name, description, address, city, district, ward, totalFloors } = req.body;
+    const { name, description, address, city, district, ward, totalFloors, latitude, longitude } = req.body;
     const landlordId = req.user.userId;
 
     // Validate required fields
@@ -27,6 +27,8 @@ const createProperty = async (req, res, next) => {
       district,
       ward,
       total_floors: totalFloors || 1,
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
       status: 'active',
     };
 
@@ -46,6 +48,8 @@ const createProperty = async (req, res, next) => {
         city: property.city,
         district: property.district,
         totalFloors: property.total_floors,
+        latitude: property.latitude,
+        longitude: property.longitude,
         status: property.status,
       },
     });
@@ -171,6 +175,8 @@ const getPropertyDetails = async (req, res, next) => {
         ward: property.ward,
         totalFloors: property.total_floors,
         thumbnailUrl: property.thumbnail_url,
+        latitude: property.latitude,
+        longitude: property.longitude,
         status: property.status,
         rooms: (property.rooms || []).map(room => ({
           roomId: room.room_id,
@@ -202,7 +208,7 @@ const updateProperty = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
     const landlordId = req.user.userId;
-    const { name, description, address, city, district, ward, totalFloors } = req.body;
+    const { name, description, address, city, district, ward, totalFloors, latitude, longitude } = req.body;
 
     const property = await Property.findOne({
       where: { property_id: propertyId, landlord_id: landlordId, is_deleted: false },
@@ -222,6 +228,8 @@ const updateProperty = async (req, res, next) => {
     if (district !== undefined) property.district = district;
     if (ward !== undefined) property.ward = ward;
     if (totalFloors) property.total_floors = totalFloors;
+    if (latitude !== undefined) property.latitude = latitude ? parseFloat(latitude) : null;
+    if (longitude !== undefined) property.longitude = longitude ? parseFloat(longitude) : null;
     if (req.file) property.thumbnail_url = req.file.path;
 
     property.updated_at = new Date();
@@ -234,6 +242,8 @@ const updateProperty = async (req, res, next) => {
         propertyId: property.property_id,
         name: property.name,
         address: property.address,
+        latitude: property.latitude,
+        longitude: property.longitude,
         status: property.status,
       },
     });

@@ -47,6 +47,14 @@ const Room = sequelize.define('Room', {
     type: DataTypes.STRING(100),
     allowNull: true,
   },
+  latitude: {
+    type: DataTypes.DECIMAL(10, 8),
+    allowNull: true,
+  },
+  longitude: {
+    type: DataTypes.DECIMAL(11, 8),
+    allowNull: true,
+  },
   price_per_month: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,

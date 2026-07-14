@@ -19,6 +19,7 @@ import {
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import { landlordService } from '../services/landlordService';
+import GoogleMapPicker from '../../../components/common/GoogleMapPicker';
 import './AddNewPropertyPage.css';
 
 
@@ -70,7 +71,9 @@ const AddNewPropertyPage = () => {
     nearMarket: false,
     nearPark: false,
     nearConvenienceStore: false,
-    images: []
+    images: [],
+    latitude: null,
+    longitude: null,
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -237,6 +240,8 @@ const AddNewPropertyPage = () => {
       if (propertyId) fd.append('propertyId', propertyId);
       if (floor) fd.append('floor', floor);
       if (formData.roomNumber) fd.append('roomNumber', formData.roomNumber);
+      if (formData.latitude) fd.append('latitude', formData.latitude);
+      if (formData.longitude) fd.append('longitude', formData.longitude);
 
       if (selectedFiles && selectedFiles.length > 0) {
         // Appending the first image as 'image' for multer upload.single('image')
@@ -432,16 +437,41 @@ const AddNewPropertyPage = () => {
 
             <div className="form-group-field">
               <label className="form-input-label">{t('addNewProperty.streetAddress', 'Street Address')} <span className="text-danger">*</span></label>
-              <input
-                type="text"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                className={`form-input-text ${formErrors.address ? 'error' : ''} ${propertyInherited ? 'disabled-input' : ''}`}
-                placeholder={t('addNewProperty.streetAddressPlaceholder', 'e.g., 123 Nguyen Van Linh St')}
-                disabled={propertyInherited}
-                style={propertyInherited ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : {}}
-              />
+              {propertyInherited ? (
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className={`form-input-text ${formErrors.address ? 'error' : ''} disabled-input`}
+                  placeholder={t('addNewProperty.streetAddressPlaceholder', 'e.g., 123 Nguyen Van Linh St')}
+                  disabled={true}
+                  style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' }}
+                />
+              ) : (
+                <GoogleMapPicker
+                  address={formData.address}
+                  onAddressChange={(val) => {
+                    setFormData(prev => ({ ...prev, address: val }));
+                    if (formErrors.address) setFormErrors(prev => ({ ...prev, address: null }));
+                  }}
+                  latitude={formData.latitude}
+                  longitude={formData.longitude}
+                  onLocationChange={({ lat, lng, address: addr }) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      address: addr,
+                      latitude: lat,
+                      longitude: lng,
+                    }));
+                    if (formErrors.address) setFormErrors(prev => ({ ...prev, address: null }));
+                  }}
+                  placeholder={t('addNewProperty.streetAddressPlaceholder', 'e.g., 123 Nguyen Van Linh St')}
+                  className={formErrors.address ? 'error' : ''}
+                  height="280px"
+                  inputId="room-address-input"
+                />
+              )}
               {formErrors.address && <span className="form-field-error-msg">{formErrors.address}</span>}
             </div>
 

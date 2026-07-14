@@ -53,4 +53,8 @@ router.get('/finance/statistics', withdrawalController.getAdminFinanceStats);
 router.get('/disputes', adminController.getAllDisputes);
 router.post('/disputes/:scheduleId/resolve', adminController.resolveDispute);
 
+// Landlord CCCD Verifications
+router.get('/verifications', adminController.getPendingVerifications);
+router.put('/verifications/:id', adminController.processVerification);
+
 module.exports = router;

@@ -35,6 +35,14 @@ const Property = sequelize.define('Property', {
     type: DataTypes.STRING(100),
     allowNull: true,
   },
+  latitude: {
+    type: DataTypes.DECIMAL(10, 8),
+    allowNull: true,
+  },
+  longitude: {
+    type: DataTypes.DECIMAL(11, 8),
+    allowNull: true,
+  },
   total_floors: {
     type: DataTypes.INTEGER,
     allowNull: true,

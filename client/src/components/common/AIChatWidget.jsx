@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, Sparkles, RotateCcw, Minus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import useAuthStore from '../../store/useAuthStore';
 import RentalWiseIcon from './RentalWiseIcon';
@@ -104,6 +104,7 @@ const MessageContent = ({ content }) => {
 // =========================================================
 const AIChatWidget = () => {
   const { user, isAuthenticated } = useAuthStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
@@ -132,10 +133,48 @@ const AIChatWidget = () => {
 
   // Lưu lịch sử chat vào localStorage (theo user ID)
   useEffect(() => {
-    if (messages.length > 1 && user?.user_id) {
-      localStorage.setItem(getStorageKey(user.user_id), JSON.stringify(messages));
+    if (messages.length > 1) {
+      localStorage.setItem(getStorageKey(user?.user_id), JSON.stringify(messages));
     }
   }, [messages, user?.user_id]);
+
+  // Lắng nghe URL search parameters để tự động chat khi tìm kiếm AI
+  useEffect(() => {
+    const aiQuery = searchParams.get('aiQuery');
+    if (aiQuery) {
+      setIsOpen(true);
+      setIsMinimized(false);
+      
+      // Xóa aiQuery khỏi URL để tránh trigger lại khi reload
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('aiQuery');
+      setSearchParams(newParams, { replace: true });
+      
+      // Trigger gửi tin nhắn
+      handleSend(aiQuery);
+    }
+  }, [searchParams, setSearchParams]);
+
+  // Lắng nghe sự kiện custom 'inject-ai-message'
+  useEffect(() => {
+    const handleInjectedMessage = (event) => {
+      const { query, reply } = event.detail;
+      if (!query || !reply) return;
+      
+      setIsOpen(true);
+      setIsMinimized(false);
+      
+      // Thêm cả câu hỏi và câu trả lời của AI vào danh sách chat
+      const userMsg = { role: 'user', content: query };
+      const assistantMsg = { role: 'assistant', content: reply };
+      setMessages(prev => [...prev, userMsg, assistantMsg]);
+    };
+    
+    window.addEventListener('inject-ai-message', handleInjectedMessage);
+    return () => {
+      window.removeEventListener('inject-ai-message', handleInjectedMessage);
+    };
+  }, []);
 
   // Auto-scroll xuống cuối
   const scrollToBottom = useCallback(() => {
@@ -172,7 +211,12 @@ const AIChatWidget = () => {
       }, { timeout: 60000 }); // Tăng timeout lên 60s cho request AI
 
       if (response.success) {
-        setMessages(prev => [...prev, { role: 'assistant', content: response.reply }]);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: response.reply,
+          sources: response.sources,
+          followups: response.followups
+        }]);
       } else {
         setMessages(prev => [...prev, {
           role: 'assistant',
@@ -200,7 +244,7 @@ const AIChatWidget = () => {
   // -------------------------------------------------------
   // RENDER
   // -------------------------------------------------------
-  if (!isAuthenticated || user?.role !== 'TENANT') {
+  if (isAuthenticated && user?.role !== 'TENANT') {
     return null;
   }
 
@@ -252,6 +296,24 @@ const AIChatWidget = () => {
                   <div key={idx} className={`ai-message ${msg.role}`}>
                     <div className="ai-message-bubble">
                       <MessageContent content={msg.content} />
+                      {msg.sources && msg.sources.length > 0 && (
+                        <div className="ai-message-sources mt-2 pt-2 border-top text-muted" style={{ fontSize: '0.75rem' }}>
+                          <span className="font-weight-bold d-block mb-1">🔍 Nguồn:</span>
+                          {msg.sources.map((src, sidx) => (
+                            <a
+                              key={sidx}
+                              href={src.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="d-block text-primary text-truncate mb-1"
+                              title={src.title}
+                              style={{ maxWidth: '100%', textDecoration: 'underline' }}
+                            >
+                              [{sidx + 1}] {src.website}: {src.title}
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -265,8 +327,8 @@ const AIChatWidget = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* QUICK REPLIES - Chỉ hiện khi mới bắt đầu */}
-              {messages.length <= 1 && (
+              {/* QUICK REPLIES - Chỉ hiện khi mới bắt đầu hoặc hiển thị follow-up từ câu trả lời trước */}
+              {messages.length <= 1 ? (
                 <div className="ai-quick-replies">
                   {QUICK_REPLIES.map((qr, idx) => (
                     <button
@@ -278,6 +340,27 @@ const AIChatWidget = () => {
                     </button>
                   ))}
                 </div>
+              ) : (
+                (() => {
+                  const lastMsg = messages[messages.length - 1];
+                  if (lastMsg && lastMsg.role === 'assistant' && lastMsg.followups && lastMsg.followups.length > 0) {
+                    return (
+                      <div className="ai-quick-replies">
+                        {lastMsg.followups.map((q, idx) => (
+                          <button
+                            key={idx}
+                            className="ai-quick-reply-btn text-primary"
+                            onClick={() => handleSend(q)}
+                            style={{ height: 'auto', whiteSpace: 'normal', textAlign: 'left' }}
+                          >
+                            💡 {q}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()
               )}
 
               {/* INPUT */}
