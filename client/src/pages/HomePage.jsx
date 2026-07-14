@@ -55,7 +55,20 @@ const HomePage = () => {
   const [district, setDistrict] = useState('');
   const [priceRange, setPriceRange] = useState('-');
   const [facilities, setFacilities] = useState([]);
-  const [isAIMode, setIsAIMode] = useState(false);
+  
+  // Persist AI mode state in localStorage
+  const [isAIMode, setIsAIMode] = useState(() => {
+    return localStorage.getItem('rentwise_ai_mode') === 'true';
+  });
+
+  const toggleAIMode = () => {
+    setIsAIMode((prev) => {
+      const newVal = !prev;
+      localStorage.setItem('rentwise_ai_mode', newVal);
+      return newVal;
+    });
+  };
+
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiLoadingMessage, setAiLoadingMessage] = useState('');
 
@@ -165,9 +178,8 @@ const HomePage = () => {
         const response = await api.post('/ai/search', { query: keyword });
         
         if (response.success) {
-          if (response.isConversational) {
-            setAiLoadingMessage('Đang mở trợ lý ảo trả lời...');
-            // Kích hoạt sự kiện custom để chatbot hiển thị câu trả lời
+          if (response.switchToChatbot) {
+            setAiLoadingMessage('Đang chuyển sang Chatbot AI...');
             setTimeout(() => {
               window.dispatchEvent(new CustomEvent('inject-ai-message', {
                 detail: { query: keyword, reply: response.reply }
@@ -178,10 +190,78 @@ const HomePage = () => {
             setAiLoadingMessage('Tìm thấy phòng phù hợp! Đang chuyển hướng...');
             const data = response.data || {};
             
-            // Xây dựng URL parameters từ các bộ lọc trích xuất được
             let params = new URLSearchParams();
             if (data.keyword) params.append('keyword', data.keyword);
-            if (data.city) params.append('city', data.city);
+            
+            // Fuzzy match city to avoid AI typos
+            let matchedCity = data.city || '';
+            if (matchedCity && provincesList.length > 0) {
+              const removeDiacritics = (str) => {
+                return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "d").toLowerCase();
+              };
+              
+              const cleanCity = removeDiacritics(matchedCity).trim();
+              const normalizedClean = cleanCity.replace(/thanh pho|tinh/g, '').trim();
+
+              const abbreviationMap = {
+                'sg': 'Thành phố Hồ Chí Minh',
+                'sai gon': 'Thành phố Hồ Chí Minh',
+                'saigon': 'Thành phố Hồ Chí Minh',
+                'hcm': 'Thành phố Hồ Chí Minh',
+                'tp hcm': 'Thành phố Hồ Chí Minh',
+                'tphcm': 'Thành phố Hồ Chí Minh',
+                'hn': 'Thành phố Hà Nội',
+                'ha noi': 'Thành phố Hà Nội',
+                'dn': 'Thành phố Đà Nẵng',
+                'da nang': 'Thành phố Đà Nẵng',
+                'hp': 'Thành phố Hải Phòng',
+                'hai phong': 'Thành phố Hải Phòng',
+                'ct': 'Thành phố Cần Thơ',
+                'can tho': 'Thành phố Cần Thơ',
+                'vt': 'Tỉnh Bà Rịa - Vũng Tàu',
+                'vung tau': 'Tỉnh Bà Rịa - Vũng Tàu',
+                'bd': 'Tỉnh Bình Dương',
+                'binh duong': 'Tỉnh Bình Dương',
+                'dnai': 'Tỉnh Đồng Nai',
+                'dong nai': 'Tỉnh Đồng Nai',
+                'ha tay': 'Thành phố Hà Nội',
+                'song be': 'Tỉnh Bình Dương',
+                'ha bac': 'Tỉnh Bắc Giang',
+                'hai hung': 'Tỉnh Hải Dương',
+                'vinh phu': 'Tỉnh Vĩnh Phúc',
+                'ha nam ninh': 'Tỉnh Hà Nam',
+                'quang nam da nang': 'Thành phố Đà Nẵng',
+                'binh tri thien': 'Tỉnh Thừa Thiên Huế',
+                'nghia binh': 'Tỉnh Bình Định',
+                'thuan hai': 'Tỉnh Bình Thuận',
+                'minh hai': 'Tỉnh Cà Mau',
+                'cuu long': 'Tỉnh Vĩnh Long',
+                'hau giang cu': 'Thành phố Cần Thơ'
+              };
+
+              if (abbreviationMap[normalizedClean]) {
+                matchedCity = abbreviationMap[normalizedClean];
+              } else if (abbreviationMap[cleanCity]) {
+                matchedCity = abbreviationMap[cleanCity];
+              } else {
+                const exactMatch = provincesList.find(p => p.full_name.toLowerCase() === matchedCity.toLowerCase());
+                if (exactMatch) {
+                  matchedCity = exactMatch.full_name;
+                } else {
+                  const partialMatch = provincesList.find(p => {
+                    const normFull = removeDiacritics(p.full_name);
+                    const normName = removeDiacritics(p.name);
+                    return normFull.includes(normalizedClean) || cleanCity.includes(normName);
+                  });
+                  
+                  if (partialMatch) {
+                    matchedCity = partialMatch.full_name;
+                  }
+                }
+              }
+            }
+            if (matchedCity) params.append('city', matchedCity);
+            
             if (data.district) params.append('district', data.district);
             if (data.priceMin) params.append('minPrice', data.priceMin);
             if (data.priceMax) params.append('maxPrice', data.priceMax);
@@ -193,8 +273,16 @@ const HomePage = () => {
               params.append('nearbyFacilities', data.nearbyFacilities.join(','));
             }
             
-            // Thêm aiQuery để tự động mở chatbot tại trang kết quả và tiếp tục hội thoại
-            params.append('aiQuery', keyword);
+            // Thêm aiQuery để tự động mở chatbot tại trang kết quả và tiếp tục hội thoại nếu cần
+            // NOTE: Do not append aiQuery for RENTWISE searches, so Chatbot won't open automatically
+            
+            if (keyword) {
+              params.append('aiPrompt', keyword);
+            }
+
+            if (response.aiSummary) {
+              params.append('aiOverview', response.aiSummary);
+            }
             
             setTimeout(() => {
               setLoadingAI(false);
@@ -284,7 +372,7 @@ const HomePage = () => {
                <button 
                  type="button" 
                  className={`ai-toggle-pill ${isAIMode ? 'active' : ''}`}
-                 onClick={() => setIsAIMode(!isAIMode)}
+                 onClick={toggleAIMode}
                  disabled={loadingAI}
                  title="Chuyển chế độ tìm kiếm AI"
                >

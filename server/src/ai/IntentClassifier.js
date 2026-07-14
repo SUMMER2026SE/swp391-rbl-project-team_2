@@ -1,4 +1,5 @@
 const Groq = require('groq-sdk');
+const { normalizeCity } = require('../utils/cityNormalizer');
 
 const groqApiKey = process.env.GROQ_API_KEY || 'dummy_key';
 const groq = new Groq({ apiKey: groqApiKey });
@@ -39,12 +40,13 @@ Everything else. E.g., programming, math, technology, shopping, cooking, movies,
 ---
 TASK:
 1. Classify the user's latest query into EITHER "RENTWISE" or "GENERAL".
-2. If the intent is "RENTWISE", extract search criteria if the user is looking for rooms. Match these fields (set to null if not mentioned):
+2. If the intent is "RENTWISE", classify the subIntent into EITHER "ROOM_SEARCH" (looking for rooms to rent) or "POLICY_FAQ" (asking about rules, deposits, contracts, complaints, platform usage).
+3. If the subIntent is "ROOM_SEARCH", extract search criteria if the user is looking for rooms. Match these fields (set to null if not mentioned):
    - keyword: any specific keywords (e.g. "gần đại học", "hẻm xe hơi").
-   - city: standardized city name (e.g. "Thành phố Hồ Chí Minh", "Thành phố Hà Nội", etc. Resolve "HCM", "Sài Gòn", "HN" to full official names).
+   - city: standardized city name. Resolve abbreviations like "HCM", "Sài Gòn", "SG" -> "Thành phố Hồ Chí Minh", "HN" -> "Thành phố Hà Nội", "ĐN", "Đà Nẵng" -> "Thành phố Đà Nẵng", "HP" -> "Thành phố Hải Phòng", "CT", "Cần Thơ" -> "Thành phố Cần Thơ", "VT", "Vũng Tàu" -> "Tỉnh Bà Rịa - Vũng Tàu", "BD" -> "Tỉnh Bình Dương", "ĐNai" -> "Tỉnh Đồng Nai". Must map exactly to Vietnam official province names.
    - district: standardized district name (e.g. "Quận 1", "Quận Bình Thạnh", "Quận Gò Vấp", "Quận 10", etc. Resolve "Q1", "Bình Thạnh", "quận tân bình" accordingly).
-   - priceMin: minimum price in VND (number, e.g., 2 triệu = 2000000).
-   - priceMax: maximum price in VND (number, e.g., dưới 3 triệu = 3000000, 4.5tr = 4500000).
+   - priceMin: minimum price in VND (number). Use this ONLY if the user specifies a lower bound (e.g., "trên 2 triệu", "từ 2 triệu trở lên"). Do NOT use this for single price targets.
+   - priceMax: maximum price in VND (number). If the user specifies a single target price or budget (e.g., "trọ 4 triệu", "phòng 3 triệu", "dưới 5 triệu", "tầm 5 triệu"), map it to priceMax. If the user specifies a range (e.g., "từ 2 đến 4 triệu"), map the upper bound to priceMax and lower bound to priceMin.
    - maxOccupants: maximum number of people (number, e.g., "cho 2 người" = 2).
    - minArea: minimum area in square meters (number).
    - facilities: array of facility names. Choose ONLY from this list:
@@ -66,6 +68,7 @@ RESPONSE FORMAT:
 You MUST respond with exactly a JSON object matching this structure (no markdown wrapper, no explanation):
 {
   "intent": "RENTWISE" or "GENERAL",
+  "subIntent": "ROOM_SEARCH" or "POLICY_FAQ" or null,
   "searchCriteria": {
     "keyword": string|null,
     "city": string|null,
@@ -94,8 +97,15 @@ You MUST respond with exactly a JSON object matching this structure (no markdown
       }
 
       const parsed = JSON.parse(jsonStr);
+      
+      // Standardize search criteria city
+      if (parsed.searchCriteria && parsed.searchCriteria.city) {
+        parsed.searchCriteria.city = normalizeCity(parsed.searchCriteria.city);
+      }
+
       return {
         intent: parsed.intent || 'GENERAL',
+        subIntent: parsed.subIntent || null,
         searchCriteria: parsed.searchCriteria || {}
       };
     } catch (err) {
@@ -119,6 +129,7 @@ You MUST respond with exactly a JSON object matching this structure (no markdown
     const isRental = rentalKeywords.some(kw => q.includes(kw));
     return {
       intent: isRental ? 'RENTWISE' : 'GENERAL',
+      subIntent: isRental ? 'ROOM_SEARCH' : null,
       searchCriteria: {}
     };
   }

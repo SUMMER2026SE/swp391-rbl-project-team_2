@@ -8,25 +8,85 @@ import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 import './SearchPage.css';
 
+// =========================================================
+// SIMPLE MARKDOWN RENDERER FOR AI OVERVIEW
+// =========================================================
+const RenderMarkdown = ({ text }) => {
+  if (!text) return null;
+  const lines = text.split('\n');
+  return (
+    <div className="space-y-2 text-gray-700 text-sm leading-relaxed">
+      {lines.map((line, index) => {
+        let trimmed = line.trim();
+        if (!trimmed) return <div key={index} style={{ height: '0.5rem' }} />;
+
+        const isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ');
+        if (isBullet) {
+          trimmed = trimmed.substring(2);
+        }
+
+        const parts = trimmed.split(/(\*\*.*?\*\*)/g);
+        const parsedElements = parts.map((part, pIdx) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={pIdx} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+
+        if (isBullet) {
+          return (
+            <div key={index} className="flex items-start gap-2 pl-4" style={{ display: 'flex', gap: '0.5rem', paddingLeft: '1rem', marginBottom: '0.25rem' }}>
+              <span className="text-pink-500">•</span>
+              <span>{parsedElements}</span>
+            </div>
+          );
+        }
+
+        return <p key={index} className="m-0" style={{ margin: '0 0 0.5rem 0' }}>{parsedElements}</p>;
+      })}
+    </div>
+  );
+};
+
 const SearchPage = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [isAIMode, setIsAIMode] = useState(false);
+  
+  // Persist AI mode state in localStorage
+  const [isAIMode, setIsAIMode] = useState(() => {
+    return localStorage.getItem('rentwise_ai_mode') === 'true';
+  });
+
+  const toggleAIMode = () => {
+    setIsAIMode((prev) => {
+      const newVal = !prev;
+      localStorage.setItem('rentwise_ai_mode', newVal);
+      return newVal;
+    });
+  };
+
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiLoadingMessage, setAiLoadingMessage] = useState('');
+  const [aiOverview, setAiOverview] = useState(searchParams.get('aiOverview') || '');
 
   // Keyword mapping from URL or local state
   const initialKeyword = searchParams.get('keyword') || '';
+  const initialAiPrompt = searchParams.get('aiPrompt') || '';
   const [keyword, setKeyword] = useState(initialKeyword);
-  const [searchInput, setSearchInput] = useState(initialKeyword);
+  const [searchInput, setSearchInput] = useState(initialAiPrompt || initialKeyword);
 
   useEffect(() => {
     const keywordParam = searchParams.get('keyword') || '';
+    const aiPromptParam = searchParams.get('aiPrompt') || '';
     if (keywordParam !== keyword) {
       setKeyword(keywordParam);
+    }
+    if (aiPromptParam) {
+      setSearchInput(aiPromptParam);
+    } else if (keywordParam !== searchInput && !isAIMode) {
       setSearchInput(keywordParam);
     }
-  }, [searchParams]);
+  }, [searchParams, isAIMode]);
 
   // Provinces/Districts States
   const [provincesList, setProvincesList] = useState([]);
@@ -191,13 +251,14 @@ const SearchPage = () => {
         const response = await api.post('/ai/search', { query: searchInput });
         
         if (response.success) {
-          if (response.isConversational) {
-            setAiLoadingMessage('Đang mở trợ lý ảo trả lời...');
+          if (response.switchToChatbot) {
+            setAiLoadingMessage('Đang chuyển sang Chatbot AI...');
             setTimeout(() => {
               window.dispatchEvent(new CustomEvent('inject-ai-message', {
                 detail: { query: searchInput, reply: response.reply }
               }));
               setLoadingAI(false);
+              setAiOverview('');
             }, 800);
           } else {
             setAiLoadingMessage('Đã tìm thấy bộ lọc phù hợp!');
@@ -208,7 +269,75 @@ const SearchPage = () => {
               setKeyword(data.keyword || '');
               setSearchInput(data.keyword || '');
             }
-            if (data.city !== undefined) setCity(data.city || '');
+
+            // Fuzzy match city to avoid AI typos
+            let matchedCity = data.city || '';
+            if (matchedCity) {
+              const removeDiacritics = (str) => {
+                return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "d").toLowerCase();
+              };
+              
+              const cleanCity = removeDiacritics(matchedCity).trim();
+              const normalizedClean = cleanCity.replace(/thanh pho|tinh/g, '').trim();
+
+              const abbreviationMap = {
+                'sg': 'Thành phố Hồ Chí Minh',
+                'sai gon': 'Thành phố Hồ Chí Minh',
+                'saigon': 'Thành phố Hồ Chí Minh',
+                'hcm': 'Thành phố Hồ Chí Minh',
+                'tp hcm': 'Thành phố Hồ Chí Minh',
+                'tphcm': 'Thành phố Hồ Chí Minh',
+                'hn': 'Thành phố Hà Nội',
+                'ha noi': 'Thành phố Hà Nội',
+                'dn': 'Thành phố Đà Nẵng',
+                'da nang': 'Thành phố Đà Nẵng',
+                'hp': 'Thành phố Hải Phòng',
+                'hai phong': 'Thành phố Hải Phòng',
+                'ct': 'Thành phố Cần Thơ',
+                'can tho': 'Thành phố Cần Thơ',
+                'vt': 'Tỉnh Bà Rịa - Vũng Tàu',
+                'vung tau': 'Tỉnh Bà Rịa - Vũng Tàu',
+                'bd': 'Tỉnh Bình Dương',
+                'binh duong': 'Tỉnh Bình Dương',
+                'dnai': 'Tỉnh Đồng Nai',
+                'dong nai': 'Tỉnh Đồng Nai',
+                'ha tay': 'Thành phố Hà Nội',
+                'song be': 'Tỉnh Bình Dương',
+                'ha bac': 'Tỉnh Bắc Giang',
+                'hai hung': 'Tỉnh Hải Dương',
+                'vinh phu': 'Tỉnh Vĩnh Phúc',
+                'ha nam ninh': 'Tỉnh Hà Nam',
+                'quang nam da nang': 'Thành phố Đà Nẵng',
+                'binh tri thien': 'Tỉnh Thừa Thiên Huế',
+                'nghia binh': 'Tỉnh Bình Định',
+                'thuan hai': 'Tỉnh Bình Thuận',
+                'minh hai': 'Tỉnh Cà Mau',
+                'cuu long': 'Tỉnh Vĩnh Long',
+                'hau giang cu': 'Thành phố Cần Thơ'
+              };
+
+              if (abbreviationMap[normalizedClean]) {
+                matchedCity = abbreviationMap[normalizedClean];
+              } else if (abbreviationMap[cleanCity]) {
+                matchedCity = abbreviationMap[cleanCity];
+              } else {
+                const exactMatch = provincesList.find(p => p.full_name.toLowerCase() === matchedCity.toLowerCase());
+                if (exactMatch) {
+                  matchedCity = exactMatch.full_name;
+                } else {
+                  const partialMatch = provincesList.find(p => {
+                    const normFull = removeDiacritics(p.full_name);
+                    const normName = removeDiacritics(p.name);
+                    return normFull.includes(normalizedClean) || cleanCity.includes(normName);
+                  });
+                  
+                  if (partialMatch) {
+                    matchedCity = partialMatch.full_name;
+                  }
+                }
+              }
+            }
+            if (matchedCity !== undefined) setCity(matchedCity);
             if (data.district !== undefined) setDistrict(data.district || '');
             
             if (data.priceMin !== undefined || data.priceMax !== undefined) {
@@ -224,10 +353,10 @@ const SearchPage = () => {
               setNearbyFacilities(data.nearbyFacilities || []);
             }
             
-            // Xây dựng URL params để update URL và đồng bộ với chatbot
+            // Xây dựng URL params để update URL
             let params = new URLSearchParams();
             if (data.keyword) params.append('keyword', data.keyword);
-            if (data.city) params.append('city', data.city);
+            if (matchedCity) params.append('city', matchedCity);
             if (data.district) params.append('district', data.district);
             if (data.priceMin) params.append('minPrice', data.priceMin);
             if (data.priceMax) params.append('maxPrice', data.priceMax);
@@ -239,8 +368,21 @@ const SearchPage = () => {
               params.append('nearbyFacilities', data.nearbyFacilities.join(','));
             }
             
-            // Thêm aiQuery để kích hoạt chatbot
-            params.append('aiQuery', searchInput);
+            // NOTE: Do not append aiQuery here so Chatbot is NOT triggered automatically.
+            // aiOverview will be shown in the UI.
+            
+            // Append aiPrompt so the search bar retains the full typed prompt
+            if (searchInput) {
+              params.append('aiPrompt', searchInput);
+            }
+            
+            if (response.aiSummary) {
+              setAiOverview(response.aiSummary);
+              params.append('aiOverview', response.aiSummary);
+            } else {
+              setAiOverview('');
+            }
+
             setSearchParams(params, { replace: true });
             
             setTimeout(() => {
@@ -296,6 +438,7 @@ const SearchPage = () => {
     setNearbyFacilities([]);
     setSort('newest');
     setLandlordId('');
+    setAiOverview('');
 
     setTimeout(() => {
       fetchRooms(1, false);
@@ -520,7 +663,7 @@ const SearchPage = () => {
               <button 
                 type="button" 
                 className={`ai-toggle-pill-inline ${isAIMode ? 'active' : ''}`}
-                onClick={() => setIsAIMode(!isAIMode)}
+                onClick={toggleAIMode}
                 disabled={loadingAI}
                 title="Chuyển chế độ tìm kiếm AI"
               >
@@ -541,6 +684,19 @@ const SearchPage = () => {
                   <Sparkles className="animate-spin text-pink-500" size={18} />
                   <span>{aiLoadingMessage}</span>
                 </div>
+              </div>
+            )}
+
+            {/* AI Overview Box */}
+            {aiOverview && (
+              <div className="ai-overview-box mb-6 p-5 rounded-lg border border-pink-200" style={{ backgroundColor: 'rgba(236, 72, 153, 0.05)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles size={18} color="#EC4899" />
+                  <h3 className="font-semibold text-gray-800" style={{ margin: 0, fontSize: '1rem' }}>
+                    Thông tin tổng quan do AI tạo
+                  </h3>
+                </div>
+                <RenderMarkdown text={aiOverview} />
               </div>
             )}
 

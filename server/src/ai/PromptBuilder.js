@@ -67,10 +67,11 @@ Always be helpful.
 - If they write in Vietnamese, reply in Vietnamese.
 - Match their language tone and style.
 
-=== ANTI-HALLUCINATION RULES ===
+=== ANTI-HALLUCINATION & ROOM SEARCH RULES ===
 1. Only recommend rooms that appear explicitly in the "ROOM DATABASE CONTEXT" section below.
-2. If no rooms are listed in the database context, inform the user that no suitable rooms were found in our system. Do NOT fabricate properties, addresses, pricing, or room IDs.
-3. Show links to room details strictly in this format: http://localhost:5173/rooms/{room_id} where {room_id} is the exact ID from the database.
+2. If no rooms are listed in the database context (or if the context says NO ROOMS), you MUST ONLY inform the user that "Hiện tại không có phòng trọ nào phù hợp trong hệ thống RentWise". 
+3. CRITICAL: DO NOT ask the user for more information or search criteria (like price, location, area, amenities). DO NOT offer to help them find a room. Just state that there are no rooms.
+4. Show links to room details strictly in this format: http://localhost:5173/rooms/{room_id} where {room_id} is the exact ID from the database.
 
 === CITATION RULES ===
 - When using information from the real-time web search context, cite the source by appending a number reference like [1], [2] next to the facts.
@@ -119,7 +120,6 @@ Do not omit these tags. They are required.
     return rooms.map(r => {
       const facs = r.facilities ? r.facilities.map(f => f.facility_name).join(', ') : 'None';
       const landlord = r.landlord ? `${r.landlord.full_name} (Email: ${r.landlord.email}, Phone: ${r.landlord.phone || 'N/A'})` : 'Unknown';
-      const images = r.images ? r.images.map(img => img.image_url).join(', ') : 'No images';
       return `Room ID: ${r.room_id}
 Title: "${r.title}"
 Price: ${r.price_per_month} VND/month
@@ -129,7 +129,6 @@ Max Occupants: ${r.max_occupants}
 Bedrooms: ${r.bedrooms}
 Landlord: ${landlord}
 Facilities: ${facs}
-Images: ${images}
 Detail Link: http://localhost:5173/rooms/${r.room_id}`;
     }).join('\n\n---\n\n');
   }
@@ -167,6 +166,81 @@ Detail Link: http://localhost:5173/rooms/${r.room_id}`;
     }
 
     return context;
+  }
+
+  static buildSearchSummaryPrompt(rooms, query, searchCriteria, totalCount) {
+    let roomsData = 'Không tìm thấy phòng trọ nào.';
+    let minPrice = Infinity;
+    let maxPrice = -Infinity;
+    let minArea = Infinity;
+    let maxArea = -Infinity;
+    const cities = new Set();
+    const districts = new Set();
+
+    if (rooms && rooms.length > 0) {
+      roomsData = rooms.map((r, idx) => {
+        const priceNum = Number(r.price_per_month);
+        if (!isNaN(priceNum)) {
+          if (priceNum < minPrice) minPrice = priceNum;
+          if (priceNum > maxPrice) maxPrice = priceNum;
+        }
+        const areaNum = Number(r.area_sqm);
+        if (!isNaN(areaNum)) {
+          if (areaNum < minArea) minArea = areaNum;
+          if (areaNum > maxArea) maxArea = areaNum;
+        }
+        if (r.city) cities.add(r.city);
+        if (r.district) districts.add(r.district);
+
+        const price = r.price_per_month ? Number(r.price_per_month).toLocaleString('vi-VN') : 'N/A';
+        const facilities = r.facilities ? r.facilities.map(f => f.facility_name).join(', ') : 'Không có';
+        return `Phòng ${idx + 1}:
+- Tên: ${r.title}
+- Giá: ${price} VND/tháng
+- Địa chỉ: ${r.address}, ${r.district || ''}, ${r.city}
+- Diện tích: ${r.area_sqm} m²
+- Số người tối đa: ${r.max_occupants}
+- Tiện ích: ${facilities}`;
+      }).join('\n\n');
+    }
+
+    const minPriceStr = minPrice !== Infinity ? (minPrice / 1000000).toLocaleString('vi-VN') + ' triệu' : 'N/A';
+    const maxPriceStr = maxPrice !== -Infinity ? (maxPrice / 1000000).toLocaleString('vi-VN') + ' triệu' : 'N/A';
+    const priceRangeStr = minPrice === maxPrice ? minPriceStr : `${minPriceStr} đến ${maxPriceStr}`;
+
+    const minAreaStr = minArea !== Infinity ? minArea + ' m²' : 'N/A';
+    const maxAreaStr = maxArea !== -Infinity ? maxArea + ' m²' : 'N/A';
+    const areaRangeStr = minArea === maxArea ? minAreaStr : `${minAreaStr} đến ${maxAreaStr}`;
+
+    const locationsStr = [...districts].join(', ') + (cities.size > 0 ? `, ${[...cities].join(', ')}` : '');
+
+    return `
+Bạn là trợ lý AI thông minh của RentWise. Người dùng vừa tìm kiếm phòng trọ bằng câu hỏi tự nhiên: "${query}".
+Hệ thống của chúng tôi đã truy xuất được ${totalCount} phòng trọ từ cơ sở dữ liệu SQL như dưới đây:
+
+=== DANH SÁCH PHÒNG TRUY XUẤT ĐƯỢC ===
+${roomsData}
+
+=== THÔNG TIN THỐNG KÊ THỰC TẾ (BẮT BUỘC SỬ DỤNG SỐ LIỆU NÀY) ===
+- Số lượng phòng phù hợp: ${totalCount} phòng.
+- Khoảng giá thực tế: ${priceRangeStr} VND/tháng.
+- Khoảng diện tích thực tế: ${areaRangeStr}.
+- Khu vực thực tế: ${locationsStr || 'N/A'}.
+
+=== YÊU CẦU ===
+Hãy viết một đoạn TỔNG QUAN TÌM KIẾM CHI TIẾT (AI Overview) bằng tiếng Việt (khoảng 3-5 câu hoặc danh sách gạch đầu dòng ngắn gọn) để tổng hợp các kết quả này cho người dùng.
+Đoạn tổng quan cần nêu rõ:
+1. Số lượng phòng phù hợp tìm thấy.
+2. Khoảng giá dao động thực tế (SỬ DỤNG CHÍNH XÁC: ${priceRangeStr} VND/tháng).
+3. Khu vực phân bố chính (SỬ DỤNG CHÍNH XÁC: ${locationsStr}).
+4. Các đặc điểm tiện ích nổi bật hoặc sự phù hợp của các phòng.
+5. Chỉ ra 1-2 phòng nổi bật nhất để người dùng lưu ý (ví dụ: phòng giá tốt nhất hoặc diện tích rộng nhất).
+
+CHÚ Ý: 
+- Trình bày đẹp mắt, chuyên nghiệp theo phong cách "Google AI Overview". Sử dụng các định dạng gạch đầu dòng, chữ đậm (bold) và icon/emoji phù hợp để người dùng dễ theo dõi.
+- Không được bịa đặt bất kỳ thông tin nào ngoài danh sách phòng được cung cấp ở trên.
+- Phản hồi bằng tiếng Việt lịch sự, tự nhiên, xưng "em/mình" và gọi "bạn/anh/chị".
+`;
   }
 }
 

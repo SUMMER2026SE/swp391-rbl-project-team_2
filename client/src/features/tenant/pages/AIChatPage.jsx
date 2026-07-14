@@ -9,7 +9,7 @@ const WELCOME_MESSAGE = {
   id: 'welcome',
   sender: 'bot',
   type: 'text',
-  text: "Xin chào! 👋 Em là trợ lý RentWise AI. Em có thể hỗ trợ bạn tìm kiếm phòng trọ, giải đáp thắc mắc về chính sách thuê cọc, hợp đồng, hoặc giải đáp bất kỳ câu hỏi nào từ khoa học, nấu ăn, công nghệ, giải trí... Bạn cứ tự nhiên hỏi nhé! 😊"
+  text: "Xin chào! Em là trợ lý RentWise AI. Em có thể hỗ trợ bạn tìm kiếm phòng trọ, giải đáp thắc mắc về chính sách thuê cọc, hợp đồng, hoặc giải đáp bất kỳ câu hỏi nào từ khoa học, nấu ăn, công nghệ, giải trí... Bạn cứ tự nhiên hỏi nhé!"
 };
 
 const SUGGESTED_PROMPTS = [
@@ -21,7 +21,7 @@ const SUGGESTED_PROMPTS = [
 const AIChatPage = () => {
   const { user } = useAuthStore();
   const userId = user?.user_id || 'guest';
-  
+
   const [conversations, setConversations] = useState({});
   const [activeConvId, setActiveConvId] = useState('default');
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
@@ -138,7 +138,7 @@ const AIChatPage = () => {
 
     const userMsgId = `user-${Date.now()}`;
     const newUserMsg = { id: userMsgId, sender: 'user', type: 'text', text: textToSend };
-    
+
     // Update local messages state immediately
     const updatedMessages = [...messages.filter(m => m.id !== 'welcome' || m.text !== WELCOME_MESSAGE.text), newUserMsg];
     setMessages(updatedMessages);
@@ -260,7 +260,7 @@ const AIChatPage = () => {
         id: botMsgId,
         sender: 'bot',
         type: 'text',
-        text: 'Xin lỗi bạn, em đã gặp sự cố kết nối với hệ thống AI. Vui lòng gửi lại câu hỏi hoặc tải lại trang nhé ạ! 😭',
+        text: 'Xin lỗi bạn, em đã gặp sự cố kết nối với hệ thống AI. Vui lòng gửi lại câu hỏi hoặc tải lại trang nhé ạ!',
         sources: [],
         followups: []
       };
@@ -347,30 +347,7 @@ const AIChatPage = () => {
 
                 <div className="message-bubble-custom">
                   {/* Sources Grid Card Header */}
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div className="citation-sources-box mb-3 p-3 bg-light rounded border">
-                      <div className="text-muted small font-weight-bold mb-2">🌐 NGUỒN TÌM KIẾM TRÊN WEB:</div>
-                      <div className="d-flex flex-wrap gap-2">
-                        {msg.sources.map((src, sidx) => (
-                          <a
-                            key={sidx}
-                            href={src.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="source-citation-card border rounded p-2 bg-white text-decoration-none text-main hover-shadow transition d-inline-flex flex-column"
-                            style={{ minWidth: '150px', maxWidth: '200px' }}
-                          >
-                            <span className="source-index-number text-primary font-weight-bold" style={{ fontSize: '0.7rem' }}>
-                              [{sidx + 1}] {src.website.toUpperCase()}
-                            </span>
-                            <span className="source-card-title text-truncate small font-weight-medium text-muted mt-1">
-                              {src.title}
-                            </span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+
 
                   {/* Main Answer Content (Markdown parsed) */}
                   <MarkdownRenderer content={msg.text} />
@@ -378,7 +355,7 @@ const AIChatPage = () => {
                   {/* Follow-up recommendation chips */}
                   {msg.followups && msg.followups.length > 0 && (
                     <div className="followup-chips-box mt-4 border-top pt-3">
-                      <div className="text-muted small font-weight-bold mb-2">💡 GỢI Ý CÂU HỎI TIẾP THEO:</div>
+                      <div className="text-muted small font-weight-bold mb-2"> GỢI Ý CÂU HỎI TIẾP THEO:</div>
                       <div className="d-flex flex-wrap gap-2">
                         {msg.followups.map((q, qidx) => (
                           <button
@@ -424,7 +401,7 @@ const AIChatPage = () => {
         {/* Suggested Prompts on empty state */}
         {messages.length <= 1 && (
           <div className="suggested-prompts-container">
-            <h3 className="suggested-prompts-title">💡 Gợi ý câu hỏi phổ biến:</h3>
+            <h3 className="suggested-prompts-title"> Gợi ý câu hỏi phổ biến:</h3>
             <div className="suggested-prompts-grid">
               {SUGGESTED_PROMPTS.map((prompt, idx) => {
                 const IconComponent = prompt.icon;
