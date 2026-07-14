@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -20,21 +20,37 @@ import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import { landlordService } from '../services/landlordService';
 import GoogleMapPicker from '../../../components/common/GoogleMapPicker';
+import useAuthStore from '../../../store/useAuthStore';
 import './AddNewPropertyPage.css';
 
+// Helper to normalize strings for accent-insensitive search in Vietnamese
+const normalizeString = (str) => {
+  if (!str) return '';
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/đ/g, "d");
+};
 
 const AddNewPropertyPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Block unverified landlords from posting rooms
+  useEffect(() => {
+    if (user && (user.verificationStatus || user.verification_status) !== 'verified') {
+      toast.error('Tài khoản của bạn chưa được xác thực. Vui lòng hoàn tất xác thực thông tin cá nhân (CCCD) để có quyền đăng tin phòng.');
+      navigate(ROUTES.LANDLORD.PROFILE || '/landlord/profile');
+    }
+  }, [user, navigate]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [provincesList, setProvincesList] = useState([]);
   const [districtsList, setDistrictsList] = useState([]);
   const [propertyInherited, setPropertyInherited] = useState(false);
   const propertyIdParam = searchParams.get('propertyId');
+  const pendingDistrictRef = useRef(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -112,7 +128,22 @@ const AddNewPropertyPage = () => {
       fetch(`https://esgoo.net/api-tinhthanh/2/${selectedProv.id}.htm`)
         .then(res => res.json())
         .then(data => {
-          if (data.error === 0) setDistrictsList(data.data);
+          if (data.error === 0) {
+            setDistrictsList(data.data);
+            
+            // Asynchronously match the pending district after city loads its districts
+            if (pendingDistrictRef.current) {
+              const normDistrictInput = normalizeString(pendingDistrictRef.current);
+              const matchedDist = data.data.find(d => 
+                normalizeString(d.full_name).includes(normDistrictInput) || 
+                normDistrictInput.includes(normalizeString(d.full_name))
+              );
+              if (matchedDist) {
+                setFormData(prev => ({ ...prev, district: matchedDist.full_name }));
+              }
+              pendingDistrictRef.current = null;
+            }
+          }
         })
         .catch(err => console.error("Error fetching districts", err));
     } else {
@@ -457,14 +488,46 @@ const AddNewPropertyPage = () => {
                   }}
                   latitude={formData.latitude}
                   longitude={formData.longitude}
-                  onLocationChange={({ lat, lng, address: addr }) => {
+                   onLocationChange={({ lat, lng, address: addr, city: rawCity, district: rawDistrict }) => {
+                    let matchedCityName = '';
+                    let matchedDistrictName = '';
+                    
+                    if (rawCity) {
+                      const normCityInput = normalizeString(rawCity);
+                      const matchedProv = provincesList.find(p => 
+                        normalizeString(p.full_name).includes(normCityInput) || 
+                        normCityInput.includes(normalizeString(p.full_name))
+                      );
+                      if (matchedProv) {
+                        matchedCityName = matchedProv.full_name;
+                        if (rawDistrict) {
+                          if (formData.city === matchedCityName && districtsList.length > 0) {
+                            const normDistrictInput = normalizeString(rawDistrict);
+                            const matchedDist = districtsList.find(d => 
+                              normalizeString(d.full_name).includes(normDistrictInput) || 
+                              normDistrictInput.includes(normalizeString(d.full_name))
+                            );
+                            if (matchedDist) {
+                              matchedDistrictName = matchedDist.full_name;
+                            }
+                          } else {
+                            pendingDistrictRef.current = rawDistrict;
+                          }
+                        }
+                      }
+                    }
+
                     setFormData(prev => ({
                       ...prev,
                       address: addr,
                       latitude: lat,
                       longitude: lng,
+                      ...(matchedCityName ? { city: matchedCityName } : {}),
+                      ...(matchedDistrictName ? { district: matchedDistrictName } : (matchedCityName && formData.city !== matchedCityName ? { district: '' } : {}))
                     }));
+                    
                     if (formErrors.address) setFormErrors(prev => ({ ...prev, address: null }));
+                    if (matchedCityName && formErrors.city) setFormErrors(prev => ({ ...prev, city: null }));
                   }}
                   placeholder={t('addNewProperty.streetAddressPlaceholder', 'e.g., 123 Nguyen Van Linh St')}
                   className={formErrors.address ? 'error' : ''}

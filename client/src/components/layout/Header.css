@@ -208,4 +208,27 @@
   .header-search-bar {
     display: none;
   }
+
+  .logo-subtitle {
+    display: none !important;
+  }
+
+  .header-landlord-btn,
+  .header-logout-btn {
+    display: none !important;
+  }
+
+  .header-left {
+    flex-shrink: 0 !important;
+    gap: 0.75rem !important;
+  }
+
+  .header-right {
+    gap: 0.5rem !important;
+  }
+
+  .header-content {
+    gap: 0.75rem !important;
+    padding: 0 0.75rem !important;
+  }
 }

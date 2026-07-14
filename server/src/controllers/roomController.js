@@ -10,6 +10,15 @@ const createRoom = async (req, res, next) => {
     const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, propertyId, floor, roomNumber, quantity, latitude, longitude } = req.body;
     const landlordId = req.user.userId;
 
+    // Verify landlord's account is verified before posting a room
+    const user = await User.findOne({ where: { user_id: landlordId } });
+    if (!user || user.verification_status !== 'verified') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn chưa được xác thực. Vui lòng hoàn tất xác thực thông tin cá nhân (CCCD) để có quyền đăng tin phòng.',
+      });
+    }
+
     // Validate required fields
     if (!title || !address || !city || !pricePerMonth) {
       return res.status(400).json({
@@ -187,6 +196,7 @@ const getRoomDetails = async (req, res, next) => {
       success: true,
       data: {
         roomId: room.room_id,
+        propertyId: room.property_id,
         title: room.title,
         description: room.description,
         address: room.address,
@@ -383,7 +393,7 @@ const getAllPublicRooms = async (req, res, next) => {
       include: [
         { model: RoomImage, as: 'images' },
         { model: Facility, as: 'facilities', through: { attributes: [] } },
-        { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'avatar_url'] }
+        { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'avatar_url', 'verification_status'] }
       ],
       offset,
       limit: parseInt(limit),
@@ -438,7 +448,7 @@ const getPublicRoomDetails = async (req, res, next) => {
       include: [
         { model: RoomImage, as: 'images' },
         { model: Facility, as: 'facilities', through: { attributes: [] } },
-        { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
+        { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url', 'verification_status'] },
       ],
     });
 
@@ -461,6 +471,7 @@ const getPublicRoomDetails = async (req, res, next) => {
       success: true,
       data: {
         roomId: room.room_id,
+        propertyId: room.property_id,
         landlordId: room.landlord_id,
         landlord_id: room.landlord_id,
         title: room.title,
@@ -997,6 +1008,8 @@ const getPublicPropertyDetails = async (req, res, next) => {
        address: firstRoom.property ? firstRoom.property.address : firstRoom.address,
        city: firstRoom.city,
        district: firstRoom.district,
+       latitude: firstRoom.property ? firstRoom.property.latitude : firstRoom.latitude,
+       longitude: firstRoom.property ? firstRoom.property.longitude : firstRoom.longitude,
        description: firstRoom.property ? firstRoom.property.description : firstRoom.description,
        landlord: firstRoom.landlord,
        thumbnailUrl: firstRoom.property?.thumbnail_url || firstRoom.thumbnail_url,

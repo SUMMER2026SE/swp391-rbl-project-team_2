@@ -83,7 +83,7 @@ const Header = ({ toggleSidebar }) => {
             </svg>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <span className="logo" style={{ fontSize: '1.45rem', lineHeight: '1', color: 'var(--primary)', letterSpacing: '-0.5px' }}>Rent<span style={{ color: '#6C63FF' }}>Wise</span></span>
-              <span style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.8px', marginTop: '3px', textTransform: 'uppercase' }}>Nền Tảng Thuê Trọ</span>
+              <span className="logo-subtitle" style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.8px', marginTop: '3px', textTransform: 'uppercase' }}>Nền Tảng Thuê Trọ</span>
             </div>
           </Link>
 
@@ -171,7 +171,7 @@ const Header = ({ toggleSidebar }) => {
               {user?.role === 'LANDLORD' && (
                 <Link
                   to="/landlord/dashboard"
-                  className="sign-in-btn"
+                  className="sign-in-btn header-landlord-btn"
                   style={{ background: '#2563EB', color: 'white', border: 'none', padding: '0.4rem 0.9rem', fontSize: '0.85rem', fontWeight: '600', textDecoration: 'none', borderRadius: '4px' }}
                 >
                   Kênh Chủ Trọ
@@ -184,7 +184,7 @@ const Header = ({ toggleSidebar }) => {
               </Link>
               <button
                 onClick={handleLogout}
-                className="sign-in-btn"
+                className="sign-in-btn header-logout-btn"
                 style={{ background: 'transparent', color: '#6C3AED', border: '1px solid #6C3AED', cursor: 'pointer' }}
               >
                 {t('header.logout', 'Đăng xuất')}

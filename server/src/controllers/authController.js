@@ -26,10 +26,16 @@ const register = async (req, res, next) => {
     // Check if email already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'Email already registered.',
-      });
+      if (existingUser.is_deleted) {
+        // If the user was soft-deleted previously, rename their email to free the unique constraint
+        const deletedSuffix = `_deleted_${Date.now()}`;
+        await existingUser.update({ email: `${existingUser.email}${deletedSuffix}` });
+      } else {
+        return res.status(409).json({
+          success: false,
+          message: 'Email already registered.',
+        });
+      }
     }
 
     // Find role (DB stores: 'Admin', 'Landlord', 'Tenant')

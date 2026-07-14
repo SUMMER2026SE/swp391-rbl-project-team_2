@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Building2,
@@ -17,6 +17,7 @@ import { ROUTES } from '../../../constants';
 import { landlordService } from '../services/landlordService';
 import toast from 'react-hot-toast';
 import GoogleMapPicker from '../../../components/common/GoogleMapPicker';
+import useAuthStore from '../../../store/useAuthStore';
 import './AddPropertyPage.css';
 
 const buildingAmenities = [
@@ -27,14 +28,34 @@ const buildingAmenities = [
   { id: 'wifi_common', label: 'Common WiFi', icon: <Wifi size={14} /> },
 ];
 
+// Helper to normalize strings for accent-insensitive search in Vietnamese
+const normalizeString = (str) => {
+  if (!str) return '';
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/đ/g, "d");
+};
+
 const AddPropertyPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuthStore();
+  const propertyIdParam = searchParams.get('id') || searchParams.get('propertyId');
+  const isEdit = !!propertyIdParam;
+
+  // Block unverified landlords from posting properties
+  useEffect(() => {
+    if (user && (user.verificationStatus || user.verification_status) !== 'verified') {
+      toast.error('Tài khoản của bạn chưa được xác thực. Vui lòng hoàn tất xác thực thông tin cá nhân (CCCD) để có quyền tạo căn hộ/dự án.');
+      navigate(ROUTES.LANDLORD.PROFILE || '/landlord/profile');
+    }
+  }, [user, navigate]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [provincesList, setProvincesList] = useState([]);
   const [districtsList, setDistrictsList] = useState([]);
+  const pendingDistrictRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -61,12 +82,57 @@ const AddPropertyPage = () => {
   }, []);
 
   useEffect(() => {
+    if (isEdit && propertyIdParam) {
+      landlordService.getPropertyById(propertyIdParam)
+        .then(res => {
+          const property = res.data?.property || res.data;
+          if (property) {
+            setFormData({
+              name: property.name || '',
+              description: property.description || '',
+              address: property.address || '',
+              city: property.city || '',
+              district: property.district || '',
+              ward: property.ward || '',
+              totalFloors: property.totalFloors || property.total_floors || 1,
+              amenities: property.amenities || [],
+              latitude: property.latitude || null,
+              longitude: property.longitude || null,
+            });
+            if (property.thumbnailUrl) {
+              setPreviewUrl(property.thumbnailUrl.startsWith('http') ? property.thumbnailUrl : `http://localhost:5000${property.thumbnailUrl}`);
+            }
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching property details", err);
+          toast.error("Failed to load property details");
+        });
+    }
+  }, [isEdit, propertyIdParam]);
+
+  useEffect(() => {
     const selectedProv = provincesList.find(p => p.full_name === formData.city);
     if (selectedProv) {
       fetch(`https://esgoo.net/api-tinhthanh/2/${selectedProv.id}.htm`)
         .then(res => res.json())
         .then(data => {
-          if (data.error === 0) setDistrictsList(data.data);
+          if (data.error === 0) {
+            setDistrictsList(data.data);
+            
+            // Asynchronously match the pending district after city loads its districts
+            if (pendingDistrictRef.current) {
+              const normDistrictInput = normalizeString(pendingDistrictRef.current);
+              const matchedDist = data.data.find(d => 
+                normalizeString(d.full_name).includes(normDistrictInput) || 
+                normDistrictInput.includes(normalizeString(d.full_name))
+              );
+              if (matchedDist) {
+                setFormData(prev => ({ ...prev, district: matchedDist.full_name }));
+              }
+              pendingDistrictRef.current = null;
+            }
+          }
         })
         .catch(err => console.error('Error fetching districts', err));
     } else {
@@ -133,18 +199,22 @@ const AddPropertyPage = () => {
         fd.append('image', selectedFile);
       }
 
-      const result = await landlordService.createProperty(fd);
-      const newPropertyId = result?.data?.propertyId;
-
-      toast.success('Property created successfully!');
-
-      if (newPropertyId) {
-        navigate(`/landlord/properties/${newPropertyId}/dashboard`);
+      if (isEdit) {
+        await landlordService.updateProperty(propertyIdParam, fd);
+        toast.success('Property updated successfully!');
+        navigate(`/landlord/properties/${propertyIdParam}/dashboard`);
       } else {
-        navigate(ROUTES.LANDLORD.PROPERTIES);
+        const result = await landlordService.createProperty(fd);
+        const newPropertyId = result?.data?.propertyId;
+        toast.success('Property created successfully!');
+        if (newPropertyId) {
+          navigate(`/landlord/properties/${newPropertyId}/dashboard`);
+        } else {
+          navigate(ROUTES.LANDLORD.PROPERTIES);
+        }
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to create property');
+      toast.error(error.message || (isEdit ? 'Failed to update property' : 'Failed to create property'));
     } finally {
       setIsSubmitting(false);
     }
@@ -156,8 +226,8 @@ const AddPropertyPage = () => {
       <div className="add-property-page-header">
         <button className="add-property-page-back" onClick={() => navigate(ROUTES.LANDLORD.PROPERTIES)}>
           <ArrowLeft size={16} />{t('addProperty.backToProperties', 'Back to Properties')}</button>
-        <h1>{t('addProperty.addNewProperty', 'Add New Property')}</h1>
-        <p>{t('addProperty.createANewBuildingOr', 'Create a new building or house to start managing rooms.')}</p>
+        <h1>{isEdit ? t('addProperty.editProperty', 'Cập nhật căn hộ') : t('addProperty.addNewProperty', 'Add New Property')}</h1>
+        <p>{isEdit ? t('addProperty.editPropertySubtitle', 'Chỉnh sửa thông tin căn hộ, tòa nhà của bạn.') : t('addProperty.createANewBuildingOr', 'Create a new building or house to start managing rooms.')}</p>
       </div>
 
       {/* Form */}
@@ -225,14 +295,46 @@ const AddPropertyPage = () => {
               }}
               latitude={formData.latitude}
               longitude={formData.longitude}
-              onLocationChange={({ lat, lng, address: addr }) => {
+              onLocationChange={({ lat, lng, address: addr, city: rawCity, district: rawDistrict }) => {
+                let matchedCityName = '';
+                let matchedDistrictName = '';
+                
+                if (rawCity) {
+                  const normCityInput = normalizeString(rawCity);
+                  const matchedProv = provincesList.find(p => 
+                    normalizeString(p.full_name).includes(normCityInput) || 
+                    normCityInput.includes(normalizeString(p.full_name))
+                  );
+                  if (matchedProv) {
+                    matchedCityName = matchedProv.full_name;
+                    if (rawDistrict) {
+                      if (formData.city === matchedCityName && districtsList.length > 0) {
+                        const normDistrictInput = normalizeString(rawDistrict);
+                        const matchedDist = districtsList.find(d => 
+                          normalizeString(d.full_name).includes(normDistrictInput) || 
+                          normDistrictInput.includes(normalizeString(d.full_name))
+                        );
+                        if (matchedDist) {
+                          matchedDistrictName = matchedDist.full_name;
+                        }
+                      } else {
+                        pendingDistrictRef.current = rawDistrict;
+                      }
+                    }
+                  }
+                }
+
                 setFormData(prev => ({
                   ...prev,
                   address: addr,
                   latitude: lat,
                   longitude: lng,
+                  ...(matchedCityName ? { city: matchedCityName } : {}),
+                  ...(matchedDistrictName ? { district: matchedDistrictName } : (matchedCityName && formData.city !== matchedCityName ? { district: '' } : {}))
                 }));
+                
                 if (errors.address) setErrors(prev => ({ ...prev, address: null }));
+                if (matchedCityName && errors.city) setErrors(prev => ({ ...prev, city: null }));
               }}
               placeholder={t('addProperty.eg123NguyenVanLinhPlaceholder', 'e.g. 123 Nguyen Van Linh St')}
               className={errors.address ? 'error' : ''}
@@ -346,9 +448,9 @@ const AddPropertyPage = () => {
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Creating...' : (
+            {isSubmitting ? (isEdit ? 'Saving...' : 'Creating...') : (
               <>
-                <Check size={16} />{t('addProperty.createProperty', 'Create Property')}</>
+                <Check size={16} />{isEdit ? t('addProperty.saveChanges', 'Lưu thay đổi') : t('addProperty.createProperty', 'Create Property')}</>
             )}
           </button>
         </div>

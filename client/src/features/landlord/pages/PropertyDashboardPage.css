@@ -565,3 +565,19 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Prevent room card text wrapping and style duplicate button on hover */
+.room-card-number {
+  white-space: nowrap !important;
+}
+
+.btn-duplicate-room-icon {
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease-in-out;
+}
+
+.floor-room-card:hover .btn-duplicate-room-icon {
+  opacity: 1;
+  visibility: visible;
+}

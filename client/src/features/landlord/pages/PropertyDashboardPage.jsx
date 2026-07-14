@@ -54,7 +54,7 @@ const PropertyDashboardPage = () => {
 
   const handleDuplicateRoom = (room) => {
     setDuplicateForm({
-      sourceRoomId: room.roomId,
+      sourceRoomId: room.originalRoomId || room.roomId,
       count: 1,
       targetFloor: room.floor || 1,
       roomNumbers: '',
@@ -267,10 +267,36 @@ const PropertyDashboardPage = () => {
                     }}
                     style={{ cursor: 'pointer' }}
                   >
-                    <div className="room-card-header">
-                      <span className="room-card-number">
-                        {room.roomNumber || `#${room.roomId}`}
-                      </span>
+                    <div className="room-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="room-card-number">
+                          {room.roomNumber || `#${room.roomId}`}
+                        </span>
+                        <button
+                          className="btn-duplicate-room-icon"
+                          title="Sao chép phòng (Tạo nhanh phòng tương tự)"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDuplicateRoom(room);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '4px',
+                            color: '#64748b',
+                            cursor: 'pointer',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = '#4f46e5'; e.currentTarget.style.background = '#f1f5f9'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}
+                        >
+                          <Copy size={13} />
+                        </button>
+                      </div>
                       <span className={`room-card-status-badge ${room.status}`}>
                         {room.status === 'available' && 'Available'}
                         {room.status === 'rented' && 'Rented'}
