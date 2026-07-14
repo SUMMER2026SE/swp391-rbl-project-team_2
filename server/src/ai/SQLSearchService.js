@@ -1,5 +1,6 @@
 const { Op } = require('sequelize');
 const { Room, Facility, RoomImage, User, Contract, Booking, Complaint } = require('../models');
+const { normalizeCity } = require('../utils/cityNormalizer');
 
 const SQL_CACHE = new Map();
 const CACHE_TTL_MS = 60 * 1000; // Cache SQL queries for 1 minute to ensure freshness
@@ -33,7 +34,14 @@ class SQLSearchService {
         where.district = { [Op.like]: `%${criteria.district}%` };
       }
       if (criteria.city) {
-        where.city = { [Op.like]: `%${criteria.city}%` };
+        const normCity = normalizeCity(criteria.city) || criteria.city;
+        // Clean out prefix "Thành phố" or "Tỉnh" to allow broader LIKE matching if DB has different prefixes
+        const cleanCityName = normCity.replace(/Thành phố\s+|Tỉnh\s+/gi, '').trim();
+        
+        where[Op.or] = [
+          { city: { [Op.like]: `%${normCity}%` } },
+          { city: { [Op.like]: `%${cleanCityName}%` } }
+        ];
       }
       if (criteria.priceMin || criteria.priceMax) {
         where.price_per_month = {};

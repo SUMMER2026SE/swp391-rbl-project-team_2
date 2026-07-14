@@ -13,14 +13,14 @@ const STORAGE_KEY_PREFIX = 'ai-chat-history';
 const getStorageKey = (userId) => `${STORAGE_KEY_PREFIX}-${userId || 'guest'}`;
 const WELCOME_MESSAGE = {
   role: 'assistant',
-  content: 'Xin chào! 👋 Em là trợ lý ảo RentalWise. Em có thể giúp bạn tìm phòng trọ, giải đáp thắc mắc về chính sách thuê phòng, hoặc tư vấn lựa chọn phòng phù hợp nhé ạ! 😊'
+  content: 'Xin chào!  Em là trợ lý ảo RentalWise. Em có thể giúp bạn tìm phòng trọ, giải đáp thắc mắc về chính sách thuê phòng, hoặc tư vấn lựa chọn phòng phù hợp nhé ạ! '
 };
 
 const QUICK_REPLIES = [
-  '🏠 Có phòng nào trống không?',
-  '💰 Phòng giá dưới 3 triệu?',
-  '📋 Quy trình thuê phòng?',
-  '🔑 Chính sách đặt cọc?',
+  ' Có phòng nào trống không?',
+  ' Phòng giá dưới 3 triệu?',
+  ' Quy trình thuê phòng?',
+  ' Chính sách đặt cọc?',
 ];
 
 // =========================================================
@@ -55,10 +55,10 @@ const MessageContent = ({ content }) => {
       if (response && response.data) {
         navigate(`/rooms/${roomId}`); // Dùng path đã clean thay vì path gốc
       } else {
-        alert('⚠️ Phòng này không tồn tại hoặc đã bị xóa. Vui lòng tìm phòng khác trên trang Khám phá nhé!');
+        alert(' Phòng này không tồn tại hoặc đã bị xóa. Vui lòng tìm phòng khác trên trang Khám phá nhé!');
       }
     } catch (err) {
-      alert('⚠️ Phòng này không tồn tại hoặc đã bị xóa. Vui lòng tìm phòng khác trên trang Khám phá nhé!');
+      alert(' Phòng này không tồn tại hoặc đã bị xóa. Vui lòng tìm phòng khác trên trang Khám phá nhé!');
     } finally {
       setChecking(false);
     }
@@ -71,7 +71,7 @@ const MessageContent = ({ content }) => {
           const cleaned = cleanUrl(part);
           // Kiểm tra nếu là link "không khả dụng" (đã bị backend loại bỏ)
           if (cleaned.includes('[link không khả dụng]')) {
-            return <span key={i} className="ai-room-link-invalid">❌ Link không khả dụng</span>;
+            return <span key={i} className="ai-room-link-invalid"> Link không khả dụng</span>;
           }
           const isLocal = cleaned.includes('localhost:5173');
           if (isLocal) {
@@ -83,7 +83,7 @@ const MessageContent = ({ content }) => {
                 className="ai-room-link"
                 disabled={checking}
               >
-                {checking ? '⏳ Đang kiểm tra...' : '🔗 Xem chi tiết phòng'}
+                {checking ? ' Đang kiểm tra...' : ' Xem chi tiết phòng'}
               </button>
             );
           }
@@ -144,12 +144,12 @@ const AIChatWidget = () => {
     if (aiQuery) {
       setIsOpen(true);
       setIsMinimized(false);
-      
+
       // Xóa aiQuery khỏi URL để tránh trigger lại khi reload
       const newParams = new URLSearchParams(searchParams);
       newParams.delete('aiQuery');
       setSearchParams(newParams, { replace: true });
-      
+
       // Trigger gửi tin nhắn
       handleSend(aiQuery);
     }
@@ -159,22 +159,22 @@ const AIChatWidget = () => {
   useEffect(() => {
     const handleInjectedMessage = (event) => {
       const { query, reply } = event.detail;
-      if (!query || !reply) return;
-      
+      if (!query) return;
+
       setIsOpen(true);
       setIsMinimized(false);
-      
-      // Thêm cả câu hỏi và câu trả lời của AI vào danh sách chat
-      const userMsg = { role: 'user', content: query };
-      const assistantMsg = { role: 'assistant', content: reply };
-      setMessages(prev => [...prev, userMsg, assistantMsg]);
+
+      // Gọi handleSend để chatbot tự động gửi câu hỏi và nhận câu trả lời
+      setTimeout(() => {
+        handleSend(query);
+      }, 300);
     };
-    
+
     window.addEventListener('inject-ai-message', handleInjectedMessage);
     return () => {
       window.removeEventListener('inject-ai-message', handleInjectedMessage);
     };
-  }, []);
+  }, [messages]);
 
   // Auto-scroll xuống cuối
   const scrollToBottom = useCallback(() => {
@@ -220,13 +220,13 @@ const AIChatWidget = () => {
       } else {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: 'Xin lỗi, em đang gặp sự cố kết nối. Bạn vui lòng thử lại sau nhé ạ! 🙏'
+          content: 'Xin lỗi, em đang gặp sự cố kết nối. Bạn vui lòng thử lại sau nhé ạ! '
         }]);
       }
     } catch (err) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Oops! Em bị lỗi rồi. Bạn thử gửi lại tin nhắn nhé ạ! 😅'
+        content: 'Oops! Em bị lỗi rồi. Bạn thử gửi lại tin nhắn nhé ạ! '
       }]);
     } finally {
       setIsTyping(false);
@@ -259,7 +259,7 @@ const AIChatWidget = () => {
                 <RentalWiseIcon size={24} />
               </div>
               <div className="ai-chat-header-text">
-                <h4>RentalWise AI</h4>
+                <h4>RentWise AI</h4>
                 <p>{isTyping ? '💬 Đang trả lời...' : '🟢 Trực tuyến'}</p>
               </div>
             </div>
@@ -296,24 +296,6 @@ const AIChatWidget = () => {
                   <div key={idx} className={`ai-message ${msg.role}`}>
                     <div className="ai-message-bubble">
                       <MessageContent content={msg.content} />
-                      {msg.sources && msg.sources.length > 0 && (
-                        <div className="ai-message-sources mt-2 pt-2 border-top text-muted" style={{ fontSize: '0.75rem' }}>
-                          <span className="font-weight-bold d-block mb-1">🔍 Nguồn:</span>
-                          {msg.sources.map((src, sidx) => (
-                            <a
-                              key={sidx}
-                              href={src.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="d-block text-primary text-truncate mb-1"
-                              title={src.title}
-                              style={{ maxWidth: '100%', textDecoration: 'underline' }}
-                            >
-                              [{sidx + 1}] {src.website}: {src.title}
-                            </a>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -353,7 +335,7 @@ const AIChatWidget = () => {
                             onClick={() => handleSend(q)}
                             style={{ height: 'auto', whiteSpace: 'normal', textAlign: 'left' }}
                           >
-                            💡 {q}
+                            {q}
                           </button>
                         ))}
                       </div>
