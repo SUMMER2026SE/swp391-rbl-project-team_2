@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
-import { Search, UserCheck, UserX, MoreVertical, Shield } from 'lucide-react';
+import { Search, UserCheck, UserX, MoreVertical, Shield, Trash2 } from 'lucide-react';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import adminService from '../../../services/adminService';
@@ -274,7 +274,10 @@ const UsersPage = () => {
                           </span>
                         </td>
                         <td>
-                          <span className={`status-badge ${user.status === 'Active' ? 'status-active' : 'status-hidden'}`}>
+                          <span className={`status-badge ${
+                            user.status === 'Active' ? 'status-active' : 
+                            user.status === 'Deleted' ? 'status-danger' : 'status-hidden'
+                          }`} style={user.status === 'Deleted' ? { backgroundColor: '#fef2f2', color: '#ef4444' } : {}}>
                             {user.status}
                           </span>
                         </td>
@@ -298,8 +301,14 @@ const UsersPage = () => {
                             >
                               <UserX size={18} />
                             </button>
-                            <button className="btn-action-icon" title="More" disabled={user.role === 'ADMIN'}>
-                              <MoreVertical size={18} />
+                            <button 
+                              className="btn-action-icon text-danger" 
+                              title="Delete User"
+                              onClick={() => handleUpdateStatus(user.rawId, 'delete')}
+                              disabled={user.status === 'Deleted' || user.role === 'ADMIN'}
+                              style={{ color: '#ef4444' }}
+                            >
+                              <Trash2 size={18} />
                             </button>
                           </div>
                         </td>
@@ -409,13 +418,13 @@ const UsersPage = () => {
           <Modal.Title>Confirm User Action</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to <strong>{confirmDialog.action}</strong> this user?
+          Are you sure you want to <strong>{confirmDialog.action}</strong> this user? This action will disable their account.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={closeConfirmDialog}>
             Cancel
           </Button>
-          <Button variant={confirmDialog.action === 'suspend' ? 'danger' : 'primary'} onClick={executeStatusUpdate}>
+          <Button variant={(confirmDialog.action === 'suspend' || confirmDialog.action === 'delete') ? 'danger' : 'primary'} onClick={executeStatusUpdate}>
             Confirm
           </Button>
         </Modal.Footer>

@@ -189,7 +189,7 @@ const PropertiesPage = () => {
                     </button>
                     <button
                       className="btn-edit-property"
-                      onClick={() => navigate(`/landlord/properties/${property.propertyId}/dashboard`)}
+                      onClick={() => navigate(`${ROUTES.LANDLORD.NEW_PROPERTY}?id=${property.propertyId}`)}
                       title="Edit Property"
                     >
                       <Edit3 size={16} />

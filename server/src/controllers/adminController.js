@@ -7,6 +7,7 @@ const { Op } = require('sequelize');
 const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
+      where: { is_deleted: false },
       include: [
         { model: Role, as: 'role' },
         { model: Room, as: 'rooms', attributes: ['room_id'] } // to count rooms
@@ -50,7 +51,7 @@ const getAllUsers = async (req, res, next) => {
 const updateUserStatus = async (req, res, next) => {
   try {
     const userId = req.params.id;
-    const { action } = req.body; // 'activate' or 'suspend'
+    const { action } = req.body; // 'activate', 'suspend', or 'delete'
 
     const user = await User.findByPk(userId);
     if (!user) {
@@ -58,9 +59,16 @@ const updateUserStatus = async (req, res, next) => {
     }
 
     if (action === 'activate') {
-      await user.update({ is_banned: false, is_active: true });
+      await user.update({ is_banned: false, is_active: true, is_deleted: false });
     } else if (action === 'suspend') {
       await user.update({ is_banned: true });
+    } else if (action === 'delete') {
+      const deletedSuffix = `_deleted_${Date.now()}`;
+      await user.update({ 
+        is_deleted: true, 
+        is_active: false,
+        email: `${user.email}${deletedSuffix}`
+      });
     } else {
       return res.status(400).json({ success: false, message: 'Invalid action' });
     }

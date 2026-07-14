@@ -1,5 +1,5 @@
 import toast from 'react-hot-toast';
-import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
+import { getAvatarUrl as getGlobalAvatar, formatDate } from '../../../utils/format';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -508,7 +508,7 @@ const LandlordProfilePage = () => {
                   <div>
                     <span className="contact-label">Member Since</span>
                     <span className="contact-val">
-                      {displayProfile.createdAt ? new Date(displayProfile.createdAt).toLocaleDateString() : 'N/A'}
+                      {displayProfile.createdAt ? formatDate(displayProfile.createdAt) : 'N/A'}
                     </span>
                   </div>
                 </div>
@@ -539,7 +539,7 @@ const LandlordProfilePage = () => {
                     <div>
                       <span className="contact-label">{t('profile.issueDate')}</span>
                       <span className="contact-val">
-                        {displayProfile.icIssueDate ? new Date(displayProfile.icIssueDate).toLocaleDateString() : t('profile.notProvided')}
+                        {displayProfile.icIssueDate ? formatDate(displayProfile.icIssueDate) : t('profile.notProvided')}
                       </span>
                     </div>
                   </div>
@@ -629,6 +629,7 @@ const LandlordProfilePage = () => {
                       <label>{t('profile.verification.issueDateLabel')}</label>
                       <input 
                         type="date" 
+                        lang="vi-VN"
                         value={verifyForm.icIssueDate} 
                         onChange={(e) => setVerifyForm(prev => ({ ...prev, icIssueDate: e.target.value }))}
                         required
@@ -947,6 +948,7 @@ const LandlordProfilePage = () => {
                 <label>Issue Date</label>
                 <input
                   type="date"
+                  lang="vi-VN"
                   value={editForm.icIssueDate}
                   onChange={(e) => setEditForm(prev => ({ ...prev, icIssueDate: e.target.value }))}
                   max={new Date().toISOString().split('T')[0]}
