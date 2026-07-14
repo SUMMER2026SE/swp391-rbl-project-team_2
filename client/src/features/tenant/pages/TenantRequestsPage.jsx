@@ -316,6 +316,7 @@ const TenantRequestsPage = () => {
       setPendingRoomId(roomId);
       setOtpCode('');
       setShowOtpModal(true);
+      setShowContractModal(false);
       toast.success('OTP sent to your email.');
     } catch (err) {
       toast.error('Failed to send OTP: ' + (err.response?.data?.message || err.message));

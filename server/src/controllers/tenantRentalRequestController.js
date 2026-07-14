@@ -10,6 +10,15 @@ const createRentalRequest = async (req, res, next) => {
     const tenantId = req.user.userId;
     const { roomId, message, requestedMoveInDate, leaseDurationMonths } = req.body;
 
+    // Verify tenant has a phone number
+    const tenant = await User.findByPk(tenantId);
+    if (!tenant || !tenant.phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bạn phải cập nhật số điện thoại trong trang cá nhân trước khi gửi yêu cầu thuê phòng.'
+      });
+    }
+
     if (!roomId) {
       return res.status(400).json({
         success: false,

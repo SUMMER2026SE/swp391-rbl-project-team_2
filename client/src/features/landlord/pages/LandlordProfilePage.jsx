@@ -2,6 +2,7 @@ import toast from 'react-hot-toast';
 import { getAvatarUrl as getGlobalAvatar } from '../../../utils/format';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   ShieldCheck, 
   Home, 
@@ -20,7 +21,8 @@ import {
   Loader,
   X,
   Check,
-  Camera
+  Camera,
+  Upload
 } from 'lucide-react';
 import { ROUTES } from '../../../constants';
 import useAuthStore from '../../../store/useAuthStore';
@@ -48,6 +50,7 @@ const VIETNAMESE_BANKS = [
 
 const LandlordProfilePage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, updateUser } = useAuthStore();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -68,6 +71,103 @@ const LandlordProfilePage = () => {
   const [phoneError, setPhoneError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
   const fileInputRef = React.useRef(null);
+
+  // Identity Verification state
+  const [verifyForm, setVerifyForm] = useState({ icNumber: '', icIssueDate: '', icIssuePlace: '', permanentAddress: '' });
+  const [cccdFront, setCccdFront] = useState(null);
+  const [cccdBack, setCccdBack] = useState(null);
+  const [facePhoto, setFacePhoto] = useState(null);
+  const [cccdFrontPreview, setCccdFrontPreview] = useState('');
+  const [cccdBackPreview, setCccdBackPreview] = useState('');
+  const [facePhotoPreview, setFacePhotoPreview] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
+
+  useEffect(() => {
+    const displayProfile = profile || user || {};
+    setVerifyForm({
+      icNumber: displayProfile.icNumber || displayProfile.ic_number || '',
+      icIssueDate: displayProfile.icIssueDate ? new Date(displayProfile.icIssueDate).toISOString().split('T')[0] : '',
+      icIssuePlace: displayProfile.icIssuePlace || '',
+      permanentAddress: displayProfile.permanentAddress || '',
+    });
+  }, [profile, user]);
+
+  const handleVerifyFileChange = (e, type) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t('profile.verification.toastSizeLimit'));
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    if (type === 'front') {
+      setCccdFront(file);
+      setCccdFrontPreview(previewUrl);
+    } else if (type === 'back') {
+      setCccdBack(file);
+      setCccdBackPreview(previewUrl);
+    } else if (type === 'face') {
+      setFacePhoto(file);
+      setFacePhotoPreview(previewUrl);
+    }
+  };
+
+  const handleRemoveVerifyFile = (type) => {
+    if (type === 'front') {
+      setCccdFront(null);
+      setCccdFrontPreview('');
+    } else if (type === 'back') {
+      setCccdBack(null);
+      setCccdBackPreview('');
+    } else if (type === 'face') {
+      setFacePhoto(null);
+      setFacePhotoPreview('');
+    }
+  };
+
+  const handleVerifySubmit = async (e) => {
+    e.preventDefault();
+
+    if (!verifyForm.icNumber || !verifyForm.icIssueDate || !verifyForm.icIssuePlace || !verifyForm.permanentAddress) {
+      toast.error(t('profile.verification.toastFieldRequired'));
+      return;
+    }
+
+    if (!cccdFront || !cccdBack || !facePhoto) {
+      toast.error(t('profile.verification.toastPhotoRequired'));
+      return;
+    }
+
+    setVerifyLoading(true);
+    const formData = new FormData();
+    formData.append('icNumber', verifyForm.icNumber);
+    formData.append('icIssueDate', verifyForm.icIssueDate);
+    formData.append('icIssuePlace', verifyForm.icIssuePlace);
+    formData.append('permanentAddress', verifyForm.permanentAddress);
+    formData.append('cccdFront', cccdFront);
+    formData.append('cccdBack', cccdBack);
+    formData.append('facePhoto', facePhoto);
+
+    try {
+      const response = await landlordService.submitVerification(formData);
+      if (response.success) {
+        toast.success(response.message || t('profile.verification.toastSuccess'));
+        fetchProfile(); // Refresh profile status
+        setCccdFront(null);
+        setCccdBack(null);
+        setFacePhoto(null);
+        setCccdFrontPreview('');
+        setCccdBackPreview('');
+        setFacePhotoPreview('');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || t('profile.verification.toastError'));
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -225,6 +325,8 @@ const LandlordProfilePage = () => {
       updateUser({
         fullName: updatedData.fullName,
         phone: updatedData.phone,
+        verificationStatus: updatedData.verificationStatus || updatedData.verification_status,
+        verificationNotes: updatedData.verificationNotes || updatedData.verification_notes,
       });
 
       setEditSuccess('Profile updated successfully!');
@@ -259,10 +361,23 @@ const LandlordProfilePage = () => {
 
   const displayProfile = profile || user || {};
 
+  const getVerificationStatusLabel = () => {
+    const status = displayProfile.verificationStatus || displayProfile.verification_status;
+    switch (status) {
+      case 'verified': return { label: t('profile.verification.badgeVerified'), type: 'success' };
+      case 'pending': return { label: t('profile.verification.badgePending'), type: 'warning' };
+      case 'rejected': return { label: t('profile.verification.badgeRejected'), type: 'danger' };
+      default: return { label: t('profile.verification.badgeUnverified'), type: 'warning' };
+    }
+  };
+
+  const statusInfo = getVerificationStatusLabel();
+
   const verificationItems = [
-    { label: 'Email Address', status: displayProfile.email ? 'Verified' : 'Pending', type: displayProfile.email ? 'success' : 'warning' },
-    { label: 'Phone Number', status: displayProfile.phone ? 'Verified' : 'Pending', type: displayProfile.phone ? 'success' : 'warning' },
-    { label: 'Account Status', status: displayProfile.isActive ? 'Active' : 'Inactive', type: displayProfile.isActive ? 'success' : 'warning' },
+    { label: t('profile.emailAddress'), status: displayProfile.email ? t('profile.verified') : t('profile.pending'), type: displayProfile.email ? 'success' : 'warning' },
+    { label: t('profile.phoneNumber'), status: displayProfile.phone ? t('profile.verified') : t('profile.pending'), type: displayProfile.phone ? 'success' : 'warning' },
+    { label: t('profile.accountStatus'), status: displayProfile.isActive ? t('profile.active') : t('profile.inactive'), type: displayProfile.isActive ? 'success' : 'warning' },
+    { label: t('profile.verification.title'), status: statusInfo.label, type: statusInfo.type },
   ];
 
   return (
@@ -401,46 +516,247 @@ const LandlordProfilePage = () => {
             </div>
           </div>
 
-          {/* Identity Details */}
-          <div className="profile-section-card" style={{ marginTop: '1.5rem' }}>
-            <div className="section-card-header">
-              <h2 className="section-card-title">Identity Details (For Contracts)</h2>
-            </div>
-            <div className="section-card-body pt-1">
-              <div className="contact-info-list">
-                <div className="contact-info-item">
-                  <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '12px' }}>🆔</span>
+          {/* Identity Details - Render only when verified or pending to avoid duplicate inputs during submission */}
+          {((displayProfile.verificationStatus || displayProfile.verification_status) === 'verified' || 
+            (displayProfile.verificationStatus || displayProfile.verification_status) === 'pending') && (
+            <div className="profile-section-card" style={{ marginTop: '1.5rem' }}>
+              <div className="section-card-header">
+                <h2 className="section-card-title">{t('profile.identityDetails')}</h2>
+              </div>
+              <div className="section-card-body pt-1">
+                <div className="contact-info-list">
+                  <div className="contact-info-item">
+                    <div style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '12px' }}>🆔</span>
+                    </div>
+                    <div>
+                      <span className="contact-label">{t('profile.idNumber')}</span>
+                      <span className="contact-val">{displayProfile.icNumber || t('profile.notProvided')}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="contact-label">CCCD/CMND</span>
-                    <span className="contact-val">{displayProfile.icNumber || 'Not provided'}</span>
+                  <div className="contact-info-item">
+                    <Calendar size={16} className="contact-icon" />
+                    <div>
+                      <span className="contact-label">{t('profile.issueDate')}</span>
+                      <span className="contact-val">
+                        {displayProfile.icIssueDate ? new Date(displayProfile.icIssueDate).toLocaleDateString() : t('profile.notProvided')}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="contact-info-item">
-                  <Calendar size={16} className="contact-icon" />
-                  <div>
-                    <span className="contact-label">Issue Date</span>
-                    <span className="contact-val">
-                      {displayProfile.icIssueDate ? new Date(displayProfile.icIssueDate).toLocaleDateString() : 'Not provided'}
-                    </span>
+                  <div className="contact-info-item">
+                    <MapPin size={16} className="contact-icon" />
+                    <div>
+                      <span className="contact-label">{t('profile.issuePlace')}</span>
+                      <span className="contact-val">{displayProfile.icIssuePlace || t('profile.notProvided')}</span>
+                    </div>
                   </div>
-                </div>
-                <div className="contact-info-item">
-                  <MapPin size={16} className="contact-icon" />
-                  <div>
-                    <span className="contact-label">Issue Place</span>
-                    <span className="contact-val">{displayProfile.icIssuePlace || 'Not provided'}</span>
-                  </div>
-                </div>
-                <div className="contact-info-item">
-                  <Home size={16} className="contact-icon" />
-                  <div>
-                    <span className="contact-label">Permanent Address</span>
-                    <span className="contact-val">{displayProfile.permanentAddress || 'Not provided'}</span>
+                  <div className="contact-info-item">
+                    <Home size={16} className="contact-icon" />
+                    <div>
+                      <span className="contact-label">{t('profile.permanentAddress')}</span>
+                      <span className="contact-val">{displayProfile.permanentAddress || t('profile.notProvided')}</span>
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Identity Verification Section */}
+          <div className="profile-section-card" style={{ marginTop: '1.5rem' }}>
+            <div className="section-card-header">
+              <div className="card-header-left">
+                <ShieldCheck size={20} className="header-icon-blue" />
+                <h2 className="section-card-title">{t('profile.verification.title')}</h2>
+              </div>
+            </div>
+
+            <div className="section-card-body pt-1">
+              {/* Verification Alerts based on status */}
+              {(displayProfile.verificationStatus || displayProfile.verification_status) === 'verified' && (
+                <div className="verification-alert success">
+                  <Check size={20} style={{ flexShrink: 0 }} />
+                  <div>
+                    <strong>{t('profile.verification.statusVerifiedTitle')}</strong>
+                    <p>{t('profile.verification.statusVerifiedDesc')}</p>
+                  </div>
+                </div>
+              )}
+
+              {(displayProfile.verificationStatus || displayProfile.verification_status) === 'pending' && (
+                <div className="verification-alert info">
+                  <Loader size={20} className="spinner" style={{ flexShrink: 0, animation: 'spin 1s linear infinite' }} />
+                  <div>
+                    <strong>{t('profile.verification.statusPendingTitle')}</strong>
+                    <p>{t('profile.verification.statusPendingDesc')}</p>
+                  </div>
+                </div>
+              )}
+
+              {(displayProfile.verificationStatus || displayProfile.verification_status) === 'rejected' && (
+                <div className="verification-alert danger">
+                  <AlertCircle size={20} style={{ flexShrink: 0 }} />
+                  <div>
+                    <strong>{t('profile.verification.statusRejectedTitle')}</strong>
+                    <p>
+                      {t('profile.verification.statusRejectedDesc', {
+                        reason: displayProfile.verificationNotes || displayProfile.verification_notes || 'Ảnh không rõ nét hoặc thông tin không khớp'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Show Form if unverified or rejected */}
+              {((displayProfile.verificationStatus || displayProfile.verification_status) === 'unverified' || 
+                (displayProfile.verificationStatus || displayProfile.verification_status) === 'rejected' ||
+                !(displayProfile.verificationStatus || displayProfile.verification_status)) && (
+                <form onSubmit={handleVerifySubmit} className="verification-form">
+                  <div className="edit-form-group">
+                    <label>{t('profile.verification.idNumberLabel')}</label>
+                    <input 
+                      type="text" 
+                      value={verifyForm.icNumber} 
+                      onChange={(e) => setVerifyForm(prev => ({ ...prev, icNumber: e.target.value.replace(/\D/g, '') }))}
+                      placeholder={t('profile.verification.idNumberPlaceholder')}
+                      maxLength={12}
+                      required
+                    />
+                  </div>
+
+                  <div className="verify-grid-3" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="edit-form-group">
+                      <label>{t('profile.verification.issueDateLabel')}</label>
+                      <input 
+                        type="date" 
+                        value={verifyForm.icIssueDate} 
+                        onChange={(e) => setVerifyForm(prev => ({ ...prev, icIssueDate: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="edit-form-group">
+                      <label>{t('profile.verification.issuePlaceLabel')}</label>
+                      <input 
+                        type="text" 
+                        value={verifyForm.icIssuePlace} 
+                        onChange={(e) => setVerifyForm(prev => ({ ...prev, icIssuePlace: e.target.value }))}
+                        placeholder={t('profile.verification.issuePlacePlaceholder')}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="edit-form-group">
+                    <label>{t('profile.verification.addressLabel')}</label>
+                    <input 
+                      type="text" 
+                      value={verifyForm.permanentAddress} 
+                      onChange={(e) => setVerifyForm(prev => ({ ...prev, permanentAddress: e.target.value }))}
+                      placeholder={t('profile.verification.addressPlaceholder')}
+                      required
+                    />
+                  </div>
+
+                  {/* Upload grid */}
+                  <div className="verify-grid-3" style={{ marginTop: '0.5rem' }}>
+                    
+                    {/* Front side card */}
+                    <div className="upload-box-wrapper">
+                      <span className="upload-box-label">{t('profile.verification.frontPhotoLabel')}</span>
+                      {cccdFrontPreview ? (
+                        <div className="preview-container">
+                          <img src={cccdFrontPreview} alt="Mặt trước CCCD" className="preview-image" />
+                          <button type="button" className="btn-remove-preview" onClick={() => handleRemoveVerifyFile('front')}>
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="upload-card-box">
+                          <Upload size={24} className="upload-box-icon" />
+                          <span className="upload-box-text">{t('profile.verification.frontPhotoUpload')}</span>
+                          <span className="upload-box-subtext">{t('profile.verification.uploadLimits')}</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            style={{ display: 'none' }} 
+                            onChange={(e) => handleVerifyFileChange(e, 'front')} 
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    {/* Back side card */}
+                    <div className="upload-box-wrapper">
+                      <span className="upload-box-label">{t('profile.verification.backPhotoLabel')}</span>
+                      {cccdBackPreview ? (
+                        <div className="preview-container">
+                          <img src={cccdBackPreview} alt="Mặt sau CCCD" className="preview-image" />
+                          <button type="button" className="btn-remove-preview" onClick={() => handleRemoveVerifyFile('back')}>
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="upload-card-box">
+                          <Upload size={24} className="upload-box-icon" />
+                          <span className="upload-box-text">{t('profile.verification.backPhotoUpload')}</span>
+                          <span className="upload-box-subtext">{t('profile.verification.uploadLimits')}</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            style={{ display: 'none' }} 
+                            onChange={(e) => handleVerifyFileChange(e, 'back')} 
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    {/* Face Selfie photo */}
+                    <div className="upload-box-wrapper">
+                      <span className="upload-box-label">{t('profile.verification.facePhotoLabel')}</span>
+                      {facePhotoPreview ? (
+                        <div className="preview-container">
+                          <img src={facePhotoPreview} alt="Ảnh chân dung" className="preview-image" />
+                          <button type="button" className="btn-remove-preview" onClick={() => handleRemoveVerifyFile('face')}>
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="upload-card-box">
+                          <Upload size={24} className="upload-box-icon" />
+                          <span className="upload-box-text">{t('profile.verification.facePhotoUpload')}</span>
+                          <span className="upload-box-subtext">{t('profile.verification.facePhotoSub')}</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            style={{ display: 'none' }} 
+                            onChange={(e) => handleVerifyFileChange(e, 'face')} 
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="btn-submit-verify" 
+                    style={{ marginTop: '1rem', width: '100%' }}
+                    disabled={verifyLoading}
+                  >
+                    {verifyLoading ? (
+                      <>
+                        <Loader size={16} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
+                        <span>{t('profile.verification.submittingButton')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck size={18} />
+                        <span>{t('profile.verification.submitButton')}</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>

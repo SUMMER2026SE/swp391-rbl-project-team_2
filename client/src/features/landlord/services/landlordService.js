@@ -614,6 +614,18 @@ export const landlordService = {
     }
   },
 
+  submitVerification: async (formData) => {
+    try {
+      const response = await httpClient.post('/landlord/profile/verify', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response;
+    } catch (error) {
+      console.error('Error submitting verification:', error);
+      throw error;
+    }
+  },
+
   // ===== BANK DETAILS =====
   getBankDetails: async () => {
     try {

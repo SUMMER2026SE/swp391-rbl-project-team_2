@@ -17,6 +17,18 @@ const createContract = async (req, res, next) => {
     const { roomId, tenantId, startDate, endDate, monthlyRent, depositAmount, termsAndConditions } = req.body;
     const landlordId = req.user.userId;
 
+    // Verify landlord's identity is verified
+    const landlord = await User.findOne({
+      where: { user_id: landlordId, is_deleted: false }
+    });
+
+    if (!landlord || landlord.verification_status !== 'verified') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn phải xác thực căn cước công dân trước khi có thể tạo hợp đồng.'
+      });
+    }
+
     // Validate required fields
     if (!roomId || !tenantId || !startDate || !endDate || !monthlyRent) {
       return res.status(400).json({

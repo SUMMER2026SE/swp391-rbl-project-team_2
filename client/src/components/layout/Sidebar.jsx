@@ -76,6 +76,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
   const { logout, user, hasUnreadTenantRequests, setHasUnreadTenantRequests } = useAuthStore();
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingVerificationsCount, setPendingVerificationsCount] = useState(0);
   const [pendingSchedules, setPendingSchedules] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
@@ -126,6 +127,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             setPendingCount(res.data.pendingListings);
           }
         }).catch(e => console.error(e));
+
+        adminService.getVerifications().then(res => {
+          if (res.success && res.data) {
+            setPendingVerificationsCount(res.data.length);
+          }
+        }).catch(e => console.error(e));
       } else {
         // Tenant notifications check - apply on all pages for tenant
         if (data.type === 'rental_request' || data.type === 'contract' || data.type === 'viewing_schedule') {
@@ -165,6 +172,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           setPendingCount(res.data.pendingListings);
         }
       }).catch(err => console.error('Failed to fetch pending count for sidebar', err));
+
+      adminService.getVerifications().then(res => {
+        if (res.success && res.data) {
+          setPendingVerificationsCount(res.data.length);
+        }
+      }).catch(err => console.error('Failed to fetch verifications for sidebar', err));
     } else if (isLandlord) {
       landlordService.getStats().then(res => {
         if (res.success) {
@@ -247,6 +260,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     {isAdmin && link.label === 'Quản lý phòng' && pendingCount > 0 && (
                       <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
                         {pendingCount}
+                      </span>
+                    )}
+                    {isAdmin && link.label === 'Người dùng' && pendingVerificationsCount > 0 && (
+                      <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
+                        {pendingVerificationsCount}
                       </span>
                     )}
                     {isLandlord && link.label === 'Lịch xem phòng' && pendingSchedules > 0 && (

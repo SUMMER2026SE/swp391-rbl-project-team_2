@@ -107,6 +107,12 @@ const RentalRequestsPage = () => {
       const res = await api.get('/landlord/profile');
       if (!res.success) throw new Error('Failed to fetch profile');
       const profile = res.data;
+
+      if (profile.verificationStatus !== 'verified' && profile.verification_status !== 'verified') {
+        toast.error('Bạn cần phải được Quản trị viên (Admin) phê duyệt xác thực danh tính CCCD trước khi tạo hợp đồng thuê phòng.', { duration: 5000 });
+        navigate('/landlord/profile');
+        return;
+      }
       
       if (!profile.icNumber || !profile.icIssueDate || !profile.icIssuePlace || !profile.permanentAddress) {
         toast.error('Vui lòng cập nhật đầy đủ thông tin pháp lý (CCCD, Địa chỉ) trong trang Profile trước khi tạo hợp đồng.', { duration: 5000 });

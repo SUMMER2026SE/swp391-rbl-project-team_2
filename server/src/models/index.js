@@ -24,7 +24,11 @@ const WithdrawalRequest = require('./WithdrawalRequest');
 // ASSOCIATIONS - Only define if not already defined
 // =========================================================
 
+let associationsDefined = false;
+
 const defineAssociations = () => {
+  if (associationsDefined) return;
+  associationsDefined = true;
   // Role <-> User
   if (!Role.hasMany.called) {
     Role.hasMany(User, { foreignKey: 'role_id', as: 'users' });
@@ -204,3 +208,7 @@ module.exports = {
   WithdrawalRequest,
   defineAssociations,
 };
+
+// Automatically define associations once models are loaded
+defineAssociations();
+
