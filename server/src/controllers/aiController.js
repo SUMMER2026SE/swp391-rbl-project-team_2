@@ -277,19 +277,81 @@ const aiController = {
   processSearch: async (req, res) => {
     try {
       const { query } = req.body;
+<<<<<<< Updated upstream
       if (!query) return res.status(400).json({ success: false, message: 'Query is required' });
+=======
+      if (!query) {
+        return res.status(400).json({ success: false, message: 'Query is required' });
+      }
+
+      // 1. Classify search query
+      const classification = await IntentClassifier.classify(query);
+      const { intent, subIntent, searchCriteria } = classification;
+
+      console.log(`[AI Search] Query: "${query}" | Intent: ${intent} | SubIntent: ${subIntent} | Criteria:`, JSON.stringify(searchCriteria));
+
+      // If it is a Room Search query
+      if (intent === 'RENTWISE' && subIntent === 'ROOM_SEARCH') {
+        // 2. Fetch matched rooms from DB with full details
+        const { rooms, totalCount } = await SQLSearchService.searchRoomsWithDetails(searchCriteria, 6);
+
+        // 3. Generate a friendly summary
+        const summaryPrompt = PromptBuilder.buildSearchSummaryPrompt(rooms, query, searchCriteria, totalCount);
+        let aiSummary = '';
+        try {
+          aiSummary = await GroqService.chatCompletion(summaryPrompt, { temperature: 0.3 });
+        } catch (e) {
+          aiSummary = `Tìm thấy ${totalCount} phòng phù hợp với yêu cầu của bạn tại hệ thống RentWise.`;
+        }
+>>>>>>> Stashed changes
 
       if (groqApiKey === 'dummy_key') {
         console.warn('Using mock AI search because GROQ_API_KEY is not set');
         return res.json({
           success: true,
+<<<<<<< Updated upstream
           data: {
             keyword: query,
             priceMax: query.includes('4M') ? 4000000 : null,
             district: query.includes('District 1') ? 'District 1' : null
+=======
+          isConversational: false,
+          reply: null,
+          aiSummary,
+          matchedRooms: rooms.map(room => ({
+            id: room.room_id,
+            title: room.title,
+            address: room.address,
+            district: room.district,
+            city: room.city,
+            pricePerMonth: room.price_per_month,
+            areaSqm: room.area_sqm,
+            maxOccupants: room.max_occupants,
+            thumbnailUrl: room.images && room.images.find(img => img.is_primary)?.image_url || room.thumbnail_url || null,
+          })),
+          totalMatched: totalCount,
+          data: {
+            keyword: searchCriteria.keyword || null,
+            city: searchCriteria.city || null,
+            district: searchCriteria.district || null,
+            priceMin: searchCriteria.priceMin || null,
+            priceMax: searchCriteria.priceMax || null,
+            maxOccupants: searchCriteria.maxOccupants || null,
+            minArea: searchCriteria.minArea || null,
+            facilities: searchCriteria.facilities || [],
+            nearbyFacilities: searchCriteria.nearbyFacilities || []
+>>>>>>> Stashed changes
           }
         });
+      } else {
+        // GENERAL queries OR other RENTWISE sub-intents (POLICY_FAQ, DEPOSIT, CONTRACT, etc.)
+        // Instruct frontend to open Chatbot AI with this query
+        return res.json({
+          success: true,
+          openChatbot: true
+        });
       }
+<<<<<<< Updated upstream
 
       const prompt = `
         You are an AI assistant for a room rental platform in Vietnam.
@@ -311,6 +373,18 @@ const aiController = {
         messages: [{ role: 'user', content: prompt }],
         model: AI_MODEL,
         temperature: 0.1,
+=======
+    } catch (error) {
+      console.error('[AI Controller] processSearch error:', error.message);
+      return res.json({
+        success: true,
+        isConversational: false,
+        reply: null,
+        aiSummary: "Xin lỗi, đã có lỗi xảy ra trong quá trình phân tích tìm kiếm của bạn.",
+        matchedRooms: [],
+        totalMatched: 0,
+        data: {}
+>>>>>>> Stashed changes
       });
 
       const responseText = chatCompletion.choices[0]?.message?.content || "";
@@ -329,10 +403,161 @@ const aiController = {
   // 2. AI Chatbot (NÂNG CẤP với 4 ý tưởng)
   chat: async (req, res) => {
     try {
+<<<<<<< Updated upstream
       const { message, history } = req.body;
 
       if (groqApiKey === 'dummy_key') {
         return res.json({
+=======
+      // 1. Intent Classification
+      if (isStreaming) StreamingService.sendStatus(res, 'Searching database...');
+      const classification = await IntentClassifier.classify(message, history || []);
+      const { intent, subIntent, searchCriteria } = classification;
+      
+      console.log(`[AI Chat] Query: "${message}" | Intent: ${intent} | SubIntent: ${subIntent} | Criteria:`, JSON.stringify(searchCriteria));
+
+      let sqlContext = '';
+      let tavilyContext = '';
+      let rawWebResults = [];
+      let validRoomIds = [];
+
+      // 2. Data Retrieval based on Routing Logic
+      if (intent === 'RENTWISE') {
+        const lowerMsg = message.toLowerCase();
+        
+        // Check for personal records or explicit PERSONAL subIntent
+        const isBookingQuery = ['lịch hẹn', 'lịch đặt', 'đặt lịch', 'đặt phòng', 'booking', 'lịch xem'].some(kw => lowerMsg.includes(kw));
+        const isContractQuery = ['hợp đồng', 'ký hợp đồng', 'hợp đồng của tôi', 'contract'].some(kw => lowerMsg.includes(kw));
+        const isComplaintQuery = ['khiếu nại', 'complaint', 'phản ánh'].some(kw => lowerMsg.includes(kw));
+        
+        const isPersonalRequest = subIntent === 'PERSONAL' || isBookingQuery || isContractQuery || isComplaintQuery;
+
+        if (isPersonalRequest) {
+          if (!isAuthenticated) {
+            const reply = "Dạ, để hỗ trợ xem lịch đặt phòng, hợp đồng hoặc khiếu nại của bạn, xin vui lòng đăng nhập vào tài khoản RentWise trước nhé ạ!";
+            if (isStreaming) {
+              StreamingService.sendChunk(res, reply);
+              StreamingService.sendFollowups(res, [
+                "Hướng dẫn đăng ký tài khoản?",
+                "Chính sách cọc tiền thế nào?",
+                "Tìm phòng trọ Quận Bình Thạnh"
+              ]);
+              return StreamingService.sendDone(res);
+            } else {
+              return res.json({
+                success: true,
+                reply,
+                followups: [
+                  "Hướng dẫn đăng ký tài khoản?",
+                  "Chính sách cọc tiền thế nào?",
+                  "Tìm phòng trọ Quận Bình Thạnh"
+                ],
+                sources: []
+              });
+            }
+          }
+
+          // Retrieve personal details
+          const personalData = {};
+          if (subIntent === 'PERSONAL' || isBookingQuery) personalData.bookings = await SQLSearchService.getTenantBookings(userId);
+          if (subIntent === 'PERSONAL' || isContractQuery) personalData.contracts = await SQLSearchService.getTenantContracts(userId);
+          if (subIntent === 'PERSONAL' || isComplaintQuery) personalData.complaints = await SQLSearchService.getTenantComplaints(userId);
+
+          sqlContext = PromptBuilder.formatPersonalContext(personalData);
+        } else if (subIntent === 'ROOM_SEARCH') {
+          // Perform room database query
+          const rooms = await SQLSearchService.searchRooms(searchCriteria);
+          validRoomIds = rooms.map(r => String(r.room_id));
+          
+          if (rooms.length > 0) {
+            sqlContext = PromptBuilder.formatRoomsForContext(rooms);
+          } else {
+            // No results in local database
+            sqlContext = 'Không tìm thấy phòng trọ nào phù hợp trong hệ thống cơ sở dữ liệu RentWise. Vui lòng thông báo cho người dùng biết điều này.';
+          }
+        } else {
+          // POLICY_FAQ, DEPOSIT, CONTRACT, PAYMENT, COMPLAINT, etc.
+          // These are answered using internal FAQ knowledge in PromptBuilder, no need to search DB rooms or Tavily
+          sqlContext = 'Yêu cầu của người dùng liên quan đến chính sách, quy định, hợp đồng hoặc thanh toán của hệ thống RentWise. Hãy dùng thông tin chính xác trong bảng Chính sách & Quy định dưới đây để giải đáp.';
+        }
+      } else {
+        // GENERAL intent -> politely refuse questions outside of RentWise scope
+        const politeRefusal = "Xin lỗi bạn, tôi là trợ lý ảo chuyên môn của RentWise. Tôi chỉ có thể hỗ trợ các câu hỏi liên quan đến tìm kiếm phòng trọ, chính sách, hợp đồng, cọc tiền và dịch vụ của hệ thống RentWise. Bạn cần tôi giúp gì về việc thuê phòng không ạ?";
+        
+        if (isStreaming) {
+          StreamingService.sendChunk(res, politeRefusal);
+          return StreamingService.sendDone(res);
+        } else {
+          return res.json({
+            success: true,
+            reply: politeRefusal,
+            sources: []
+          });
+        }
+      }
+
+      // Generate and stream citations if available
+      const citations = CitationService.extractCitations(rawWebResults);
+      if (isStreaming && citations.length > 0) {
+        StreamingService.sendStatus(res, 'Reading sources...');
+        StreamingService.sendSources(res, citations);
+      }
+
+      // 3. Prompt Construction and LLM Completion Call
+      if (isStreaming) StreamingService.sendStatus(res, 'Thinking...');
+      const systemPrompt = PromptBuilder.buildSystemPrompt({
+        intent,
+        sqlContext,
+        tavilyContext,
+        isAuthenticated
+      });
+
+      const formattedHistory = [
+        { role: 'system', content: systemPrompt }
+      ];
+
+      // Limit history count to optimize token counts
+      const trimmedHistory = (history || []).slice(-7);
+      trimmedHistory.forEach(msg => {
+        formattedHistory.push({
+          role: msg.role === 'assistant' ? 'assistant' : 'user',
+          content: msg.content
+        });
+      });
+
+      formattedHistory.push({ role: 'user', content: message });
+
+      if (isStreaming) {
+        StreamingService.sendStatus(res, 'Generating answer...');
+        let fullText = '';
+        try {
+          const stream = await GroqService.chatCompletionStream(formattedHistory);
+          for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta?.content || '';
+            if (delta) {
+              fullText += delta;
+              StreamingService.sendChunk(res, delta);
+            }
+          }
+
+          // Clean, validate links and pull out XML follow-up chips
+          const formatted = await ResponseFormatter.format(fullText, validRoomIds);
+          
+          // Stream follow-ups and complete SSE write
+          StreamingService.sendFollowups(res, formatted.followups);
+          StreamingService.sendDone(res);
+        } catch (streamError) {
+          console.error('[AI Controller] Streaming completion failed:', streamError.message);
+          StreamingService.sendChunk(res, "\n\n⚠️ Có lỗi xảy ra trong quá trình kết nối với AI. Bạn vui lòng thử lại nhé.");
+          StreamingService.sendDone(res);
+        }
+      } else {
+        // Non-streaming completion call
+        const responseText = await GroqService.chatCompletion(formattedHistory);
+        const formatted = await ResponseFormatter.format(responseText, validRoomIds);
+
+        res.json({
+>>>>>>> Stashed changes
           success: true,
           reply: "Xin chào! Em là trợ lý ảo RentalWise. Hiện tại hệ thống chưa cấu hình GROQ_API_KEY nên em chưa thể hoạt động. Vui lòng liên hệ quản trị viên để thiết lập nhé ạ!"
         });

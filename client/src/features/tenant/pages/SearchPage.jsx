@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Sparkles, Loader, Search, ChevronDown, ChevronUp, Check, RotateCcw, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Sparkles, Loader, Search, ChevronDown, ChevronUp, Check, RotateCcw, Filter, ChevronLeft, ChevronRight, X, ArrowRight, Clock } from 'lucide-react';
 import PropertyCard from '../components/PropertyCard';
 import { roomService } from '../services/roomService';
 import useAuthStore from '../../../store/useAuthStore';
@@ -10,6 +10,21 @@ import './SearchPage.css';
 const SearchPage = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
+<<<<<<< Updated upstream
+=======
+  const navigate = useNavigate();
+  const [isAIMode, setIsAIMode] = useState(() => {
+    if (searchParams.get('ai') === 'true') return true;
+    return localStorage.getItem('rentwise_ai_mode_active') === 'true';
+  });
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiLoadingMessage, setAiLoadingMessage] = useState('');
+>>>>>>> Stashed changes
+
+  // AI summary card states
+  const [aiSummary, setAiSummary] = useState('');
+  const [showAISummaryCard, setShowAISummaryCard] = useState(false);
+  const [totalAIMatched, setTotalAIMatched] = useState(0);
 
   // Keyword mapping from URL or local state
   const initialKeyword = searchParams.get('keyword') || '';
@@ -23,6 +38,20 @@ const SearchPage = () => {
       setSearchInput(keywordParam);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get('ai') === 'true' && searchInput) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('ai');
+      setSearchParams(newParams, { replace: true });
+      
+      handleSearchSubmit(null, searchInput, true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    localStorage.setItem('rentwise_ai_mode_active', isAIMode);
+  }, [isAIMode]);
 
   // Provinces/Districts States
   const [provincesList, setProvincesList] = useState([]);
@@ -66,7 +95,56 @@ const SearchPage = () => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const userId = user?.user_id || 'guest';
+
+  // AI search history states
+  const [aiSearchHistory, setAiSearchHistory] = useState([]);
+  const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
+
+  // Load AI search history
+  useEffect(() => {
+    try {
+      const historyKey = `rentwise-search-ai-history-${userId}`;
+      const saved = localStorage.getItem(historyKey);
+      if (saved) {
+        setAiSearchHistory(JSON.parse(saved));
+      } else {
+        setAiSearchHistory([]);
+      }
+    } catch (e) {
+      console.error('Failed to load AI search history:', e);
+    }
+  }, [userId]);
+
+  // Save AI search history query
+  const saveSearchHistory = (queryText) => {
+    if (!queryText || !queryText.trim()) return;
+    const trimmed = queryText.trim();
+    setAiSearchHistory(prev => {
+      const filtered = prev.filter(h => h.toLowerCase() !== trimmed.toLowerCase());
+      const updated = [trimmed, ...filtered].slice(0, 5);
+      try {
+        const historyKey = `rentwise-search-ai-history-${userId}`;
+        localStorage.setItem(historyKey, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save AI search history:', e);
+      }
+      return updated;
+    });
+  };
+
+  // Clear AI search history
+  const clearSearchHistory = (e) => {
+    if (e) e.stopPropagation();
+    setAiSearchHistory([]);
+    try {
+      const historyKey = `rentwise-search-ai-history-${userId}`;
+      localStorage.removeItem(historyKey);
+    } catch (e) {
+      console.error('Failed to clear AI search history:', e);
+    }
+  };
 
   const isFirstRender = useRef(true);
   const debounceRef = useRef(null);
@@ -174,9 +252,103 @@ const SearchPage = () => {
     fetchRooms(1, false);
   };
 
+<<<<<<< Updated upstream
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setKeyword(searchInput);
+=======
+  const handleSearchSubmit = async (e, queryOverride, forceAIMode = false) => {
+    if (e) e.preventDefault();
+    
+    const queryToSearch = queryOverride || searchInput;
+    if (isAIMode || forceAIMode) {
+      if (!queryToSearch.trim()) return;
+      
+      setLoadingAI(true);
+      setAiLoadingMessage('AI đang phân tích yêu cầu...');
+      
+      try {
+        const response = await api.post('/ai/search', { query: queryToSearch });
+        
+        if (response.success) {
+          if (response.openChatbot) {
+            setAiLoadingMessage('Đang chuyển hướng sang Chatbot...');
+            let params = new URLSearchParams(searchParams);
+            params.set('aiQuery', queryToSearch);
+            setSearchParams(params, { replace: true });
+            setTimeout(() => {
+              setLoadingAI(false);
+            }, 800);
+            return;
+          }
+
+          setAiLoadingMessage('Đang tổng hợp kết quả tìm kiếm...');
+          const data = response.data || {};
+            
+            // Cập nhật các trạng thái AI Summary Card
+            setAiSummary(response.aiSummary || '');
+            setTotalAIMatched(response.totalMatched || 0);
+            setShowAISummaryCard(true);
+
+            // Lưu lịch sử tìm kiếm AI
+            saveSearchHistory(queryToSearch);
+
+            // Cập nhật local filter states
+            if (data.keyword !== undefined) {
+              setKeyword(data.keyword || '');
+              setSearchInput(queryToSearch); // Keep the search query in the input
+            }
+            if (data.city !== undefined) setCity(data.city || '');
+            if (data.district !== undefined) setDistrict(data.district || '');
+            
+            if (data.priceMin !== undefined || data.priceMax !== undefined) {
+              setMinPrice(data.priceMin || '');
+              setMaxPrice(data.priceMax || '');
+            }
+            
+            if (data.facilities !== undefined) {
+              setFacilities(data.facilities || []);
+            }
+            
+            if (data.nearbyFacilities !== undefined) {
+              setNearbyFacilities(data.nearbyFacilities || []);
+            }
+            
+            // Xây dựng URL params để update URL
+            let params = new URLSearchParams();
+            if (data.keyword) params.append('keyword', data.keyword);
+            if (data.city) params.append('city', data.city);
+            if (data.district) params.append('district', data.district);
+            if (data.priceMin) params.append('minPrice', data.priceMin);
+            if (data.priceMax) params.append('maxPrice', data.priceMax);
+            
+            if (data.facilities && data.facilities.length > 0) {
+              params.append('facilities', data.facilities.join(','));
+            }
+            if (data.nearbyFacilities && data.nearbyFacilities.length > 0) {
+              params.append('nearbyFacilities', data.nearbyFacilities.join(','));
+            }
+            
+            setSearchParams(params, { replace: true });
+            
+            setTimeout(() => {
+              setLoadingAI(false);
+            }, 800);
+        } else {
+          throw new Error('AI Search failed');
+        }
+      } catch (err) {
+        console.error("SearchPage AI Search Error", err);
+        setAiLoadingMessage('Lỗi tìm kiếm AI. Đang chuyển về tìm kiếm từ khóa...');
+        setTimeout(() => {
+          setLoadingAI(false);
+          setKeyword(searchInput);
+        }, 1200);
+      }
+    } else {
+      setKeyword(searchInput);
+    }
+>>>>>>> Stashed changes
   };
 
   useEffect(() => {
@@ -212,6 +384,11 @@ const SearchPage = () => {
     setNearbyFacilities([]);
     setSort('newest');
     setLandlordId('');
+
+    // Clear AI States
+    setAiSummary('');
+    setTotalAIMatched(0);
+    setShowAISummaryCard(false);
 
     setTimeout(() => {
       fetchRooms(1, false);
@@ -421,8 +598,13 @@ const SearchPage = () => {
           {/* Main Results Area */}
           <div className="search-results-area">
             {/* Top Search Bar Row */}
+<<<<<<< Updated upstream
             <form className="ask-ai-container" onSubmit={(e) => e.preventDefault()}>
               <Search className="sparkles-icon" size={20} style={{ color: '#6B7280' }} />
+=======
+            <form className={`ask-ai-container ${isAIMode ? 'ai-active' : ''}`} style={{ position: 'relative' }} onSubmit={handleSearchSubmit}>
+              <Search className={isAIMode ? "sparkles-icon text-pink-500" : "sparkles-icon"} size={20} style={{ color: isAIMode ? '#EC4899' : '#6B7280' }} />
+>>>>>>> Stashed changes
               <input
                 type="text"
                 placeholder={t('search.searchPlaceholder', 'Search by keyword (e.g. Da Nang, title, address)')}
@@ -431,11 +613,105 @@ const SearchPage = () => {
                   setSearchInput(e.target.value);
                   setKeyword(e.target.value);
                 }}
+                onFocus={() => isAIMode && setShowHistoryDropdown(true)}
+                onBlur={() => setTimeout(() => setShowHistoryDropdown(false), 250)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setShowHistoryDropdown(false);
+                    handleSearchSubmit(e);
+                  }
+                }}
                 className="ask-ai-input"
               />
+<<<<<<< Updated upstream
               <button type="submit" className="ask-ai-btn" onClick={handleSearchSubmit}>{t('search.searchBtn', 'Search')}</button>
             </form>
 
+=======
+              <button 
+                type="button" 
+                className={`ai-toggle-pill-inline ${isAIMode ? 'active' : ''}`}
+                onClick={() => {
+                  setIsAIMode(!isAIMode);
+                  setShowHistoryDropdown(false);
+                }}
+                disabled={loadingAI}
+                title="Chuyển chế độ tìm kiếm AI"
+              >
+                <Sparkles size={14} className={isAIMode ? 'sparkle-pulse' : ''} />
+                <span>AI Mode</span>
+              </button>
+              <button type="submit" className={isAIMode ? "ask-ai-btn ai-btn-glowing" : "ask-ai-btn"} disabled={loadingAI}>
+                {isAIMode ? <Sparkles size={16} className={loadingAI ? 'animate-spin' : ''} /> : null}
+                <span>{isAIMode ? t('search.searchBtnAI', 'AI Search') : t('search.searchBtn', 'Search')}</span>
+              </button>
+
+              {/* AI Search History Dropdown */}
+              {isAIMode && showHistoryDropdown && aiSearchHistory.length > 0 && (
+                <div className="ai-search-history-dropdown">
+                  <div className="history-dropdown-header">
+                    <span>LỊCH SỬ TÌM KIẾM AI</span>
+                    <button type="button" onMouseDown={clearSearchHistory} className="clear-history-btn">
+                      Xóa lịch sử
+                    </button>
+                  </div>
+                  <ul className="history-dropdown-list">
+                    {aiSearchHistory.map((hist, idx) => (
+                      <li 
+                        key={idx} 
+                        onMouseDown={() => {
+                          setSearchInput(hist);
+                          handleSearchSubmit(null, hist);
+                        }}
+                      >
+                        <Clock size={13} className="history-item-icon" />
+                        <span className="history-item-text">{hist}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </form>
+
+            {/* SearchPage loading overlay */}
+            {loadingAI && (
+              <div className="searchpage-ai-loading-overlay animate-fade-in mb-6">
+                <div className="ai-loading-scanner"></div>
+                <div className="ai-loading-text flex items-center gap-2 justify-center py-4">
+                  <Sparkles className="animate-spin text-pink-500" size={18} />
+                  <span>{aiLoadingMessage}</span>
+                </div>
+              </div>
+            )}
+
+            {/* AI Summary Card */}
+            {showAISummaryCard && (
+              <div className="ai-summary-card animate-slide-down mb-8">
+                <button 
+                  type="button"
+                  className="ai-summary-close-btn" 
+                  onClick={() => setShowAISummaryCard(false)}
+                  title="Đóng kết quả AI"
+                >
+                  <X size={16} />
+                </button>
+                
+                <div className="ai-summary-header">
+                  <div className="ai-summary-badge">
+                    <Sparkles size={13} className="sparkle-pulse" />
+                    <span>KẾT QUẢ RENTWISE AI</span>
+                  </div>
+                  <h4>Tìm thấy {totalAIMatched} phòng phù hợp</h4>
+                </div>
+
+                <div className="ai-summary-body mb-0">
+                  <p className="ai-summary-text">{aiSummary}</p>
+                </div>
+              </div>
+            )}
+
+>>>>>>> Stashed changes
             <div className="results-header flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-2xl font-bold">{t('search.availableProperties', 'Available Properties')}</h2>

@@ -54,6 +54,25 @@ const HomePage = () => {
   const [district, setDistrict] = useState('');
   const [priceRange, setPriceRange] = useState('-');
   const [facilities, setFacilities] = useState([]);
+<<<<<<< Updated upstream
+=======
+  const [isAIMode, setIsAIMode] = useState(() => {
+    return localStorage.getItem('rentwise_ai_mode_active') === 'true';
+  });
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiLoadingMessage, setAiLoadingMessage] = useState('');
+
+  const aiSuggestions = [
+    "Phòng trọ dưới 3 triệu ở Quận 1 có WiFi và máy lạnh",
+    "Căn hộ dịch vụ Quận Bình Thạnh có ban công, tủ lạnh",
+    "Phòng trọ gần Đại học Bách Khoa chỗ để xe rộng",
+    "Quy trình đặt cọc tiền phòng và ký hợp đồng như thế nào?"
+  ];
+
+  const handleSuggestionClick = (suggestionText) => {
+    setKeyword(suggestionText);
+  };
+>>>>>>> Stashed changes
   const [nearbyFacilities, setNearbyFacilities] = useState([]);
   const [showFacilities, setShowFacilities] = useState(false);
   const [showNearbyFacilities, setShowNearbyFacilities] = useState(false);
@@ -139,6 +158,7 @@ const HomePage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+<<<<<<< Updated upstream
   const handleSearchSubmit = () => {
     let params = new URLSearchParams();
     if (keyword) params.append('keyword', keyword);
@@ -148,6 +168,32 @@ const HomePage = () => {
       const [min, max] = priceRange.split('-');
       if (min) params.append('minPrice', min);
       if (max) params.append('maxPrice', max);
+=======
+  useEffect(() => {
+    localStorage.setItem('rentwise_ai_mode_active', isAIMode);
+  }, [isAIMode]);
+
+  const handleSearchSubmit = async () => {
+    if (isAIMode) {
+      let params = new URLSearchParams();
+      params.append('keyword', keyword);
+      params.append('ai', 'true');
+      navigate(`${ROUTES.ROOMS}?${params.toString()}`);
+    } else {
+      let params = new URLSearchParams();
+      if (keyword) params.append('keyword', keyword);
+      if (city) params.append('city', city);
+      if (district) params.append('district', district);
+      if (priceRange && priceRange !== '-') {
+        const [min, max] = priceRange.split('-');
+        if (min) params.append('minPrice', min);
+        if (max) params.append('maxPrice', max);
+      }
+      if (facilities.length > 0) params.append('facilities', facilities.join(','));
+      if (nearbyFacilities.length > 0) params.append('nearbyFacilities', nearbyFacilities.join(','));
+      
+      navigate(`${ROUTES.ROOMS}?${params.toString()}`);
+>>>>>>> Stashed changes
     }
     if (facilities.length > 0) params.append('facilities', facilities.join(','));
     if (nearbyFacilities.length > 0) params.append('nearbyFacilities', nearbyFacilities.join(','));

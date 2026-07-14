@@ -13,14 +13,14 @@ const STORAGE_KEY_PREFIX = 'ai-chat-history';
 const getStorageKey = (userId) => `${STORAGE_KEY_PREFIX}-${userId || 'guest'}`;
 const WELCOME_MESSAGE = {
   role: 'assistant',
-  content: 'Xin chào! 👋 Em là trợ lý ảo RentalWise. Em có thể giúp bạn tìm phòng trọ, giải đáp thắc mắc về chính sách thuê phòng, hoặc tư vấn lựa chọn phòng phù hợp nhé ạ! 😊'
+  content: 'Xin chào!  Em là trợ lý ảo RentWise. Em có thể giúp bạn tìm phòng trọ, giải đáp thắc mắc về chính sách đặt cọc, hợp đồng điện tử, thanh toán, hoặc hỗ trợ gửi khiếu nại nhé ạ! '
 };
 
 const QUICK_REPLIES = [
-  '🏠 Có phòng nào trống không?',
-  '💰 Phòng giá dưới 3 triệu?',
-  '📋 Quy trình thuê phòng?',
-  '🔑 Chính sách đặt cọc?',
+  ' Có phòng nào trống ở Quận 1 không?',
+  ' Chính sách hoàn tiền cọc thế nào?',
+  ' Quy trình ký hợp đồng điện tử?',
+  ' Hướng dẫn gửi khiếu nại/phản ánh?',
 ];
 
 // =========================================================
@@ -55,10 +55,10 @@ const MessageContent = ({ content }) => {
       if (response && response.data) {
         navigate(`/rooms/${roomId}`); // Dùng path đã clean thay vì path gốc
       } else {
-        alert('⚠️ Phòng này không tồn tại hoặc đã bị xóa. Vui lòng tìm phòng khác trên trang Khám phá nhé!');
+        alert(' Phòng này không tồn tại hoặc đã bị xóa. Vui lòng tìm phòng khác trên trang Khám phá nhé!');
       }
     } catch (err) {
-      alert('⚠️ Phòng này không tồn tại hoặc đã bị xóa. Vui lòng tìm phòng khác trên trang Khám phá nhé!');
+      alert(' Phòng này không tồn tại hoặc đã bị xóa. Vui lòng tìm phòng khác trên trang Khám phá nhé!');
     } finally {
       setChecking(false);
     }
@@ -71,7 +71,7 @@ const MessageContent = ({ content }) => {
           const cleaned = cleanUrl(part);
           // Kiểm tra nếu là link "không khả dụng" (đã bị backend loại bỏ)
           if (cleaned.includes('[link không khả dụng]')) {
-            return <span key={i} className="ai-room-link-invalid">❌ Link không khả dụng</span>;
+            return <span key={i} className="ai-room-link-invalid"> Link không khả dụng</span>;
           }
           const isLocal = cleaned.includes('localhost:5173');
           if (isLocal) {
@@ -83,7 +83,7 @@ const MessageContent = ({ content }) => {
                 className="ai-room-link"
                 disabled={checking}
               >
-                {checking ? '⏳ Đang kiểm tra...' : '🔗 Xem chi tiết phòng'}
+                {checking ? ' Đang kiểm tra...' : ' Xem chi tiết phòng'}
               </button>
             );
           }
@@ -137,6 +137,47 @@ const AIChatWidget = () => {
     }
   }, [messages, user?.user_id]);
 
+<<<<<<< Updated upstream
+=======
+  // Lắng nghe URL search parameters để tự động chat khi tìm kiếm AI
+  useEffect(() => {
+    const aiQuery = searchParams.get('aiQuery');
+    if (aiQuery) {
+      setIsOpen(true);
+      setIsMinimized(false);
+
+      // Xóa aiQuery khỏi URL để tránh trigger lại khi reload
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('aiQuery');
+      setSearchParams(newParams, { replace: true });
+
+      // Trigger gửi tin nhắn
+      handleSend(aiQuery);
+    }
+  }, [searchParams, setSearchParams]);
+
+  // Lắng nghe sự kiện custom 'inject-ai-message'
+  useEffect(() => {
+    const handleInjectedMessage = (event) => {
+      const { query, reply } = event.detail;
+      if (!query || !reply) return;
+
+      setIsOpen(true);
+      setIsMinimized(false);
+
+      // Thêm cả câu hỏi và câu trả lời của AI vào danh sách chat
+      const userMsg = { role: 'user', content: query };
+      const assistantMsg = { role: 'assistant', content: reply };
+      setMessages(prev => [...prev, userMsg, assistantMsg]);
+    };
+
+    window.addEventListener('inject-ai-message', handleInjectedMessage);
+    return () => {
+      window.removeEventListener('inject-ai-message', handleInjectedMessage);
+    };
+  }, []);
+
+>>>>>>> Stashed changes
   // Auto-scroll xuống cuối
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -176,13 +217,13 @@ const AIChatWidget = () => {
       } else {
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: 'Xin lỗi, em đang gặp sự cố kết nối. Bạn vui lòng thử lại sau nhé ạ! 🙏'
+          content: 'Xin lỗi, em đang gặp sự cố kết nối. Bạn vui lòng thử lại sau nhé ạ! '
         }]);
       }
     } catch (err) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Oops! Em bị lỗi rồi. Bạn thử gửi lại tin nhắn nhé ạ! 😅'
+        content: 'Oops! Em bị lỗi rồi. Bạn thử gửi lại tin nhắn nhé ạ! '
       }]);
     } finally {
       setIsTyping(false);
@@ -215,7 +256,7 @@ const AIChatWidget = () => {
                 <RentalWiseIcon size={24} />
               </div>
               <div className="ai-chat-header-text">
-                <h4>RentalWise AI</h4>
+                <h4>RentWise AI</h4>
                 <p>{isTyping ? '💬 Đang trả lời...' : '🟢 Trực tuyến'}</p>
               </div>
             </div>
@@ -278,6 +319,30 @@ const AIChatWidget = () => {
                     </button>
                   ))}
                 </div>
+<<<<<<< Updated upstream
+=======
+              ) : (
+                (() => {
+                  const lastMsg = messages[messages.length - 1];
+                  if (lastMsg && lastMsg.role === 'assistant' && lastMsg.followups && lastMsg.followups.length > 0) {
+                    return (
+                      <div className="ai-quick-replies">
+                        {lastMsg.followups.map((q, idx) => (
+                          <button
+                            key={idx}
+                            className="ai-quick-reply-btn text-primary"
+                            onClick={() => handleSend(q)}
+                            style={{ height: 'auto', whiteSpace: 'normal', textAlign: 'left' }}
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()
+>>>>>>> Stashed changes
               )}
 
               {/* INPUT */}
@@ -285,7 +350,7 @@ const AIChatWidget = () => {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Nhập tin nhắn..."
+                  placeholder="Hỏi tôi bất cứ điều gì về thuê phòng, chính sách..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}

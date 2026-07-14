@@ -1,9 +1,14 @@
+const { Op } = require('sequelize');
 const { Room } = require('./src/models');
+
 async function test() {
-  const rooms = await Room.findAll({ limit: 5 });
-  for(let r of rooms) {
-    console.log(`ID: ${r.room_id}, Status: ${r.status}, Qty: ${r.quantity}, AvailQty: ${r.available_quantity}`);
-  }
-  process.exit(0);
+  const rooms = await Room.findAll({
+    where: {
+      city: { [Op.like]: '%Đà Nẵng%' }
+    },
+    attributes: ['title', 'city', 'district', 'address']
+  });
+  console.log("Matching city '%Đà Nẵng%':", rooms.length);
+  console.log(rooms.slice(0,2).map(r => r.toJSON()));
 }
-test();
+test().catch(console.error).finally(() => process.exit(0));

@@ -75,12 +75,43 @@ const initDatabase = async () => {
         END
       `);
 
+      // Add missing columns to users table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'cccd_front_url')
+        BEGIN
+            ALTER TABLE users ADD 
+                cccd_front_url NVARCHAR(500) NULL,
+                cccd_back_url NVARCHAR(500) NULL,
+                face_photo_url NVARCHAR(500) NULL,
+                verification_status VARCHAR(20) NOT NULL DEFAULT 'unverified',
+                verification_notes NVARCHAR(1000) NULL;
+        END
+      `);
+
       // Add missing room columns
       await sequelize.query(`
         IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'quantity')
         BEGIN
             ALTER TABLE rooms ADD quantity INT DEFAULT 1;
             ALTER TABLE rooms ADD available_quantity INT DEFAULT 1;
+        END
+      `);
+
+      // Add latitude and longitude to rooms
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'latitude')
+        BEGIN
+            ALTER TABLE rooms ADD latitude DECIMAL(10, 8) NULL;
+            ALTER TABLE rooms ADD longitude DECIMAL(11, 8) NULL;
+        END
+      `);
+
+      // Add latitude and longitude to properties
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('properties') AND name = 'latitude')
+        BEGIN
+            ALTER TABLE properties ADD latitude DECIMAL(10, 8) NULL;
+            ALTER TABLE properties ADD longitude DECIMAL(11, 8) NULL;
         END
       `);
 

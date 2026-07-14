@@ -3,6 +3,22 @@ import { Paperclip, Send, MessageSquare, Bot, Lightbulb, Compass, Home } from 'l
 import RoomCard from '../components/RoomCard';
 import './AIChatPage.css';
 
+<<<<<<< Updated upstream
+=======
+const WELCOME_MESSAGE = {
+  id: 'welcome',
+  sender: 'bot',
+  type: 'text',
+  text: "Xin chào! 👋 Em là trợ lý ảo RentWise AI. Em có thể hỗ trợ bạn tìm kiếm phòng trọ, giải đáp các thắc mắc về quy trình thuê phòng, chính sách đặt cọc, hợp đồng điện tử, thanh toán, hoặc khiếu nại trên hệ thống. Hãy hỏi em bất cứ điều gì nhé! 😊"
+};
+
+const SUGGESTED_PROMPTS = [
+  { text: "Tìm phòng trọ Quận 1 giá dưới 4 triệu có điều hòa?", icon: Home },
+  { text: "Quy trình đặt cọc và chính sách hoàn tiền cọc trên RentWise?", icon: HelpCircle },
+  { text: "Hướng dẫn ký hợp đồng điện tử và các điều khoản cần lưu ý?", icon: Bot }
+];
+
+>>>>>>> Stashed changes
 const AIChatPage = () => {
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -77,9 +93,15 @@ const AIChatPage = () => {
           <div className="bot-icon-wrapper">
             <Bot size={24} className="text-primary" />
           </div>
+<<<<<<< Updated upstream
           <div className="bot-info">
             <h2>AI RentalWise</h2>
             <p>RentWise Help</p>
+=======
+          <div className="sidebar-bot-info">
+            <h2>RentWise AI Assistant</h2>
+            <p>Trợ lý thông minh chuyên biệt</p>
+>>>>>>> Stashed changes
           </div>
         </div>
 
@@ -168,6 +190,7 @@ const AIChatPage = () => {
           <div ref={messagesEndRef} />
         </div>
 
+<<<<<<< Updated upstream
         {/* Chat Input */}
         <div className="chat-input-container">
           <div className="chat-input-wrapper">
@@ -177,6 +200,45 @@ const AIChatPage = () => {
             <input 
               type="text" 
               placeholder="Type your message or ask for recommendations..."
+=======
+        {/* Suggested Prompts on empty state */}
+        {messages.length <= 1 && (
+          <div className="suggested-prompts-container">
+            <h3 className="suggested-prompts-title">💡 Gợi ý câu hỏi phổ biến:</h3>
+            <div className="suggested-prompts-grid">
+              {SUGGESTED_PROMPTS.map((prompt, idx) => {
+                const IconComponent = prompt.icon;
+                return (
+                  <button
+                    key={idx}
+                    className="suggested-prompt-card"
+                    onClick={() => handleSend(prompt.text)}
+                  >
+                    <IconComponent size={20} className="text-primary flex-shrink-0" />
+                    <span>{prompt.text}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="quick-category-container mt-6 flex flex-wrap gap-2 justify-center" style={{ marginTop: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center' }}>
+              <button type="button" onClick={() => handleSend("Tìm phòng trọ trống")} className="quick-cat-btn border rounded-pill px-3 py-1.5 text-sm bg-white hover:bg-gray-50 flex items-center gap-1.5" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '99px', padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>🏠 Tìm phòng</button>
+              <button type="button" onClick={() => handleSend("Chính sách cọc tiền của RentWise")} className="quick-cat-btn border rounded-pill px-3 py-1.5 text-sm bg-white hover:bg-gray-50 flex items-center gap-1.5" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '99px', padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>💰 Tiền cọc</button>
+              <button type="button" onClick={() => handleSend("Quy trình ký hợp đồng điện tử")} className="quick-cat-btn border rounded-pill px-3 py-1.5 text-sm bg-white hover:bg-gray-50 flex items-center gap-1.5" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '99px', padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>📄 Hợp đồng</button>
+              <button type="button" onClick={() => handleSend("Cách thanh toán tiền thuê phòng")} className="quick-cat-btn border rounded-pill px-3 py-1.5 text-sm bg-white hover:bg-gray-50 flex items-center gap-1.5" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '99px', padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>💳 Thanh toán</button>
+              <button type="button" onClick={() => handleSend("Hướng dẫn gửi khiếu nại và phản ánh")} className="quick-cat-btn border rounded-pill px-3 py-1.5 text-sm bg-white hover:bg-gray-50 flex items-center gap-1.5" style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '99px', padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>📢 Khiếu nại</button>
+            </div>
+          </div>
+        )}
+
+        {/* Input Bar */}
+        <div className="chat-input-container-custom">
+          <div className="chat-input-wrapper-custom">
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Hỏi tôi bất cứ điều gì về thuê phòng, chính sách RentWise..."
+>>>>>>> Stashed changes
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
             />
