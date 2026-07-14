@@ -54,8 +54,6 @@ const HomePage = () => {
   const [district, setDistrict] = useState('');
   const [priceRange, setPriceRange] = useState('-');
   const [facilities, setFacilities] = useState([]);
-<<<<<<< Updated upstream
-=======
   const [isAIMode, setIsAIMode] = useState(() => {
     return localStorage.getItem('rentwise_ai_mode_active') === 'true';
   });
@@ -72,7 +70,7 @@ const HomePage = () => {
   const handleSuggestionClick = (suggestionText) => {
     setKeyword(suggestionText);
   };
->>>>>>> Stashed changes
+
   const [nearbyFacilities, setNearbyFacilities] = useState([]);
   const [showFacilities, setShowFacilities] = useState(false);
   const [showNearbyFacilities, setShowNearbyFacilities] = useState(false);
@@ -158,17 +156,6 @@ const HomePage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-<<<<<<< Updated upstream
-  const handleSearchSubmit = () => {
-    let params = new URLSearchParams();
-    if (keyword) params.append('keyword', keyword);
-    if (city) params.append('city', city);
-    if (district) params.append('district', district);
-    if (priceRange && priceRange !== '-') {
-      const [min, max] = priceRange.split('-');
-      if (min) params.append('minPrice', min);
-      if (max) params.append('maxPrice', max);
-=======
   useEffect(() => {
     localStorage.setItem('rentwise_ai_mode_active', isAIMode);
   }, [isAIMode]);
@@ -193,7 +180,7 @@ const HomePage = () => {
       if (nearbyFacilities.length > 0) params.append('nearbyFacilities', nearbyFacilities.join(','));
       
       navigate(`${ROUTES.ROOMS}?${params.toString()}`);
->>>>>>> Stashed changes
+
     }
     if (facilities.length > 0) params.append('facilities', facilities.join(','));
     if (nearbyFacilities.length > 0) params.append('nearbyFacilities', nearbyFacilities.join(','));

@@ -10,8 +10,6 @@ import './SearchPage.css';
 const SearchPage = () => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-<<<<<<< Updated upstream
-=======
   const navigate = useNavigate();
   const [isAIMode, setIsAIMode] = useState(() => {
     if (searchParams.get('ai') === 'true') return true;
@@ -19,7 +17,7 @@ const SearchPage = () => {
   });
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiLoadingMessage, setAiLoadingMessage] = useState('');
->>>>>>> Stashed changes
+
 
   // AI summary card states
   const [aiSummary, setAiSummary] = useState('');
@@ -252,11 +250,6 @@ const SearchPage = () => {
     fetchRooms(1, false);
   };
 
-<<<<<<< Updated upstream
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setKeyword(searchInput);
-=======
   const handleSearchSubmit = async (e, queryOverride, forceAIMode = false) => {
     if (e) e.preventDefault();
     
@@ -348,7 +341,7 @@ const SearchPage = () => {
     } else {
       setKeyword(searchInput);
     }
->>>>>>> Stashed changes
+
   };
 
   useEffect(() => {
@@ -598,13 +591,9 @@ const SearchPage = () => {
           {/* Main Results Area */}
           <div className="search-results-area">
             {/* Top Search Bar Row */}
-<<<<<<< Updated upstream
-            <form className="ask-ai-container" onSubmit={(e) => e.preventDefault()}>
-              <Search className="sparkles-icon" size={20} style={{ color: '#6B7280' }} />
-=======
             <form className={`ask-ai-container ${isAIMode ? 'ai-active' : ''}`} style={{ position: 'relative' }} onSubmit={handleSearchSubmit}>
               <Search className={isAIMode ? "sparkles-icon text-pink-500" : "sparkles-icon"} size={20} style={{ color: isAIMode ? '#EC4899' : '#6B7280' }} />
->>>>>>> Stashed changes
+
               <input
                 type="text"
                 placeholder={t('search.searchPlaceholder', 'Search by keyword (e.g. Da Nang, title, address)')}
@@ -624,11 +613,6 @@ const SearchPage = () => {
                 }}
                 className="ask-ai-input"
               />
-<<<<<<< Updated upstream
-              <button type="submit" className="ask-ai-btn" onClick={handleSearchSubmit}>{t('search.searchBtn', 'Search')}</button>
-            </form>
-
-=======
               <button 
                 type="button" 
                 className={`ai-toggle-pill-inline ${isAIMode ? 'active' : ''}`}
@@ -711,7 +695,7 @@ const SearchPage = () => {
               </div>
             )}
 
->>>>>>> Stashed changes
+
             <div className="results-header flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-2xl font-bold">{t('search.availableProperties', 'Available Properties')}</h2>

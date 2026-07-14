@@ -3,8 +3,6 @@ import { Paperclip, Send, MessageSquare, Bot, Lightbulb, Compass, Home } from 'l
 import RoomCard from '../components/RoomCard';
 import './AIChatPage.css';
 
-<<<<<<< Updated upstream
-=======
 const WELCOME_MESSAGE = {
   id: 'welcome',
   sender: 'bot',
@@ -18,7 +16,7 @@ const SUGGESTED_PROMPTS = [
   { text: "Hướng dẫn ký hợp đồng điện tử và các điều khoản cần lưu ý?", icon: Bot }
 ];
 
->>>>>>> Stashed changes
+
 const AIChatPage = () => {
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -93,15 +91,10 @@ const AIChatPage = () => {
           <div className="bot-icon-wrapper">
             <Bot size={24} className="text-primary" />
           </div>
-<<<<<<< Updated upstream
-          <div className="bot-info">
-            <h2>AI RentalWise</h2>
-            <p>RentWise Help</p>
-=======
           <div className="sidebar-bot-info">
             <h2>RentWise AI Assistant</h2>
             <p>Trợ lý thông minh chuyên biệt</p>
->>>>>>> Stashed changes
+
           </div>
         </div>
 
@@ -190,17 +183,6 @@ const AIChatPage = () => {
           <div ref={messagesEndRef} />
         </div>
 
-<<<<<<< Updated upstream
-        {/* Chat Input */}
-        <div className="chat-input-container">
-          <div className="chat-input-wrapper">
-            <button className="btn-attachment">
-              <Paperclip size={20} />
-            </button>
-            <input 
-              type="text" 
-              placeholder="Type your message or ask for recommendations..."
-=======
         {/* Suggested Prompts on empty state */}
         {messages.length <= 1 && (
           <div className="suggested-prompts-container">
@@ -238,7 +220,7 @@ const AIChatPage = () => {
               ref={inputRef}
               type="text"
               placeholder="Hỏi tôi bất cứ điều gì về thuê phòng, chính sách RentWise..."
->>>>>>> Stashed changes
+
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
             />

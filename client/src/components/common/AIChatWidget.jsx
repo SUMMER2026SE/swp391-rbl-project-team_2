@@ -137,8 +137,6 @@ const AIChatWidget = () => {
     }
   }, [messages, user?.user_id]);
 
-<<<<<<< Updated upstream
-=======
   // Lắng nghe URL search parameters để tự động chat khi tìm kiếm AI
   useEffect(() => {
     const aiQuery = searchParams.get('aiQuery');
@@ -177,7 +175,7 @@ const AIChatWidget = () => {
     };
   }, []);
 
->>>>>>> Stashed changes
+
   // Auto-scroll xuống cuối
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -319,8 +317,6 @@ const AIChatWidget = () => {
                     </button>
                   ))}
                 </div>
-<<<<<<< Updated upstream
-=======
               ) : (
                 (() => {
                   const lastMsg = messages[messages.length - 1];
@@ -342,7 +338,7 @@ const AIChatWidget = () => {
                   }
                   return null;
                 })()
->>>>>>> Stashed changes
+
               )}
 
               {/* INPUT */}
