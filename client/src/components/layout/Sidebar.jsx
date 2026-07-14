@@ -56,7 +56,6 @@ const ADMIN_NAV = [
   { icon: <ShieldCheck size={20} />, label: 'Kiểm duyệt', tKey: 'sidebar.moderation', path: ROUTES.ADMIN.MODERATION },
   { icon: <BarChart3 size={20} />, label: 'Thống kê', tKey: 'sidebar.analytics', path: ROUTES.ADMIN.ANALYTICS },
   { icon: <Receipt size={20} />, label: 'Giao dịch', tKey: 'sidebar.transactions', path: ROUTES.ADMIN.TRANSACTIONS },
-  { icon: <Wallet size={20} />, label: 'Thanh toán', tKey: 'sidebar.payouts', path: ROUTES.ADMIN.PAYOUTS },
   { icon: <Settings size={20} />, label: 'Cài đặt', tKey: 'sidebar.settings', path: ROUTES.ADMIN.SETTINGS },
 ];
 

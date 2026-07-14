@@ -157,7 +157,7 @@ const LandlordDashboard = () => {
   const [showPeriodFilter, setShowPeriodFilter] = useState(false);
   const [filterPeriod, setFilterPeriod] = useState('Last 30 Days');
 
-  const { stats: statsData, recentActivity, revenueChart, loading, error } = useLandlordStats();
+  const { stats: statsData, recentActivity, revenueChart, loading, error } = useLandlordStats(filterPeriod);
 
   // Stats matching Figma design precisely
   const stats = [
@@ -381,7 +381,7 @@ const LandlordDashboard = () => {
         <div className="dashboard-activity-card">
           <div className="dashboard-activity-header">
             <h3 className="activity-card-title">{t('landlord.dashboard.recentActivity.title', 'Recent Activity')}</h3>
-            <Link to={ROUTES.LANDLORD.REQUESTS} className="activity-view-all-link">
+            <Link to={ROUTES.LANDLORD.NOTIFICATIONS} className="activity-view-all-link">
               {t('landlord.dashboard.recentActivity.viewAll', 'View All')}
             </Link>
           </div>

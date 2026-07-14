@@ -2,9 +2,9 @@ import httpClient from '../../../services/httpClient';
 
 export const landlordService = {
   // ===== DASHBOARD STATS =====
-  getStats: async () => {
+  getStats: async (params = {}) => {
     try {
-      const response = await httpClient.get('/landlord/stats');
+      const response = await httpClient.get('/landlord/stats', { params });
       return response;
     } catch (error) {
       console.error('Error fetching landlord stats:', error);
@@ -12,9 +12,9 @@ export const landlordService = {
     }
   },
 
-  getRecentActivity: async () => {
+  getRecentActivity: async (params = {}) => {
     try {
-      const response = await httpClient.get('/landlord/dashboard/recent-activity');
+      const response = await httpClient.get('/landlord/dashboard/recent-activity', { params });
       return response;
     } catch (error) {
       console.error('Error fetching recent activity:', error);
@@ -22,9 +22,9 @@ export const landlordService = {
     }
   },
 
-  getRevenueChart: async () => {
+  getRevenueChart: async (params = {}) => {
     try {
-      const response = await httpClient.get('/landlord/dashboard/revenue-chart');
+      const response = await httpClient.get('/landlord/dashboard/revenue-chart', { params });
       return response;
     } catch (error) {
       console.error('Error fetching revenue chart:', error);

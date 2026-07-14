@@ -89,6 +89,9 @@ class ResponseFormatter {
     let cleanedText = text.replace(/<followups>[\s\S]*?<\/followups>/g, '').trim();
     cleanedText = cleanedText.replace(/<followup>[\s\S]*?<\/followup>/g, '').trim();
 
+    // Strip "Sources:" or "Nguồn:" section at the end of the text (from a newline or start of string)
+    cleanedText = cleanedText.replace(/(?:\r?\n|^)\s*(?:Sources|Nguồn trích dẫn|Nguồn):\s*[\s\S]*$/i, '').trim();
+
     // Default fallback if no followups found
     if (followups.length === 0) {
       followups.push(
