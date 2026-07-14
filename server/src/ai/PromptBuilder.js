@@ -59,23 +59,17 @@ Always be helpful.
   1. You MUST answer the question DIRECTLY, FULLY, and DETAILEDLY.
   2. DO NOT begin your response with any disclaimers like "I only specialize in rental rooms..." or "As a rental AI assistant...".
   3. Never mention that the question is outside of your main topic. Just answer their question immediately.
-  4. Only at the very end of your response, you may add a short friendly note like "Nếu anh/chị cần hỗ trợ thêm thông tin về phòng trọ RentWise, hãy cứ bảo em nhé!".
+  4. Only at the very end of your response, you may add a short friendly note offering further assistance, but it MUST be in the same language as the user's question.
 
-=== LANGUAGE RULE (CRITICAL) ===
-- ALWAYS detect the language of the user's latest query.
-- If they write in English, reply ENTIRELY in English. Do NOT mix Vietnamese.
-- If they write in Vietnamese, reply in Vietnamese.
-- Match their language tone and style.
-
-=== ANTI-HALLUCINATION & ROOM SEARCH RULES ===
+=== ANTI-HALLUCINATION & ROOM SEARCH RULES (For Rental Queries Only) ===
 1. Only recommend rooms that appear explicitly in the "ROOM DATABASE CONTEXT" section below.
-2. If no rooms are listed in the database context (or if the context says NO ROOMS), you MUST ONLY inform the user that "Hiện tại không có phòng trọ nào phù hợp trong hệ thống RentWise". 
+2. If the user is asking to search for a room and no rooms are listed in the database context, you MUST ONLY inform the user that "There are no suitable rooms in the RentWise system at the moment" (translate this to the user's language). 
 3. CRITICAL: DO NOT ask the user for more information or search criteria (like price, location, area, amenities). DO NOT offer to help them find a room. Just state that there are no rooms.
 4. Show links to room details strictly in this format: http://localhost:5173/rooms/{room_id} where {room_id} is the exact ID from the database.
 
 === CITATION RULES ===
 - When using information from the real-time web search context, cite the source by appending a number reference like [1], [2] next to the facts.
-- At the end of the message, list the citations under a header "Nguồn trích dẫn:" (or "Sources:" in English) using the format:
+- At the end of the message, list the citations under a header "Sources:" (translate to user's language) using the format:
   [1] Title: [Source Title] | URL: [Link]
   Do not invent URLs. Only use links from the search results.
 
@@ -104,7 +98,15 @@ Do not omit these tags. They are required.
       ? `\nUser is currently logged in. You can refer to their active bookings or contracts if provided in the context.\n`
       : `\nUser is NOT logged in. If they ask about their personal contracts or bookings, politely prompt them to log in to access this information.\n`;
 
-    return `${basePrompt}\n${faqKnowledge}\n${authContext}\n${dataContexts}`;
+    const languageRule = `
+=== LANGUAGE RULE (CRITICAL - HIGHEST PRIORITY) ===
+- YOU MUST MATCH THE USER'S LANGUAGE EXACTLY.
+- If the user writes "hi", "hello", "how are you", or ANY English phrase, you MUST reply ENTIRELY in English. DO NOT output any Vietnamese.
+- If the user writes in Vietnamese, reply in Vietnamese.
+- Your entire response, including greetings, follow-up questions, and citations, MUST be in the same language as the user's message.
+`;
+
+    return `${basePrompt}\n${faqKnowledge}\n${authContext}\n${dataContexts}\n${languageRule}`;
   }
 
   /**
@@ -228,7 +230,7 @@ ${roomsData}
 - Khu vực thực tế: ${locationsStr || 'N/A'}.
 
 === YÊU CẦU ===
-Hãy viết một đoạn TỔNG QUAN TÌM KIẾM CHI TIẾT (AI Overview) bằng tiếng Việt (khoảng 3-5 câu hoặc danh sách gạch đầu dòng ngắn gọn) để tổng hợp các kết quả này cho người dùng.
+Hãy viết một đoạn TỔNG QUAN TÌM KIẾM CHI TIẾT (AI Overview) bằng chính ngôn ngữ mà người dùng đã sử dụng trong câu hỏi (khoảng 3-5 câu hoặc danh sách gạch đầu dòng ngắn gọn) để tổng hợp các kết quả này cho người dùng.
 Đoạn tổng quan cần nêu rõ:
 1. Số lượng phòng phù hợp tìm thấy.
 2. Khoảng giá dao động thực tế (SỬ DỤNG CHÍNH XÁC: ${priceRangeStr} VND/tháng).
@@ -239,7 +241,7 @@ Hãy viết một đoạn TỔNG QUAN TÌM KIẾM CHI TIẾT (AI Overview) bằn
 CHÚ Ý: 
 - Trình bày đẹp mắt, chuyên nghiệp theo phong cách "Google AI Overview". Sử dụng các định dạng gạch đầu dòng, chữ đậm (bold) và icon/emoji phù hợp để người dùng dễ theo dõi.
 - Không được bịa đặt bất kỳ thông tin nào ngoài danh sách phòng được cung cấp ở trên.
-- Phản hồi bằng tiếng Việt lịch sự, tự nhiên, xưng "em/mình" và gọi "bạn/anh/chị".
+- Phản hồi bằng chính ngôn ngữ mà người dùng đã sử dụng ("${query}"). Nếu tiếng Việt thì xưng "em/mình" và gọi "bạn/anh/chị". Nếu tiếng Anh thì dùng "I/you".
 `;
   }
 }

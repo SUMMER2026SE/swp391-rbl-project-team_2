@@ -22,7 +22,7 @@ class GroqService {
 
     const model = options.model || DEFAULT_MODEL;
     const temperature = options.temperature !== undefined ? options.temperature : 0.2;
-    const timeout = options.timeout || 15000; // Default 15s timeout
+    const timeout = options.timeout || 30000; // Default 30s timeout
 
     try {
       const completion = await Promise.race([

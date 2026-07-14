@@ -3,7 +3,7 @@ const { normalizeCity } = require('../utils/cityNormalizer');
 
 const groqApiKey = process.env.GROQ_API_KEY || 'dummy_key';
 const groq = new Groq({ apiKey: groqApiKey });
-const AI_MODEL = 'llama-3.1-8b-instant';
+const AI_MODEL = 'llama-3.3-70b-versatile';
 
 /**
  * Classifies a user query into RENTWISE or GENERAL, and extracts search parameters.
@@ -45,8 +45,8 @@ TASK:
    - keyword: any specific keywords (e.g. "gần đại học", "hẻm xe hơi").
    - city: standardized city name. Resolve abbreviations like "HCM", "Sài Gòn", "SG" -> "Thành phố Hồ Chí Minh", "HN" -> "Thành phố Hà Nội", "ĐN", "Đà Nẵng" -> "Thành phố Đà Nẵng", "HP" -> "Thành phố Hải Phòng", "CT", "Cần Thơ" -> "Thành phố Cần Thơ", "VT", "Vũng Tàu" -> "Tỉnh Bà Rịa - Vũng Tàu", "BD" -> "Tỉnh Bình Dương", "ĐNai" -> "Tỉnh Đồng Nai". Must map exactly to Vietnam official province names.
    - district: standardized district name (e.g. "Quận 1", "Quận Bình Thạnh", "Quận Gò Vấp", "Quận 10", etc. Resolve "Q1", "Bình Thạnh", "quận tân bình" accordingly).
-   - priceMin: minimum price in VND (number). Use this ONLY if the user specifies a lower bound (e.g., "trên 2 triệu", "từ 2 triệu trở lên"). Do NOT use this for single price targets.
-   - priceMax: maximum price in VND (number). If the user specifies a single target price or budget (e.g., "trọ 4 triệu", "phòng 3 triệu", "dưới 5 triệu", "tầm 5 triệu"), map it to priceMax. If the user specifies a range (e.g., "từ 2 đến 4 triệu"), map the upper bound to priceMax and lower bound to priceMin.
+   - priceMin: minimum price in VND (number). Use this ONLY if the user specifies a lower bound (e.g., "trên 2 triệu", "từ 2 triệu trở lên", "hơn 3 triệu"). Do NOT use this for maximum budgets or single target prices.
+   - priceMax: maximum price in VND (number). If the user specifies a maximum budget or price limit (e.g., "dưới 3 triệu", "tầm 3 triệu trở xuống", "tối đa 4 triệu"), map it to priceMax. If the user specifies a single target price (e.g., "trọ 4 triệu", "phòng 3 triệu", "tầm 5 triệu"), map it to priceMax. If the user specifies a range (e.g., "từ 2 đến 4 triệu"), map the upper bound to priceMax and lower bound to priceMin.
    - maxOccupants: maximum number of people (number, e.g., "cho 2 người" = 2).
    - minArea: minimum area in square meters (number).
    - facilities: array of facility names. Choose ONLY from this list:
@@ -55,6 +55,63 @@ TASK:
    - nearbyFacilities: array of nearby facility names. Choose ONLY from this list:
      ['Near University', 'Near Hospital', 'Near Supermarket', 'Near Bus Station', 'Near Market', 'Near Park', 'Near Convenience Store'].
      Map terms like "gần trường"/"gần đại học" to "Near University".
+
+---
+FEW-SHOT EXAMPLES:
+
+Example 1: "cho tôi phòng dưới 3 triệu"
+Response:
+{
+  "intent": "RENTWISE",
+  "subIntent": "ROOM_SEARCH",
+  "searchCriteria": {
+    "keyword": null,
+    "city": null,
+    "district": null,
+    "priceMin": null,
+    "priceMax": 3000000,
+    "maxOccupants": null,
+    "minArea": null,
+    "facilities": [],
+    "nearbyFacilities": []
+  }
+}
+
+Example 2: "phòng trên 3 triệu ở quận 1"
+Response:
+{
+  "intent": "RENTWISE",
+  "subIntent": "ROOM_SEARCH",
+  "searchCriteria": {
+    "keyword": null,
+    "city": null,
+    "district": "Quận 1",
+    "priceMin": 3000000,
+    "priceMax": null,
+    "maxOccupants": null,
+    "minArea": null,
+    "facilities": [],
+    "nearbyFacilities": []
+  }
+}
+
+Example 3: "tìm phòng trọ giá từ 2 đến 4 triệu"
+Response:
+{
+  "intent": "RENTWISE",
+  "subIntent": "ROOM_SEARCH",
+  "searchCriteria": {
+    "keyword": null,
+    "city": null,
+    "district": null,
+    "priceMin": 2000000,
+    "priceMax": 4000000,
+    "maxOccupants": null,
+    "minArea": null,
+    "facilities": [],
+    "nearbyFacilities": []
+  }
+}
 
 ---
 CONVERSATION CONTEXT:
@@ -98,9 +155,12 @@ You MUST respond with exactly a JSON object matching this structure (no markdown
 
       const parsed = JSON.parse(jsonStr);
       
-      // Standardize search criteria city
-      if (parsed.searchCriteria && parsed.searchCriteria.city) {
-        parsed.searchCriteria.city = normalizeCity(parsed.searchCriteria.city);
+      // Standardize search criteria city and post-process price criteria
+      if (parsed.searchCriteria) {
+        if (parsed.searchCriteria.city) {
+          parsed.searchCriteria.city = normalizeCity(parsed.searchCriteria.city);
+        }
+        IntentClassifier.postProcessPriceCriteria(message, parsed.searchCriteria);
       }
 
       return {
@@ -111,6 +171,41 @@ You MUST respond with exactly a JSON object matching this structure (no markdown
     } catch (err) {
       console.error('[IntentClassifier] error:', err.message);
       return this.heuristicFallback(message);
+    }
+  }
+
+  /**
+   * Post-process search criteria to correct price bounds based on explicit keywords in query
+   */
+  static postProcessPriceCriteria(query, criteria) {
+    if (!criteria) return;
+    const q = (query || '').toLowerCase();
+
+    // Keywords indicating maximum bounds ("dưới", "đến", "tối đa", etc.)
+    const underKeywords = ['dưới', 'thấp hơn', 'nhỏ hơn', 'tối đa', 'đổ xuống', 'trở xuống', 'không quá', 'dưới mức', 'ít hơn'];
+    // Keywords indicating minimum bounds ("trên", "hơn", "tối thiểu", etc.)
+    const overKeywords = ['trên', 'hơn', 'lớn hơn', 'từ', 'trở lên', 'đổ lên', 'tối thiểu', 'cao hơn', 'ít nhất'];
+    // Keywords indicating range queries ("từ...đến", "khoảng...đến", etc.)
+    const rangeKeywords = ['đến', 'tới', 'đến mức', 'tới mức', '-'];
+
+    const hasUnder = underKeywords.some(kw => q.includes(kw));
+    const hasOver = overKeywords.some(kw => q.includes(kw));
+    const hasRange = rangeKeywords.some(kw => q.includes(kw)) && (q.includes('từ') || q.includes('khoảng') || /\d+\s*-\s*\d+/.test(q));
+
+    // If query is strictly a maximum bound filter: e.g. "dưới 3 triệu"
+    if (hasUnder && !hasOver && !hasRange) {
+      if (criteria.priceMin) {
+        criteria.priceMax = criteria.priceMin;
+        criteria.priceMin = null;
+      }
+    }
+
+    // If query is strictly a minimum bound filter: e.g. "trên 3 triệu"
+    if (hasOver && !hasUnder && !hasRange) {
+      if (criteria.priceMax) {
+        criteria.priceMin = criteria.priceMax;
+        criteria.priceMax = null;
+      }
     }
   }
 
