@@ -301,19 +301,10 @@ const aiController = {
             sqlContext = 'Yêu cầu của người dùng liên quan đến chính sách, quy định, hợp đồng hoặc thanh toán của hệ thống RentWise. Hãy dùng thông tin chính xác trong bảng Chính sách & Quy định dưới đây để giải đáp.';
           }
         } else {
-          // GENERAL intent -> politely refuse questions outside of RentWise scope
-          const politeRefusal = "Xin lỗi bạn, tôi là trợ lý ảo chuyên môn của RentWise. Tôi chỉ có thể hỗ trợ các câu hỏi liên quan đến tìm kiếm phòng trọ, chính sách, hợp đồng, cọc tiền và dịch vụ của hệ thống RentWise. Bạn cần tôi giúp gì về việc thuê phòng không ạ?";
-
-          if (isStreaming) {
-            StreamingService.sendChunk(res, politeRefusal);
-            return StreamingService.sendDone(res);
-          } else {
-            return res.json({
-              success: true,
-              reply: politeRefusal,
-              sources: []
-            });
-          }
+          // GENERAL intent -> fall through to LLM to handle greetings or polite small talk
+          // sqlContext and tavilyContext will remain empty.
+          sqlContext = ''; 
+          tavilyContext = '';
         }
 
         // Generate and stream citations if available
