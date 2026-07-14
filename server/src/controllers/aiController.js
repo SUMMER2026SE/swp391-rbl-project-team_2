@@ -277,9 +277,6 @@ const aiController = {
   processSearch: async (req, res) => {
     try {
       const { query } = req.body;
-<<<<<<< Updated upstream
-      if (!query) return res.status(400).json({ success: false, message: 'Query is required' });
-=======
       if (!query) {
         return res.status(400).json({ success: false, message: 'Query is required' });
       }
@@ -303,18 +300,12 @@ const aiController = {
         } catch (e) {
           aiSummary = `Tìm thấy ${totalCount} phòng phù hợp với yêu cầu của bạn tại hệ thống RentWise.`;
         }
->>>>>>> Stashed changes
+
 
       if (groqApiKey === 'dummy_key') {
         console.warn('Using mock AI search because GROQ_API_KEY is not set');
         return res.json({
           success: true,
-<<<<<<< Updated upstream
-          data: {
-            keyword: query,
-            priceMax: query.includes('4M') ? 4000000 : null,
-            district: query.includes('District 1') ? 'District 1' : null
-=======
           isConversational: false,
           reply: null,
           aiSummary,
@@ -340,7 +331,7 @@ const aiController = {
             minArea: searchCriteria.minArea || null,
             facilities: searchCriteria.facilities || [],
             nearbyFacilities: searchCriteria.nearbyFacilities || []
->>>>>>> Stashed changes
+
           }
         });
       } else {
@@ -351,29 +342,6 @@ const aiController = {
           openChatbot: true
         });
       }
-<<<<<<< Updated upstream
-
-      const prompt = `
-        You are an AI assistant for a room rental platform in Vietnam.
-        Extract search parameters from the following user query.
-        Possible fields to extract (all are optional, return null if not mentioned):
-        - keyword: Any specific text or location name to search for.
-        - priceMin: Minimum price in VND (number). (e.g. 1M = 1000000)
-        - priceMax: Maximum price in VND (number).
-        - district: District name.
-
-        
-        User Query: "${query}"
-        
-        Respond ONLY with a valid JSON object matching this structure:
-        { "keyword": string|null, "priceMin": number|null, "priceMax": number|null, "district": string|null }
-      `;
-
-      const chatCompletion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: AI_MODEL,
-        temperature: 0.1,
-=======
     } catch (error) {
       console.error('[AI Controller] processSearch error:', error.message);
       return res.json({
@@ -384,7 +352,7 @@ const aiController = {
         matchedRooms: [],
         totalMatched: 0,
         data: {}
->>>>>>> Stashed changes
+
       });
 
       const responseText = chatCompletion.choices[0]?.message?.content || "";
@@ -403,12 +371,6 @@ const aiController = {
   // 2. AI Chatbot (NÂNG CẤP với 4 ý tưởng)
   chat: async (req, res) => {
     try {
-<<<<<<< Updated upstream
-      const { message, history } = req.body;
-
-      if (groqApiKey === 'dummy_key') {
-        return res.json({
-=======
       // 1. Intent Classification
       if (isStreaming) StreamingService.sendStatus(res, 'Searching database...');
       const classification = await IntentClassifier.classify(message, history || []);
@@ -557,7 +519,7 @@ const aiController = {
         const formatted = await ResponseFormatter.format(responseText, validRoomIds);
 
         res.json({
->>>>>>> Stashed changes
+
           success: true,
           reply: "Xin chào! Em là trợ lý ảo RentalWise. Hiện tại hệ thống chưa cấu hình GROQ_API_KEY nên em chưa thể hoạt động. Vui lòng liên hệ quản trị viên để thiết lập nhé ạ!"
         });
