@@ -225,7 +225,7 @@ const getRecentActivities = async (req, res, next) => {
       else if (diffMins < 1440) timeStr = `${Math.floor(diffMins / 60)} hr ago`;
       else timeStr = `${Math.floor(diffMins / 1440)} days ago`;
 
-      return { ...a, time: timeStr };
+      return { ...a, time: timeStr, rawTime: a.time };
     });
 
     return res.status(200).json({ success: true, data: activities });

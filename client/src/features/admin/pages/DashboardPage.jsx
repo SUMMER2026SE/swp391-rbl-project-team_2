@@ -106,13 +106,22 @@ const DashboardPage = () => {
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={revenueData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} />
+                <XAxis 
+                  dataKey="month" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickFormatter={(month) => t(`adminDashboard.months.${month}`, month)} 
+                />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(v) => `${v / 1000000}M`}
+                  tickFormatter={(v) => `${v / 1000000}${t('adminDashboard.million', 'M')}`}
                 />
-                <Tooltip formatter={(v) => formatCurrency(v)} cursor={{ fill: '#f8fafc' }} />
+                <Tooltip 
+                  formatter={(v) => formatCurrency(v)} 
+                  labelFormatter={(label) => t(`adminDashboard.months.${label}`, label)}
+                  cursor={{ fill: '#f8fafc' }} 
+                />
                 <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -139,14 +148,29 @@ const DashboardPage = () => {
                     activityMessage = t('adminDashboard.paymentActivity', '{{name}} paid rent for {{room}}', { name: match[1], room: match[2] });
                   }
                 }
+
+                let timeStr = item.time;
+                if (item.rawTime) {
+                  const diffMs = new Date() - new Date(item.rawTime);
+                  const diffMins = Math.floor(diffMs / 60000);
+                  if (diffMins < 1) {
+                    timeStr = t('adminDashboard.timeAgo.justNow', 'Just now');
+                  } else if (diffMins < 60) {
+                    timeStr = t('adminDashboard.timeAgo.mins', '{{count}} min ago', { count: diffMins });
+                  } else if (diffMins < 1440) {
+                    timeStr = t('adminDashboard.timeAgo.hrs', '{{count}} hr ago', { count: Math.floor(diffMins / 60) });
+                  } else {
+                    timeStr = t('adminDashboard.timeAgo.days', '{{count}} days ago', { count: Math.floor(diffMins / 1440) });
+                  }
+                }
                 
                 return (
                   <li key={item.id} className="activity-item">
                     <div className="activity-dot" />
                     <div className="activity-content">
-                      <span className="activity-type">{item.type}</span>
+                      <span className="activity-type">{t(`adminDashboard.types.${item.type}`, item.type.toUpperCase())}</span>
                       <p className="activity-message">{activityMessage}</p>
-                      <span className="activity-time">{item.time}</span>
+                      <span className="activity-time">{timeStr}</span>
                     </div>
                   </li>
                 );

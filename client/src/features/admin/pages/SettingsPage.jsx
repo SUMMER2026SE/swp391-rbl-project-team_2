@@ -1,10 +1,12 @@
 import toast from 'react-hot-toast';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, Bell, Shield, Globe, Palette } from 'lucide-react';
 import Button from '../../../components/common/Button';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('general');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -13,22 +15,22 @@ const SettingsPage = () => {
     // Simulate API call
     setTimeout(() => {
       setIsSaving(false);
-      toast.success('Settings saved successfully!');
+      toast.success(t('adminSettings.saved'));
     }, 800);
   };
 
   const tabs = [
-    { id: 'general', label: 'General', icon: <Globe size={18} /> },
-    { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> },
-    { id: 'security', label: 'Security', icon: <Shield size={18} /> },
-    { id: 'appearance', label: 'Appearance', icon: <Palette size={18} /> },
+    { id: 'general', label: t('adminSettings.tabs.general'), icon: <Globe size={18} /> },
+    { id: 'notifications', label: t('adminSettings.tabs.notifications'), icon: <Bell size={18} /> },
+    { id: 'security', label: t('adminSettings.tabs.security'), icon: <Shield size={18} /> },
+    { id: 'appearance', label: t('adminSettings.tabs.appearance'), icon: <Palette size={18} /> },
   ];
 
   return (
     <div className="admin-page-container">
       <div className="admin-page-header">
-        <h1 className="admin-page-title">Portal Settings</h1>
-        <p className="admin-page-subtitle">Configure system preferences and platform settings.</p>
+        <h1 className="admin-page-title">{t('adminSettings.title')}</h1>
+        <p className="admin-page-subtitle">{t('adminSettings.subtitle')}</p>
       </div>
 
       <div className="settings-layout">
@@ -50,25 +52,25 @@ const SettingsPage = () => {
         <div className="settings-panel">
           {activeTab === 'general' && (
             <div className="settings-section">
-              <h2>General Settings</h2>
+              <h2>{t('adminSettings.general.title')}</h2>
               <div className="settings-form">
                 <div className="settings-field">
-                  <label>Platform Name</label>
+                  <label>{t('adminSettings.general.platformName')}</label>
                   <input type="text" defaultValue="RentWise" />
                 </div>
                 <div className="settings-field">
-                  <label>Support Email</label>
+                  <label>{t('adminSettings.general.supportEmail')}</label>
                   <input type="email" defaultValue="support@smartboarding.com" />
                 </div>
                 <div className="settings-field">
-                  <label>Default Language</label>
+                  <label>{t('adminSettings.general.defaultLang')}</label>
                   <select defaultValue="vi">
-                    <option value="vi">Vietnamese</option>
-                    <option value="en">English</option>
+                    <option value="vi">{t('adminSettings.general.vietnamese')}</option>
+                    <option value="en">{t('adminSettings.general.english')}</option>
                   </select>
                 </div>
                 <div className="settings-field">
-                  <label>Timezone</label>
+                  <label>{t('adminSettings.general.timezone')}</label>
                   <select defaultValue="Asia/Ho_Chi_Minh">
                     <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (UTC+7)</option>
                     <option value="UTC">UTC</option>
@@ -80,13 +82,13 @@ const SettingsPage = () => {
 
           {activeTab === 'notifications' && (
             <div className="settings-section">
-              <h2>Notification Preferences</h2>
+              <h2>{t('adminSettings.notifications.title')}</h2>
               <div className="settings-toggles">
                 {[
-                  { label: 'New tenant registration', desc: 'Get notified when a new user registers' },
-                  { label: 'Payment received', desc: 'Get notified when a payment is processed' },
-                  { label: 'Maintenance requests', desc: 'Get notified on new maintenance requests' },
-                  { label: 'System alerts', desc: 'Critical system and security alerts' },
+                  { label: t('adminSettings.notifications.items.reg'), desc: t('adminSettings.notifications.items.regDesc') },
+                  { label: t('adminSettings.notifications.items.payment'), desc: t('adminSettings.notifications.items.paymentDesc') },
+                  { label: t('adminSettings.notifications.items.maintenance'), desc: t('adminSettings.notifications.items.maintenanceDesc') },
+                  { label: t('adminSettings.notifications.items.system'), desc: t('adminSettings.notifications.items.systemDesc') },
                 ].map((item) => (
                   <div key={item.label} className="toggle-row">
                     <div>
@@ -105,18 +107,18 @@ const SettingsPage = () => {
 
           {activeTab === 'security' && (
             <div className="settings-section">
-              <h2>Security Settings</h2>
+              <h2>{t('adminSettings.security.title')}</h2>
               <div className="settings-form">
                 <div className="settings-field">
-                  <label>Current Password</label>
+                  <label>{t('adminSettings.security.currentPassword')}</label>
                   <input type="password" placeholder="••••••••" />
                 </div>
                 <div className="settings-field">
-                  <label>New Password</label>
+                  <label>{t('adminSettings.security.newPassword')}</label>
                   <input type="password" placeholder="••••••••" />
                 </div>
                 <div className="settings-field">
-                  <label>Confirm New Password</label>
+                  <label>{t('adminSettings.security.confirmPassword')}</label>
                   <input type="password" placeholder="••••••••" />
                 </div>
               </div>
@@ -125,17 +127,17 @@ const SettingsPage = () => {
 
           {activeTab === 'appearance' && (
             <div className="settings-section">
-              <h2>Appearance</h2>
+              <h2>{t('adminSettings.appearance.title')}</h2>
               <div className="settings-form">
                 <div className="settings-field">
-                  <label>Theme</label>
+                  <label>{t('adminSettings.appearance.theme')}</label>
                   <select defaultValue="light">
-                    <option value="light">Light</option>
-                    <option value="dark">Dark (Coming soon)</option>
+                    <option value="light">{t('adminSettings.appearance.light')}</option>
+                    <option value="dark">{t('adminSettings.appearance.dark')}</option>
                   </select>
                 </div>
                 <div className="settings-field">
-                  <label>Primary Color</label>
+                  <label>{t('adminSettings.appearance.primaryColor')}</label>
                   <input type="color" defaultValue="#2563EB" />
                 </div>
               </div>
@@ -145,7 +147,7 @@ const SettingsPage = () => {
           <div className="settings-actions">
             <Button variant="primary" onClick={handleSave} disabled={isSaving}>
               <Save size={16} />
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {isSaving ? t('adminSettings.saving') : t('adminSettings.saveChanges')}
             </Button>
           </div>
         </div>

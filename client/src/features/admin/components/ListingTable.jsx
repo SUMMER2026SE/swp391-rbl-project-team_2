@@ -1,35 +1,37 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MoreVertical, Lock, AlertCircle, ExternalLink, EyeOff, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { formatCurrency } from '../../../utils/format';
 import './ListingTable.css';
 
 const ListingTable = ({ listings, onUpdateStatus }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case 'active':
       case 'available':
-        return <span className="status-badge status-active">Active</span>;
+        return <span className="status-badge status-active">{t('adminListings.statusActive')}</span>;
       case 'occupied':
       case 'rented':
         return (
           <span className="status-badge status-occupied">
-            <Lock size={12} /> Occupied
+            <Lock size={12} /> {t('adminListings.statusOccupied')}
           </span>
         );
       case 'hidden':
-        return <span className="status-badge status-hidden">Hidden (System)</span>;
+        return <span className="status-badge status-hidden">{t('adminListings.hiddenSystem')}</span>;
       case 'pending':
         return (
           <span className="status-badge" style={{ backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>
-            <Clock size={12} /> Pending Approval
+            <Clock size={12} /> {t('adminListings.statusPending')}
           </span>
         );
       case 'rejected':
         return (
           <span className="status-badge" style={{ backgroundColor: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3' }}>
-            <XCircle size={12} /> Rejected
+            <XCircle size={12} /> {t('adminListings.statusRejected')}
           </span>
         );
       default:
@@ -39,10 +41,10 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
 
   const getLandlordBadge = (type) => {
     if (type === 'Verified Host') {
-      return <span className="landlord-badge verified">Verified Host</span>;
+      return <span className="landlord-badge verified">{t('adminListings.verifiedHost')}</span>;
     }
     if (type === 'New Host') {
-      return <span className="landlord-badge new">New Host</span>;
+      return <span className="landlord-badge new">{t('adminListings.newHost')}</span>;
     }
     return null;
   };
@@ -52,10 +54,10 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
       <table className="listing-table">
         <thead>
           <tr>
-            <th>Property</th>
-            <th>Landlord</th>
-            <th>Status</th>
-            <th className="th-actions">Actions</th>
+            <th>{t('adminListings.tableProperty')}</th>
+            <th>{t('adminListings.tableLandlord')}</th>
+            <th>{t('adminListings.tableStatus')}</th>
+            <th className="th-actions">{t('adminListings.tableActions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -68,13 +70,13 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
                     <span className="property-id">{listing.id}</span>
                     <span className="property-title">{listing.title}</span>
                     <span className="property-location">{listing.location}</span>
-                    <span className="property-price">{formatCurrency(listing.price)}/mo</span>
+                    <span className="property-price">{formatCurrency(listing.price)}{t('adminListings.perMonth')}</span>
                   </div>
                 </div>
               </td>
               <td className="listing-landlord">
                 <div className="landlord-info-cell">
-                  <span className="landlord-name">{listing.landlord?.name || 'Unknown'}</span>
+                  <span className="landlord-name">{listing.landlord?.name || t('adminListings.unknown')}</span>
                   {getLandlordBadge(listing.landlord?.type)}
                 </div>
               </td>
@@ -94,19 +96,19 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
                   <div className="action-buttons">
                     <button
                       className="btn-action-icon"
-                      title="Xem và duyệt phòng"
+                      title={t('adminListings.viewAndReview')}
                       onClick={() => navigate(`/admin/listings/${listing.rawId}/review`)}
                       style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#d97706', fontWeight: 600 }}
                     >
                       <ExternalLink size={16} />
-                      <span style={{ fontSize: '13px' }}>Duyệt phòng</span>
+                      <span style={{ fontSize: '13px' }}>{t('adminListings.reviewListing')}</span>
                     </button>
                   </div>
                 ) : (
                   <div className="action-buttons">
                     <button
                       className="btn-action-icon"
-                      title="Xem chi tiết"
+                      title={t('adminListings.viewDetails')}
                       onClick={() => navigate(`/admin/listings/${listing.rawId}/review`)}
                     >
                       <ExternalLink size={18} />
@@ -114,7 +116,7 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
                     {listing.status.toLowerCase() !== 'hidden' ? (
                       <button
                         className="btn-action-icon"
-                        title="Ẩn phòng"
+                        title={t('adminListings.hideListing')}
                         onClick={() => onUpdateStatus(listing.rawId, 'hidden')}
                       >
                         <EyeOff size={18} />
@@ -122,13 +124,13 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
                     ) : (
                       <button
                         className="btn-action-icon"
-                        title="Khôi phục phòng"
+                        title={t('adminListings.activateListing')}
                         onClick={() => onUpdateStatus(listing.rawId, 'available')}
                       >
                         <CheckCircle size={18} />
                       </button>
                     )}
-                    <button className="btn-action-icon" title="Thêm tùy chọn">
+                    <button className="btn-action-icon" title={t('adminListings.moreOptions')}>
                       <MoreVertical size={18} />
                     </button>
                   </div>
@@ -138,7 +140,7 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
           ))}
           {listings.length === 0 && (
             <tr>
-              <td colSpan="5" className="text-center py-4">No listings found</td>
+              <td colSpan="5" className="text-center py-4">{t('adminListings.noListings')}</td>
             </tr>
           )}
         </tbody>

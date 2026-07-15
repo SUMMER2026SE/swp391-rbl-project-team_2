@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Building, 
   Search, 
@@ -23,6 +24,7 @@ import './PayoutsPage.css';
 
 const PayoutsPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Data states
   const [withdrawals, setWithdrawals] = useState([]);
@@ -65,7 +67,7 @@ const PayoutsPage = () => {
       }
     } catch (error) {
       console.error('Failed to load withdrawals / stats:', error);
-      toast.error('Không thể tải danh sách yêu cầu rút tiền.');
+      toast.error(t('adminPayouts.toastLoadFail'));
     } finally {
       setLoading(false);
     }
@@ -100,7 +102,7 @@ const PayoutsPage = () => {
       setSubmitting(true);
       const res = await adminService.processWithdrawal(id);
       if (res.success) {
-        toast.success('Đã duyệt yêu cầu rút tiền. Trạng thái chuyển sang Đang xử lý.');
+        toast.success(t('adminPayouts.toastProcessSuccess'));
         // Refresh local list
         setWithdrawals(prev => prev.map(w => w.withdrawal_id === id ? { ...w, status: 'processing' } : w));
         // Open modal immediately to let admin pay
@@ -112,7 +114,7 @@ const PayoutsPage = () => {
         }
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Lỗi duyệt yêu cầu.');
+      toast.error(err.response?.data?.message || t('adminPayouts.toastGenericError'));
     } finally {
       setSubmitting(false);
     }
@@ -121,7 +123,7 @@ const PayoutsPage = () => {
   const handleComplete = async (e) => {
     e.preventDefault();
     if (!proofUrl) {
-      toast.error('Vui lòng tải lên ảnh chứng từ giao dịch (Receipt Proof) để hoàn tất.');
+      toast.error(t('adminPayouts.toastCompleteError'));
       return;
     }
 
@@ -133,12 +135,12 @@ const PayoutsPage = () => {
       });
 
       if (res.success) {
-        toast.success('Hoàn thành yêu cầu rút tiền thành công!');
+        toast.success(t('adminPayouts.toastCompleteSuccess'));
         setSelectedWithdrawal(null);
         fetchWithdrawalsAndStats();
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra.');
+      toast.error(err.response?.data?.message || t('adminPayouts.toastGenericError'));
     } finally {
       setSubmitting(false);
     }
@@ -146,7 +148,7 @@ const PayoutsPage = () => {
 
   const handleReject = async () => {
     if (!notes) {
-      toast.error('Vui lòng nhập lý do từ chối vào ô Ghi chú Admin.');
+      toast.error(t('adminPayouts.toastRejectError'));
       return;
     }
 
@@ -157,12 +159,12 @@ const PayoutsPage = () => {
       });
 
       if (res.success) {
-        toast.success('Đã từ chối yêu cầu rút tiền.');
+        toast.success(t('adminPayouts.toastRejectSuccess'));
         setSelectedWithdrawal(null);
         fetchWithdrawalsAndStats();
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra.');
+      toast.error(err.response?.data?.message || t('adminPayouts.toastGenericError'));
     } finally {
       setSubmitting(false);
     }
@@ -180,13 +182,59 @@ const PayoutsPage = () => {
       const res = await adminService.uploadProof(formData);
       if (res.success) {
         setProofUrl(res.url);
-        toast.success('Đã tải lên ảnh chứng từ thành công!');
+        toast.success(t('adminPayouts.toastUploadSuccess'));
       }
     } catch (err) {
-      toast.error('Lỗi upload ảnh chứng từ.');
+      toast.error(t('adminPayouts.toastUploadFail'));
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleExport = () => {
+    if (filteredWithdrawals.length === 0) {
+      toast.error(t('adminPayouts.noDataToExport'));
+      return;
+    }
+
+    const headers = [
+      t('adminPayouts.tableReqDate'),
+      t('adminPayouts.tableLandlord'),
+      t('adminPayouts.accountHolder'),
+      t('adminPayouts.bank'),
+      t('adminPayouts.accountNumber'),
+      t('adminPayouts.tableAmount'),
+      t('adminPayouts.tableStatus'),
+      t('adminPayouts.adminNotes')
+    ];
+
+    const rows = filteredWithdrawals.map(w => [
+      `WDR-${w.withdrawal_id} (${new Date(w.created_at).toLocaleDateString('vi-VN')})`,
+      w.user?.full_name || '',
+      w.account_holder_name || '',
+      w.bank_name || '',
+      `'${w.account_number || ''}`,
+      parseFloat(w.amount),
+      t(`adminPayouts.status${w.status.charAt(0).toUpperCase() + w.status.slice(1).toLowerCase()}`, w.status),
+      w.admin_notes || ''
+    ]);
+
+    const csvContent = "\uFEFF" + [
+      headers.join(','),
+      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `payout_report_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success(t('adminPayouts.exportSuccess'));
   };
 
   // Filter withdrawals
@@ -206,10 +254,10 @@ const PayoutsPage = () => {
 
   const getStatusBadge = (status) => {
     switch(status.toLowerCase()) {
-      case 'completed': return <span className="payout-badge success">Đã chuyển</span>;
-      case 'processing': return <span className="payout-badge warning">Đang chuyển</span>;
-      case 'rejected': return <span className="payout-badge danger">Từ chối</span>;
-      default: return <span className="payout-badge pending">Chờ duyệt</span>;
+      case 'completed': return <span className="payout-badge success">{t('adminPayouts.statusCompleted')}</span>;
+      case 'processing': return <span className="payout-badge warning">{t('adminPayouts.statusProcessing')}</span>;
+      case 'rejected': return <span className="payout-badge danger">{t('adminPayouts.statusRejected')}</span>;
+      default: return <span className="payout-badge pending">{t('adminPayouts.statusPending')}</span>;
     }
   };
 
@@ -218,11 +266,11 @@ const PayoutsPage = () => {
       {/* Page Header */}
       <div className="payouts-header">
         <div className="header-titles">
-          <h1>Quản lý Rút tiền & Thanh toán</h1>
-          <p>Duyệt yêu cầu rút doanh thu từ Landlords, quét mã VietQR động để chuyển khoản và lưu minh chứng giao dịch.</p>
+          <h1>{t('adminPayouts.title')}</h1>
+          <p>{t('adminPayouts.subtitle')}</p>
         </div>
         <div className="header-actions">
-          <button className="btn-export" onClick={() => toast.success('Đang xuất báo cáo...')}>Xuất báo cáo</button>
+          <button className="btn-export" onClick={handleExport}>{t('adminPayouts.export')}</button>
         </div>
       </div>
 
@@ -233,7 +281,7 @@ const PayoutsPage = () => {
             <Clock size={24} />
           </div>
           <div className="stat-card-info">
-            <p>Tổng yêu cầu chờ duyệt</p>
+            <p>{t('adminPayouts.totalPending')}</p>
             <h3>{formatCurrency(stats.totalPending)}</h3>
           </div>
         </div>
@@ -243,7 +291,7 @@ const PayoutsPage = () => {
             <CheckCircle size={24} />
           </div>
           <div className="stat-card-info">
-            <p>Tổng tiền đã chuyển khoản</p>
+            <p>{t('adminPayouts.totalPaid')}</p>
             <h3>{formatCurrency(stats.totalPaid)}</h3>
           </div>
         </div>
@@ -253,7 +301,7 @@ const PayoutsPage = () => {
             <Percent size={24} />
           </div>
           <div className="stat-card-info">
-            <p>Doanh thu hoa hồng (5%)</p>
+            <p>{t('adminPayouts.platformRevenue')}</p>
             <h3>{formatCurrency(stats.totalPlatformRevenue)}</h3>
           </div>
         </div>
@@ -263,7 +311,7 @@ const PayoutsPage = () => {
             <Wallet size={24} />
           </div>
           <div className="stat-card-info">
-            <p>Số dư Escrow giữ hộ</p>
+            <p>{t('adminPayouts.escrowBalance')}</p>
             <h3>{formatCurrency(stats.totalEscrowBalance)}</h3>
           </div>
         </div>
@@ -276,7 +324,7 @@ const PayoutsPage = () => {
             <Search size={18} />
             <input 
               type="text" 
-              placeholder="Tìm theo landlord, số tài khoản, mã yêu cầu..." 
+              placeholder={t('adminPayouts.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -287,30 +335,30 @@ const PayoutsPage = () => {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="pending">Chờ duyệt</option>
-              <option value="processing">Đang chuyển</option>
-              <option value="completed">Đã chuyển</option>
-              <option value="rejected">Từ chối</option>
+              <option value="all">{t('adminPayouts.allStatus')}</option>
+              <option value="pending">{t('adminPayouts.statusPending')}</option>
+              <option value="processing">{t('adminPayouts.statusProcessing')}</option>
+              <option value="completed">{t('adminPayouts.statusCompleted')}</option>
+              <option value="rejected">{t('adminPayouts.statusRejected')}</option>
             </select>
           </div>
         </div>
 
         {loading ? (
           <div className="loading-state" style={{ textAlign: 'center', padding: '40px' }}>
-            Đang tải dữ liệu yêu cầu rút tiền...
+            {t('adminPayouts.loading')}
           </div>
         ) : (
           <div className="payouts-table-container">
             <table className="payouts-table">
               <thead>
                 <tr>
-                  <th>Yêu cầu / Ngày</th>
-                  <th>Landlord (Người thụ hưởng)</th>
-                  <th>Tài khoản Ngân hàng</th>
-                  <th>Số tiền rút</th>
-                  <th>Trạng thái</th>
-                  <th>Hành động</th>
+                  <th>{t('adminPayouts.tableReqDate')}</th>
+                  <th>{t('adminPayouts.tableLandlord')}</th>
+                  <th>{t('adminPayouts.tableBankAccount')}</th>
+                  <th>{t('adminPayouts.tableAmount')}</th>
+                  <th>{t('adminPayouts.tableStatus')}</th>
+                  <th>{t('adminPayouts.tableActions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -349,7 +397,7 @@ const PayoutsPage = () => {
                           onClick={() => handleProcess(w.withdrawal_id)}
                           disabled={submitting}
                         >
-                          Duyệt xử lý
+                          {t('adminPayouts.actionProcess')}
                         </button>
                       )}
                       {w.status.toLowerCase() === 'processing' && (
@@ -362,7 +410,7 @@ const PayoutsPage = () => {
                           }}
                           style={{ backgroundColor: '#2563eb' }}
                         >
-                          Thanh toán
+                          {t('adminPayouts.actionPay')}
                         </button>
                       )}
                       {(w.status.toLowerCase() === 'completed' || w.status.toLowerCase() === 'rejected') && (
@@ -374,7 +422,7 @@ const PayoutsPage = () => {
                             setProofUrl(w.transaction_proof_url || '');
                           }}
                         >
-                          Chi tiết
+                          {t('adminPayouts.actionView')}
                         </button>
                       )}
                     </td>
@@ -382,7 +430,7 @@ const PayoutsPage = () => {
                 )) : (
                   <tr>
                     <td colSpan="6" className="empty-state" style={{ textAlign: 'center', padding: '40px' }}>
-                      Không có yêu cầu rút tiền nào phù hợp.
+                      {t('adminPayouts.emptyState')}
                     </td>
                   </tr>
                 )}
@@ -398,7 +446,7 @@ const PayoutsPage = () => {
           <div className="modal-content payout-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: selectedWithdrawal.status.toLowerCase() === 'processing' ? '760px' : '480px' }}>
             <div className="modal-header">
               <h3>
-                Yêu cầu rút tiền #{selectedWithdrawal.withdrawal_id} 
+                {t('adminPayouts.reqTitle', { id: selectedWithdrawal.withdrawal_id })}
                 <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#64748b', marginLeft: '8px' }}>
                   ({selectedWithdrawal.status})
                 </span>
@@ -418,14 +466,14 @@ const PayoutsPage = () => {
                 {/* Left Side: QR Code (only for processing status) */}
                 {selectedWithdrawal.status.toLowerCase() === 'processing' && (
                   <div style={{ flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                    <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#475569' }}>Mã VietQR Chuyển Khoản Nhanh</h4>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#475569' }}>{t('adminPayouts.qrTitle')}</h4>
                     <img 
                       src={`https://img.vietqr.io/image/${getBankCode(selectedWithdrawal.bank_name)}-${selectedWithdrawal.account_number}-compact2.png?amount=${selectedWithdrawal.amount}&addInfo=RUT%20TIEN%20WDR%20${selectedWithdrawal.withdrawal_id}&accountName=${encodeURIComponent(selectedWithdrawal.account_holder_name)}`} 
                       alt="VietQR Code" 
                       style={{ width: '220px', height: '220px', display: 'block', backgroundColor: 'white', padding: '8px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}
                     />
                     <p style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', margin: '12px 0 0 0', lineHeight: '1.4' }}>
-                      Quét mã QR bằng App Ngân hàng để tự động điền đúng STK, Số tiền và Nội dung.
+                      {t('adminPayouts.qrDesc')}
                     </p>
                   </div>
                 )}
@@ -434,25 +482,25 @@ const PayoutsPage = () => {
                 <div style={{ flex: '1.2', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="payout-summary-card" style={{ padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ color: '#64748b' }}>Chủ tài khoản:</span>
+                      <span style={{ color: '#64748b' }}>{t('adminPayouts.accountHolder')}</span>
                       <strong style={{ color: '#1e293b' }}>{selectedWithdrawal.account_holder_name}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ color: '#64748b' }}>Ngân hàng:</span>
+                      <span style={{ color: '#64748b' }}>{t('adminPayouts.bank')}</span>
                       <strong style={{ color: '#1e293b' }}>{selectedWithdrawal.bank_name}</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ color: '#64748b' }}>Số tài khoản:</span>
+                      <span style={{ color: '#64748b' }}>{t('adminPayouts.accountNumber')}</span>
                       <strong style={{ color: '#1e293b' }}>{selectedWithdrawal.account_number}</strong>
                     </div>
                     {selectedWithdrawal.branch && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ color: '#64748b' }}>Chi nhánh:</span>
+                        <span style={{ color: '#64748b' }}>{t('adminPayouts.branch')}</span>
                         <strong style={{ color: '#1e293b' }}>{selectedWithdrawal.branch}</strong>
                       </div>
                     )}
                     <div style={{ borderTop: '1px dashed #cbd5e1', margin: '8px 0', paddingTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#64748b', fontWeight: 'bold' }}>Số tiền yêu cầu rút:</span>
+                      <span style={{ color: '#64748b', fontWeight: 'bold' }}>{t('adminPayouts.requestedAmount')}</span>
                       <strong style={{ color: '#10b981', fontSize: '18px' }}>
                         {parseFloat(selectedWithdrawal.amount).toLocaleString('vi-VN')} đ
                       </strong>
@@ -463,12 +511,12 @@ const PayoutsPage = () => {
                     <form onSubmit={handleComplete} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569' }}>
-                          Ảnh chứng từ chuyển tiền (Receipt Proof)
+                          {t('adminPayouts.receiptProof')}
                         </label>
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', background: '#eff6ff', color: '#2563eb', border: '1px dashed #bfdbfe', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>
-                            <Upload size={16} /> Tải ảnh lên
+                            <Upload size={16} /> {t('adminPayouts.uploadBtn')}
                             <input 
                               type="file" 
                               accept="image/*" 
@@ -478,11 +526,11 @@ const PayoutsPage = () => {
                             />
                           </label>
                           
-                          {uploading && <span style={{ fontSize: '13px', color: '#64748b' }}>Đang upload...</span>}
+                          {uploading && <span style={{ fontSize: '13px', color: '#64748b' }}>{t('adminPayouts.uploading')}</span>}
                           
                           {proofUrl && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '13px', fontWeight: '600' }}>
-                              <CheckCircle2 size={16} /> Đã chọn ảnh
+                              <CheckCircle2 size={16} /> {t('adminPayouts.uploaded')}
                             </div>
                           )}
                         </div>
@@ -496,12 +544,12 @@ const PayoutsPage = () => {
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569' }}>Ghi chú Admin (nếu có)</label>
+                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569' }}>{t('adminPayouts.adminNotes')}</label>
                         <textarea 
                           rows="3"
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
-                          placeholder="Nhập ghi chú cho Landlord về giao dịch này..."
+                          placeholder={t('adminPayouts.adminNotesPlaceholder')}
                           disabled={submitting}
                           style={{ padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', resize: 'vertical' }}
                         />
@@ -515,7 +563,7 @@ const PayoutsPage = () => {
                           disabled={submitting}
                           style={{ padding: '10px 16px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}
                         >
-                          Từ chối
+                          {t('adminPayouts.rejectBtn')}
                         </button>
                         <button 
                           type="submit" 
@@ -523,7 +571,7 @@ const PayoutsPage = () => {
                           disabled={submitting || uploading}
                           style={{ padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                         >
-                          {submitting ? 'Đang hoàn tất...' : 'Hoàn thành & Báo đã chuyển'} <ArrowUpRight size={16} />
+                          {submitting ? t('adminPayouts.completingBtn') : t('adminPayouts.completeBtn')} <ArrowUpRight size={16} />
                         </button>
                       </div>
                     </form>
@@ -534,7 +582,7 @@ const PayoutsPage = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px' }}>
                       {selectedWithdrawal.status.toLowerCase() === 'completed' && selectedWithdrawal.transaction_proof_url && (
                         <div>
-                          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#475569', marginBottom: '8px' }}>Ảnh chứng từ giao dịch:</div>
+                          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#475569', marginBottom: '8px' }}>{t('adminPayouts.receiptLabel')}</div>
                           <a 
                             href={selectedWithdrawal.transaction_proof_url} 
                             target="_blank" 
@@ -550,9 +598,9 @@ const PayoutsPage = () => {
                       )}
                       
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>Ghi chú của Admin:</div>
+                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>{t('adminPayouts.notesLabel')}</div>
                         <p style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#475569', fontSize: '13px', margin: 0 }}>
-                          {selectedWithdrawal.admin_notes || 'Không có ghi chú.'}
+                          {selectedWithdrawal.admin_notes || t('adminPayouts.noNotes')}
                         </p>
                       </div>
 
@@ -562,7 +610,7 @@ const PayoutsPage = () => {
                           onClick={() => setSelectedWithdrawal(null)}
                           style={{ width: '100%', padding: '12px', background: '#0f172a', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer' }}
                         >
-                          Đóng chi tiết
+                          {t('adminPayouts.closeBtn')}
                         </button>
                       </div>
                     </div>
