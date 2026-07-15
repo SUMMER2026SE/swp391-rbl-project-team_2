@@ -1,6 +1,7 @@
 const { UserBankDetail, WithdrawalRequest, Payment, User } = require('../models');
 const { Op } = require('sequelize');
 const sequelize = require('../config/database');
+const { compareNames } = require('../utils/nameNormalizer');
 
 // =========================================================
 // GET /api/landlord/bank-details
@@ -32,6 +33,18 @@ const saveBankDetails = async (req, res, next) => {
         success: false,
         message: 'Bank name, account number, and account holder name are required.',
       });
+    }
+
+    // AML Check: Bank account holder name must match verified landlord's full name
+    const user = await User.findOne({ where: { user_id: userId } });
+    if (user && user.verification_status === 'verified') {
+      const isMatch = compareNames(user.full_name, account_holder_name);
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          message: `Tên chủ tài khoản ngân hàng không khớp với Họ tên đã được xác thực chính chủ trên hệ thống (${user.full_name.toUpperCase()}). Vui lòng nhập đúng tên tài khoản ngân hàng của bạn.`,
+        });
+      }
     }
 
     let bankDetails = await UserBankDetail.findOne({ where: { user_id: userId } });
@@ -150,6 +163,48 @@ const createWithdrawal = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Please configure your bank details in profile settings first.',
+      });
+    }
+
+    // AML Check: Enforce verification status and daily withdrawal limit for verified landlords
+    const user = await User.findOne({
+      where: { user_id: userId },
+      transaction,
+    });
+
+    if (!user || user.verification_status !== 'verified') {
+      await transaction.rollback();
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn chưa được xác thực. Bạn chỉ được phép thực hiện rút tiền khi tài khoản ở trạng thái Đã xác thực.',
+      });
+    }
+
+    const dailyLimit = 200000000; // 200 Million VND daily limit for verified landlords
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const todayWithdrawalsRes = await WithdrawalRequest.sum('amount', {
+      where: {
+        user_id: userId,
+        created_at: {
+          [Op.between]: [todayStart, todayEnd]
+        },
+        status: { [Op.ne]: 'failed' } // Non-failed requests count toward limit
+      },
+      transaction,
+    });
+    const todayWithdrawals = parseFloat(todayWithdrawalsRes || 0);
+
+    if (todayWithdrawals + requestAmount > dailyLimit) {
+      const remainingLimit = dailyLimit - todayWithdrawals;
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: `Giao dịch vượt quá hạn mức rút tiền trong ngày. Tài khoản của bạn có hạn mức rút tối đa là ${dailyLimit.toLocaleString('vi-VN')} đ/ngày. Hôm nay bạn đã rút ${todayWithdrawals.toLocaleString('vi-VN')} đ. Số tiền tối đa có thể rút thêm là ${Math.max(0, remainingLimit).toLocaleString('vi-VN')} đ.`,
       });
     }
 

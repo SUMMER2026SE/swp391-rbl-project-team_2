@@ -7,8 +7,17 @@ const { sequelize, Room, RoomImage, Facility, RoomFacility, User, Property } = r
 // =========================================================
 const createRoom = async (req, res, next) => {
   try {
-    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, propertyId, floor, roomNumber, quantity } = req.body;
+    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, propertyId, floor, roomNumber, quantity, latitude, longitude } = req.body;
     const landlordId = req.user.userId;
+
+    // Verify landlord's account is verified before posting a room
+    const user = await User.findOne({ where: { user_id: landlordId } });
+    if (!user || user.verification_status !== 'verified') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn chưa được xác thực. Vui lòng hoàn tất xác thực thông tin cá nhân (CCCD) để có quyền đăng tin phòng.',
+      });
+    }
 
     // Validate required fields
     if (!title || !address || !city || !pricePerMonth) {
@@ -45,6 +54,8 @@ const createRoom = async (req, res, next) => {
       room_number: roomNumber || null,
       quantity: quantity || 1,
       available_quantity: quantity || 1,
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
     };
 
     if (req.file) {
@@ -80,6 +91,8 @@ const createRoom = async (req, res, next) => {
         title: room.title,
         address: room.address,
         pricePerMonth: room.price_per_month,
+        latitude: room.latitude,
+        longitude: room.longitude,
         status: room.status,
       },
     });
@@ -183,12 +196,15 @@ const getRoomDetails = async (req, res, next) => {
       success: true,
       data: {
         roomId: room.room_id,
+        propertyId: room.property_id,
         title: room.title,
         description: room.description,
         address: room.address,
         city: room.city,
         district: room.district,
         ward: room.ward,
+        latitude: room.latitude,
+        longitude: room.longitude,
         pricePerMonth: room.price_per_month,
         areaSqm: room.area_sqm,
         roomType: room.room_type,
@@ -216,7 +232,7 @@ const updateRoom = async (req, res, next) => {
   try {
     const { roomId } = req.params;
     const landlordId = req.user.userId;
-    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, status, roomNumber } = req.body;
+    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, status, roomNumber, latitude, longitude } = req.body;
 
     const room = await Room.findOne({
       where: { room_id: roomId, landlord_id: landlordId, is_deleted: false },
@@ -257,6 +273,8 @@ const updateRoom = async (req, res, next) => {
       }
       room.status = status;
     }
+    if (latitude !== undefined) room.latitude = latitude ? parseFloat(latitude) : null;
+    if (longitude !== undefined) room.longitude = longitude ? parseFloat(longitude) : null;
     if (req.file) room.thumbnail_url = req.file.path;
 
     room.updated_at = new Date();
@@ -375,7 +393,7 @@ const getAllPublicRooms = async (req, res, next) => {
       include: [
         { model: RoomImage, as: 'images' },
         { model: Facility, as: 'facilities', through: { attributes: [] } },
-        { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'avatar_url'] }
+        { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'avatar_url', 'verification_status'] }
       ],
       offset,
       limit: parseInt(limit),
@@ -430,7 +448,7 @@ const getPublicRoomDetails = async (req, res, next) => {
       include: [
         { model: RoomImage, as: 'images' },
         { model: Facility, as: 'facilities', through: { attributes: [] } },
-        { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
+        { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url', 'verification_status'] },
       ],
     });
 
@@ -453,6 +471,7 @@ const getPublicRoomDetails = async (req, res, next) => {
       success: true,
       data: {
         roomId: room.room_id,
+        propertyId: room.property_id,
         landlordId: room.landlord_id,
         landlord_id: room.landlord_id,
         title: room.title,
@@ -461,6 +480,8 @@ const getPublicRoomDetails = async (req, res, next) => {
         city: room.city,
         district: room.district,
         ward: room.ward,
+        latitude: room.latitude,
+        longitude: room.longitude,
         pricePerMonth: room.price_per_month,
         areaSqm: room.area_sqm,
         roomType: room.room_type,
@@ -686,12 +707,92 @@ const searchProperties = async (req, res, next) => {
       where.landlord_id = landlordId;
     }
 
-    if (keyword) {
+    let searchKeyword = keyword;
+    let searchCity = city;
+    let searchDistrict = district;
+
+    // Smart heuristic preprocessor for natural language keyword search
+    if (searchKeyword && !searchCity && !searchDistrict) {
+      let kw = searchKeyword.toLowerCase().trim();
+      
+      // Extract City
+      if (kw.includes('đà nẵng')) {
+        searchCity = 'Thành phố Đà Nẵng';
+        searchKeyword = searchKeyword.replace(/đà nẵng/gi, '').trim();
+      } else if (kw.includes('hồ chí minh') || kw.includes('sài gòn') || kw.includes('hcm')) {
+        searchCity = 'Thành phố Hồ Chí Minh';
+        searchKeyword = searchKeyword.replace(/(hồ chí minh|sài gòn|hcm)/gi, '').trim();
+      } else if (kw.includes('hà nội') || kw.includes('hn')) {
+        searchCity = 'Thành phố Hà Nội';
+        searchKeyword = searchKeyword.replace(/(hà nội|hn)/gi, '').trim();
+      }
+
+      // Re-evaluate lowercase keyword after city extraction
+      kw = searchKeyword.toLowerCase().trim();
+
+      // Extract District via dictionary map lookup
+      const districtMap = {
+        'bình thạnh': 'Quận Bình Thạnh',
+        'gò vấp': 'Quận Gò Vấp',
+        'phú nhuận': 'Quận Phú Nhuận',
+        'tân bình': 'Quận Tân Bình',
+        'tân phú': 'Quận Tân Phú',
+        'thủ đức': 'Quận Thủ Đức',
+        'liên chiểu': 'Quận Liên Chiểu',
+        'hải châu': 'Quận Hải Châu',
+        'thanh khê': 'Quận Thanh Khê',
+        'sơn trà': 'Quận Sơn Trà',
+        'ngũ hành sơn': 'Quận Ngũ Hành Sơn',
+        'cẩm lệ': 'Quận Cẩm Lệ',
+        'hòa vang': 'Huyện Hòa Vàng',
+        'quận 1': 'Quận 1', 'q1': 'Quận 1',
+        'quận 2': 'Quận 2', 'q2': 'Quận 2',
+        'quận 3': 'Quận 3', 'q3': 'Quận 3',
+        'quận 4': 'Quận 4', 'q4': 'Quận 4',
+        'quận 5': 'Quận 5', 'q5': 'Quận 5',
+        'quận 6': 'Quận 6', 'q6': 'Quận 6',
+        'quận 7': 'Quận 7', 'q7': 'Quận 7',
+        'quận 8': 'Quận 8', 'q8': 'Quận 8',
+        'quận 9': 'Quận 9', 'q9': 'Quận 9',
+        'quận 10': 'Quận 10', 'q10': 'Quận 10',
+        'quận 11': 'Quận 11', 'q11': 'Quận 11',
+        'quận 12': 'Quận 12', 'q12': 'Quận 12',
+      };
+
+      for (const [key, val] of Object.entries(districtMap)) {
+        if (kw.includes(key)) {
+          searchDistrict = val;
+          // Strip the matched key and any optional "quận"/"huyện"/"q" prefix
+          const stripRegex = new RegExp(`(quận|huyện|q)?\\s*${key}`, 'gi');
+          searchKeyword = searchKeyword.replace(stripRegex, '').trim();
+          break;
+        }
+      }
+
+      // Clean prepositions, filler words, and generic room search words using a Set
+      const genericStopWords = new Set([
+        'tôi', 'muốn', 'tìm', 'kiếm', 'cần', 'cho', 'thuê', 'trống', 'ở', 'tại', 
+        'phòng', 'trọ', 'nhà', 'căn', 'hộ', 'chung', 'cư', 'đâu', 'địa', 'chỉ', 
+        'bản', 'đồ', 'giá', 'rẻ', 'tốt', 'chỗ', 'khu', 'vực', 'có', 'thể', 'được', 
+        'nào', 'mới', 'đẹp'
+      ]);
+
+      const words = searchKeyword.split(/\s+/);
+      const cleanWords = words.filter(word => {
+        // Strip punctuation and check if the lowercased word is a stop word
+        const cleanWord = word.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '');
+        return cleanWord && !genericStopWords.has(cleanWord);
+      });
+
+      searchKeyword = cleanWords.join(' ').trim();
+    }
+
+    if (searchKeyword) {
       const matchingLandlords = await User.findAll({
         where: {
           [Op.and]: [
             { is_deleted: false },
-            sequelize.where(sequelize.col('full_name'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`))
+            sequelize.where(sequelize.col('full_name'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + searchKeyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`))
           ]
         },
         attributes: ['user_id'],
@@ -699,12 +800,12 @@ const searchProperties = async (req, res, next) => {
       const landlordIds = matchingLandlords.map((u) => u.user_id);
 
       const keywordConditions = [
-        sequelize.where(sequelize.col('Room.title'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
-        sequelize.where(sequelize.col('Room.description'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
-        sequelize.where(sequelize.col('Room.address'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
-        sequelize.where(sequelize.col('Room.city'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
-        sequelize.where(sequelize.col('Room.district'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
-        sequelize.where(sequelize.col('Room.ward'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`))
+        sequelize.where(sequelize.col('Room.title'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + searchKeyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
+        sequelize.where(sequelize.col('Room.description'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + searchKeyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
+        sequelize.where(sequelize.col('Room.address'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + searchKeyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
+        sequelize.where(sequelize.col('Room.city'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + searchKeyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
+        sequelize.where(sequelize.col('Room.district'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + searchKeyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)),
+        sequelize.where(sequelize.col('Room.ward'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + searchKeyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`))
       ];
       if (landlordIds.length > 0) {
         keywordConditions.push({ landlord_id: { [Op.in]: landlordIds } });
@@ -712,13 +813,13 @@ const searchProperties = async (req, res, next) => {
       where[Op.or] = keywordConditions;
     }
 
-    if (city || district) {
+    if (searchCity || searchDistrict) {
         where[Op.and] = where[Op.and] || [];
-        if (city) {
-            where[Op.and].push(sequelize.where(sequelize.col('Room.city'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + city + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)));
+        if (searchCity) {
+            where[Op.and].push(sequelize.where(sequelize.col('Room.city'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + searchCity + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)));
         }
-        if (district) {
-            where[Op.and].push(sequelize.where(sequelize.col('Room.district'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + district + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)));
+        if (searchDistrict) {
+            where[Op.and].push(sequelize.where(sequelize.col('Room.district'), 'LIKE', sequelize.literal(`${sequelize.escape('%' + searchDistrict + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)));
         }
     }
 
@@ -907,6 +1008,8 @@ const getPublicPropertyDetails = async (req, res, next) => {
        address: firstRoom.property ? firstRoom.property.address : firstRoom.address,
        city: firstRoom.city,
        district: firstRoom.district,
+       latitude: firstRoom.property ? firstRoom.property.latitude : firstRoom.latitude,
+       longitude: firstRoom.property ? firstRoom.property.longitude : firstRoom.longitude,
        description: firstRoom.property ? firstRoom.property.description : firstRoom.description,
        landlord: firstRoom.landlord,
        thumbnailUrl: firstRoom.property?.thumbnail_url || firstRoom.thumbnail_url,

@@ -102,6 +102,16 @@ export const adminService = {
     });
     return response;
   },
+
+  getVerifications: async () => {
+    const response = await api.get('/admin/verifications');
+    return response;
+  },
+
+  processVerification: async (id, status, notes) => {
+    const response = await api.put(`/admin/verifications/${id}`, { status, notes });
+    return response;
+  },
 };
 
 export default adminService;

@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -19,21 +19,69 @@ import {
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
 import { landlordService } from '../services/landlordService';
+import GoogleMapPicker from '../../../components/common/GoogleMapPicker';
+import useAuthStore from '../../../store/useAuthStore';
 import './AddNewPropertyPage.css';
 
+// Helper to normalize strings for accent-insensitive search in Vietnamese
+const normalizeString = (str) => {
+  if (!str) return '';
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/đ/g, "d");
+};
+
+// Helper to remove administrative noise words for robust matching
+const cleanAdministrativeNoise = (str) => {
+  if (!str) return '';
+  return normalizeString(str)
+    .replace(/\b(quan|huyen|thanh pho|tp|phuong|xa|thi xa|thi tran|ward|district|city|town|commune|province)\b/g, '')
+    .trim();
+};
 
 const AddNewPropertyPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user, updateUser } = useAuthStore();
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Block unverified landlords from posting rooms (Real-time check)
+  useEffect(() => {
+    const checkVerification = async () => {
+      try {
+        const response = await landlordService.getProfile();
+        const profileData = response.data || response;
+        const status = profileData.verificationStatus || profileData.verification_status;
+        
+        // Sync to Zustand store to keep global state updated
+        updateUser({
+          verificationStatus: status,
+          verification_status: status,
+        });
+
+        if (status !== 'verified') {
+          toast.error('Tài khoản của bạn chưa được xác thực. Vui lòng hoàn tất xác thực thông tin cá nhân (CCCD) để có quyền đăng tin phòng.');
+          navigate(ROUTES.LANDLORD.PROFILE || '/landlord/profile');
+        } else {
+          setCheckingAuth(false);
+        }
+      } catch (err) {
+        console.error('Failed to verify landlord status:', err);
+        navigate(ROUTES.LANDLORD.PROFILE || '/landlord/profile');
+      }
+    };
+
+    checkVerification();
+  }, [navigate, updateUser]);
+
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [provincesList, setProvincesList] = useState([]);
   const [districtsList, setDistrictsList] = useState([]);
   const [propertyInherited, setPropertyInherited] = useState(false);
   const propertyIdParam = searchParams.get('propertyId');
+  const pendingDistrictRef = useRef(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -70,7 +118,9 @@ const AddNewPropertyPage = () => {
     nearMarket: false,
     nearPark: false,
     nearConvenienceStore: false,
-    images: []
+    images: [],
+    latitude: null,
+    longitude: null,
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -109,7 +159,22 @@ const AddNewPropertyPage = () => {
       fetch(`https://esgoo.net/api-tinhthanh/2/${selectedProv.id}.htm`)
         .then(res => res.json())
         .then(data => {
-          if (data.error === 0) setDistrictsList(data.data);
+          if (data.error === 0) {
+            setDistrictsList(data.data);
+            
+            // Asynchronously match the pending district after city loads its districts
+            if (pendingDistrictRef.current) {
+              const cleanPending = cleanAdministrativeNoise(pendingDistrictRef.current);
+              const matchedDist = data.data.find(d => {
+                const cleanDbDist = cleanAdministrativeNoise(d.full_name);
+                return cleanDbDist.includes(cleanPending) || cleanPending.includes(cleanDbDist);
+              });
+              if (matchedDist) {
+                setFormData(prev => ({ ...prev, district: matchedDist.full_name }));
+              }
+              pendingDistrictRef.current = null;
+            }
+          }
         })
         .catch(err => console.error("Error fetching districts", err));
     } else {
@@ -237,6 +302,8 @@ const AddNewPropertyPage = () => {
       if (propertyId) fd.append('propertyId', propertyId);
       if (floor) fd.append('floor', floor);
       if (formData.roomNumber) fd.append('roomNumber', formData.roomNumber);
+      if (formData.latitude) fd.append('latitude', formData.latitude);
+      if (formData.longitude) fd.append('longitude', formData.longitude);
 
       if (selectedFiles && selectedFiles.length > 0) {
         // Appending the first image as 'image' for multer upload.single('image')
@@ -297,6 +364,15 @@ const AddNewPropertyPage = () => {
     setShowSuccessModal(false);
     navigate(ROUTES.LANDLORD.LISTINGS);
   };
+
+  if (checkingAuth) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', gap: '1rem', color: '#4f46e5' }}>
+        <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid #e0e7ff', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+        <p style={{ fontWeight: '600' }}>Đang xác thực quyền truy cập...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="add-property-container" id="add-property-page">
@@ -432,16 +508,73 @@ const AddNewPropertyPage = () => {
 
             <div className="form-group-field">
               <label className="form-input-label">{t('addNewProperty.streetAddress', 'Street Address')} <span className="text-danger">*</span></label>
-              <input
-                type="text"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                className={`form-input-text ${formErrors.address ? 'error' : ''} ${propertyInherited ? 'disabled-input' : ''}`}
-                placeholder={t('addNewProperty.streetAddressPlaceholder', 'e.g., 123 Nguyen Van Linh St')}
-                disabled={propertyInherited}
-                style={propertyInherited ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : {}}
-              />
+              {propertyInherited ? (
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className={`form-input-text ${formErrors.address ? 'error' : ''} disabled-input`}
+                  placeholder={t('addNewProperty.streetAddressPlaceholder', 'e.g., 123 Nguyen Van Linh St')}
+                  disabled={true}
+                  style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' }}
+                />
+              ) : (
+                <GoogleMapPicker
+                  address={formData.address}
+                  onAddressChange={(val) => {
+                    setFormData(prev => ({ ...prev, address: val }));
+                    if (formErrors.address) setFormErrors(prev => ({ ...prev, address: null }));
+                  }}
+                  latitude={formData.latitude}
+                  longitude={formData.longitude}
+                   onLocationChange={({ lat, lng, address: addr, city: rawCity, district: rawDistrict }) => {
+                    let matchedCityName = '';
+                    let matchedDistrictName = '';
+                    
+                    if (rawCity) {
+                      const normCityInput = normalizeString(rawCity);
+                      const matchedProv = provincesList.find(p => 
+                        normalizeString(p.full_name).includes(normCityInput) || 
+                        normCityInput.includes(normalizeString(p.full_name))
+                      );
+                      if (matchedProv) {
+                        matchedCityName = matchedProv.full_name;
+                        if (rawDistrict) {
+                          if (formData.city === matchedCityName && districtsList.length > 0) {
+                            const cleanInput = cleanAdministrativeNoise(rawDistrict);
+                            const matchedDist = districtsList.find(d => {
+                              const cleanDb = cleanAdministrativeNoise(d.full_name);
+                              return cleanDb.includes(cleanInput) || cleanInput.includes(cleanDb);
+                            });
+                            if (matchedDist) {
+                              matchedDistrictName = matchedDist.full_name;
+                            }
+                          } else {
+                            pendingDistrictRef.current = rawDistrict;
+                          }
+                        }
+                      }
+                    }
+
+                    setFormData(prev => ({
+                      ...prev,
+                      address: addr,
+                      latitude: lat,
+                      longitude: lng,
+                      ...(matchedCityName ? { city: matchedCityName } : {}),
+                      ...(matchedDistrictName ? { district: matchedDistrictName } : (matchedCityName && formData.city !== matchedCityName ? { district: '' } : {}))
+                    }));
+                    
+                    if (formErrors.address) setFormErrors(prev => ({ ...prev, address: null }));
+                    if (matchedCityName && formErrors.city) setFormErrors(prev => ({ ...prev, city: null }));
+                  }}
+                  placeholder={t('addNewProperty.streetAddressPlaceholder', 'e.g., 123 Nguyen Van Linh St')}
+                  className={formErrors.address ? 'error' : ''}
+                  height="280px"
+                  inputId="room-address-input"
+                />
+              )}
               {formErrors.address && <span className="form-field-error-msg">{formErrors.address}</span>}
             </div>
 

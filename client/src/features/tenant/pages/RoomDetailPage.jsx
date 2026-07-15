@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  MapPin, Share2, Heart, MessageSquare, CheckCircle, Bed, Users, Maximize, Home, Compass, ChevronLeft
+  MapPin, Share2, Heart, MessageSquare, CheckCircle, Bed, Users, Maximize, Home, Compass, ChevronLeft, ShieldCheck, ShieldAlert
 } from 'lucide-react';
 import { favoriteService } from '../services/favoriteService';
 import { rentalRequestService } from '../services/rentalRequestService';
@@ -16,6 +16,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import api from '../../../services/api';
 import RoomCard from '../components/RoomCard';
 import { useTranslation } from 'react-i18next';
+import GoogleMapPicker from '../../../components/common/GoogleMapPicker';
 import './RoomDetailPage.css';
 
 const RoomDetailPage = () => {
@@ -338,16 +339,54 @@ const RoomDetailPage = () => {
             )}
           </div>
 
-          <div className="property-header">
-            {isEditing ? (
-              <input name="title" value={editForm.title} onChange={handleEditChange} className="form-control mb-2" style={{ fontSize: '1.8rem', fontWeight: 700 }} />
-            ) : (
-              <h1 className="room-detail-title">{roomData.title}</h1>
+          <div className="property-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+            <div style={{ flex: 1 }}>
+              {isEditing ? (
+                <input name="title" value={editForm.title} onChange={handleEditChange} className="form-control mb-2" style={{ fontSize: '1.8rem', fontWeight: 700 }} />
+              ) : (
+                <h1 className="room-detail-title" style={{ margin: 0 }}>{roomData.title}</h1>
+              )}
+              {roomData.roomNumber && (
+                <p className="room-detail-address" style={{ marginTop: '0.4rem', marginBottom: '0.4rem', fontWeight: '500', color: '#4f46e5' }}>{t('propertyDetail.roomPrefix', 'Phòng:')} {roomData.roomNumber}</p>
+              )}
+              <p className="room-detail-address" style={{ margin: '0.4rem 0 0 0' }}><MapPin size={16}/> {[roomData.address, roomData.ward, roomData.district, roomData.city].filter(Boolean).join(', ')}</p>
+            </div>
+
+            {!(isAuthenticated && (user?.role === 'LANDLORD' || user?.role === 'ADMIN')) && (
+              <button 
+                onClick={toggleFavorite}
+                className="detail-favorite-btn"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '10px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+                  backgroundColor: '#ffffff',
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0,
+                  marginTop: '4px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.12)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.08)';
+                }}
+              >
+                <Heart 
+                  size={24} 
+                  fill={isFavorite ? '#ef4444' : 'none'} 
+                  color={isFavorite ? '#ef4444' : '#64748b'} 
+                />
+              </button>
             )}
-            {roomData.roomNumber && (
-              <p className="room-detail-address" style={{ marginTop: '0.2rem', marginBottom: '0.5rem', fontWeight: '500', color: '#4f46e5' }}>{t('propertyDetail.roomPrefix', 'Phòng:')} {roomData.roomNumber}</p>
-            )}
-            <p className="room-detail-address"><MapPin size={16}/> {[roomData.address, roomData.ward, roomData.district, roomData.city].filter(Boolean).join(', ')}</p>
           </div>
           
           <div className="property-features">
@@ -448,6 +487,26 @@ const RoomDetailPage = () => {
               <p style={{ color: '#64748b' }}>{t('roomDetail.noAmenities', 'Chưa có thông tin tiện ích.')}</p>
             )}
           </section>
+
+          {/* Google Maps Location Section */}
+          {!roomData.propertyId && (
+            <>
+              <hr className="section-divider" />
+              <section className="location-map-section" style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1rem', color: '#1e293b' }}>
+                  <MapPin size={20} style={{ display: 'inline', marginRight: '8px', color: '#4f46e5' }} />
+                  {t('roomDetail.locationMap', 'Vị trí trên bản đồ')}
+                </h2>
+                <GoogleMapPicker
+                  address={[roomData.address, roomData.ward, roomData.district, roomData.city].filter(Boolean).join(', ')}
+                  latitude={roomData.latitude}
+                  longitude={roomData.longitude}
+                  readOnly={true}
+                  height="350px"
+                />
+              </section>
+            </>
+          )}
         </div>
 
         {/* Right Side: Booking Card */}
@@ -490,12 +549,27 @@ const RoomDetailPage = () => {
                   <img 
                     src={getGlobalAvatar(roomData.landlord?.full_name, roomData.landlord?.avatar_url || roomData.landlord?.avatarUrl, 100)} 
                     alt={roomData.landlord?.full_name || 'Landlord'} 
-                    className="host-avatar" 
+                    className={`host-avatar ${
+                      (roomData.landlord?.verification_status === 'verified' || roomData.landlord?.verificationStatus === 'verified') 
+                        ? 'verified-border' 
+                        : ''
+                    }`}
                   />
                   <span className="host-status-dot"></span>
                 </div>
                 <div className="host-text">
-                  <h3>{t('roomDetail.managedBy', 'Quản lý bởi')} {roomData.landlord?.full_name || 'Chủ trọ'}</h3>
+                  <h3 className="flex items-center gap-1 flex-wrap" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                    {t('roomDetail.managedBy', 'Quản lý bởi')} {roomData.landlord?.full_name || 'Chủ trọ'}
+                    {(roomData.landlord?.verification_status === 'verified' || roomData.landlord?.verificationStatus === 'verified') ? (
+                      <span className="host-verified-badge" title="Chủ trọ đã xác thực danh tính qua CCCD và tài khoản ngân hàng chính chủ">
+                        <ShieldCheck size={14} fill="#1d4ed8" color="white" /> {t('profile.verification.badgeVerified', 'Đã xác thực')}
+                      </span>
+                    ) : (
+                      <span className="host-unverified-badge" title="Chủ trọ chưa được xác thực. Hãy cẩn trọng khi giao dịch ngoài hệ thống">
+                        <ShieldAlert size={14} fill="#b91c1c" color="white" /> {t('profile.verification.badgeUnverified', 'Chưa xác thực')}
+                      </span>
+                    )}
+                  </h3>
                   <p>{t('roomDetail.hostPhone', 'SĐT:')} {roomData.landlord?.phone || 'Đang cập nhật'}</p>
                   <div className="flex gap-4 mt-1 text-sm text-gray-600">
                     <span>{t('roomDetail.postedRooms', 'Số phòng đăng:')} <strong>{roomData.landlord?.postCount || 0}</strong></span>

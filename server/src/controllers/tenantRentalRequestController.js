@@ -8,12 +8,62 @@ const { RentalRequest, Room, User, Notification } = require('../models');
 const createRentalRequest = async (req, res, next) => {
   try {
     const tenantId = req.user.userId;
-    const { roomId, message, requestedMoveInDate, leaseDurationMonths } = req.body;
+    const { 
+      roomId, 
+      message, 
+      requestedMoveInDate, 
+      leaseDurationMonths,
+      tenantName,
+      tenantIc,
+      tenantIcIssueDate,
+      tenantIcIssuePlace,
+      tenantPermanentAddress
+    } = req.body;
+
+    // Verify tenant has a phone number
+    const tenant = await User.findByPk(tenantId);
+    if (!tenant || !tenant.phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bạn phải cập nhật số điện thoại trong trang cá nhân trước khi gửi yêu cầu thuê phòng.'
+      });
+    }
 
     if (!roomId) {
       return res.status(400).json({
         success: false,
         message: 'Room ID is required.',
+      });
+    }
+
+    if (!requestedMoveInDate || !leaseDurationMonths) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng chọn ngày dọn vào và thời hạn thuê.',
+      });
+    }
+
+    if (!tenantName || !tenantIc || !tenantIcIssueDate || !tenantIcIssuePlace || !tenantPermanentAddress) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp đầy đủ thông tin cá nhân của bạn phục vụ cho hợp đồng.',
+      });
+    }
+
+    if (tenantIc.length !== 12) {
+      return res.status(400).json({
+        success: false,
+        message: 'Số CCCD phải có đúng 12 chữ số.',
+      });
+    }
+
+    const start = new Date(requestedMoveInDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (start < today) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ngày nhận phòng không thể ở quá khứ.',
       });
     }
 
@@ -69,6 +119,11 @@ const createRentalRequest = async (req, res, next) => {
       message: message || null,
       requested_move_in_date: requestedMoveInDate || null,
       lease_duration_months: leaseDurationMonths || null,
+      tenant_name: tenantName,
+      tenant_ic: tenantIc,
+      tenant_ic_issue_date: tenantIcIssueDate || null,
+      tenant_ic_issue_place: tenantIcIssuePlace,
+      tenant_permanent_address: tenantPermanentAddress,
     });
 
     // Create notification for landlord
@@ -102,6 +157,16 @@ const createRentalRequest = async (req, res, next) => {
         message: rentalRequest.message,
         requestedMoveInDate: rentalRequest.requested_move_in_date,
         leaseDurationMonths: rentalRequest.lease_duration_months,
+        tenantName: rentalRequest.tenant_name,
+        tenant_name: rentalRequest.tenant_name,
+        tenantIc: rentalRequest.tenant_ic,
+        tenant_ic: rentalRequest.tenant_ic,
+        tenantIcIssueDate: rentalRequest.tenant_ic_issue_date,
+        tenant_ic_issue_date: rentalRequest.tenant_ic_issue_date,
+        tenantIcIssuePlace: rentalRequest.tenant_ic_issue_place,
+        tenant_ic_issue_place: rentalRequest.tenant_ic_issue_place,
+        tenantPermanentAddress: rentalRequest.tenant_permanent_address,
+        tenant_permanent_address: rentalRequest.tenant_permanent_address,
         createdAt: rentalRequest.created_at,
         created_at: rentalRequest.created_at,
       },
@@ -157,6 +222,16 @@ const getMyRentalRequests = async (req, res, next) => {
         message: req.message,
         rejectionReason: req.rejection_reason,
         rejection_reason: req.rejection_reason,
+        tenantName: req.tenant_name,
+        tenant_name: req.tenant_name,
+        tenantIc: req.tenant_ic,
+        tenant_ic: req.tenant_ic,
+        tenantIcIssueDate: req.tenant_ic_issue_date,
+        tenant_ic_issue_date: req.tenant_ic_issue_date,
+        tenantIcIssuePlace: req.tenant_ic_issue_place,
+        tenant_ic_issue_place: req.tenant_ic_issue_place,
+        tenantPermanentAddress: req.tenant_permanent_address,
+        tenant_permanent_address: req.tenant_permanent_address,
         room: req.room,
         landlord: req.landlordRequest,
         createdAt: req.created_at,
@@ -219,6 +294,16 @@ const getRentalRequestDetail = async (req, res, next) => {
         message: rentalRequest.message,
         rejectionReason: rentalRequest.rejection_reason,
         rejection_reason: rentalRequest.rejection_reason,
+        tenantName: rentalRequest.tenant_name,
+        tenant_name: rentalRequest.tenant_name,
+        tenantIc: rentalRequest.tenant_ic,
+        tenant_ic: rentalRequest.tenant_ic,
+        tenantIcIssueDate: rentalRequest.tenant_ic_issue_date,
+        tenant_ic_issue_date: rentalRequest.tenant_ic_issue_date,
+        tenantIcIssuePlace: rentalRequest.tenant_ic_issue_place,
+        tenant_ic_issue_place: rentalRequest.tenant_ic_issue_place,
+        tenantPermanentAddress: rentalRequest.tenant_permanent_address,
+        tenant_permanent_address: rentalRequest.tenant_permanent_address,
         room: rentalRequest.room,
         landlord: rentalRequest.landlordRequest,
         createdAt: rentalRequest.created_at,

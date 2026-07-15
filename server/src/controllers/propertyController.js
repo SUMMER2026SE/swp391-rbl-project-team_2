@@ -1,14 +1,31 @@
 const { Op } = require('sequelize');
 const { sequelize, Property, Room, RoomImage, Facility, RoomFacility, Contract, Payment, User } = require('../models');
 
+// Helper to strip "prop_" prefix from property ID for robust integer queries
+const getCleanPropertyId = (id) => {
+  if (typeof id === 'string' && id.startsWith('prop_')) {
+    return parseInt(id.replace('prop_', ''), 10);
+  }
+  return parseInt(id, 10) || null;
+};
+
 // =========================================================
 // POST /api/landlord/properties
 // Create a new property (building/house)
 // =========================================================
 const createProperty = async (req, res, next) => {
   try {
-    const { name, description, address, city, district, ward, totalFloors } = req.body;
+    const { name, description, address, city, district, ward, totalFloors, latitude, longitude } = req.body;
     const landlordId = req.user.userId;
+
+    // Verify landlord's account is verified before creating a property
+    const user = await User.findOne({ where: { user_id: landlordId } });
+    if (!user || user.verification_status !== 'verified') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn chưa được xác thực. Vui lòng hoàn tất xác thực thông tin cá nhân (CCCD) để có quyền tạo căn hộ/dự án.',
+      });
+    }
 
     // Validate required fields
     if (!name || !address || !city) {
@@ -27,6 +44,8 @@ const createProperty = async (req, res, next) => {
       district,
       ward,
       total_floors: totalFloors || 1,
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
       status: 'active',
     };
 
@@ -46,6 +65,8 @@ const createProperty = async (req, res, next) => {
         city: property.city,
         district: property.district,
         totalFloors: property.total_floors,
+        latitude: property.latitude,
+        longitude: property.longitude,
         status: property.status,
       },
     });
@@ -133,10 +154,11 @@ const getProperties = async (req, res, next) => {
 const getPropertyDetails = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
+    const cleanPropertyId = getCleanPropertyId(propertyId);
     const landlordId = req.user.userId;
 
     const property = await Property.findOne({
-      where: { property_id: propertyId, landlord_id: landlordId, is_deleted: false },
+      where: { property_id: cleanPropertyId, landlord_id: landlordId, is_deleted: false },
       include: [
         {
           model: Room,
@@ -171,6 +193,8 @@ const getPropertyDetails = async (req, res, next) => {
         ward: property.ward,
         totalFloors: property.total_floors,
         thumbnailUrl: property.thumbnail_url,
+        latitude: property.latitude,
+        longitude: property.longitude,
         status: property.status,
         rooms: (property.rooms || []).map(room => ({
           roomId: room.room_id,
@@ -201,11 +225,12 @@ const getPropertyDetails = async (req, res, next) => {
 const updateProperty = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
+    const cleanPropertyId = getCleanPropertyId(propertyId);
     const landlordId = req.user.userId;
-    const { name, description, address, city, district, ward, totalFloors } = req.body;
+    const { name, description, address, city, district, ward, totalFloors, latitude, longitude } = req.body;
 
     const property = await Property.findOne({
-      where: { property_id: propertyId, landlord_id: landlordId, is_deleted: false },
+      where: { property_id: cleanPropertyId, landlord_id: landlordId, is_deleted: false },
     });
 
     if (!property) {
@@ -222,6 +247,8 @@ const updateProperty = async (req, res, next) => {
     if (district !== undefined) property.district = district;
     if (ward !== undefined) property.ward = ward;
     if (totalFloors) property.total_floors = totalFloors;
+    if (latitude !== undefined) property.latitude = latitude ? parseFloat(latitude) : null;
+    if (longitude !== undefined) property.longitude = longitude ? parseFloat(longitude) : null;
     if (req.file) property.thumbnail_url = req.file.path;
 
     property.updated_at = new Date();
@@ -234,6 +261,8 @@ const updateProperty = async (req, res, next) => {
         propertyId: property.property_id,
         name: property.name,
         address: property.address,
+        latitude: property.latitude,
+        longitude: property.longitude,
         status: property.status,
       },
     });
@@ -249,10 +278,11 @@ const updateProperty = async (req, res, next) => {
 const deleteProperty = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
+    const cleanPropertyId = getCleanPropertyId(propertyId);
     const landlordId = req.user.userId;
 
     const property = await Property.findOne({
-      where: { property_id: propertyId, landlord_id: landlordId, is_deleted: false },
+      where: { property_id: cleanPropertyId, landlord_id: landlordId, is_deleted: false },
     });
 
     if (!property) {
@@ -269,7 +299,7 @@ const deleteProperty = async (req, res, next) => {
     // Also soft-delete all rooms belonging to this property
     await Room.update(
       { is_deleted: true, updated_at: new Date() },
-      { where: { property_id: propertyId, landlord_id: landlordId } }
+      { where: { property_id: cleanPropertyId, landlord_id: landlordId } }
     );
 
     return res.status(200).json({
@@ -288,11 +318,12 @@ const deleteProperty = async (req, res, next) => {
 const getPropertyDashboard = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
+    const cleanPropertyId = getCleanPropertyId(propertyId);
     const landlordId = req.user.userId;
 
     // Verify ownership
     const property = await Property.findOne({
-      where: { property_id: propertyId, landlord_id: landlordId, is_deleted: false },
+      where: { property_id: cleanPropertyId, landlord_id: landlordId, is_deleted: false },
     });
 
     if (!property) {
@@ -304,7 +335,7 @@ const getPropertyDashboard = async (req, res, next) => {
 
     // Get all rooms for this property
     const rooms = await Room.findAll({
-      where: { property_id: propertyId, is_deleted: false },
+      where: { property_id: cleanPropertyId, is_deleted: false },
       attributes: ['room_id', 'title', 'floor', 'room_number', 'price_per_month', 'area_sqm', 'status', 'max_occupants', 'thumbnail_url', 'quantity', 'available_quantity'],
       order: [['floor', 'ASC'], ['room_number', 'ASC']],
     });
@@ -482,12 +513,13 @@ const getPropertyDashboard = async (req, res, next) => {
 const duplicateRoom = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
+    const cleanPropertyId = getCleanPropertyId(propertyId);
     const { sourceRoomId, count = 1, targetFloor, roomNumbers } = req.body;
     const landlordId = req.user.userId;
 
     // Verify property ownership
     const property = await Property.findOne({
-      where: { property_id: propertyId, landlord_id: landlordId, is_deleted: false },
+      where: { property_id: cleanPropertyId, landlord_id: landlordId, is_deleted: false },
     });
 
     if (!property) {
@@ -499,7 +531,7 @@ const duplicateRoom = async (req, res, next) => {
 
     // Find source room
     const sourceRoom = await Room.findOne({
-      where: { room_id: sourceRoomId, property_id: propertyId, is_deleted: false },
+      where: { room_id: sourceRoomId, property_id: cleanPropertyId, is_deleted: false },
       include: [
         { model: Facility, as: 'facilities', through: { attributes: [] } },
       ],
@@ -518,7 +550,7 @@ const duplicateRoom = async (req, res, next) => {
 
     // Get existing room count on that floor to auto-generate room numbers
     const existingOnFloor = await Room.count({
-      where: { property_id: propertyId, floor, is_deleted: false },
+      where: { property_id: cleanPropertyId, floor, is_deleted: false },
     });
 
     const createdRooms = [];
@@ -532,7 +564,7 @@ const duplicateRoom = async (req, res, next) => {
 
       const newRoom = await Room.create({
         landlord_id: landlordId,
-        property_id: propertyId,
+        property_id: cleanPropertyId,
         floor,
         room_number: roomNumber,
         title: `${sourceRoom.title}`,

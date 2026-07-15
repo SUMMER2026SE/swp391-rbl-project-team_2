@@ -616,6 +616,15 @@ const requestViewing = async (req, res, next) => {
     const { roomId, scheduledDate, notes } = req.body;
     const tenantId = req.user.userId;
 
+    // Verify tenant has a phone number
+    const tenant = await User.findByPk(tenantId);
+    if (!tenant || !tenant.phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bạn phải cập nhật số điện thoại trong trang cá nhân trước khi đặt lịch xem phòng.'
+      });
+    }
+
     if (!roomId || !scheduledDate) {
       return res.status(400).json({
         success: false,
@@ -781,124 +790,9 @@ const retryPayment = async (req, res, next) => {
 // =========================================================
 const requestContract = async (req, res, next) => {
   try {
-    const { scheduleId } = req.params;
-    const tenantId = req.user.userId;
-    const { 
-      message: tenantMessage, 
-      startDate, 
-      durationMonths,
-      tenantName,
-      tenantIc,
-      tenantIcIssueDate,
-      tenantIcIssuePlace,
-      tenantPermanentAddress
-    } = req.body;
-
-    if (!startDate || !durationMonths || durationMonths < 1 || durationMonths > 12) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide a valid move-in date and duration (1-12 months).'
-      });
-    }
-
-    const schedule = await ViewingSchedule.findOne({
-      where: { schedule_id: scheduleId, tenant_id: tenantId },
-      include: [{ model: Room, as: 'room' }],
-    });
-
-    if (!schedule) {
-      return res.status(404).json({ success: false, message: 'Viewing schedule not found.' });
-    }
-
-    if (schedule.status !== 'confirmed' && schedule.status !== 'completed') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'You can only request a contract after your viewing has been confirmed or completed by the landlord.' 
-      });
-    }
-
-    // Calculate end date and validate start date
-    const start = new Date(startDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to midnight
-    
-    if (start < today) {
-      return res.status(400).json({
-        success: false,
-        message: 'Move-in date cannot be in the past.',
-      });
-    }
-
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + parseInt(durationMonths));
-
-    // Create a draft contract
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    const contractNumber = `CT-${timestamp}-${random}`;
-
-    const { Contract } = require('../models');
-    
-    // Check if a draft already exists
-    let contract = await Contract.findOne({
-      where: { room_id: schedule.room_id, tenant_id: tenantId, status: 'draft' }
-    });
-
-    if (!contract) {
-      contract = await Contract.create({
-        room_id: schedule.room_id,
-        tenant_id: tenantId,
-        landlord_id: schedule.landlord_id,
-        contract_number: contractNumber,
-        start_date: start,
-        end_date: end,
-        monthly_rent: schedule.room.price_per_month,
-        deposit_amount: schedule.room.price_per_month, // Standard 1 month deposit
-        status: 'draft',
-        tenant_name: tenantName,
-        tenant_ic: tenantIc,
-        tenant_ic_issue_date: tenantIcIssueDate || null,
-        tenant_ic_issue_place: tenantIcIssuePlace,
-        tenant_permanent_address: tenantPermanentAddress
-      });
-    } else {
-      await contract.update({
-        start_date: start,
-        end_date: end,
-        monthly_rent: schedule.room.price_per_month,
-        tenant_name: tenantName,
-        tenant_ic: tenantIc,
-        tenant_ic_issue_date: tenantIcIssueDate || null,
-        tenant_ic_issue_place: tenantIcIssuePlace,
-        tenant_permanent_address: tenantPermanentAddress
-      });
-    }
-
-    schedule.tenant_decision = 'want_to_rent';
-    schedule.status = 'contract_requested';
-    if (tenantMessage) {
-      schedule.notes = (schedule.notes ? schedule.notes + '\n' : '') + `[TENANT]: ${tenantMessage}`;
-    }
-    schedule.updated_at = new Date();
-    await schedule.save();
-
-    // Notify landlord
-    await Notification.create({
-      user_id: schedule.landlord_id,
-      title: 'Contract Request',
-      message: `Tenant wants to rent "${schedule.room.title}". Please review the draft contract and add terms.`,
-      notification_type: 'contract',
-      related_id: contract.contract_id,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Contract request sent to landlord!',
-      data: { 
-        scheduleId: schedule.schedule_id, 
-        status: schedule.status, 
-        tenantDecision: schedule.tenant_decision 
-      },
+    return res.status(400).json({
+      success: false,
+      message: 'Tạo hợp đồng chỉ được phép sau khi yêu cầu thuê phòng đã được phê duyệt. Vui lòng gửi yêu cầu thuê phòng trước.'
     });
   } catch (error) {
     next(error);
@@ -1088,6 +982,18 @@ const createContractFromViewing = async (req, res, next) => {
   try {
     const { scheduleId } = req.params;
     const landlordId = req.user.userId;
+
+    // Verify landlord's identity is verified
+    const landlord = await User.findOne({
+      where: { user_id: landlordId, is_deleted: false }
+    });
+
+    if (!landlord || landlord.verification_status !== 'verified') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn phải xác thực căn cước công dân trước khi có thể tạo hợp đồng.'
+      });
+    }
     const { 
       startDate, 
       endDate, 

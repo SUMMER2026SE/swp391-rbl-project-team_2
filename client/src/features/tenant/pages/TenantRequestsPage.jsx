@@ -316,6 +316,7 @@ const TenantRequestsPage = () => {
       setPendingRoomId(roomId);
       setOtpCode('');
       setShowOtpModal(true);
+      setShowContractModal(false);
       toast.success('OTP sent to your email.');
     } catch (err) {
       toast.error('Failed to send OTP: ' + (err.response?.data?.message || err.message));
@@ -523,6 +524,10 @@ const TenantRequestsPage = () => {
           <div className="requests-list">
             {viewingSchedules.map((schedule) => {
               const statusInfo = getStatusInfo(schedule.status);
+              const existingRequest = rentalRequests.find(r => 
+                (r.roomId === schedule.roomId || r.room_id === schedule.roomId) && 
+                r.status !== 'cancelled' && r.status !== 'canceled'
+              );
               const primaryImage = schedule.room?.images?.find(img => img.is_primary)?.image_url || schedule.room?.images?.[0]?.image_url;
               const roomImage = primaryImage
                 ? (primaryImage.startsWith('http') ? primaryImage : `http://localhost:5000${primaryImage}`) 
@@ -632,9 +637,29 @@ const TenantRequestsPage = () => {
                         {/* After viewing confirmed/completed — tenant can request contract, decline, or dispute */}
                         {(schedule.status === 'confirmed' || schedule.status === 'completed') && (
                           <>
-                            <button onClick={() => handleOpenContractRequest(schedule)} className="btn-action btn-contract">
-                              <FileSignature size={16} /> {t('tenantRequests.requestContract', 'Request Contract')}
-                            </button>
+                            {existingRequest ? (
+                              existingRequest.status === 'pending' ? (
+                                <span className="status-message-inline" style={{ color: '#b45309', background: '#fef3c7', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #fde68a' }}>
+                                  <Clock size={14} /> {t('tenantRequests.rentalRequestPending', 'Đã gửi yêu cầu thuê (Chờ duyệt)')}
+                                </span>
+                              ) : existingRequest.status === 'approved' ? (
+                                <span className="status-message-inline" style={{ color: '#059669', background: '#d1fae5', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #a7f3d0' }}>
+                                  <CheckCircle2 size={14} /> {t('tenantRequests.rentalRequestApproved', 'Yêu cầu thuê đã duyệt (Nhấp tab Yêu cầu thuê để yêu cầu hợp đồng)')}
+                                </span>
+                              ) : existingRequest.status === 'contract_requested' ? (
+                                <span className="status-message-inline" style={{ color: '#0891b2', background: '#cffafe', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #a5f3fc' }}>
+                                  <Clock size={14} /> {t('tenantRequests.contractRequested', 'Đã yêu cầu hợp đồng')}
+                                </span>
+                              ) : (
+                                <span className="status-message-inline" style={{ color: '#64748b', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #e2e8f0' }}>
+                                  <Info size={14} /> {t('tenantRequests.rentalRequestStatus', 'Yêu cầu thuê:')} {existingRequest.status}
+                                </span>
+                              )
+                            ) : (
+                              <button onClick={() => navigate(`/rental-request?roomId=${schedule.roomId}`)} className="btn-action" style={{ background: '#10b981', color: '#ffffff', border: 'none' }}>
+                                <Home size={16} /> {t('tenantRequests.sendRentalRequest', 'Gửi yêu cầu thuê')}
+                              </button>
+                            )}
                             <button onClick={() => handleDeclineToRent(schedule.scheduleId)} className="btn-action" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
                               <Ban size={16} /> {t('tenantRequests.decline', 'Decline')}
                             </button>

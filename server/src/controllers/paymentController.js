@@ -550,7 +550,8 @@ const vnpayReturn = async (req, res, next) => {
                   platform_fee: total * 0.05,
                   net_amount: total * 0.95,
                   refund_amount: 0,
-                  payout_status: 'pending'
+                  payout_status: 'completed',
+                  payout_date: new Date()
               });
             }
           } else {

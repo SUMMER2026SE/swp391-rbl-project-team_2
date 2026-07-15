@@ -8,53 +8,88 @@ const { Room, Contract, Payment, RentalRequest, Complaint, Notification, Viewing
 const getDashboardStatistics = async (req, res, next) => {
   try {
     const landlordId = req.user.userId;
+    const { period } = req.query;
 
-    // Total rooms
+    let dateCondition = {};
+    if (period) {
+      const now = new Date();
+      let startDate = null;
+
+      if (period === 'Last 7 Days') {
+        startDate = new Date(now.setDate(now.getDate() - 7));
+      } else if (period === 'Last 30 Days') {
+        startDate = new Date(now.setDate(now.getDate() - 30));
+      } else if (period === 'Last 6 Months') {
+        startDate = new Date(now.setMonth(now.getMonth() - 6));
+      } else if (period === 'This Year') {
+        startDate = new Date(now.getFullYear(), 0, 1);
+      }
+
+      if (startDate) {
+        dateCondition = {
+          created_at: {
+            [Op.gte]: startDate,
+          },
+        };
+      }
+    }
+
+    // Total rooms (snapshot, no date filter)
     const totalRooms = await Room.count({
       where: { landlord_id: landlordId, is_deleted: false },
     });
 
-    // Available rooms
+    // Available rooms (snapshot)
     const availableRooms = await Room.count({
       where: { landlord_id: landlordId, status: 'available', is_deleted: false },
     });
 
-    // Rented rooms
+    // Rented rooms (snapshot)
     const rentedRooms = await Room.count({
       where: { landlord_id: landlordId, status: 'rented', is_deleted: false },
     });
 
-    // Active contracts
+    // Active contracts (snapshot)
     const activeContracts = await Contract.count({
       where: { landlord_id: landlordId, status: 'active' },
     });
 
     // Total revenue (earned)
-    const totalRevenue = await Payment.sum('net_amount', {
-      where: { landlord_id: landlordId, status: 'completed' },
-    });
+    const revenueWhere = { landlord_id: landlordId, status: 'completed' };
+    if (period && dateCondition.created_at) {
+      revenueWhere.paid_date = dateCondition.created_at;
+    }
+    const totalRevenue = await Payment.sum('net_amount', { where: revenueWhere });
 
     // Pending payments
-    const pendingPayments = await Payment.sum('amount', {
-      where: { landlord_id: landlordId, status: 'pending' },
-    });
+    const pendingPaymentsWhere = { landlord_id: landlordId, status: 'pending' };
+    if (period && dateCondition.created_at) {
+      pendingPaymentsWhere.created_at = dateCondition.created_at;
+    }
+    const pendingPayments = await Payment.sum('amount', { where: pendingPaymentsWhere });
 
     // Pending rental requests
-    const pendingRequests = await RentalRequest.count({
-      where: { landlord_id: landlordId, status: 'pending' },
-    });
+    const requestsWhere = { landlord_id: landlordId, status: 'pending' };
+    if (period && dateCondition.created_at) {
+      requestsWhere.created_at = dateCondition.created_at;
+    }
+    const pendingRequests = await RentalRequest.count({ where: requestsWhere });
 
     // Pending viewing schedules
-    const pendingSchedules = await ViewingSchedule.count({
-      where: { landlord_id: landlordId, status: 'pending' },
-    });
+    const schedulesWhere = { landlord_id: landlordId, status: 'pending' };
+    if (period && dateCondition.created_at) {
+      schedulesWhere.created_at = dateCondition.created_at;
+    }
+    const pendingSchedules = await ViewingSchedule.count({ where: schedulesWhere });
 
     // Open complaints
-    const openComplaints = await Complaint.count({
-      where: { landlord_id: landlordId, status: 'open' },
-    });
+    const complaintsWhere = { landlord_id: landlordId, status: 'open' };
+    if (period && dateCondition.created_at) {
+      complaintsWhere.created_at = dateCondition.created_at;
+    }
+    const openComplaints = await Complaint.count({ where: complaintsWhere });
 
-    // Unread notifications
+    // Unread notifications (always current unread count)
     const unreadNotifications = await Notification.count({
       where: { user_id: landlordId, is_read: false },
     });
@@ -100,11 +135,45 @@ const getDashboardStatistics = async (req, res, next) => {
 const getRecentActivity = async (req, res, next) => {
   try {
     const landlordId = req.user.userId;
-    const { limit = 10 } = req.query;
+    const { limit = 10, period } = req.query;
+
+    let dateCondition = {};
+    if (period) {
+      const now = new Date();
+      let startDate = null;
+
+      if (period === 'Last 7 Days') {
+        startDate = new Date(now.setDate(now.getDate() - 7));
+      } else if (period === 'Last 30 Days') {
+        startDate = new Date(now.setDate(now.getDate() - 30));
+      } else if (period === 'Last 6 Months') {
+        startDate = new Date(now.setMonth(now.getMonth() - 6));
+      } else if (period === 'This Year') {
+        startDate = new Date(now.getFullYear(), 0, 1);
+      }
+
+      if (startDate) {
+        dateCondition = {
+          created_at: {
+            [Op.gte]: startDate,
+          },
+        };
+      }
+    }
+
+    const reqWhere = { landlord_id: landlordId };
+    const payWhere = { landlord_id: landlordId };
+    const compWhere = { landlord_id: landlordId };
+
+    if (period && dateCondition.created_at) {
+      reqWhere.created_at = dateCondition.created_at;
+      payWhere.created_at = dateCondition.created_at;
+      compWhere.created_at = dateCondition.created_at;
+    }
 
     // Recent rental requests
     const recentRequests = await RentalRequest.findAll({
-      where: { landlord_id: landlordId },
+      where: reqWhere,
       limit: parseInt(limit),
       order: [['created_at', 'DESC']],
       attributes: ['request_id', 'status', 'created_at'],
@@ -112,7 +181,7 @@ const getRecentActivity = async (req, res, next) => {
 
     // Recent payments
     const recentPayments = await Payment.findAll({
-      where: { landlord_id: landlordId },
+      where: payWhere,
       limit: parseInt(limit),
       order: [['created_at', 'DESC']],
       attributes: ['payment_id', 'amount', 'status', 'created_at'],
@@ -120,7 +189,7 @@ const getRecentActivity = async (req, res, next) => {
 
     // Recent complaints
     const recentComplaints = await Complaint.findAll({
-      where: { landlord_id: landlordId },
+      where: compWhere,
       limit: parseInt(limit),
       order: [['created_at', 'DESC']],
       attributes: ['complaint_id', 'title', 'status', 'priority', 'created_at'],
@@ -161,12 +230,19 @@ const getRecentActivity = async (req, res, next) => {
 const getRevenueChart = async (req, res, next) => {
   try {
     const landlordId = req.user.userId;
-    const { months = 12 } = req.query;
+    const { months = 12, period } = req.query;
+
+    let monthsToFetch = parseInt(months);
+    if (period === 'Last 6 Months') {
+      monthsToFetch = 6;
+    } else if (period === 'This Year') {
+      monthsToFetch = new Date().getMonth() + 1;
+    }
 
     const revenueData = [];
     const now = new Date();
 
-    for (let i = parseInt(months) - 1; i >= 0; i--) {
+    for (let i = monthsToFetch - 1; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
 

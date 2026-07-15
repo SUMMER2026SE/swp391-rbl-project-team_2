@@ -30,6 +30,7 @@ import {
 import { ROUTES } from '../constants';
 import Button from '../components/common/Button';
 import useAuthStore from '../store/useAuthStore';
+import api from '../services/api';
 import './HomePage.css';
 
 import downtownImg from '../assets/images/downtown.png';
@@ -54,6 +55,33 @@ const HomePage = () => {
   const [district, setDistrict] = useState('');
   const [priceRange, setPriceRange] = useState('-');
   const [facilities, setFacilities] = useState([]);
+  
+  // Persist AI mode state in localStorage
+  const [isAIMode, setIsAIMode] = useState(() => {
+    return localStorage.getItem('rentwise_ai_mode') === 'true';
+  });
+
+  const toggleAIMode = () => {
+    setIsAIMode((prev) => {
+      const newVal = !prev;
+      localStorage.setItem('rentwise_ai_mode', newVal);
+      return newVal;
+    });
+  };
+
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiLoadingMessage, setAiLoadingMessage] = useState('');
+
+  const aiSuggestions = [
+    "Phòng trọ dưới 3 triệu ở Quận 1 có WiFi và máy lạnh",
+    "Căn hộ dịch vụ Quận Bình Thạnh có ban công, tủ lạnh",
+    "Phòng trọ gần Đại học Bách Khoa chỗ để xe rộng",
+    "Quy trình đặt cọc tiền phòng và ký hợp đồng như thế nào?"
+  ];
+
+  const handleSuggestionClick = (suggestionText) => {
+    setKeyword(suggestionText);
+  };
   const [nearbyFacilities, setNearbyFacilities] = useState([]);
   const [showFacilities, setShowFacilities] = useState(false);
   const [showNearbyFacilities, setShowNearbyFacilities] = useState(false);
@@ -139,20 +167,157 @@ const HomePage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSearchSubmit = () => {
-    let params = new URLSearchParams();
-    if (keyword) params.append('keyword', keyword);
-    if (city) params.append('city', city);
-    if (district) params.append('district', district);
-    if (priceRange && priceRange !== '-') {
-      const [min, max] = priceRange.split('-');
-      if (min) params.append('minPrice', min);
-      if (max) params.append('maxPrice', max);
+  const handleSearchSubmit = async () => {
+    if (isAIMode) {
+      if (!keyword.trim()) return;
+      
+      setLoadingAI(true);
+      setAiLoadingMessage('AI đang phân tích yêu cầu...');
+      
+      try {
+        const response = await api.post('/ai/search', { query: keyword });
+        
+        if (response.success) {
+          if (response.switchToChatbot) {
+            setAiLoadingMessage('Đang chuyển sang Chatbot AI...');
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('inject-ai-message', {
+                detail: { query: keyword, reply: response.reply }
+              }));
+              setLoadingAI(false);
+            }, 800);
+          } else {
+            setAiLoadingMessage('Tìm thấy phòng phù hợp! Đang chuyển hướng...');
+            const data = response.data || {};
+            
+            let params = new URLSearchParams();
+            if (data.keyword) params.append('keyword', data.keyword);
+            
+            // Fuzzy match city to avoid AI typos
+            let matchedCity = data.city || '';
+            if (matchedCity && provincesList.length > 0) {
+              const removeDiacritics = (str) => {
+                return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "d").toLowerCase();
+              };
+              
+              const cleanCity = removeDiacritics(matchedCity).trim();
+              const normalizedClean = cleanCity.replace(/thanh pho|tinh/g, '').trim();
+
+              const abbreviationMap = {
+                'sg': 'Thành phố Hồ Chí Minh',
+                'sai gon': 'Thành phố Hồ Chí Minh',
+                'saigon': 'Thành phố Hồ Chí Minh',
+                'hcm': 'Thành phố Hồ Chí Minh',
+                'tp hcm': 'Thành phố Hồ Chí Minh',
+                'tphcm': 'Thành phố Hồ Chí Minh',
+                'hn': 'Thành phố Hà Nội',
+                'ha noi': 'Thành phố Hà Nội',
+                'dn': 'Thành phố Đà Nẵng',
+                'da nang': 'Thành phố Đà Nẵng',
+                'hp': 'Thành phố Hải Phòng',
+                'hai phong': 'Thành phố Hải Phòng',
+                'ct': 'Thành phố Cần Thơ',
+                'can tho': 'Thành phố Cần Thơ',
+                'vt': 'Tỉnh Bà Rịa - Vũng Tàu',
+                'vung tau': 'Tỉnh Bà Rịa - Vũng Tàu',
+                'bd': 'Tỉnh Bình Dương',
+                'binh duong': 'Tỉnh Bình Dương',
+                'dnai': 'Tỉnh Đồng Nai',
+                'dong nai': 'Tỉnh Đồng Nai',
+                'ha tay': 'Thành phố Hà Nội',
+                'song be': 'Tỉnh Bình Dương',
+                'ha bac': 'Tỉnh Bắc Giang',
+                'hai hung': 'Tỉnh Hải Dương',
+                'vinh phu': 'Tỉnh Vĩnh Phúc',
+                'ha nam ninh': 'Tỉnh Hà Nam',
+                'quang nam da nang': 'Thành phố Đà Nẵng',
+                'binh tri thien': 'Tỉnh Thừa Thiên Huế',
+                'nghia binh': 'Tỉnh Bình Định',
+                'thuan hai': 'Tỉnh Bình Thuận',
+                'minh hai': 'Tỉnh Cà Mau',
+                'cuu long': 'Tỉnh Vĩnh Long',
+                'hau giang cu': 'Thành phố Cần Thơ'
+              };
+
+              if (abbreviationMap[normalizedClean]) {
+                matchedCity = abbreviationMap[normalizedClean];
+              } else if (abbreviationMap[cleanCity]) {
+                matchedCity = abbreviationMap[cleanCity];
+              } else {
+                const exactMatch = provincesList.find(p => p.full_name.toLowerCase() === matchedCity.toLowerCase());
+                if (exactMatch) {
+                  matchedCity = exactMatch.full_name;
+                } else {
+                  const partialMatch = provincesList.find(p => {
+                    const normFull = removeDiacritics(p.full_name);
+                    const normName = removeDiacritics(p.name);
+                    return normFull.includes(normalizedClean) || cleanCity.includes(normName);
+                  });
+                  
+                  if (partialMatch) {
+                    matchedCity = partialMatch.full_name;
+                  }
+                }
+              }
+            }
+            if (matchedCity) params.append('city', matchedCity);
+            
+            if (data.district) params.append('district', data.district);
+            if (data.priceMin) params.append('minPrice', data.priceMin);
+            if (data.priceMax) params.append('maxPrice', data.priceMax);
+            
+            if (data.facilities && data.facilities.length > 0) {
+              params.append('facilities', data.facilities.join(','));
+            }
+            if (data.nearbyFacilities && data.nearbyFacilities.length > 0) {
+              params.append('nearbyFacilities', data.nearbyFacilities.join(','));
+            }
+            
+            // Thêm aiQuery để tự động mở chatbot tại trang kết quả và tiếp tục hội thoại nếu cần
+            // NOTE: Do not append aiQuery for RENTWISE searches, so Chatbot won't open automatically
+            
+            if (keyword) {
+              params.append('aiPrompt', keyword);
+            }
+
+            if (response.aiSummary) {
+              params.append('aiOverview', response.aiSummary);
+            }
+            
+            setTimeout(() => {
+              setLoadingAI(false);
+              navigate(`${ROUTES.ROOMS}?${params.toString()}`);
+            }, 800);
+          }
+        } else {
+          throw new Error('Failed to search');
+        }
+      } catch (err) {
+        console.error("AI Search Error", err);
+        setAiLoadingMessage('Có lỗi xảy ra. Đang chuyển về tìm kiếm từ khóa thường...');
+        setTimeout(() => {
+          setLoadingAI(false);
+          // Fallback to standard keyword search
+          let params = new URLSearchParams();
+          params.append('keyword', keyword);
+          navigate(`${ROUTES.ROOMS}?${params.toString()}`);
+        }, 1200);
+      }
+    } else {
+      let params = new URLSearchParams();
+      if (keyword) params.append('keyword', keyword);
+      if (city) params.append('city', city);
+      if (district) params.append('district', district);
+      if (priceRange && priceRange !== '-') {
+        const [min, max] = priceRange.split('-');
+        if (min) params.append('minPrice', min);
+        if (max) params.append('maxPrice', max);
+      }
+      if (facilities.length > 0) params.append('facilities', facilities.join(','));
+      if (nearbyFacilities.length > 0) params.append('nearbyFacilities', nearbyFacilities.join(','));
+      
+      navigate(`${ROUTES.ROOMS}?${params.toString()}`);
     }
-    if (facilities.length > 0) params.append('facilities', facilities.join(','));
-    if (nearbyFacilities.length > 0) params.append('nearbyFacilities', nearbyFacilities.join(','));
-    
-    navigate(`${ROUTES.ROOMS}?${params.toString()}`);
   };
 
   // Redirect role-specific users
@@ -189,111 +354,169 @@ const HomePage = () => {
             {t('home.heroSubtitle', 'Tìm kiếm nhanh · Lọc thông minh · Không mất phí môi giới')}
           </p>
 
-          <div className="search-widget-glass">
+          <div className={`search-widget-glass ${isAIMode ? 'ai-active' : ''}`}>
              {/* Text Search */}
              <div className="search-top-row">
-               <Search className="search-icon-blue" size={24} color="#2563EB" />
+               <Search className={isAIMode ? "search-icon-pink" : "search-icon-blue"} size={24} color={isAIMode ? "#EC4899" : "#2563EB"} />
                <input 
                  type="text" 
-                 placeholder={t('home.searchPlaceholder', 'Bạn muốn tìm phòng ở đâu?')} 
+                 placeholder={isAIMode ? t('home.searchPlaceholderAI', 'Mô tả phòng bạn muốn tìm bằng AI (ví dụ: phòng dưới 4 triệu quận 1 có điều hòa)...') : t('home.searchPlaceholder', 'Bạn muốn tìm phòng ở đâu?')} 
                  className="search-input-main" 
                  value={keyword}
                  onChange={(e) => setKeyword(e.target.value)}
                  onKeyDown={(e) => {
                    if (e.key === 'Enter') handleSearchSubmit();
                  }}
+                 disabled={loadingAI}
                />
-             </div>
-             
-             {/* Filters */}
-             <div className="search-bottom-row">
-               <div className="filter-select-wrapper">
-                 <MapPin className="filter-icon" size={18} color="#2563EB" />
-                 <select className="filter-select" value={city} onChange={e => { setCity(e.target.value); setDistrict(''); }}>
-                   <option value="">{t('home.province', 'Tỉnh / Thành')}</option>
-                   {provincesList.map((prov, index) => (
-                     <option key={index} value={prov.full_name}>{prov.full_name}</option>
-                   ))}
-                 </select>
-               </div>
-               
-               <div className="filter-select-wrapper">
-                 <MapPin className="filter-icon" size={18} color="#2563EB" />
-                 <select className="filter-select" value={district} onChange={e => setDistrict(e.target.value)} disabled={!city || districtsList.length === 0}>
-                   <option value="">{t('home.district', 'Quận / Huyện')}</option>
-                   {districtsList.map((dist, index) => (
-                     <option key={index} value={dist.full_name}>{dist.full_name}</option>
-                   ))}
-                 </select>
-               </div>
-
-               <div className="filter-select-wrapper">
-                 <DollarSign className="filter-icon" size={18} color="#2563EB" />
-                 <select className="filter-select" value={priceRange} onChange={e => setPriceRange(e.target.value)}>
-                    <option value="-">{t('home.allPrices', 'Mọi mức giá')}</option>
-                    <option value="0-1000000">{t('home.price1', '< 1 triệu VNĐ')}</option>
-                    <option value="1000000-2000000">{t('home.price2', '1 - 2 triệu VNĐ')}</option>
-                    <option value="2000000-3000000">{t('home.price3', '2 - 3 triệu VNĐ')}</option>
-                    <option value="3000000-4000000">{t('home.price4', '3 - 4 triệu VNĐ')}</option>
-                    <option value="4000000-5000000">{t('home.price5', '4 - 5 triệu VNĐ')}</option>
-                    <option value="5000000-">{t('home.price6', '> 5 triệu VNĐ')}</option>
-                 </select>
-               </div>
-
-               <div className="filter-dropdown-wrapper" ref={facilitiesRef}>
-                 <div className="filter-dropdown-btn" onClick={() => setShowFacilities(!showFacilities)}>
-                   <Grid className="filter-icon" size={18} color="#2563EB" />
-                   <span className="dropdown-label">{t('home.amenities', 'Tiện ích')} {facilities.length > 0 && `(${facilities.length})`}</span>
-                   <ChevronDown className="dropdown-icon" size={16} />
-                 </div>
-                 {showFacilities && (
-                   <div className="facilities-dropdown-menu">
-                     {roomFacilitiesList.map(f => (
-                       <label key={f} className="facility-checkbox-label">
-                         <input 
-                           type="checkbox" 
-                           checked={facilities.includes(f)} 
-                           onChange={(e) => {
-                             if(e.target.checked) setFacilities([...facilities, f]);
-                             else setFacilities(facilities.filter(x => x !== f));
-                           }}
-                         />
-                         {t(`facilities.${f}`, f)}
-                       </label>
-                     ))}
-                   </div>
-                 )}
-               </div>
-
-               <div className="filter-dropdown-wrapper" ref={nearbyRef}>
-                 <div className="filter-dropdown-btn" onClick={() => setShowNearbyFacilities(!showNearbyFacilities)}>
-                   <TreePine className="filter-icon" size={18} color="#2563EB" />
-                   <span className="dropdown-label">{t('home.nearby', 'Lân cận')} {nearbyFacilities.length > 0 && `(${nearbyFacilities.length})`}</span>
-                   <ChevronDown className="dropdown-icon" size={16} />
-                 </div>
-                 {showNearbyFacilities && (
-                   <div className="facilities-dropdown-menu">
-                     {nearbyFacilitiesList.map(f => (
-                       <label key={f} className="facility-checkbox-label">
-                         <input 
-                           type="checkbox" 
-                           checked={nearbyFacilities.includes(f)} 
-                           onChange={(e) => {
-                             if(e.target.checked) setNearbyFacilities([...nearbyFacilities, f]);
-                             else setNearbyFacilities(nearbyFacilities.filter(x => x !== f));
-                           }}
-                         />
-                         {t(`facilities.${f}`, f)}
-                       </label>
-                     ))}
-                   </div>
-                 )}
-               </div>
-
-               <button className="search-submit-btn" onClick={handleSearchSubmit}>
-                 <Search size={20} /> {t('home.searchBtn', 'Tìm Kiếm')}
+               <button 
+                 type="button" 
+                 className={`ai-toggle-pill ${isAIMode ? 'active' : ''}`}
+                 onClick={toggleAIMode}
+                 disabled={loadingAI}
+                 title="Chuyển chế độ tìm kiếm AI"
+               >
+                 <Sparkles size={16} className={isAIMode ? 'sparkle-pulse' : ''} />
+                 <span>AI Mode</span>
                </button>
              </div>
+             
+             {/* Dynamic loading scanner overlay */}
+             {loadingAI && (
+               <div className="ai-loading-overlay animate-fade-in">
+                 <div className="ai-loading-scanner"></div>
+                 <div className="ai-loading-text flex items-center gap-2">
+                   <Sparkles className="animate-spin text-pink-500" size={18} />
+                   <span>{aiLoadingMessage}</span>
+                 </div>
+               </div>
+             )}
+
+             {/* Dynamic content under search input based on Mode */}
+             {!isAIMode ? (
+               /* Standard Filters Row */
+               <div className="search-bottom-row">
+                 <div className="filter-select-wrapper">
+                   <MapPin className="filter-icon" size={18} color="#2563EB" />
+                   <select className="filter-select" value={city} onChange={e => { setCity(e.target.value); setDistrict(''); }}>
+                     <option value="">{t('home.province', 'Tỉnh / Thành')}</option>
+                     {provincesList.map((prov, index) => (
+                       <option key={index} value={prov.full_name}>{prov.full_name}</option>
+                     ))}
+                   </select>
+                 </div>
+                 
+                 <div className="filter-select-wrapper">
+                   <MapPin className="filter-icon" size={18} color="#2563EB" />
+                   <select className="filter-select" value={district} onChange={e => setDistrict(e.target.value)} disabled={!city || districtsList.length === 0}>
+                     <option value="">{t('home.district', 'Quận / Huyện')}</option>
+                     {districtsList.map((dist, index) => (
+                       <option key={index} value={dist.full_name}>{dist.full_name}</option>
+                     ))}
+                   </select>
+                 </div>
+
+                 <div className="filter-select-wrapper">
+                   <DollarSign className="filter-icon" size={18} color="#2563EB" />
+                   <select className="filter-select" value={priceRange} onChange={e => setPriceRange(e.target.value)}>
+                      <option value="-">{t('home.allPrices', 'Mọi mức giá')}</option>
+                      <option value="0-1000000">{t('home.price1', '< 1 triệu VNĐ')}</option>
+                      <option value="1000000-2000000">{t('home.price2', '1 - 2 triệu VNĐ')}</option>
+                      <option value="2000000-3000000">{t('home.price3', '2 - 3 triệu VNĐ')}</option>
+                      <option value="3000000-4000000">{t('home.price4', '3 - 4 triệu VNĐ')}</option>
+                      <option value="4000000-5000000">{t('home.price5', '4 - 5 triệu VNĐ')}</option>
+                      <option value="5000000-">{t('home.price6', '> 5 triệu VNĐ')}</option>
+                   </select>
+                 </div>
+
+                 <div className="filter-dropdown-wrapper" ref={facilitiesRef}>
+                   <div className="filter-dropdown-btn" onClick={() => setShowFacilities(!showFacilities)}>
+                     <Grid className="filter-icon" size={18} color="#2563EB" />
+                     <span className="dropdown-label">{t('home.amenities', 'Tiện ích')} {facilities.length > 0 && `(${facilities.length})`}</span>
+                     <ChevronDown className="dropdown-icon" size={16} />
+                   </div>
+                   {showFacilities && (
+                     <div className="facilities-dropdown-menu">
+                       {roomFacilitiesList.map(f => (
+                         <label key={f} className="facility-checkbox-label">
+                           <input 
+                             type="checkbox" 
+                             checked={facilities.includes(f)} 
+                             onChange={(e) => {
+                               if(e.target.checked) setFacilities([...facilities, f]);
+                               else setFacilities(facilities.filter(x => x !== f));
+                             }}
+                           />
+                           {t(`facilities.${f}`, f)}
+                         </label>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+
+                 <div className="filter-dropdown-wrapper" ref={nearbyRef}>
+                   <div className="filter-dropdown-btn" onClick={() => setShowNearbyFacilities(!showNearbyFacilities)}>
+                     <TreePine className="filter-icon" size={18} color="#2563EB" />
+                     <span className="dropdown-label">{t('home.nearby', 'Lân cận')} {nearbyFacilities.length > 0 && `(${nearbyFacilities.length})`}</span>
+                     <ChevronDown className="dropdown-icon" size={16} />
+                   </div>
+                   {showNearbyFacilities && (
+                     <div className="facilities-dropdown-menu">
+                       {nearbyFacilitiesList.map(f => (
+                         <label key={f} className="facility-checkbox-label">
+                           <input 
+                             type="checkbox" 
+                             checked={nearbyFacilities.includes(f)} 
+                             onChange={(e) => {
+                               if(e.target.checked) setNearbyFacilities([...nearbyFacilities, f]);
+                               else setNearbyFacilities(nearbyFacilities.filter(x => x !== f));
+                             }}
+                           />
+                           {t(`facilities.${f}`, f)}
+                         </label>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+
+                 <button className="search-submit-btn" onClick={handleSearchSubmit}>
+                   <Search size={20} /> {t('home.searchBtn', 'Tìm Kiếm')}
+                 </button>
+               </div>
+             ) : (
+               /* AI Suggestions & Submit Row */
+               <div className="ai-suggestions-row animate-fade-in flex flex-col gap-4">
+                 <div className="ai-suggestions-content">
+                   <div className="ai-suggestions-title flex items-center gap-1.5 mb-2">
+                     <Sparkles size={14} color="#EC4899" />
+                     <span>Gợi ý câu lệnh AI:</span>
+                   </div>
+                   <div className="ai-suggestions-list">
+                     {aiSuggestions.map((s, idx) => (
+                       <button
+                         key={idx}
+                         type="button"
+                         className="ai-suggestion-tag"
+                         onClick={() => handleSuggestionClick(s)}
+                         disabled={loadingAI}
+                       >
+                         {s}
+                       </button>
+                     ))}
+                   </div>
+                 </div>
+                 <div className="ai-search-submit-row flex justify-end">
+                   <button 
+                     className="ai-search-submit-btn flex items-center gap-1.5" 
+                     onClick={handleSearchSubmit}
+                     disabled={loadingAI}
+                   >
+                     <Sparkles size={18} className={loadingAI ? 'animate-spin' : ''} />
+                     <span>Tìm bằng AI</span>
+                   </button>
+                 </div>
+               </div>
+             )}
           </div>
 
           <div className="amenities-carousel">

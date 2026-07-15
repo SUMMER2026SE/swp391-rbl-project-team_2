@@ -7,6 +7,7 @@ const { Op } = require('sequelize');
 const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
+      where: { is_deleted: false },
       include: [
         { model: Role, as: 'role' },
         { model: Room, as: 'rooms', attributes: ['room_id'] } // to count rooms
@@ -50,7 +51,7 @@ const getAllUsers = async (req, res, next) => {
 const updateUserStatus = async (req, res, next) => {
   try {
     const userId = req.params.id;
-    const { action } = req.body; // 'activate' or 'suspend'
+    const { action } = req.body; // 'activate', 'suspend', or 'delete'
 
     const user = await User.findByPk(userId);
     if (!user) {
@@ -58,9 +59,16 @@ const updateUserStatus = async (req, res, next) => {
     }
 
     if (action === 'activate') {
-      await user.update({ is_banned: false, is_active: true });
+      await user.update({ is_banned: false, is_active: true, is_deleted: false });
     } else if (action === 'suspend') {
       await user.update({ is_banned: true });
+    } else if (action === 'delete') {
+      const deletedSuffix = `_deleted_${Date.now()}`;
+      await user.update({ 
+        is_deleted: true, 
+        is_active: false,
+        email: `${user.email}${deletedSuffix}`
+      });
     } else {
       return res.status(400).json({ success: false, message: 'Invalid action' });
     }
@@ -506,6 +514,101 @@ const resolveDispute = async (req, res, next) => {
   }
 };
 
+// =========================================================
+// GET /api/admin/verifications
+// Fetch all pending landlord verification requests
+// =========================================================
+const getPendingVerifications = async (req, res, next) => {
+  try {
+    const users = await User.findAll({
+      where: {
+        verification_status: 'pending',
+        is_deleted: false
+      },
+      attributes: [
+        'user_id', 'full_name', 'email', 'phone', 'avatar_url',
+        'ic_number', 'ic_issue_date', 'ic_issue_place', 'permanent_address',
+        'cccd_front_url', 'cccd_back_url', 'face_photo_url',
+        'verification_status', 'updated_at'
+      ],
+      order: [['updated_at', 'DESC']]
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: users.map(u => ({
+        userId: u.user_id,
+        fullName: u.full_name,
+        email: u.email,
+        phone: u.phone,
+        avatarUrl: u.avatar_url,
+        icNumber: u.ic_number,
+        icIssueDate: u.ic_issue_date,
+        icIssuePlace: u.ic_issue_place,
+        permanentAddress: u.permanent_address,
+        cccdFrontUrl: u.cccd_front_url,
+        cccdBackUrl: u.cccd_back_url,
+        facePhotoUrl: u.face_photo_url,
+        verificationStatus: u.verification_status,
+        submittedAt: u.updated_at
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================================
+// PUT /api/admin/verifications/:id
+// Approve or Reject landlord verification
+// =========================================================
+const processVerification = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const { status, notes } = req.body; // status: 'verified' or 'rejected'
+
+    if (!['verified', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Trạng thái không hợp lệ. Phải là verified hoặc rejected.' });
+    }
+
+    const user = await User.findOne({
+      where: { user_id: userId, is_deleted: false }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng.' });
+    }
+
+    if (user.verification_status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Chủ trọ này không nằm trong trạng thái chờ duyệt xác thực.' });
+    }
+
+    await user.update({
+      verification_status: status,
+      verification_notes: status === 'rejected' ? (notes || 'Thông tin ảnh CCCD hoặc khuôn mặt bị mờ/không khớp.') : null
+    });
+
+    // Send notification
+    const { Notification } = require('../models');
+    await Notification.create({
+      user_id: user.user_id,
+      title: status === 'verified' ? 'Xác thực tài khoản thành công' : 'Yêu cầu xác thực bị từ chối',
+      message: status === 'verified'
+        ? 'Chúc mừng! Tài khoản chủ trọ của bạn đã được xác thực thành công. Bạn đã nhận được tích xanh chủ trọ uy tín.'
+        : `Yêu cầu xác thực tài khoản chủ trọ của bạn bị từ chối. Lý do: ${notes || 'Thông tin không khớp.'} Vui lòng cập nhật thông tin và gửi lại.`,
+      notification_type: 'system',
+      related_id: user.user_id
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Cập nhật trạng thái xác thực thành công sang ${status}.`
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllUsers,
   updateUserStatus,
@@ -519,5 +622,7 @@ module.exports = {
   getPayouts,
   processPayout,
   getAllDisputes,
-  resolveDispute
+  resolveDispute,
+  getPendingVerifications,
+  processVerification,
 };

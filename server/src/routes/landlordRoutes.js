@@ -49,6 +49,15 @@ router.use(authMiddleware);
 router.get('/profile', landlordProfileController.getLandlordProfile);
 router.put('/profile', landlordProfileController.updateLandlordProfile);
 router.put('/profile/avatar', upload.single('avatar'), landlordProfileController.updateAvatar);
+router.post(
+  '/profile/verify',
+  upload.fields([
+    { name: 'cccdFront', maxCount: 1 },
+    { name: 'cccdBack', maxCount: 1 },
+    { name: 'facePhoto', maxCount: 1 }
+  ]),
+  landlordProfileController.submitVerification
+);
 
 // =========================================================
 // BANK DETAILS & WITHDRAWAL ROUTES

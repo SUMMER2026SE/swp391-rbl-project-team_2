@@ -56,7 +56,6 @@ const ADMIN_NAV = [
   { icon: <ShieldCheck size={20} />, label: 'Kiểm duyệt', tKey: 'sidebar.moderation', path: ROUTES.ADMIN.MODERATION },
   { icon: <BarChart3 size={20} />, label: 'Thống kê', tKey: 'sidebar.analytics', path: ROUTES.ADMIN.ANALYTICS },
   { icon: <Receipt size={20} />, label: 'Giao dịch', tKey: 'sidebar.transactions', path: ROUTES.ADMIN.TRANSACTIONS },
-  { icon: <Wallet size={20} />, label: 'Thanh toán', tKey: 'sidebar.payouts', path: ROUTES.ADMIN.PAYOUTS },
   { icon: <Settings size={20} />, label: 'Cài đặt', tKey: 'sidebar.settings', path: ROUTES.ADMIN.SETTINGS },
 ];
 
@@ -76,6 +75,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
   const { logout, user, hasUnreadTenantRequests, setHasUnreadTenantRequests } = useAuthStore();
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingVerificationsCount, setPendingVerificationsCount] = useState(0);
   const [pendingSchedules, setPendingSchedules] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
@@ -126,6 +126,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             setPendingCount(res.data.pendingListings);
           }
         }).catch(e => console.error(e));
+
+        adminService.getVerifications().then(res => {
+          if (res.success && res.data) {
+            setPendingVerificationsCount(res.data.length);
+          }
+        }).catch(e => console.error(e));
       } else {
         // Tenant notifications check - apply on all pages for tenant
         if (data.type === 'rental_request' || data.type === 'contract' || data.type === 'viewing_schedule') {
@@ -165,6 +171,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           setPendingCount(res.data.pendingListings);
         }
       }).catch(err => console.error('Failed to fetch pending count for sidebar', err));
+
+      adminService.getVerifications().then(res => {
+        if (res.success && res.data) {
+          setPendingVerificationsCount(res.data.length);
+        }
+      }).catch(err => console.error('Failed to fetch verifications for sidebar', err));
     } else if (isLandlord) {
       landlordService.getStats().then(res => {
         if (res.success) {
@@ -247,6 +259,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     {isAdmin && link.label === 'Quản lý phòng' && pendingCount > 0 && (
                       <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
                         {pendingCount}
+                      </span>
+                    )}
+                    {isAdmin && link.label === 'Người dùng' && pendingVerificationsCount > 0 && (
+                      <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
+                        {pendingVerificationsCount}
                       </span>
                     )}
                     {isLandlord && link.label === 'Lịch xem phòng' && pendingSchedules > 0 && (

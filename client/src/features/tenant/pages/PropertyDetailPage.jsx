@@ -8,6 +8,7 @@ import Button from 'react-bootstrap/Button';
 import RoomCard from '../components/RoomCard';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useTranslation } from 'react-i18next';
+import GoogleMapPicker from '../../../components/common/GoogleMapPicker';
 import './RoomDetailPage.css';
 
 const PropertyDetailPage = () => {
@@ -183,6 +184,23 @@ const PropertyDetailPage = () => {
                     )}
                 </div>
             </div>
+
+            <hr className="section-divider" style={{ margin: '2rem 0' }} />
+
+            {/* Google Maps Location Section */}
+            <section className="location-map-section" style={{ marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1rem', color: '#1e293b' }}>
+                <MapPin size={20} style={{ display: 'inline', marginRight: '8px', color: '#4f46e5' }} />
+                {t('roomDetail.locationMap', 'Vị trí trên bản đồ')}
+              </h2>
+              <GoogleMapPicker
+                address={[propertyData.address, propertyData.district, propertyData.city].filter(Boolean).join(', ')}
+                latitude={propertyData.latitude}
+                longitude={propertyData.longitude}
+                readOnly={true}
+                height="350px"
+              />
+            </section>
           </section>
         </div>
 
