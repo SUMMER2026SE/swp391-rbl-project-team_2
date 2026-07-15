@@ -367,7 +367,7 @@
     "postedRooms": "Số phòng đăng:",
     "rentedRooms": "Phòng đã thuê:",
     "chatWithHost": "Chat với chủ trọ",
-    "cannotEditOccupied": "Không thể sửa phòng đang có khách/chờ",
+    "cannotEditOccupied": "Không thể sửa phòng đã cho thuê",
     "saveChanges": "Lưu thay đổi",
     "cancel": "Hủy bỏ",
     "editRoom": "Chỉnh sửa phòng trực tiếp",

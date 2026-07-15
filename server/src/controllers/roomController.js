@@ -35,6 +35,23 @@ const createRoom = async (req, res, next) => {
       });
     }
 
+    // Check for duplicate room number under the same property
+    if (propertyId && roomNumber) {
+      const existingRoom = await Room.findOne({
+        where: {
+          property_id: propertyId,
+          room_number: roomNumber.toString().trim(),
+          is_deleted: false,
+        },
+      });
+      if (existingRoom) {
+        return res.status(409).json({
+          success: false,
+          message: 'Room is already exist',
+        });
+      }
+    }
+
     const roomData = {
       landlord_id: landlordId,
       title,
@@ -245,6 +262,16 @@ const updateRoom = async (req, res, next) => {
       });
     }
 
+    const originalPrice = room.price_per_month;
+    const originalRoomNumber = room.room_number;
+
+    if (room.status === 'rented') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot edit a room that is currently rented/occupied.',
+      });
+    }
+
     // Update fields
     if (title) room.title = title;
     if (description) room.description = description;
@@ -263,6 +290,25 @@ const updateRoom = async (req, res, next) => {
     }
     if (areaSqm) room.area_sqm = areaSqm;
     if (maxOccupants) room.max_occupants = Math.min(maxOccupants, 4);
+    if (roomNumber !== undefined && roomNumber !== room.room_number && room.property_id) {
+      const trimmedRoomNumber = roomNumber ? roomNumber.toString().trim() : null;
+      if (trimmedRoomNumber) {
+        const existingRoom = await Room.findOne({
+          where: {
+            property_id: room.property_id,
+            room_number: trimmedRoomNumber,
+            is_deleted: false,
+            room_id: { [Op.ne]: roomId }
+          }
+        });
+        if (existingRoom) {
+          return res.status(409).json({
+            success: false,
+            message: 'Room is already exist',
+          });
+        }
+      }
+    }
     if (roomNumber !== undefined) room.room_number = roomNumber || null;
     if (status) {
       if (room.status === 'pending' || room.status === 'rejected') {
@@ -276,6 +322,18 @@ const updateRoom = async (req, res, next) => {
     if (latitude !== undefined) room.latitude = latitude ? parseFloat(latitude) : null;
     if (longitude !== undefined) room.longitude = longitude ? parseFloat(longitude) : null;
     if (req.file) room.thumbnail_url = req.file.path;
+
+    // Automatic status transitions
+    if (room.status === 'rejected') {
+      room.status = 'pending';
+      room.rejection_reason = null;
+    } else if (room.status === 'available') {
+      const priceChanged = pricePerMonth !== undefined && Number(pricePerMonth) !== Number(originalPrice);
+      const roomNumChanged = roomNumber !== undefined && String(roomNumber).trim() !== String(originalRoomNumber).trim();
+      if (priceChanged || roomNumChanged) {
+        room.status = 'pending';
+      }
+    }
 
     room.updated_at = new Date();
     await room.save();
@@ -311,6 +369,13 @@ const deleteRoom = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Room not found.',
+      });
+    }
+
+    if (room.status === 'rented') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete a room that is currently rented/occupied.',
       });
     }
 
@@ -389,7 +454,7 @@ const getAllPublicRooms = async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     const { count, rows } = await Room.findAndCountAll({
-      where: { is_deleted: false, status: { [Op.notIn]: ['inactive', 'pending', 'rejected'] } },
+      where: { is_deleted: false, status: 'available' },
       include: [
         { model: RoomImage, as: 'images' },
         { model: Facility, as: 'facilities', through: { attributes: [] } },
@@ -534,7 +599,7 @@ const searchRooms = async (req, res, next) => {
     if (status) {
       where.status = status;
     } else {
-      where.status = { [Op.notIn]: ['inactive', 'pending', 'rejected'] };
+      where.status = 'available';
     }
 
     if (landlordId) {
@@ -935,6 +1000,11 @@ const searchProperties = async (req, res, next) => {
     });
 
     let resultList = Object.values(groups);
+
+    // Filter out completely sold out properties (availableRooms === 0) if status is not explicitly requested
+    if (!status) {
+      resultList = resultList.filter(group => group.availableRooms > 0);
+    }
     
     // Sort logic
     if (sort) {

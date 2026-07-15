@@ -82,6 +82,7 @@ const AddNewPropertyPage = () => {
   const [propertyInherited, setPropertyInherited] = useState(false);
   const propertyIdParam = searchParams.get('propertyId');
   const pendingDistrictRef = useRef(null);
+  const [existingRooms, setExistingRooms] = useState([]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -140,12 +141,16 @@ const AddNewPropertyPage = () => {
         .then(res => {
           const property = res.data?.property || res.data;
           if (property) {
+            if (property.district) {
+              pendingDistrictRef.current = property.district;
+            }
             setFormData(prev => ({
               ...prev,
               address: property.address || prev.address,
               city: property.city || prev.city,
               district: property.district || prev.district,
             }));
+            setExistingRooms(property.rooms || []);
             setPropertyInherited(true);
           }
         })
@@ -154,7 +159,21 @@ const AddNewPropertyPage = () => {
   }, [propertyIdParam]);
 
   useEffect(() => {
-    const selectedProv = provincesList.find(p => p.full_name === formData.city);
+    let selectedProv = provincesList.find(p => p.full_name === formData.city);
+    
+    // Normalize and match city if exact match fails
+    if (!selectedProv && formData.city && provincesList.length > 0) {
+      const normCity = normalizeString(formData.city);
+      selectedProv = provincesList.find(p => 
+        normalizeString(p.full_name).includes(normCity) || 
+        normCity.includes(normalizeString(p.full_name))
+      );
+      if (selectedProv) {
+        setFormData(prev => ({ ...prev, city: selectedProv.full_name }));
+        return;
+      }
+    }
+
     if (selectedProv) {
       fetch(`https://esgoo.net/api-tinhthanh/2/${selectedProv.id}.htm`)
         .then(res => res.json())
@@ -163,17 +182,43 @@ const AddNewPropertyPage = () => {
             setDistrictsList(data.data);
             
             // Asynchronously match the pending district after city loads its districts
+            let matchedDistName = '';
+            
+            // 1. Try matching using pendingDistrictRef
             if (pendingDistrictRef.current) {
               const cleanPending = cleanAdministrativeNoise(pendingDistrictRef.current);
-              const matchedDist = data.data.find(d => {
-                const cleanDbDist = cleanAdministrativeNoise(d.full_name);
-                return cleanDbDist.includes(cleanPending) || cleanPending.includes(cleanDbDist);
-              });
-              if (matchedDist) {
-                setFormData(prev => ({ ...prev, district: matchedDist.full_name }));
+              if (cleanPending) {
+                const matchedDist = data.data.find(d => {
+                  const cleanDbDist = cleanAdministrativeNoise(d.full_name);
+                  return cleanDbDist.includes(cleanPending) || cleanPending.includes(cleanDbDist);
+                });
+                if (matchedDist) {
+                  matchedDistName = matchedDist.full_name;
+                }
               }
-              pendingDistrictRef.current = null;
             }
+            
+            // 2. Fallback: Try extracting/matching from the address string
+            if (!matchedDistName && formData.address) {
+              const normAddress = normalizeString(formData.address);
+              // Sort districts by length descending to match longer names first
+              const sortedDistricts = [...data.data].sort((a, b) => b.full_name.length - a.full_name.length);
+              
+              const matchedDist = sortedDistricts.find(d => {
+                const cleanDbDist = cleanAdministrativeNoise(d.full_name);
+                return cleanDbDist && normAddress.includes(cleanDbDist);
+              });
+              
+              if (matchedDist) {
+                matchedDistName = matchedDist.full_name;
+              }
+            }
+            
+            if (matchedDistName) {
+              setFormData(prev => ({ ...prev, district: matchedDistName }));
+              if (formErrors.district) setFormErrors(prev => ({ ...prev, district: null }));
+            }
+            pendingDistrictRef.current = null;
           }
         })
         .catch(err => console.error("Error fetching districts", err));
@@ -224,6 +269,20 @@ const AddNewPropertyPage = () => {
       } else if (formErrors.rent) {
         setFormErrors(prev => ({ ...prev, rent: null }));
       }
+    } else if (name === 'roomNumber') {
+      const trimmed = value.toString().trim().toLowerCase();
+      const duplicate = existingRooms.some(r => {
+        if (!r.roomNumber) return false;
+        const existingStr = r.roomNumber.toString().trim().toLowerCase();
+        const cleanExisting = existingStr.replace(/phòng|phong/g, '').trim();
+        const cleanInput = trimmed.replace(/phòng|phong/g, '').trim();
+        return cleanExisting === cleanInput || existingStr === trimmed;
+      });
+      if (duplicate) {
+        setFormErrors(prev => ({ ...prev, roomNumber: 'Room is already exist' }));
+      } else {
+        setFormErrors(prev => ({ ...prev, roomNumber: null }));
+      }
     } else if (formErrors[name]) {
       setFormErrors(prev => ({ ...prev, [name]: null }));
     }
@@ -259,6 +318,19 @@ const AddNewPropertyPage = () => {
       if (!formData.description.trim()) errors.description = 'Property Description is required';
       if (formData.size && Number(formData.size) <= 0) errors.size = 'Size must be a positive number';
       if (!formData.maxOccupants) errors.maxOccupants = 'Please select max occupants';
+      if (formData.roomNumber && formData.roomNumber.trim()) {
+        const trimmed = formData.roomNumber.trim().toLowerCase();
+        const duplicate = existingRooms.some(r => {
+          if (!r.roomNumber) return false;
+          const existingStr = r.roomNumber.toString().trim().toLowerCase();
+          const cleanExisting = existingStr.replace(/phòng|phong/g, '').trim();
+          const cleanInput = trimmed.replace(/phòng|phong/g, '').trim();
+          return cleanExisting === cleanInput || existingStr === trimmed;
+        });
+        if (duplicate) {
+          errors.roomNumber = 'Room is already exist';
+        }
+      }
     } else if (step === 2) {
       if (!formData.address.trim()) errors.address = 'Street Address is required';
       if (!formData.city.trim()) errors.city = 'City is required';
@@ -356,7 +428,7 @@ const AddNewPropertyPage = () => {
       setShowSuccessModal(true);
     } catch (err) {
       setIsSubmitting(false);
-      toast.error(err.message || 'Failed to publish listing');
+      toast.error(err.response?.data?.message || err.message || 'Failed to publish listing');
     }
   };
 
@@ -436,9 +508,10 @@ const AddNewPropertyPage = () => {
                   name="roomNumber"
                   value={formData.roomNumber}
                   onChange={handleInputChange}
-                  className="form-input-text"
+                  className={`form-input-text ${formErrors.roomNumber ? 'error' : ''}`}
                   placeholder={t('addNewProperty.roomNumberPlaceholder', 'e.g. 101, A2')}
                 />
+                {formErrors.roomNumber && <span className="form-field-error-msg">{formErrors.roomNumber}</span>}
               </div>
             </div>
 
