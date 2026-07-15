@@ -63,7 +63,7 @@ const ViewingSchedulesPage = () => {
     landlordPermanentAddress: '',
     assignedRoomNumber: '',
   });
-  
+
   const landlordSigCanvas = React.useRef(null);
 
   const clearLandlordSignature = () => {
@@ -113,21 +113,21 @@ const ViewingSchedulesPage = () => {
     const tenantName = schedule.tenant?.full_name || '';
     const tenantEmail = schedule.tenant?.email || '';
     const roomTitle = schedule.room?.title || '';
-    
+
     const matchesSearch =
       tenantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       roomTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tenantEmail.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'All' || schedule.status === statusFilter;
-    
+
     let matchesDate = true;
     if (dateFrom || dateTo) {
       const scheduleDate = new Date(schedule.createdAt || schedule.scheduledDate || new Date());
       if (dateFrom && new Date(dateFrom) > scheduleDate) matchesDate = false;
       if (dateTo && new Date(dateTo) < scheduleDate) matchesDate = false;
     }
-    
+
     return matchesSearch && matchesStatus && matchesDate;
   }).sort((a, b) => {
     const dateA = new Date(a.createdAt || a.scheduledDate || 0);
@@ -232,7 +232,7 @@ const ViewingSchedulesPage = () => {
         navigate('/landlord/profile');
         return;
       }
-      
+
       if (!profile.icNumber || !profile.icIssueDate || !profile.icIssuePlace || !profile.permanentAddress) {
         toast.error('Vui lòng cập nhật đầy đủ thông tin pháp lý (CCCD, Địa chỉ) trong trang Profile trước khi tạo hợp đồng.', { duration: 5000 });
         navigate('/landlord/profile');
@@ -264,10 +264,10 @@ const ViewingSchedulesPage = () => {
   const handleCreateContract = async () => {
     try {
       console.log("Submitting contract...", contractData, selectedSchedule?.scheduleId);
-      
+
       if (!contractData.landlordName || !contractData.landlordIc || !contractData.landlordIcIssueDate || !contractData.landlordIcIssuePlace || !contractData.landlordPermanentAddress) {
-          toast.error('Please fill in all identity details.');
-          return;
+        toast.error('Please fill in all identity details.');
+        return;
       }
       if (!contractData.assignedRoomNumber) {
         toast.error('Vui lòng gán số phòng thực tế cho hợp đồng này.');
@@ -296,7 +296,7 @@ const ViewingSchedulesPage = () => {
         landlordSignature: landlordSignature,
         assignedRoomNumber: contractData.assignedRoomNumber,
       });
-      
+
       if (res.success) {
         toast.success('Contract created! Waiting for tenant to sign.');
         setShowContractModal(false);
@@ -371,7 +371,7 @@ const ViewingSchedulesPage = () => {
           <span>{error}</span>
         </div>
       )}
-      
+
       {/* Filter Bar */}
       <div className="rental-requests__filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
         <div className="filter-search" style={{ minWidth: '250px' }}>
@@ -453,85 +453,85 @@ const ViewingSchedulesPage = () => {
                 </tr>
               </thead>
               <tbody>
-              {paginatedSchedules.map(schedule => (
-                <tr key={schedule.scheduleId} className="request-row">
-                  <td>
-                    <div className="tenant-info">
-                      <div className="tenant-avatar">
-                        <img src={getGlobalAvatar(schedule.tenant?.full_name, schedule.tenant?.avatar_url)} alt={schedule.tenant?.full_name || 'Unknown'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                {paginatedSchedules.map(schedule => (
+                  <tr key={schedule.scheduleId} className="request-row">
+                    <td>
+                      <div className="tenant-info">
+                        <div className="tenant-avatar">
+                          <img src={getGlobalAvatar(schedule.tenant?.full_name, schedule.tenant?.avatar_url)} alt={schedule.tenant?.full_name || 'Unknown'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                        </div>
+                        <div>
+                          <div className="tenant-name">{schedule.tenant?.full_name || 'Unknown'}</div>
+                          <div className="tenant-email">{schedule.tenant?.email || 'N/A'}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="tenant-name">{schedule.tenant?.full_name || 'Unknown'}</div>
-                        <div className="tenant-email">{schedule.tenant?.email || 'N/A'}</div>
+                    </td>
+                    <td>
+                      <div className="room-info">
+                        <div
+                          className="room-title"
+                          onClick={() => navigate(`/rooms/${schedule.roomId}`, { state: { from: 'viewing_schedule' } })}
+                          style={{ cursor: 'pointer', color: '#2563EB', textDecoration: 'underline' }}
+                        >
+                          {schedule.room?.title || 'N/A'}
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="room-info">
-                      <div 
-                        className="room-title" 
-                        onClick={() => navigate(`/rooms/${schedule.roomId}`, { state: { from: 'viewing_schedule' } })}
-                        style={{ cursor: 'pointer', color: '#2563EB', textDecoration: 'underline' }}
-                      >
-                        {schedule.room?.title || 'N/A'}
+                    </td>
+                    <td>
+                      <div className="date-info">
+                        <Calendar size={14} />
+                        {schedule.scheduledDate ? new Date(schedule.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="date-info">
-                      <Calendar size={14} />
-                      {schedule.scheduledDate ? new Date(schedule.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="time-info" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontSize: '14px' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                      {schedule.scheduledDate ? new Date(schedule.scheduledDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
-                    </div>
-                  </td>
+                    </td>
+                    <td>
+                      <div className="time-info" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontSize: '14px' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        {schedule.scheduledDate ? new Date(schedule.scheduledDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                      </div>
+                    </td>
 
-                  <td>
-                    <Badge variant={getStatusColor(schedule.status)}>
-                      {getStatusLabel(schedule.status)}
-                    </Badge>
-                  </td>
-                  <td>
-                    <button
-                      className="view-btn"
-                      onClick={() => {
-                        setSelectedSchedule(schedule);
-                        setShowDetailModal(true);
-                      }}
-                    >
-                      {t('landlordSchedules.viewDetails')}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {totalPages > 1 && (
-          <div className="pagination-container">
-            <button 
-              className={`btn-pagination ${currentPage === 1 ? 'disabled' : ''}`}
-              disabled={currentPage === 1} 
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            >
-              {t('landlordSchedules.previous')}
-            </button>
-            <span className="pagination-info">
-              {t('landlordSchedules.pageOf', { currentPage, totalPages })}
-            </span>
-            <button 
-              className={`btn-pagination ${currentPage === totalPages ? 'disabled' : ''}`}
-              disabled={currentPage === totalPages} 
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            >
-              {t('landlordSchedules.next')}
-            </button>
+                    <td>
+                      <Badge variant={getStatusColor(schedule.status)}>
+                        {getStatusLabel(schedule.status)}
+                      </Badge>
+                    </td>
+                    <td>
+                      <button
+                        className="view-btn"
+                        onClick={() => {
+                          setSelectedSchedule(schedule);
+                          setShowDetailModal(true);
+                        }}
+                      >
+                        {t('landlordSchedules.viewDetails')}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+          {totalPages > 1 && (
+            <div className="pagination-container">
+              <button
+                className={`btn-pagination ${currentPage === 1 ? 'disabled' : ''}`}
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              >
+                {t('landlordSchedules.previous')}
+              </button>
+              <span className="pagination-info">
+                {t('landlordSchedules.pageOf', { currentPage, totalPages })}
+              </span>
+              <button
+                className={`btn-pagination ${currentPage === totalPages ? 'disabled' : ''}`}
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              >
+                {t('landlordSchedules.next')}
+              </button>
+            </div>
+          )}
         </>
       ) : (
         <EmptyState
@@ -608,10 +608,11 @@ const ViewingSchedulesPage = () => {
                     <div className="detail-item">
                       <label>Tenant Decision</label>
                       <div className="detail-value">
-                        {selectedSchedule.tenantDecision === 'want_to_rent' ? '✅ Wants to rent' : 
-                         selectedSchedule.tenantDecision === 'disputed' ? '⚠️ Disputed' :
-                         selectedSchedule.tenantDecision === 'rented' ? '🏠 Rented' :
-                         selectedSchedule.tenantDecision}
+                        {selectedSchedule.tenantDecision === 'want_to_rent' ? ' Wants to rent' :
+                          selectedSchedule.tenantDecision === 'disputed' ? ' Disputed' :
+                            selectedSchedule.tenantDecision === 'rented' ? ' Rented' :
+                              selectedSchedule.tenantDecision === 'rejected' ? ' Từ chối thuê (Declined to rent)' :
+                                selectedSchedule.tenantDecision}
                       </div>
                     </div>
                   )}
@@ -642,7 +643,7 @@ const ViewingSchedulesPage = () => {
             </div>
 
             {/* ===== MODAL FOOTER ACTIONS ===== */}
-            
+
             {/* Pending status: Approve or Reject */}
             {selectedSchedule.status === 'pending' && (
               <div className="modal-footer">
@@ -765,22 +766,22 @@ const ViewingSchedulesPage = () => {
               </div>
 
               <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '20px 0 12px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>Your Information (For Contract)</h4>
-              
+
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Assign Room Number (Physical Room) *</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. 101, A2" 
-                  value={contractData.assignedRoomNumber} 
-                  onChange={(e) => setContractData({...contractData, assignedRoomNumber: e.target.value})}
+                <input
+                  type="text"
+                  placeholder="e.g. 101, A2"
+                  value={contractData.assignedRoomNumber}
+                  onChange={(e) => setContractData({ ...contractData, assignedRoomNumber: e.target.value })}
                   style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
                 />
               </div>
 
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Họ và Tên *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={contractData.landlordName}
                   readOnly
                   style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }}
@@ -790,8 +791,8 @@ const ViewingSchedulesPage = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>CCCD/CMND (12 digits) *</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={contractData.landlordIc}
                     readOnly
                     style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }}
@@ -799,8 +800,8 @@ const ViewingSchedulesPage = () => {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Date *</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={contractData.landlordIcIssueDate}
                     readOnly
                     style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }}
@@ -810,8 +811,8 @@ const ViewingSchedulesPage = () => {
 
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Place *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={contractData.landlordIcIssuePlace}
                   readOnly
                   style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }}
@@ -820,8 +821,8 @@ const ViewingSchedulesPage = () => {
 
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Permanent Address *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={contractData.landlordPermanentAddress}
                   readOnly
                   style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }}
@@ -841,10 +842,10 @@ const ViewingSchedulesPage = () => {
               <div style={{ marginTop: '16px' }}>
                 <label style={{ fontWeight: 600, marginBottom: '6px', display: 'block' }}>Chữ ký Bên Cho Thuê (Bên A) *</label>
                 <div style={{ border: '2px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc', position: 'relative', display: 'inline-block' }}>
-                  <SignatureCanvas 
+                  <SignatureCanvas
                     ref={landlordSigCanvas}
                     penColor="black"
-                    canvasProps={{width: 400, height: 200, className: 'sigCanvas'}} 
+                    canvasProps={{ width: 400, height: 200, className: 'sigCanvas' }}
                   />
                   <button onClick={clearLandlordSignature} style={{ position: 'absolute', top: 5, right: 5, background: '#e2e8f0', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', color: '#475569', cursor: 'pointer' }} title="Clear">
                     Xóa chữ ký
@@ -880,20 +881,20 @@ const ViewingSchedulesPage = () => {
           <div className="modal-container" style={{ maxWidth: '400px', background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
               <h2 className="modal-title" style={{ fontSize: '18px' }}>{confirmDialog.title}</h2>
-              <button 
-                className="modal-close" 
+              <button
+                className="modal-close"
                 onClick={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="modal-body" style={{ padding: '24px' }}>
               <p style={{ margin: 0, fontSize: '15px', color: '#4b5563', lineHeight: 1.5 }}>
                 {confirmDialog.message}
               </p>
             </div>
-            
+
             <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
               <Button
                 variant="secondary"

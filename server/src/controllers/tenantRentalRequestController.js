@@ -36,37 +36,6 @@ const createRentalRequest = async (req, res, next) => {
       });
     }
 
-    if (!requestedMoveInDate || !leaseDurationMonths) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng chọn ngày dọn vào và thời hạn thuê.',
-      });
-    }
-
-    if (!tenantName || !tenantIc || !tenantIcIssueDate || !tenantIcIssuePlace || !tenantPermanentAddress) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng cung cấp đầy đủ thông tin cá nhân của bạn phục vụ cho hợp đồng.',
-      });
-    }
-
-    if (tenantIc.length !== 12) {
-      return res.status(400).json({
-        success: false,
-        message: 'Số CCCD phải có đúng 12 chữ số.',
-      });
-    }
-
-    const start = new Date(requestedMoveInDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (start < today) {
-      return res.status(400).json({
-        success: false,
-        message: 'Ngày nhận phòng không thể ở quá khứ.',
-      });
-    }
-
     // Check if room exists and is available
     const room = await Room.findOne({
       where: { room_id: roomId, is_deleted: false },
@@ -407,6 +376,37 @@ const requestContract = async (req, res, next) => {
 
     if (rentalRequest.status !== 'approved') {
       return res.status(400).json({ success: false, message: 'Rental request must be approved before requesting a contract.' });
+    }
+
+    if (!startDate || !durationMonths) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng chọn ngày dọn vào và thời hạn thuê.',
+      });
+    }
+
+    if (!tenantName || !tenantIc || !tenantIcIssueDate || !tenantIcIssuePlace || !tenantPermanentAddress) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp đầy đủ thông tin cá nhân của bạn phục vụ cho hợp đồng.',
+      });
+    }
+
+    if (tenantIc.length !== 12 || !/^\d{12}$/.test(tenantIc)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Số CCCD phải có đúng 12 chữ số.',
+      });
+    }
+
+    const start = new Date(startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (start < today) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ngày nhận phòng không thể ở quá khứ.',
+      });
     }
 
     const { Contract } = require('../models');

@@ -67,6 +67,19 @@ const PropertyDashboardPage = () => {
       const customRooms = duplicateForm.roomNumbers
         ? duplicateForm.roomNumbers.split(',').map(n => n.trim()).filter(Boolean)
         : [];
+
+      // Get all existing room numbers under this property from floorPlan
+      const allExistingRoomNumbers = Object.values(floorPlan || {})
+        .flat()
+        .map(r => r.roomNumber?.toString().trim())
+        .filter(Boolean);
+
+      // Check for duplicates
+      const duplicates = customRooms.filter(num => allExistingRoomNumbers.includes(num));
+      if (duplicates.length > 0) {
+        toast.error('Room is already exist');
+        return;
+      }
         
       const payload = {
         sourceRoomId: duplicateForm.sourceRoomId,
@@ -85,7 +98,7 @@ const PropertyDashboardPage = () => {
       setShowDuplicateModal(false);
       fetchDashboard();
     } catch (error) {
-      toast.error('Failed to duplicate room');
+      toast.error(error.response?.data?.message || 'Failed to duplicate room');
     }
   };
 

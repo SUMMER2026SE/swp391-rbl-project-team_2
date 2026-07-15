@@ -397,6 +397,12 @@
   transition: all 0.2s;
 }
 
+.btn-performance:hover {
+  color: #8B5CF6;
+  border-color: #8B5CF6;
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
 .btn-edit:hover {
   color: var(--primary);
   border-color: var(--primary);

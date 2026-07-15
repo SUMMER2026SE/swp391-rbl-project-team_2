@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ROUTES } from '../constants';
 
 // Layouts
@@ -93,7 +93,7 @@ const AppRoutes = () => {
         <Route path="/listings/:id" element={<RoomDetailPage />} />
         <Route path={ROUTES.ROOM_DETAIL} element={<RoomDetailPage />} />
         <Route path={ROUTES.TENANT.CHAT} element={<AIChatPage />} />
-        <Route path={ROUTES.TENANT.RENTAL_REQUEST} element={<RentalRequestPage />} />
+        <Route path={ROUTES.TENANT.RENTAL_REQUEST} element={<Navigate to="/tenant/requests" replace />} />
         <Route path={ROUTES.HELP} element={<HelpCenterPage />} />
         <Route path="/about" element={<InfoSupportPage />} />
         <Route path="/privacy" element={<InfoSupportPage />} />
