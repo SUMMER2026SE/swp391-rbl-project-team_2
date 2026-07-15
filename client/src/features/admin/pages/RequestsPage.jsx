@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Eye, CheckCircle, XCircle } from 'lucide-react';
 import './RequestsPage.css';
 
@@ -24,6 +25,7 @@ const PRIORITY_CLASSES = {
 };
 
 const RequestsPage = () => {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -37,8 +39,8 @@ const RequestsPage = () => {
   return (
     <div className="admin-page-container">
       <div className="admin-page-header">
-        <h1 className="admin-page-title">Requests Management</h1>
-        <p className="admin-page-subtitle">Review and manage tenant requests, maintenance issues, and complaints.</p>
+        <h1 className="admin-page-title">{t('adminRequests.title')}</h1>
+        <p className="admin-page-subtitle">{t('adminRequests.subtitle')}</p>
       </div>
 
       <div className="requests-content-area">
@@ -47,17 +49,17 @@ const RequestsPage = () => {
             <Search size={18} className="search-icon" />
             <input
               type="text"
-              placeholder="Search by ID or tenant..."
+              placeholder={t('adminRequests.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="toolbar-filters">
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
-              <option value="All">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="In Review">In Review</option>
-              <option value="Resolved">Resolved</option>
+              <option value="All">{t('adminRequests.allStatus')}</option>
+              <option value="Pending">{t('adminRequests.pending')}</option>
+              <option value="In Review">{t('adminRequests.inReview')}</option>
+              <option value="Resolved">{t('adminRequests.resolved')}</option>
             </select>
           </div>
         </div>
@@ -66,15 +68,15 @@ const RequestsPage = () => {
           <table className="requests-table">
             <thead>
               <tr>
-                <th>Request ID</th>
-                <th>Tenant</th>
-                <th>Property</th>
-                <th>Type</th>
-                <th>Subject</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th className="th-actions">Actions</th>
+                <th>{t('adminRequests.requestId')}</th>
+                <th>{t('adminRequests.tenant')}</th>
+                <th>{t('adminRequests.property')}</th>
+                <th>{t('adminRequests.type')}</th>
+                <th>{t('adminRequests.subject')}</th>
+                <th>{t('adminRequests.priority')}</th>
+                <th>{t('adminRequests.status')}</th>
+                <th>{t('adminRequests.date')}</th>
+                <th className="th-actions">{t('adminRequests.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -85,27 +87,29 @@ const RequestsPage = () => {
                   <td className="td-muted">{req.property}</td>
                   <td>
                     <span className={`request-type-badge ${TYPE_CLASSES[req.type]}`}>
-                      {req.type}
+                      {t(`adminRequests.types.${req.type}`, req.type)}
                     </span>
                   </td>
                   <td>{req.subject}</td>
                   <td>
-                    <span className={PRIORITY_CLASSES[req.priority]}>{req.priority}</span>
+                    <span className={PRIORITY_CLASSES[req.priority]}>
+                      {t(`adminRequests.priorities.${req.priority}`, req.priority)}
+                    </span>
                   </td>
                   <td>
                     <span className={`status-badge ${
                       req.status === 'Resolved' ? 'status-active' :
                       req.status === 'Pending' ? 'status-pending' : 'status-occupied'
                     }`}>
-                      {req.status}
+                      {t(`adminRequests.statuses.${req.status.replace(/\s+/g, '')}`, req.status)}
                     </span>
                   </td>
                   <td className="td-muted">{new Date(req.date).toLocaleDateString('vi-VN')}</td>
                   <td>
                     <div className="action-buttons">
-                      <button className="btn-action-icon" title="View"><Eye size={18} /></button>
-                      <button className="btn-action-icon" title="Approve"><CheckCircle size={18} /></button>
-                      <button className="btn-action-icon" title="Reject"><XCircle size={18} /></button>
+                      <button className="btn-action-icon" title={t('adminRequests.view')}><Eye size={18} /></button>
+                      <button className="btn-action-icon" title={t('adminRequests.approve')}><CheckCircle size={18} /></button>
+                      <button className="btn-action-icon" title={t('adminRequests.reject')}><XCircle size={18} /></button>
                     </div>
                   </td>
                 </tr>
@@ -115,11 +119,13 @@ const RequestsPage = () => {
         </div>
 
         <div className="pagination-container">
-          <span className="pagination-info">Showing {filtered.length} of {MOCK_REQUESTS.length} requests</span>
+          <span className="pagination-info">
+            {t('adminRequests.showingInfo', { count: filtered.length, total: MOCK_REQUESTS.length })}
+          </span>
           <div className="pagination-controls">
-            <button className="btn-page" disabled>Previous</button>
+            <button className="btn-page" disabled>{t('adminRequests.previous')}</button>
             <button className="btn-page active">1</button>
-            <button className="btn-page">Next</button>
+            <button className="btn-page">{t('adminRequests.next')}</button>
           </div>
         </div>
       </div>

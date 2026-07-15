@@ -98,7 +98,7 @@ const ManageListingsPage = () => {
   const [previewImages, setPreviewImages] = useState([]);
   const [listings, setListings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All Statuses');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     if (rooms) {
@@ -127,11 +127,11 @@ const ManageListingsPage = () => {
           city: room.city || '',
           district: room.district || '',
           price: Number(room.pricePerMonth || room.price_per_month || 0),
-          status: (room.status || '').toLowerCase() === 'available' ? 'Available' :
-            ['rented', 'unavailable'].includes((room.status || '').toLowerCase()) ? 'Occupied' :
-              (room.status || '').toLowerCase() === 'pending' ? 'Pending' :
-                (room.status || '').toLowerCase() === 'rejected' ? 'Rejected' :
-                  (room.status || '').toLowerCase() === 'maintenance' ? 'Maintenance' : 'Inactive',
+          status: (room.status || '').toLowerCase() === 'available' ? 'available' :
+            ['rented', 'unavailable'].includes((room.status || '').toLowerCase()) ? 'occupied' :
+              (room.status || '').toLowerCase() === 'pending' ? 'pending' :
+                (room.status || '').toLowerCase() === 'rejected' ? 'rejected' :
+                  (room.status || '').toLowerCase() === 'maintenance' ? 'maintenance' : 'inactive',
           type: 'Private Room',
           image: coverImg,
           tags: tags,
@@ -172,7 +172,7 @@ const ManageListingsPage = () => {
   const [formAddress, setFormAddress] = useState('');
   const [formPrice, setFormPrice] = useState('');
   const [formDescription, setFormDescription] = useState('');
-  const [formStatus, setFormStatus] = useState('Available');
+  const [formStatus, setFormStatus] = useState('available');
   const [formImage, setFormImage] = useState('');
   const [formTags, setFormTags] = useState('');
   const [formNearbyTags, setFormNearbyTags] = useState('');
@@ -199,7 +199,7 @@ const ManageListingsPage = () => {
       item.address.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
-      statusFilter === 'All Statuses' || item.status === statusFilter;
+      statusFilter === 'all' || item.status === statusFilter;
 
     let matchesDate = true;
     if (dateFrom || dateTo) {
@@ -277,7 +277,7 @@ const ManageListingsPage = () => {
       setIsAddModalOpen(false);
       resetForm();
     } catch (err) {
-      toast.error(err.message || 'Failed to create room');
+      toast.error(err.message || t('landlordListings.failedCreate'));
     }
   };
 
@@ -322,8 +322,8 @@ const ManageListingsPage = () => {
       };
 
       if (selectedListing.rawRoom?.status !== 'pending' && selectedListing.rawRoom?.status !== 'rejected') {
-        roomPayload.status = formStatus === 'Available' ? 'available' :
-          formStatus === 'Occupied' ? 'rented' : 'inactive';
+        roomPayload.status = formStatus === 'available' ? 'available' :
+          formStatus === 'occupied' ? 'rented' : 'inactive';
       }
 
       const roomIdToUpdate = selectedListing.rawRoom?.roomId || selectedListing.id;
@@ -372,17 +372,17 @@ const ManageListingsPage = () => {
       setSelectedListing(null);
       resetForm();
     } catch (err) {
-      toast.error(err.message || 'Failed to update room');
+      toast.error(err.message || t('landlordListings.failedUpdate'));
     }
   };
 
   const handleDeleteClick = async (id) => {
-    if (window.confirm(`Are you sure you want to delete listing ${id}?`)) {
+    if (window.confirm(t('landlordListings.confirmDelete', { id }))) {
       try {
         await deleteRoom(id);
         setListings(listings.filter(item => item.id !== id));
       } catch (err) {
-        toast.error(err.message || 'Failed to delete room');
+        toast.error(err.message || t('landlordListings.failedDelete'));
       }
     }
   };
@@ -397,15 +397,15 @@ const ManageListingsPage = () => {
       {/* Top Header Row */}
       <div className="manage-listings__header">
         <div>
-          <h1 className="manage-listings__title">Manage Listings</h1>
-          <p className="manage-listings__subtitle">View, edit, and monitor your property portfolio.</p>
+          <h1 className="manage-listings__title">{t('landlordListings.title')}</h1>
+          <p className="manage-listings__subtitle">{t('landlordListings.subtitle')}</p>
         </div>
         <Button
           variant="primary"
           icon={<Plus size={18} />}
           onClick={() => navigate(ROUTES.LANDLORD.NEW_LISTING)}
         >
-          Add New Listing
+          {t('landlordListings.addNewListing')}
         </Button>
       </div>
 
@@ -416,7 +416,7 @@ const ManageListingsPage = () => {
           <Search size={18} className="filter-search__icon" />
           <input
             type="text"
-            placeholder={t('landlord.manageListings.searchPlaceholder', 'Search by address, ID, or title...')}
+            placeholder={t('landlordListings.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="filter-search__input"
@@ -432,12 +432,12 @@ const ManageListingsPage = () => {
               setShowTypeDropdown(false);
             }}
           >
-            <span>{statusFilter}</span>
+            <span>{statusFilter === 'all' ? t('landlordListings.allStatuses') : t(`landlordListings.${statusFilter}`)}</span>
             <ChevronDown size={16} />
           </button>
           {showStatusDropdown && (
             <div className="filter-dropdown-menu">
-              {['All Statuses', 'Available', 'Occupied', 'Pending', 'Rejected', 'Inactive'].map((st) => (
+              {['all', 'available', 'occupied', 'pending', 'rejected', 'inactive'].map((st) => (
                 <button
                   key={st}
                   className={`filter-dropdown-item ${statusFilter === st ? 'active' : ''}`}
@@ -446,7 +446,7 @@ const ManageListingsPage = () => {
                     setShowStatusDropdown(false);
                   }}
                 >
-                  {st}
+                  {st === 'all' ? t('landlordListings.allStatuses') : t(`landlordListings.${st}`)}
                 </button>
               ))}
             </div>
@@ -457,13 +457,13 @@ const ManageListingsPage = () => {
         <button
           className="filter-more-btn"
           onClick={() => {
-            setStatusFilter('All Statuses');
+            setStatusFilter('all');
             setSearchTerm('');
           }}
-          title="Reset all filters"
+          title={t('landlordListings.moreFilters')}
         >
           <SlidersHorizontal size={16} />
-          <span>{t('landlord.manageListings.moreFilters', 'More Filters')}</span>
+          <span>{t('landlordListings.moreFilters')}</span>
         </button>
       </div>
 
@@ -471,13 +471,13 @@ const ManageListingsPage = () => {
       {roomsLoading && (
         <div className="manage-listings__loading">
           <div className="spinner-loader"></div>
-          <p>Loading listings from database...</p>
+          <p>{t('landlordListings.loading')}</p>
         </div>
       )}
 
       {roomsError && (
         <div className="manage-listings__error">
-          <p>⚠️ Error loading listings: {roomsError}</p>
+          <p>⚠️ {t('landlordListings.errorLoading')} {roomsError}</p>
         </div>
       )}
 
@@ -490,7 +490,7 @@ const ManageListingsPage = () => {
                 <h2 className="manage-listings__property-title">
                   <Building2 size={20} className="property-icon" />
                   {propertyName}
-                  <span className="property-count">{items.length} {items.length === 1 ? 'room' : 'rooms'}</span>
+                  <span className="property-count">{items.length} {items.length === 1 ? t('landlordListings.roomSingular') : t('landlordListings.rooms')}</span>
                 </h2>
                 <div className="manage-listings__grid">
                   {items.map((listing) => (
@@ -500,26 +500,26 @@ const ManageListingsPage = () => {
                   <img src={listing.image} alt={listing.title} className="listing-card__img" />
 
                   {/* Status Badge */}
-                  <div className={`listing-card__badge-status status-${listing.status.toLowerCase()}`}>
+                  <div className={`listing-card__badge-status status-${listing.status}`}>
                     <span className="badge-status-dot"></span>
-                    <span>{t(`landlord.manageListings.statuses.${listing.status.toLowerCase()}`, listing.status)}</span>
+                    <span>{t(`landlordListings.${listing.status}`)}</span>
                   </div>
 
                   {/* Price Tag */}
                   <div className="listing-card__badge-price">
                     <span className="price-amount">{listing.price.toLocaleString('vi-VN')} VNĐ</span>
-                    <span className="price-unit">{t('landlord.manageListings.perMonth', '/tháng')}</span>
+                    <span className="price-unit">{t('landlordListings.perMonth')}</span>
                   </div>
                 </div>
 
                 {/* Body */}
                 <div className="listing-card__body">
-                  <div className="listing-card__id">Room: {listing.rawRoom?.room_number || listing.rawRoom?.roomNumber || listing.id}</div>
+                  <div className="listing-card__id">{t('landlordListings.room')} {listing.rawRoom?.room_number || listing.rawRoom?.roomNumber || listing.id}</div>
                   <h3 className="listing-card__title">{listing.title}</h3>
 
-                  {listing.status === 'Rejected' && listing.rawRoom?.rejection_reason && (
+                  {listing.status === 'rejected' && listing.rawRoom?.rejection_reason && (
                     <div className="listing-card__rejection-reason" style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '0.5rem', border: '1px solid #fca5a5' }}>
-                      <strong>Rejection Reason:</strong> {listing.rawRoom.rejection_reason}
+                      <strong>{t('landlordListings.rejectionReason')}</strong> {listing.rawRoom.rejection_reason}
                     </div>
                   )}
 
@@ -530,12 +530,12 @@ const ManageListingsPage = () => {
 
                   {/* Room Description */}
                   <div className="listing-card__description" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>
-                    {listing.rawRoom?.description || 'Chưa có mô tả.'}
+                    {listing.rawRoom?.description || t('landlordListings.noDescription')}
                   </div>
 
                   <div className="listing-card__tags">
                     {listing.tags.map((tag, idx) => (
-                      <span key={idx} className="listing-card__tag-pill">{tag}</span>
+                      <span key={idx} className="listing-card__tag-pill">{t(`facilities.${tag}`, tag)}</span>
                     ))}
                   </div>
                 </div>
@@ -546,24 +546,24 @@ const ManageListingsPage = () => {
                     className="btn-performance-link"
                     onClick={() => navigate(`/rooms/${listing.id}`)}
                   >
-                    <span>{t('landlord.manageListings.viewRoomListing', 'View Room Listing')}</span>
+                    <span>{t('landlordListings.viewRoomListing')}</span>
                     <ArrowUpRight size={16} />
                   </button>
 
                   <div className="listing-card__actions">
                     <button
                       className="action-icon-btn btn-edit"
-                      title="Edit Listing"
+                      title={t('landlordListings.editListing')}
                       onClick={() => handleEditClick(listing)}
                     >
                       <Pencil size={15} />
                     </button>
                     <button
                       className="action-icon-btn btn-delete"
-                      title="Delete Listing"
+                      title={t('landlordListings.deleteListing')}
                       onClick={() => handleDeleteClick(listing.id)}
-                      disabled={['Occupied'].includes(listing.status)}
-                      style={['Occupied'].includes(listing.status) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                      disabled={['occupied'].includes(listing.status)}
+                      style={['occupied'].includes(listing.status) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -578,8 +578,8 @@ const ManageListingsPage = () => {
         ) : (
           <div className="manage-listings__empty">
             <div className="empty-icon-wrapper">🏡</div>
-            <h3>No listings found</h3>
-            <p>Try adjusting your search criteria or add a new listing to get started.</p>
+            <h3>{t('landlordListings.noListings')}</h3>
+            <p>{t('landlordListings.noListingsDesc')}</p>
           </div>
         )
       )}
@@ -589,7 +589,7 @@ const ManageListingsPage = () => {
         <div className="modal-backdrop">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Create New Listing</h3>
+              <h3>{t('landlordListings.createNewListing')}</h3>
               <button className="modal-close-btn" onClick={() => setIsAddModalOpen(false)}>
                 <X size={18} />
               </button>
@@ -598,7 +598,7 @@ const ManageListingsPage = () => {
               <div className="modal-body">
                 <div className="form-group-row">
                   <div className="form-group">
-                    <label>Room Number</label>
+                    <label>{t('landlordListings.roomNumber')}</label>
                     <input
                       type="text"
                       placeholder="e.g. 101, A2"
@@ -607,7 +607,7 @@ const ManageListingsPage = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Monthly Rent (VNĐ) *</label>
+                    <label>{t('landlordListings.monthlyRent')}</label>
                     <input
                       type="number"
                       required
@@ -617,7 +617,7 @@ const ManageListingsPage = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Quantity of Rooms *</label>
+                    <label>{t('landlordListings.quantityOfRooms')}</label>
                     <input
                       type="number"
                       required
@@ -629,7 +629,7 @@ const ManageListingsPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Listing Title *</label>
+                  <label>{t('landlordListings.listingTitle')}</label>
                   <input
                     type="text"
                     required
@@ -640,9 +640,9 @@ const ManageListingsPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Property Description</label>
+                  <label>{t('landlordListings.propertyDescription')}</label>
                   <textarea
-                    placeholder="Describe your property..."
+                    placeholder={t('landlordListings.descPlaceholder')}
                     value={formDescription}
                     onChange={(e) => setFormDescription(e.target.value)}
                     rows={4}
@@ -650,7 +650,7 @@ const ManageListingsPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Full Address *</label>
+                  <label>{t('landlordListings.fullAddress')}</label>
                   <input
                     type="text"
                     required
@@ -663,7 +663,7 @@ const ManageListingsPage = () => {
 
 
                 <div className="form-group">
-                  <label>Room Images (optional)</label>
+                  <label>{t('landlordListings.roomImages')}</label>
                   <div className="media-drag-drop-zone">
                     <input
                       type="file"
@@ -685,15 +685,15 @@ const ManageListingsPage = () => {
                         <Upload size={24} />
                       </div>
                       <div className="drag-drop-text-instructions">
-                        <span className="bold-instruction-text">Click to upload</span> or drag and drop
+                        <span className="bold-instruction-text">{t('landlordListings.clickToUpload')}</span> {t('landlordListings.orDragAndDrop')}
                       </div>
-                      <span className="upload-limit-info">PNG, JPG, JPEG up to 10MB</span>
+                      <span className="upload-limit-info">{t('landlordListings.uploadLimit')}</span>
                     </label>
                   </div>
 
                   {previewImages.length > 0 && (
                     <div className="media-preview-container">
-                      <h4 className="preview-section-title">Selected Images ({previewImages.length})</h4>
+                      <h4 className="preview-section-title">{t('landlordListings.selectedImages', {count: previewImages.length})}</h4>
                       <div className="media-previews-grid">
                         {previewImages.map((src, idx) => (
                           <div className="preview-image-card" key={idx}>
@@ -711,7 +711,7 @@ const ManageListingsPage = () => {
                             >
                               <X size={14} />
                             </button>
-                            {idx === 0 && <span className="featured-image-tag">Cover</span>}
+                            {idx === 0 && <span className="featured-image-tag">{t('landlordListings.cover')}</span>}
                           </div>
                         ))}
                       </div>
@@ -720,7 +720,7 @@ const ManageListingsPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Tags / Amenities (comma separated)</label>
+                  <label>{t('landlordListings.tagsAmenities')}</label>
                   <input
                     type="text"
                     placeholder="e.g. Private Bath, High-Speed Wi-Fi, Gym Access"
@@ -731,10 +731,10 @@ const ManageListingsPage = () => {
               </div>
               <div className="modal-footer">
                 <Button variant="secondary" type="button" onClick={() => setIsAddModalOpen(false)}>
-                  Cancel
+                  {t('landlordListings.cancel')}
                 </Button>
                 <Button variant="primary" type="submit">
-                  Create Listing
+                  {t('landlordListings.createListing')}
                 </Button>
               </div>
             </form>
@@ -747,7 +747,7 @@ const ManageListingsPage = () => {
         <div className="modal-backdrop">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Edit Listing {selectedListing?.id}</h3>
+              <h3>{t('landlordListings.editListingTitle', {id: selectedListing?.id})}</h3>
               <button className="modal-close-btn" onClick={() => {
                 setIsEditModalOpen(false);
                 setSelectedListing(null);
@@ -759,7 +759,7 @@ const ManageListingsPage = () => {
               <div className="modal-body">
                 <div className="form-group-row">
                   <div className="form-group">
-                    <label>Room Number</label>
+                    <label>{t('landlordListings.roomNumber')}</label>
                     <input
                       type="text"
                       placeholder="e.g. 101, A2"
@@ -769,23 +769,23 @@ const ManageListingsPage = () => {
                   </div>
                   
                   <div className="form-group">
-                    <label>Status</label>
+                    <label>{t('landlordListings.status')}</label>
                     <div className="form-select-wrapper">
                       <select
                         value={formStatus}
                         onChange={(e) => setFormStatus(e.target.value)}
                         className="form-input-select"
                       >
-                        <option value="Available">Available</option>
-                        <option value="Occupied">Occupied (Rented)</option>
-                        <option value="Inactive">Inactive</option>
+                        <option value="available">{t('landlordListings.available')}</option>
+                        <option value="occupied">{t('landlordListings.occupiedRented')}</option>
+                        <option value="inactive">{t('landlordListings.inactive')}</option>
                       </select>
                     </div>
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label>Listing Title *</label>
+                  <label>{t('landlordListings.listingTitle')}</label>
                   <input
                     type="text"
                     required
@@ -795,9 +795,9 @@ const ManageListingsPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Property Description</label>
+                  <label>{t('landlordListings.propertyDescription')}</label>
                   <textarea
-                    placeholder="Describe your property..."
+                    placeholder={t('landlordListings.descPlaceholder')}
                     value={formDescription}
                     onChange={(e) => setFormDescription(e.target.value)}
                     rows={4}
@@ -805,7 +805,7 @@ const ManageListingsPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Full Address *</label>
+                  <label>{t('landlordListings.fullAddress')}</label>
                   <input
                     type="text"
                     required
@@ -818,7 +818,7 @@ const ManageListingsPage = () => {
 
                 <div className="form-group-row">
                   <div className="form-group">
-                    <label>Monthly Rent (VNĐ) *</label>
+                    <label>{t('landlordListings.monthlyRent')}</label>
                     <input
                       type="text"
                       required
@@ -828,9 +828,9 @@ const ManageListingsPage = () => {
                         const val = e.target.value;
                         setFormPrice(val);
                         if (val !== '' && !/^\d+$/.test(val)) {
-                          setPriceError('Please enter a valid positive number.');
+                          setPriceError(t('landlordListings.priceError'));
                         } else if (val !== '' && Number(val) <= 0) {
-                          setPriceError('Rent must be greater than 0.');
+                          setPriceError(t('landlordListings.priceGt0'));
                         } else {
                           setPriceError('');
                         }
@@ -842,7 +842,7 @@ const ManageListingsPage = () => {
 
                 <div className="form-group-row">
                   <div className="form-group">
-                    <label>Max Occupants</label>
+                    <label>{t('landlordListings.maxOccupants')}</label>
                     <input
                       type="text"
                       value={formMaxOccupants}
@@ -851,9 +851,9 @@ const ManageListingsPage = () => {
                         const val = e.target.value;
                         setFormMaxOccupants(val);
                         if (val !== '' && !/^\d+$/.test(val)) {
-                          setOccupantsError('Please enter a valid number.');
+                          setOccupantsError(t('landlordListings.occupantsError'));
                         } else if (val !== '' && Number(val) <= 0) {
-                          setOccupantsError('Max occupants must be at least 1.');
+                          setOccupantsError(t('landlordListings.occupantsGt0'));
                         } else {
                           setOccupantsError('');
                         }
@@ -866,7 +866,7 @@ const ManageListingsPage = () => {
                 <div className="form-group-row">
 
                   <div className="form-group">
-                    <label>Size (m<sup>2</sup>)</label>
+                    <label>{t('landlordListings.sizeSqm')} (m<sup>2</sup>)</label>
                     <input
                       type="text"
                       value={formAreaSqm}
@@ -875,9 +875,9 @@ const ManageListingsPage = () => {
                         const val = e.target.value;
                         setFormAreaSqm(val);
                         if (val !== '' && !/^\d+(\.\d+)?$/.test(val)) {
-                          setAreaError('Please enter a valid number.');
+                          setAreaError(t('landlordListings.areaError'));
                         } else if (val !== '' && Number(val) <= 0) {
-                          setAreaError('Area must be greater than 0.');
+                          setAreaError(t('landlordListings.areaGt0'));
                         } else {
                           setAreaError('');
                         }
@@ -888,7 +888,7 @@ const ManageListingsPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Update Images</label>
+                  <label>{t('landlordListings.updateImages')}</label>
                   <div className="media-drag-drop-zone">
                     <input
                       type="file"
@@ -910,15 +910,15 @@ const ManageListingsPage = () => {
                         <Upload size={24} />
                       </div>
                       <div className="drag-drop-text-instructions">
-                        <span className="bold-instruction-text">Click to upload</span> new images
+                        <span className="bold-instruction-text">{t('landlordListings.clickToUploadNew')}</span>
                       </div>
-                      <span className="upload-limit-info">PNG, JPG, JPEG up to 10MB</span>
+                      <span className="upload-limit-info">{t('landlordListings.uploadLimit')}</span>
                     </label>
                   </div>
 
                   {previewImages.length > 0 && (
                     <div className="media-preview-container">
-                      <h4 className="preview-section-title">New Images ({previewImages.length})</h4>
+                      <h4 className="preview-section-title">{t('landlordListings.newImages', {count: previewImages.length})}</h4>
                       <div className="media-previews-grid">
                         {previewImages.map((src, idx) => (
                           <div className="preview-image-card" key={idx}>
@@ -945,7 +945,7 @@ const ManageListingsPage = () => {
 
                 <div className="form-group-row">
                   <div className="form-group">
-                    <label>Room Facilities (Fixed)</label>
+                    <label>{t('landlordListings.roomFacilities')}</label>
                     <input
                       type="text"
                       disabled
@@ -955,7 +955,7 @@ const ManageListingsPage = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Nearby Facilities (Fixed)</label>
+                    <label>{t('landlordListings.nearbyFacilities')}</label>
                     <input
                       type="text"
                       disabled
@@ -971,10 +971,10 @@ const ManageListingsPage = () => {
                   setIsEditModalOpen(false);
                   setSelectedListing(null);
                 }}>
-                  Cancel
+                  {t('landlordListings.cancel')}
                 </Button>
                 <Button variant="primary" type="submit" disabled={!!priceError || !!occupantsError || !!areaError}>
-                  Save Changes
+                  {t('landlordListings.saveChanges')}
                 </Button>
               </div>
             </form>
@@ -987,7 +987,7 @@ const ManageListingsPage = () => {
         <div className="modal-backdrop">
           <div className="modal-content modal-content--performance">
             <div className="modal-header">
-              <h3>Performance: {selectedListing.title}</h3>
+              <h3>{t('landlordListings.performance')} {selectedListing.title}</h3>
               <button className="modal-close-btn" onClick={() => {
                 setIsPerfModalOpen(false);
                 setSelectedListing(null);
@@ -996,7 +996,7 @@ const ManageListingsPage = () => {
               </button>
             </div>
             <div className="modal-body">
-              <p className="perf-id-sub">Listing ID: {selectedListing.id} • {selectedListing.address}</p>
+              <p className="perf-id-sub">{t('landlordListings.listingId')} {selectedListing.id} • {selectedListing.address}</p>
 
               <div className="perf-stats-grid">
                 <div className="perf-stat-box">
@@ -1004,7 +1004,7 @@ const ManageListingsPage = () => {
                     <Eye size={20} />
                   </div>
                   <div className="perf-stat-info">
-                    <span className="perf-stat-label">Page Views</span>
+                    <span className="perf-stat-label">{t('landlordListings.pageViews')}</span>
                     <span className="perf-stat-val">{selectedListing.performance.views}</span>
                   </div>
                 </div>
@@ -1014,7 +1014,7 @@ const ManageListingsPage = () => {
                     <Calendar size={20} />
                   </div>
                   <div className="perf-stat-info">
-                    <span className="perf-stat-label">Leasing Inquiries</span>
+                    <span className="perf-stat-label">{t('landlordListings.leasingInquiries')}</span>
                     <span className="perf-stat-val">{selectedListing.performance.inquiries}</span>
                   </div>
                 </div>
@@ -1024,7 +1024,7 @@ const ManageListingsPage = () => {
                     <DollarSign size={20} />
                   </div>
                   <div className="perf-stat-info">
-                    <span className="perf-stat-label">Monthly Revenue</span>
+                    <span className="perf-stat-label">{t('landlordListings.monthlyRevenue')}</span>
                     <span className="perf-stat-val">{selectedListing.performance.revenue.toLocaleString('vi-VN')} VNĐ</span>
                   </div>
                 </div>
@@ -1032,7 +1032,7 @@ const ManageListingsPage = () => {
 
               {/* Graphic chart illustration */}
               <div className="perf-chart-box">
-                <h4>Inquiry Trend (Last 7 Days)</h4>
+                <h4>{t('landlordListings.inquiryTrend')}</h4>
                 <div className="perf-svg-container">
                   <svg viewBox="0 0 400 120" className="mini-chart-svg">
                     <defs>
@@ -1062,13 +1062,13 @@ const ManageListingsPage = () => {
                   </svg>
                 </div>
                 <div className="chart-days-row">
-                  <span>Mon</span>
-                  <span>Tue</span>
-                  <span>Wed</span>
-                  <span>Thu</span>
-                  <span>Fri</span>
-                  <span>Sat</span>
-                  <span>Sun</span>
+                  <span>{t('landlordListings.mon')}</span>
+                  <span>{t('landlordListings.tue')}</span>
+                  <span>{t('landlordListings.wed')}</span>
+                  <span>{t('landlordListings.thu')}</span>
+                  <span>{t('landlordListings.fri')}</span>
+                  <span>{t('landlordListings.sat')}</span>
+                  <span>{t('landlordListings.sun')}</span>
                 </div>
               </div>
             </div>

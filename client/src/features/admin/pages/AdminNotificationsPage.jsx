@@ -1,6 +1,7 @@
 import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   CheckCheck, 
   AlertCircle, 
@@ -16,42 +17,42 @@ import '../../landlord/pages/LandlordNotificationsPage.css'; // Reusing styles
 const MOCK_ADMIN_NOTIFICATIONS = [
   {
     id: 1,
-    type: 'System Alert',
+    typeKey: 'sysAlert',
     category: 'System',
-    time: '10 mins ago',
-    title: 'High Server Load Detected',
-    description: 'CPU usage exceeded 85% on the main database cluster. Auto-scaling has been triggered.',
+    timeKey: 'minsAgo',
+    titleKey: 'title1',
+    descriptionKey: 'desc1',
     isUnread: true,
     hasRedAccent: true,
     icon: <AlertCircle size={20} />,
     iconClass: 'icon-danger',
     headerClass: 'text-danger',
     actions: [
-      { text: 'View Metrics', variant: 'primary', isSolid: true }
+      { textKey: 'action1', variant: 'primary', isSolid: true }
     ]
   },
   {
     id: 2,
-    type: 'Moderation',
+    typeKey: 'moderation',
     category: 'Requests',
-    time: '1 hour ago',
-    title: 'New Landlord Registration',
-    description: 'User John Doe has registered as a Landlord and is awaiting identity verification.',
+    timeKey: 'hrAgo',
+    titleKey: 'title2',
+    descriptionKey: 'desc2',
     isUnread: true,
     icon: <UserPlus size={20} />,
     iconClass: 'icon-info',
     headerClass: 'text-info',
     actions: [
-      { text: 'Review Identity', variant: 'primary', isSolid: true }
+      { textKey: 'action2', variant: 'primary', isSolid: true }
     ]
   },
   {
     id: 3,
-    type: 'Security',
+    typeKey: 'security',
     category: 'System',
-    time: 'Yesterday',
-    title: 'Multiple Failed Logins',
-    description: 'Multiple failed login attempts detected from IP 192.168.1.45 targeting the Admin portal.',
+    timeKey: 'yesterday',
+    titleKey: 'title3',
+    descriptionKey: 'desc3',
     isUnread: false,
     icon: <ShieldAlert size={20} />,
     iconClass: 'icon-warning',
@@ -59,11 +60,11 @@ const MOCK_ADMIN_NOTIFICATIONS = [
   },
   {
     id: 4,
-    type: 'Approval',
+    typeKey: 'approval',
     category: 'Requests',
-    time: '2 days ago',
-    title: 'Listing Approved',
-    description: 'You approved the listing "Modern Minimalist Loft" submitted by Landlord ID #452.',
+    timeKey: 'daysAgo',
+    titleKey: 'title4',
+    descriptionKey: 'desc4',
     isUnread: false,
     icon: <CheckCircle2 size={20} />,
     iconClass: 'icon-success',
@@ -73,15 +74,20 @@ const MOCK_ADMIN_NOTIFICATIONS = [
 
 const AdminNotificationsPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('All Alerts');
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState(MOCK_ADMIN_NOTIFICATIONS);
+  const [activeTab, setActiveTab] = useState('all');
 
-  const tabs = ['All Alerts', 'Requests', 'System'];
+  const tabs = [
+    { id: 'all', label: t('adminNotifications.tabs.all') },
+    { id: 'requests', label: t('adminNotifications.tabs.requests') },
+    { id: 'system', label: t('adminNotifications.tabs.system') }
+  ];
 
-  const handleActionClick = (act) => {
-    if (act.text === 'View Metrics') navigate(ROUTES.ADMIN.ANALYTICS);
-    else if (act.text === 'Review Identity') navigate(ROUTES.ADMIN.USERS);
-    else toast(`Action triggered: ${act.text}`);
+  const handleActionClick = (actionKey) => {
+    if (actionKey === 'action1') navigate(ROUTES.ADMIN.ANALYTICS);
+    else if (actionKey === 'action2') navigate(ROUTES.ADMIN.USERS);
+    else toast(t('adminNotifications.mock.actionTriggered', { text: t(`adminNotifications.mock.${actionKey}`) }));
   };
 
   const handleMarkAllRead = () => {
@@ -93,9 +99,9 @@ const AdminNotificationsPage = () => {
   };
 
   const filteredNotifications = notifications.filter(item => {
-    if (activeTab === 'All Alerts') return true;
-    if (activeTab === 'Requests') return item.category === 'Requests';
-    if (activeTab === 'System') return item.category === 'System';
+    if (activeTab === 'all') return true;
+    if (activeTab === 'requests') return item.category === 'Requests';
+    if (activeTab === 'system') return item.category === 'System';
     return true;
   });
 
@@ -103,24 +109,24 @@ const AdminNotificationsPage = () => {
     <div className="notifications-page">
       <header className="notifications-header">
         <div className="header-titles">
-          <h1 className="notifications-title">System Notifications</h1>
-          <p className="notifications-subtitle">Stay updated on platform activity, security alerts, and moderation requests.</p>
+          <h1 className="notifications-title">{t('adminNotifications.title')}</h1>
+          <p className="notifications-subtitle">{t('adminNotifications.subtitle')}</p>
         </div>
 
         <button className="btn-mark-all" onClick={handleMarkAllRead}>
           <CheckCheck size={16} />
-          <span>Mark all as read</span>
+          <span>{t('adminNotifications.markAllRead')}</span>
         </button>
       </header>
 
       <div className="notifications-tabs">
         {tabs.map(tab => (
           <button 
-            key={tab}
-            className={`tab-pill ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab)}
+            key={tab.id}
+            className={`tab-pill ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
           >
-            {tab}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -142,12 +148,12 @@ const AdminNotificationsPage = () => {
 
               <div className="card-center-section">
                 <div className="notification-meta">
-                  <span className={`notification-type ${item.headerClass}`}>{item.type}</span>
+                  <span className={`notification-type ${item.headerClass}`}>{t(`adminNotifications.mock.${item.typeKey}`)}</span>
                   <span className="meta-bullet">•</span>
-                  <span className="notification-time">{item.time}</span>
+                  <span className="notification-time">{t(`adminNotifications.mock.${item.timeKey}`)}</span>
                 </div>
-                <h3 className="notification-card-title">{item.title}</h3>
-                <p className="notification-card-desc">{item.description}</p>
+                <h3 className="notification-card-title">{t(`adminNotifications.mock.${item.titleKey}`)}</h3>
+                <p className="notification-card-desc">{t(`adminNotifications.mock.${item.descriptionKey}`)}</p>
 
                 {item.actions && (
                   <div className="notification-actions" onClick={e => e.stopPropagation()}>
@@ -156,9 +162,9 @@ const AdminNotificationsPage = () => {
                         key={index} 
                         variant={act.variant}
                         className={act.isSolid ? 'btn-solid-action' : 'btn-outline-action'}
-                        onClick={() => handleActionClick(act)}
+                        onClick={() => handleActionClick(act.textKey)}
                       >
-                        {act.text}
+                        {t(`adminNotifications.mock.${act.textKey}`)}
                       </Button>
                     ))}
                   </div>
@@ -175,8 +181,8 @@ const AdminNotificationsPage = () => {
         ) : (
           <div className="empty-notifications">
             <Sparkles size={48} className="empty-icon" />
-            <h3>All caught up!</h3>
-            <p>No new system notifications in this category.</p>
+            <h3>{t('adminNotifications.emptyTitle')}</h3>
+            <p>{t('adminNotifications.emptyDesc')}</p>
           </div>
         )}
       </div>

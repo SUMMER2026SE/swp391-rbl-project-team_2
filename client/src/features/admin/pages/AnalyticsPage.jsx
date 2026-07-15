@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   LineChart, Line 
@@ -10,6 +11,7 @@ import adminService from '../../../services/adminService';
 import './AnalyticsPage.css';
 
 const AnalyticsPage = () => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     totalRevenue: 0,
     activeTenants: 0,
@@ -21,12 +23,12 @@ const AnalyticsPage = () => {
 
   // Mock data for occupancy until backend supports historical occupancy tracking
   const occupancyData = [
-    { month: 'Jan', rate: 85 },
-    { month: 'Feb', rate: 88 },
-    { month: 'Mar', rate: 86 },
-    { month: 'Apr', rate: 92 },
-    { month: 'May', rate: 90 },
-    { month: 'Jun', rate: parseInt(stats.occupancyRate) || 95 },
+    { month: t('adminDashboard.months.Jan', 'Jan'), rate: 85 },
+    { month: t('adminDashboard.months.Feb', 'Feb'), rate: 88 },
+    { month: t('adminDashboard.months.Mar', 'Mar'), rate: 86 },
+    { month: t('adminDashboard.months.Apr', 'Apr'), rate: 92 },
+    { month: t('adminDashboard.months.May', 'May'), rate: 90 },
+    { month: t('adminDashboard.months.Jun', 'Jun'), rate: parseInt(stats.occupancyRate) || 95 },
   ];
 
   useEffect(() => {
@@ -44,7 +46,6 @@ const AnalyticsPage = () => {
           const last6Months = chartRes.data.filter((d, i) => i <= currentMonth && i >= currentMonth - 5);
           if (last6Months.length < 6) {
              // fill missing past months if needed
-             const diff = 6 - last6Months.length;
              const padded = chartRes.data.slice(Math.max(0, currentMonth - 5), currentMonth + 1);
              setRevenueData(padded);
           } else {
@@ -65,13 +66,13 @@ const AnalyticsPage = () => {
   return (
     <div className="admin-page-container">
       <div className="admin-page-header">
-        <h1 className="admin-page-title">Reports & Analytics</h1>
-        <p className="admin-page-subtitle">Overview of your business performance and property statistics.</p>
+        <h1 className="admin-page-title">{t('adminAnalytics.title')}</h1>
+        <p className="admin-page-subtitle">{t('adminAnalytics.subtitle')}</p>
       </div>
 
       <div className="stats-grid">
         <StatCard 
-          title="Total Revenue (This Year)" 
+          title={t('adminAnalytics.totalRevenue')}
           value={formatCurrency(stats.totalRevenue)} 
           icon={<DollarSign size={24} />}
           trend="up"
@@ -79,21 +80,21 @@ const AnalyticsPage = () => {
           isCurrency={true}
         />
         <StatCard 
-          title="Active Tenants" 
+          title={t('adminAnalytics.activeTenants')}
           value={stats.activeTenants} 
           icon={<Users size={24} />}
           trend="up"
           trendValue="4.2%"
         />
         <StatCard 
-          title="Total Listings" 
+          title={t('adminAnalytics.totalListings')}
           value={stats.totalListings} 
           icon={<Home size={24} />}
           trend="up"
           trendValue="2"
         />
         <StatCard 
-          title="Occupancy Rate" 
+          title={t('adminAnalytics.occupancyRate')}
           value={stats.occupancyRate} 
           icon={<TrendingUp size={24} />}
           trend="up"
@@ -104,24 +105,30 @@ const AnalyticsPage = () => {
       <div className="charts-grid">
         <div className="chart-card chart-large">
           <div className="chart-header">
-            <h3>Revenue Overview</h3>
+            <h3>{t('adminAnalytics.revenueOverview')}</h3>
             <select className="chart-filter">
-              <option>Last 6 Months</option>
-              <option>This Year</option>
+              <option>{t('adminAnalytics.last6Months')}</option>
+              <option>{t('adminAnalytics.thisYear')}</option>
             </select>
           </div>
           <div className="chart-body">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={revenueData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} />
+                <XAxis 
+                  dataKey="month" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickFormatter={(month) => t(`adminDashboard.months.${month}`, month)} 
+                />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tickFormatter={(value) => `${value / 1000000}M`}
+                  tickFormatter={(value) => `${value / 1000000}${t('adminDashboard.million', 'M')}`}
                 />
                 <Tooltip 
                   formatter={(value) => formatCurrency(value)}
+                  labelFormatter={(label) => t(`adminDashboard.months.${label}`, label)}
                   cursor={{ fill: '#f8fafc' }}
                 />
                 <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
@@ -132,7 +139,7 @@ const AnalyticsPage = () => {
 
         <div className="chart-card">
           <div className="chart-header">
-            <h3>Occupancy Rate</h3>
+            <h3>{t('adminAnalytics.occupancyRate')}</h3>
           </div>
           <div className="chart-body">
             <ResponsiveContainer width="100%" height={300}>
