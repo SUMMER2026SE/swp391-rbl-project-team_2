@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, ChevronDown, List, Grid, MoreHorizontal, AlertTriangle } from 'lucide-react';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
@@ -9,6 +10,7 @@ import adminService from '../../../services/adminService';
 import './ListingsPage.css';
 
 const ListingsPage = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -121,11 +123,11 @@ const ListingsPage = () => {
       {/* Header */}
       <div className="listings-page-header">
         <div className="header-titles">
-          <h1 className="admin-page-title">Listing Management</h1>
-          <p className="admin-page-subtitle">Manage properties, review flagged listings, and monitor performance.</p>
+          <h1 className="admin-page-title">{t('adminListings.title')}</h1>
+          <p className="admin-page-subtitle">{t('adminListings.subtitle')}</p>
         </div>
         <div className="header-actions">
-          <button className="btn-bulk-action">Bulk Actions</button>
+          <button className="btn-bulk-action">{t('adminListings.bulkActions')}</button>
           <div className="view-mode-toggle">
             <button 
               className={`btn-view ${viewMode === 'list' ? 'active' : ''}`}
@@ -158,7 +160,7 @@ const ListingsPage = () => {
             fontSize: '0.95rem'
           }}
         >
-          All Properties
+          {t('adminListings.allProperties')}
         </button>
         <button 
           className={`listing-tab ${activeTab === 'pending' ? 'active' : ''}`}
@@ -177,7 +179,7 @@ const ListingsPage = () => {
             gap: '8px'
           }}
         >
-          Pending Approvals
+          {t('adminListings.pendingApprovals')}
           {listings.filter(l => l.status.toLowerCase() === 'pending').length > 0 && (
             <span style={{ 
               background: '#ef4444', 
@@ -200,7 +202,7 @@ const ListingsPage = () => {
             <Search size={18} className="search-icon" />
             <input 
               type="text" 
-              placeholder="Search by Prop ID or Title..." 
+              placeholder={t('adminListings.searchPlaceholder')} 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -218,7 +220,7 @@ const ListingsPage = () => {
                   setDistrictFilter('All'); // Reset district when city changes
                 }}
               >
-                <option value="All">All Cities/Provinces</option>
+                <option value="All">{t('adminListings.allCities')}</option>
                 {uniqueCities.map(city => (
                   <option key={city} value={city}>{city}</option>
                 ))}
@@ -232,7 +234,7 @@ const ListingsPage = () => {
                 value={districtFilter}
                 onChange={(e) => setDistrictFilter(e.target.value)}
               >
-                <option value="All">All Districts</option>
+                <option value="All">{t('adminListings.allDistricts')}</option>
                 {uniqueDistricts.map(district => (
                   <option key={district} value={district}>{district}</option>
                 ))}
@@ -246,26 +248,26 @@ const ListingsPage = () => {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <option value="All">All Statuses</option>
-                <option value="available">Active / Available</option>
-                <option value="pending">Pending Approval</option>
-                <option value="rented">Occupied</option>
-                <option value="rejected">Rejected</option>
-                <option value="hidden">Hidden</option>
+                <option value="All">{t('adminListings.allStatuses')}</option>
+                <option value="available">{t('adminListings.statusActive')}</option>
+                <option value="pending">{t('adminListings.statusPending')}</option>
+                <option value="rented">{t('adminListings.statusOccupied')}</option>
+                <option value="rejected">{t('adminListings.statusRejected')}</option>
+                <option value="hidden">{t('adminListings.statusHidden')}</option>
               </select>
               <ChevronDown size={14} className="dropdown-icon" />
             </div>
 
             <button className="btn-more-filters">
               <MoreHorizontal size={18} />
-              <span>More</span>
+              <span>{t('adminListings.more')}</span>
             </button>
           </div>
         </div>
 
         {/* Table Content */}
         {loading ? (
-          <div className="loading-state">Loading listings...</div>
+          <div className="loading-state">{t('adminListings.loading')}</div>
         ) : viewMode === 'list' ? (
           <ListingTable listings={currentListings} onUpdateStatus={handleUpdateStatus} />
         ) : (
@@ -276,7 +278,7 @@ const ListingsPage = () => {
         {filteredListings.length > 0 && (
           <div className="pagination-container">
             <span className="pagination-info">
-              Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredListings.length)} of {filteredListings.length} properties
+              {t('adminListings.showing', { start: indexOfFirstItem + 1, end: Math.min(indexOfLastItem, filteredListings.length), total: filteredListings.length })}
             </span>
             <div className="pagination-controls">
               <button 
@@ -284,17 +286,17 @@ const ListingsPage = () => {
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               >
-                Previous
+                {t('adminListings.previous')}
               </button>
               <span className="page-indicator" style={{ margin: '0 10px', fontSize: '0.9rem', color: '#64748b' }}>
-                Page {currentPage} of {totalPages}
+                {t('adminListings.pageIndicator', { current: currentPage, total: totalPages })}
               </span>
               <button 
                 className="btn-page" 
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               >
-                Next
+                {t('adminListings.next')}
               </button>
             </div>
           </div>
@@ -311,20 +313,20 @@ const ListingsPage = () => {
           <div className="confirm-modal-icon-wrapper">
             <AlertTriangle className="confirm-modal-icon" size={30} />
           </div>
-          <h3 className="confirm-modal-title">Confirm Status Change</h3>
+          <h3 className="confirm-modal-title">{t('adminListings.confirmTitle')}</h3>
           <p className="confirm-modal-text">
-            Are you sure you want to change this listing's status to 
-            <span className={`status-badge-inline status-${confirmDialog.status?.toLowerCase()}`}>
-              {confirmDialog.status}
+            {t('adminListings.confirmText')}
+            {' '}<span className={`status-badge-inline status-${confirmDialog.status?.toLowerCase()}`}>
+              {t(`adminListings.status${confirmDialog.status ? confirmDialog.status.charAt(0).toUpperCase() + confirmDialog.status.slice(1).toLowerCase() : ''}`, confirmDialog.status)}
             </span>?
           </p>
         </Modal.Body>
         <Modal.Footer className="confirm-modal-footer">
           <button className="btn-confirm-cancel" onClick={closeConfirmDialog}>
-            Cancel
+            {t('adminListings.cancel')}
           </button>
           <button className="btn-confirm-submit" onClick={executeStatusUpdate}>
-            Confirm
+            {t('adminListings.confirm')}
           </button>
         </Modal.Footer>
       </Modal>

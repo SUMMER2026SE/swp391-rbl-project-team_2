@@ -1,10 +1,12 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, AlertCircle, Shield, Search, Bell, Mail, MessageSquare } from 'lucide-react';
 import adminService from '../../../services/adminService';
 import './ViolationManagementPage.css';
 
 const ViolationManagementPage = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [complaints, setComplaints] = useState([]);
   const [disputes, setDisputes] = useState([]);
@@ -39,10 +41,10 @@ const ViolationManagementPage = () => {
     id: c.complaint_id,
     type: 'complaint',
     severity: index % 3 === 0 ? 'critical' : index % 3 === 1 ? 'warning' : 'info',
-    title: `Complaint from ${c.tenant?.full_name || 'Tenant'} regarding ${c.room?.title || 'Room'}`,
+    title: t('adminDisputes.complaintTitle', { tenant: c.tenant?.full_name || 'Tenant', room: c.room?.title || 'Room' }),
     description: c.description,
     time: new Date(c.created_at).toLocaleString('vi-VN'),
-    actionLabel: 'Review Case',
+    actionLabel: t('adminDisputes.reviewCase'),
     secondaryAction: 'Dismiss',
     status: c.status,
     raw: c
@@ -52,10 +54,10 @@ const ViolationManagementPage = () => {
     id: d.schedule_id,
     type: 'dispute',
     severity: 'critical',
-    title: `Dispute from ${d.tenant?.full_name} for room ${d.room?.title}`,
+    title: t('adminDisputes.disputeTitle', { tenant: d.tenant?.full_name, room: d.room?.title }),
     description: d.dispute_reason || d.notes,
     time: new Date(d.updated_at).toLocaleString('vi-VN'),
-    actionLabel: 'Resolve Dispute',
+    actionLabel: t('adminDisputes.resolveDispute'),
     secondaryAction: 'Ignore',
     status: d.status,
     raw: d
@@ -67,10 +69,10 @@ const ViolationManagementPage = () => {
   const resolvedDisputes = disputes.filter(d => d.status === 'dispute_resolved').map(d => ({
     id: d.schedule_id,
     type: 'dispute',
-    title: `Resolved dispute for room ${d.room?.title || 'Unknown'}`,
-    description: `Tenant: ${d.tenant?.full_name} | Landlord: ${d.landlordSchedule?.full_name}`,
+    title: t('adminDisputes.resolvedDisputeTitle', { room: d.room?.title || 'Unknown' }),
+    description: t('adminDisputes.resolvedDisputeDesc', { tenant: d.tenant?.full_name, landlord: d.landlordSchedule?.full_name }),
     time: new Date(d.updated_at).toLocaleString('vi-VN'),
-    status: 'Resolved',
+    status: t('adminDisputes.resolvedStatus'),
     raw: d
   }));
 
@@ -90,7 +92,7 @@ const ViolationManagementPage = () => {
   };
 
   if (loading) {
-    return <div className="violation-management-page"><div className="loading-state">Loading violations...</div></div>;
+    return <div className="violation-management-page"><div className="loading-state">{t('adminDisputes.loading')}</div></div>;
   }
 
   return (
@@ -98,11 +100,11 @@ const ViolationManagementPage = () => {
       {/* Page Header */}
       <div className="page-header">
         <div className="violation-header-content">
-          <h1>Disputes Management</h1>
-          <p>Resolve disputes regarding room viewing issues and manage complaint history.</p>
+          <h1>{t('adminDisputes.title')}</h1>
+          <p>{t('adminDisputes.subtitle')}</p>
         </div>
         <div className="header-actions">
-          <button className="btn-export">📊 Export</button>
+          <button className="btn-export">📊 {t('adminDisputes.export')}</button>
         </div>
       </div>
 
@@ -121,7 +123,7 @@ const ViolationManagementPage = () => {
           }}
           onClick={() => setActiveTab('pending')}
         >
-          Pending Disputes
+          {t('adminDisputes.pendingDisputes')}
         </button>
         <button 
           style={{ 
@@ -136,7 +138,7 @@ const ViolationManagementPage = () => {
           }}
           onClick={() => setActiveTab('history')}
         >
-          Resolution History
+          {t('adminDisputes.resolutionHistory')}
         </button>
       </div>
 
@@ -146,7 +148,7 @@ const ViolationManagementPage = () => {
         {activeTab === 'pending' && (
           <div className="alerts-feed">
             <h2 className="feed-title">
-              Active Disputes & Complaints
+              {t('adminDisputes.activeDisputes')}
             </h2>
 
             {alerts.length > 0 ? alerts.map((alert) => (
@@ -182,7 +184,7 @@ const ViolationManagementPage = () => {
                 </div>
               </div>
             )) : (
-              <p className="text-gray-500 py-4 text-center" style={{ color: '#6b7280', textAlign: 'center', padding: '1rem 0' }}>No active complaints found.</p>
+              <p className="text-gray-500 py-4 text-center" style={{ color: '#6b7280', textAlign: 'center', padding: '1rem 0' }}>{t('adminDisputes.noActiveComplaints')}</p>
             )}
           </div>
         )}
@@ -190,7 +192,7 @@ const ViolationManagementPage = () => {
         {activeTab === 'history' && (
           <div className="alerts-feed">
             <h2 className="feed-title">
-              Resolution History
+              {t('adminDisputes.resolutionHistory')}
             </h2>
 
             {history.length > 0 ? history.map((item) => (
@@ -224,13 +226,13 @@ const ViolationManagementPage = () => {
                       }}
                       style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
                     >
-                      View Details
+                      {t('adminDisputes.viewDetails')}
                     </button>
                   </div>
                 </div>
               </div>
             )) : (
-              <p className="text-gray-500 py-4 text-center" style={{ color: '#6b7280', textAlign: 'center', padding: '1rem 0' }}>No resolution history found.</p>
+              <p className="text-gray-500 py-4 text-center" style={{ color: '#6b7280', textAlign: 'center', padding: '1rem 0' }}>{t('adminDisputes.noResolutionHistory')}</p>
             )}
           </div>
         )}
@@ -241,39 +243,39 @@ const ViolationManagementPage = () => {
         <div className="complaint-modal-overlay" onClick={() => setSelectedComplaint(null)}>
           <div className="complaint-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Complaint Details</h3>
+              <h3>{t('adminDisputes.complaintDetails')}</h3>
               <button className="btn-close-modal" onClick={() => setSelectedComplaint(null)}>×</button>
             </div>
             <div className="modal-body">
               <div className="detail-group">
-                <label>Complaint ID:</label>
+                <label>{t('adminDisputes.complaintId')}</label>
                 <p>#{selectedComplaint.id}</p>
               </div>
               <div className="detail-group">
-                <label>Subject:</label>
+                <label>{t('adminDisputes.subject')}</label>
                 <p>{selectedComplaint.title}</p>
               </div>
               <div className="detail-group">
-                <label>Date Submitted:</label>
+                <label>{t('adminDisputes.dateSubmitted')}</label>
                 <p>{selectedComplaint.time}</p>
               </div>
               <div className="detail-group">
-                <label>Severity:</label>
+                <label>{t('adminDisputes.severity')}</label>
                 <p style={{textTransform: 'capitalize'}}>{selectedComplaint.severity}</p>
               </div>
               <div className="detail-group full-width">
-                <label>Description:</label>
+                <label>{t('adminDisputes.description')}</label>
                 <div className="description-box">
                   {selectedComplaint.description}
                 </div>
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setSelectedComplaint(null)}>Close</button>
+              <button className="btn-secondary" onClick={() => setSelectedComplaint(null)}>{t('adminDisputes.close')}</button>
               <button className="btn-primary" onClick={() => {
-                toast.success('Action successfully recorded!');
+                toast.success(t('adminDisputes.actionSuccess'));
                 setSelectedComplaint(null);
-              }}>Take Action</button>
+              }}>{t('adminDisputes.takeAction')}</button>
             </div>
           </div>
         </div>
@@ -284,28 +286,28 @@ const ViolationManagementPage = () => {
         <div className="complaint-modal-overlay" onClick={() => setSelectedDispute(null)}>
           <div className="complaint-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
-              <h3>Resolve Room Dispute</h3>
+              <h3>{t('adminDisputes.resolveRoomDispute')}</h3>
               <button className="btn-close-modal" onClick={() => setSelectedDispute(null)}>×</button>
             </div>
             <div className="modal-body">
               <div className="detail-group">
-                <label>Schedule ID:</label>
+                <label>{t('adminDisputes.scheduleId')}</label>
                 <p>#{selectedDispute.schedule_id}</p>
               </div>
               <div className="detail-group">
-                <label>Room:</label>
+                <label>{t('adminDisputes.room')}</label>
                 <p>{selectedDispute.room?.title}</p>
               </div>
               <div className="detail-group">
-                <label>Tenant:</label>
+                <label>{t('adminDisputes.tenant')}</label>
                 <p>{selectedDispute.tenant?.full_name} ({selectedDispute.tenant?.email})</p>
               </div>
               <div className="detail-group">
-                <label>Landlord:</label>
+                <label>{t('adminDisputes.landlord')}</label>
                 <p>{selectedDispute.landlordSchedule?.full_name}</p>
               </div>
               <div className="detail-group full-width">
-                <label>Dispute Reason / Notes:</label>
+                <label>{t('adminDisputes.disputeReason')}</label>
                 <div className="description-box" style={{ whiteSpace: 'pre-wrap' }}>
                   {selectedDispute.dispute_reason || selectedDispute.notes}
                 </div>
@@ -313,37 +315,37 @@ const ViolationManagementPage = () => {
 
               {selectedDispute.status === 'disputed' ? (
                 <div className="detail-group full-width" style={{ marginTop: '20px' }}>
-                  <label>Resolution Outcome:</label>
+                  <label>{t('adminDisputes.resolutionOutcome')}</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                         <input type="radio" name="outcome" value="A" checked={disputeOutcome === 'A'} onChange={e => setDisputeOutcome(e.target.value)} />
                         <div>
-                          <strong>Outcome A (Landlord Wrong)</strong> - Issue warning to Landlord, cancel schedule
+                          {t('adminDisputes.outcomeA')}
                         </div>
                       </label>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                         <input type="radio" name="outcome" value="B" checked={disputeOutcome === 'B'} onChange={e => setDisputeOutcome(e.target.value)} />
                         <div>
-                          <strong>Outcome B (Tenant Unreasonable)</strong> - Reject dispute, cancel schedule
+                          {t('adminDisputes.outcomeB')}
                         </div>
                       </label>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                         <input type="radio" name="outcome" value="C" checked={disputeOutcome === 'C'} onChange={e => setDisputeOutcome(e.target.value)} />
                         <div>
-                          <strong>Outcome C (Shared Fault)</strong> - Cancel schedule without penalty
+                          {t('adminDisputes.outcomeC')}
                         </div>
                       </label>
                   </div>
                 </div>
               ) : (
                 <div className="detail-group full-width" style={{ marginTop: '20px' }}>
-                  <label>Status:</label>
-                  <p style={{ color: '#10B981', fontWeight: 'bold' }}>Resolved</p>
+                  <label>{t('adminDisputes.status')}</label>
+                  <p style={{ color: '#10B981', fontWeight: 'bold' }}>{t('adminDisputes.resolvedStatus')}</p>
                 </div>
               )}
             </div>
             <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setSelectedDispute(null)}>Close</button>
+              <button className="btn-secondary" onClick={() => setSelectedDispute(null)}>{t('adminDisputes.close')}</button>
               {selectedDispute.status === 'disputed' && (
                 <button 
                   className="btn-primary" 
@@ -352,15 +354,15 @@ const ViolationManagementPage = () => {
                   onClick={async () => {
                     try {
                       await adminService.resolveDispute(selectedDispute.schedule_id, disputeOutcome);
-                      toast.success('Dispute resolved successfully!');
+                      toast.success(t('adminDisputes.disputeSuccess'));
                       setSelectedDispute(null);
                       fetchData();
                     } catch (err) {
-                      toast.error('Failed to resolve dispute.');
+                      toast.error(t('adminDisputes.disputeFailed'));
                     }
                   }}
                 >
-                  Confirm Resolution
+                  {t('adminDisputes.confirmResolution')}
                 </button>
               )}
             </div>

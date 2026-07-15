@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, UserCheck, UserX, MoreVertical, Shield } from 'lucide-react';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
@@ -14,6 +15,7 @@ const ROLE_COLORS = {
 };
 
 const UsersPage = () => {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [users, setUsers] = useState([]);
@@ -41,7 +43,7 @@ const UsersPage = () => {
         setUsers(res.data);
       }
     } catch (err) {
-      setError('Failed to fetch users. Please try again.');
+      setError(t('adminUsers.errorFetch'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -59,11 +61,11 @@ const UsersPage = () => {
     try {
       const res = await adminService.updateUserStatus(userId, action);
       if (res.success) {
-        toast.success(`User successfully ${action}d!`);
+        toast.success(t(`adminUsers.success${action.charAt(0).toUpperCase() + action.slice(1)}`));
         fetchUsers(); // Refresh list
       }
     } catch (err) {
-      toast.error('Failed to update user status.');
+      toast.error(t('adminUsers.errorUpdate'));
       console.error(err);
     }
   };
@@ -89,8 +91,8 @@ const UsersPage = () => {
   return (
     <div className="admin-page-container">
       <div className="admin-page-header">
-        <h1 className="admin-page-title">User Management</h1>
-        <p className="admin-page-subtitle">Manage tenants, landlords, and admin accounts.</p>
+        <h1 className="admin-page-title">{t('adminUsers.title')}</h1>
+        <p className="admin-page-subtitle">{t('adminUsers.subtitle')}</p>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -101,34 +103,34 @@ const UsersPage = () => {
             <Search size={18} className="search-icon" />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder={t('adminUsers.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="toolbar-filters">
             <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="filter-select">
-              <option value="All">All Roles</option>
-              <option value="TENANT">Tenant</option>
-              <option value="LANDLORD">Landlord</option>
-              <option value="ADMIN">Admin</option>
+              <option value="All">{t('adminUsers.allRoles')}</option>
+              <option value="TENANT">{t('adminUsers.roleTenant')}</option>
+              <option value="LANDLORD">{t('adminUsers.roleLandlord')}</option>
+              <option value="ADMIN">{t('adminUsers.roleAdmin')}</option>
             </select>
           </div>
         </div>
 
         <div className="users-table-container">
           {loading ? (
-            <div className="loading-state">Loading users...</div>
+            <div className="loading-state">{t('adminUsers.loading')}</div>
           ) : (
             <table className="users-table">
               <thead>
                 <tr>
-                  <th>User</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Rooms</th>
-                  <th>Joined</th>
-                  <th className="th-actions">Actions</th>
+                  <th>{t('adminUsers.tableUser')}</th>
+                  <th>{t('adminUsers.tableRole')}</th>
+                  <th>{t('adminUsers.tableStatus')}</th>
+                  <th>{t('adminUsers.tableRooms')}</th>
+                  <th>{t('adminUsers.tableJoined')}</th>
+                  <th className="th-actions">{t('adminUsers.tableActions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -148,12 +150,12 @@ const UsersPage = () => {
                     <td>
                       <span className={`role-badge ${ROLE_COLORS[user.role]}`}>
                         {user.role === 'ADMIN' && <Shield size={12} />}
-                        {user.role}
+                        {t(`adminUsers.roles.${user.role}`, user.role)}
                       </span>
                     </td>
                     <td>
                       <span className={`status-badge ${user.status === 'Active' ? 'status-active' : 'status-hidden'}`}>
-                        {user.status}
+                        {t(`adminUsers.status.${user.status}`, user.status)}
                       </span>
                     </td>
                     <td className="td-center">{user.rooms}</td>
@@ -162,7 +164,7 @@ const UsersPage = () => {
                       <div className="action-buttons">
                         <button 
                           className="btn-action-icon" 
-                          title="Activate"
+                          title={t('adminUsers.activate')}
                           onClick={() => handleUpdateStatus(user.rawId, 'activate')}
                           disabled={user.status === 'Active' || user.role === 'ADMIN'}
                         >
@@ -170,13 +172,13 @@ const UsersPage = () => {
                         </button>
                         <button 
                           className="btn-action-icon" 
-                          title="Suspend"
+                          title={t('adminUsers.suspend')}
                           onClick={() => handleUpdateStatus(user.rawId, 'suspend')}
                           disabled={user.status === 'Suspended' || user.role === 'ADMIN'}
                         >
                           <UserX size={18} />
                         </button>
-                        <button className="btn-action-icon" title="More" disabled={user.role === 'ADMIN'}>
+                        <button className="btn-action-icon" title={t('adminUsers.more')} disabled={user.role === 'ADMIN'}>
                           <MoreVertical size={18} />
                         </button>
                       </div>
@@ -185,7 +187,7 @@ const UsersPage = () => {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan="6" className="text-center py-4">No users found</td>
+                    <td colSpan="6" className="text-center py-4">{t('adminUsers.noUsers')}</td>
                   </tr>
                 )}
               </tbody>
@@ -195,7 +197,11 @@ const UsersPage = () => {
 
         <div className="pagination-container">
           <span className="pagination-info">
-            Showing {filtered.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} users
+            {t('adminUsers.showing', {
+              start: filtered.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1,
+              end: Math.min(currentPage * itemsPerPage, filtered.length),
+              total: filtered.length
+            })}
           </span>
           <div className="pagination-controls">
             <button 
@@ -203,7 +209,7 @@ const UsersPage = () => {
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
             >
-              Previous
+              {t('adminUsers.previous')}
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button 
@@ -219,7 +225,7 @@ const UsersPage = () => {
               disabled={currentPage === totalPages || totalPages === 0}
               onClick={() => setCurrentPage(p => p + 1)}
             >
-              Next
+              {t('adminUsers.next')}
             </button>
           </div>
         </div>
@@ -227,17 +233,17 @@ const UsersPage = () => {
 
       <Modal show={confirmDialog.show} onHide={closeConfirmDialog} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Confirm User Action</Modal.Title>
+          <Modal.Title>{t('adminUsers.confirmTitle')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to <strong>{confirmDialog.action}</strong> this user?
+          {t('adminUsers.confirmText', { action: confirmDialog.action ? t(`adminUsers.${confirmDialog.action}`) : '' })}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={closeConfirmDialog}>
-            Cancel
+            {t('adminUsers.cancel')}
           </Button>
           <Button variant={confirmDialog.action === 'suspend' ? 'danger' : 'primary'} onClick={executeStatusUpdate}>
-            Confirm
+            {t('adminUsers.confirm')}
           </Button>
         </Modal.Footer>
       </Modal>

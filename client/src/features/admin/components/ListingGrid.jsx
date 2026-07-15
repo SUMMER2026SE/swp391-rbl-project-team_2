@@ -1,23 +1,25 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { EyeOff, CheckCircle, ExternalLink, MapPin, Eye, MessageSquare, MoreVertical, ShieldCheck, AlertCircle, XCircle } from 'lucide-react';
 import { formatCurrency } from '../../../utils/format';
 import './ListingGrid.css';
 
 const ListingGrid = ({ listings, onUpdateStatus }) => {
+  const { t } = useTranslation();
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case 'active':
       case 'available':
-        return <span className="grid-status-badge active">Available</span>;
+        return <span className="grid-status-badge active">{t('adminListings.statusAvailable')}</span>;
       case 'occupied':
       case 'rented':
-        return <span className="grid-status-badge occupied">Occupied</span>;
+        return <span className="grid-status-badge occupied">{t('adminListings.statusOccupied')}</span>;
       case 'hidden':
-        return <span className="grid-status-badge hidden">Hidden</span>;
+        return <span className="grid-status-badge hidden">{t('adminListings.statusHidden')}</span>;
       case 'pending':
-        return <span className="grid-status-badge" style={{ backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>Pending</span>;
+        return <span className="grid-status-badge" style={{ backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>{t('adminListings.statusPending')}</span>;
       case 'rejected':
-        return <span className="grid-status-badge" style={{ backgroundColor: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3' }}>Rejected</span>;
+        return <span className="grid-status-badge" style={{ backgroundColor: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3' }}>{t('adminListings.statusRejected')}</span>;
       default:
         return <span className="grid-status-badge">{status}</span>;
     }
@@ -26,7 +28,7 @@ const ListingGrid = ({ listings, onUpdateStatus }) => {
   if (listings.length === 0) {
     return (
       <div className="grid-empty-state">
-        <p>No listings found.</p>
+        <p>{t('adminListings.noListings')}</p>
       </div>
     );
   }
@@ -42,27 +44,27 @@ const ListingGrid = ({ listings, onUpdateStatus }) => {
               {getStatusBadge(listing.status)}
               {listing.alert && (
                 <span className="grid-alert-badge">
-                  <AlertCircle size={14} /> Alert
+                  <AlertCircle size={14} /> {t('adminListings.alert')}
                 </span>
               )}
             </div>
             <div className="grid-card-overlay-actions">
-              <button className="grid-icon-btn" title="View Details" onClick={() => window.open(`/admin/listings/${listing.rawId}/review`, '_blank')}>
+              <button className="grid-icon-btn" title={t('adminListings.viewDetails')} onClick={() => window.open(`/admin/listings/${listing.rawId}/review`, '_blank')}>
                 <ExternalLink size={16} />
               </button>
               {listing.status.toLowerCase() === 'pending' ? (
                 <button 
                   className="grid-icon-btn" 
-                  title="Review Listing"
+                  title={t('adminListings.viewAndReview')}
                   style={{ color: '#4f46e5', borderColor: '#c7d2fe', backgroundColor: '#eef2ff', padding: '0 8px', width: 'auto' }}
                   onClick={() => window.open(`/admin/listings/${listing.rawId}/review`, '_blank')}
                 >
-                  <span style={{ fontSize: '12px', fontWeight: '500' }}>Review</span>
+                  <span style={{ fontSize: '12px', fontWeight: '500' }}>{t('adminListings.reviewListing')}</span>
                 </button>
               ) : listing.status.toLowerCase() !== 'hidden' ? (
                 <button 
                   className="grid-icon-btn" 
-                  title="Hide Listing"
+                  title={t('adminListings.hideListing')}
                   onClick={() => onUpdateStatus(listing.rawId, 'hidden')}
                 >
                   <EyeOff size={16} />
@@ -70,13 +72,13 @@ const ListingGrid = ({ listings, onUpdateStatus }) => {
               ) : (
                 <button 
                   className="grid-icon-btn" 
-                  title="Activate Listing"
+                  title={t('adminListings.activateListing')}
                   onClick={() => onUpdateStatus(listing.rawId, 'available')}
                 >
                   <CheckCircle size={16} />
                 </button>
               )}
-              <button className="grid-icon-btn" title="More Options">
+              <button className="grid-icon-btn" title={t('adminListings.moreOptions')}>
                 <MoreVertical size={16} />
               </button>
             </div>
@@ -93,7 +95,7 @@ const ListingGrid = ({ listings, onUpdateStatus }) => {
               <span>{listing.location}</span>
             </div>
             <div className="grid-card-price">
-              {formatCurrency(listing.price)}<span>/month</span>
+              {formatCurrency(listing.price)}<span>{t('adminListings.perMonth')}</span>
             </div>
           </div>
 
@@ -104,9 +106,9 @@ const ListingGrid = ({ listings, onUpdateStatus }) => {
                 {listing.landlord?.name?.charAt(0) || 'U'}
               </div>
               <div className="grid-landlord-details">
-                <span className="grid-landlord-name">{listing.landlord?.name || 'Unknown'}</span>
+                <span className="grid-landlord-name">{listing.landlord?.name || t('adminListings.unknown')}</span>
                 {listing.landlord?.type === 'Verified Host' && (
-                  <span className="grid-verified-host"><ShieldCheck size={12} /> Verified</span>
+                  <span className="grid-verified-host"><ShieldCheck size={12} /> {t('adminListings.verifiedHost')}</span>
                 )}
               </div>
             </div>
@@ -114,7 +116,7 @@ const ListingGrid = ({ listings, onUpdateStatus }) => {
           
           {listing.alert && (
             <div className="grid-card-alert-action">
-              <button className="btn-review-alert">Review Violation</button>
+              <button className="btn-review-alert">{t('adminListings.reviewViolation')}</button>
             </div>
           )}
         </div>

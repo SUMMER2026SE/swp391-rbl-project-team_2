@@ -232,8 +232,8 @@ const RentalRequestsPage = () => {
       {/* Header */}
       <div className="rental-requests__header">
         <div>
-          <h1 className="rental-requests__title">{t('rentalRequests.rentalRequests', 'Rental Requests')}</h1>
-          <p className="rental-requests__subtitle">{t('rentalRequests.reviewAndManageTenantRental', 'Review and manage tenant rental applications')}</p>
+          <h1 className="rental-requests__title">{t('landlordRequests.title')}</h1>
+          <p className="rental-requests__subtitle">{t('landlordRequests.subtitle')}</p>
         </div>
       </div>
 
@@ -251,19 +251,19 @@ const RentalRequestsPage = () => {
           <Search size={18} />
           <input
             type="text"
-            placeholder={t('rentalRequests.searchByTenantNameEmailPlaceholder', 'Search by tenant name, email, or room...')}
+            placeholder={t('landlordRequests.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
         <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>{t('rentalRequests.from', 'From:')}</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>{t('landlordRequests.from')}</span>
           <input type="date" lang="en-GB" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
         </div>
 
         <div className="filter-dropdown-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)', padding: '0.65rem 1rem', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>{t('rentalRequests.to', 'To:')}</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>{t('landlordRequests.to')}</span>
           <input type="date" lang="en-GB" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-main)', cursor: 'pointer' }} />
         </div>
 
@@ -288,7 +288,7 @@ const RentalRequestsPage = () => {
             className="filter-dropdown-btn"
             onClick={() => setShowStatusDropdown(!showStatusDropdown)}
           >
-            <span>{statusFilter === 'All' ? 'All' : statusFilter.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
+            <span>{statusFilter === 'All' ? t('landlordRequests.all') : t(`landlordRequests.statusLabels.${statusFilter}`)}</span>
             <ChevronDown size={16} />
           </button>
           {showStatusDropdown && (
@@ -302,7 +302,7 @@ const RentalRequestsPage = () => {
                     setShowStatusDropdown(false);
                   }}
                 >
-                  {status === 'All' ? 'All' : status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                  {status === 'All' ? t('landlordRequests.all') : t(`landlordRequests.statusLabels.${status}`)}
                 </button>
               ))}
             </div>
@@ -316,12 +316,12 @@ const RentalRequestsPage = () => {
           <table className="rental-requests__table">
             <thead>
               <tr>
-                <th>{t('rentalRequests.tenant', 'Tenant')}</th>
-                <th>{t('rentalRequests.room', 'Room')}</th>
-                <th>{t('rentalRequests.requestDate', 'Request Date')}</th>
-                <th>{t('rentalRequests.moveinDate', 'Move-in Date')}</th>
-                <th>{t('rentalRequests.status', 'Status')}</th>
-                <th>{t('rentalRequests.actions', 'Actions')}</th>
+                <th>{t('landlordRequests.tenant')}</th>
+                <th>{t('landlordRequests.room')}</th>
+                <th>{t('landlordRequests.requestDate')}</th>
+                <th>{t('landlordRequests.moveInDate')}</th>
+                <th>{t('landlordRequests.status')}</th>
+                <th>{t('landlordRequests.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -363,7 +363,7 @@ const RentalRequestsPage = () => {
                   </td>
                   <td>
                     <Badge variant={getStatusColor(request.status)}>
-                      {formatStatus(request.status)}
+                      {t(`landlordRequests.statusLabels.${request.status}`)}
                     </Badge>
                   </td>
                   <td>
@@ -373,7 +373,7 @@ const RentalRequestsPage = () => {
                         setSelectedRequest(request);
                         setShowDetailModal(true);
                       }}
-                    >{t('rentalRequests.viewDetails', 'View Details')}</button>
+                    >{t('landlordRequests.viewDetails')}</button>
                   </td>
                 </tr>
               ))}
@@ -383,8 +383,8 @@ const RentalRequestsPage = () => {
       ) : (
         <EmptyState
           icon="📋"
-          title="No rental requests"
-          description="You don't have any rental requests yet"
+          title={t('landlordRequests.noRequests')}
+          description={t('landlordRequests.noRequestsDesc')}
         />
       )}
 
@@ -393,7 +393,7 @@ const RentalRequestsPage = () => {
         <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}>
           <div className="modal-content modal-content--large" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{t('rentalRequests.rentalRequestDetails', 'Rental Request Details')}</h3>
+              <h3>{t('landlordRequests.requestDetails')}</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setShowDetailModal(false)}
@@ -405,31 +405,31 @@ const RentalRequestsPage = () => {
             <div className="modal-body">
               {/* Tenant Info */}
               <div className="detail-section">
-                <h4 className="section-title">{t('rentalRequests.tenantInformation', 'Tenant Information')}</h4>
+                <h4 className="section-title">{t('landlordRequests.tenantInfo')}</h4>
                 <div className="detail-grid">
                   <div className="detail-item">
-                    <label>{t('rentalRequests.name', 'Name')}</label>
+                    <label>{t('landlordRequests.name')}</label>
                     <div className="detail-value">{selectedRequest.tenant?.full_name || 'N/A'}</div>
                   </div>
                   <div className="detail-item">
-                    <label>{t('rentalRequests.email', 'Email')}</label>
+                    <label>{t('landlordRequests.email')}</label>
                     <div className="detail-value">
                       <Mail size={14} />
                       {selectedRequest.tenant?.email || 'N/A'}
                     </div>
                   </div>
                   <div className="detail-item">
-                    <label>{t('rentalRequests.phone', 'Phone')}</label>
+                    <label>{t('landlordRequests.phone')}</label>
                     <div className="detail-value">
                       <Phone size={14} />
                       {selectedRequest.tenant?.phone || 'N/A'}
                     </div>
                   </div>
                   <div className="detail-item">
-                    <label>{t('rentalRequests.status', 'Status')}</label>
+                    <label>{t('landlordRequests.status')}</label>
                     <div className="detail-value">
                       <Badge variant={getStatusColor(selectedRequest.status)}>
-                        {formatStatus(selectedRequest.status)}
+                        {t(`landlordRequests.statusLabels.${selectedRequest.status}`)}
                       </Badge>
                     </div>
                   </div>
@@ -438,19 +438,19 @@ const RentalRequestsPage = () => {
 
               {/* Room Info */}
               <div className="detail-section">
-                <h4 className="section-title">{t('rentalRequests.roomInformation', 'Room Information')}</h4>
+                <h4 className="section-title">{t('landlordRequests.roomInfo')}</h4>
                 <div className="detail-grid">
                   <div className="detail-item">
-                    <label>{t('rentalRequests.roomTitle', 'Room Title')}</label>
+                    <label>{t('landlordRequests.roomTitle')}</label>
                     <div className="detail-value">{selectedRequest.room?.title || 'N/A'}</div>
                   </div>
                   <div className="detail-item">
-                    <label>{t('rentalRequests.monthlyRent', 'Monthly Rent')}</label>
-                    <div className="detail-value">{selectedRequest.room?.price_per_month || 0} VNĐ/month</div>
+                    <label>{t('landlordRequests.monthlyRent')}</label>
+                    <div className="detail-value">{selectedRequest.room?.price_per_month?.toLocaleString('vi-VN') || 0} {t('landlordRequests.vndPerMonth')}</div>
                   </div>
                   <div className="detail-item">
-                    <label>{t('rentalRequests.requestType', 'Request Type')}</label>
-                    <div className="detail-value">{t('rentalRequests.rentalRequest', 'Rental Request')}</div>
+                    <label>{t('landlordRequests.requestType')}</label>
+                    <div className="detail-value">{t('landlordRequests.rentalRequest')}</div>
                   </div>
                 </div>
               </div>
@@ -458,7 +458,7 @@ const RentalRequestsPage = () => {
               {/* Request Message */}
               {selectedRequest.message && (
                 <div className="detail-section">
-                  <h4 className="section-title">{t('rentalRequests.messageFromTenant', 'Message from Tenant')}</h4>
+                  <h4 className="section-title">{t('landlordRequests.messageFromTenant')}</h4>
                   <div className="message-box">
                     <FileText size={16} />
                     <p>{selectedRequest.message}</p>
@@ -477,13 +477,13 @@ const RentalRequestsPage = () => {
                   }}
                   disabled={isSubmitting}
                 >
-                  <X size={16} />{t('rentalRequests.rejectRequest', 'Reject Request')}</Button>
+                  <X size={16} />{t('landlordRequests.rejectRequest')}</Button>
                 <Button
                   variant="primary"
                   onClick={() => setShowApproveModal(true)}
                   disabled={isSubmitting}
                 >
-                  <Check size={16} />{t('rentalRequests.approveRequest', 'Approve Request')}</Button>
+                  <Check size={16} />{t('landlordRequests.approveRequest')}</Button>
               </div>
             )}
             
@@ -496,7 +496,7 @@ const RentalRequestsPage = () => {
                   disabled={isSubmitting}
                   style={{ background: '#7c3aed' }}
                 >
-                  <FileSignature size={16} />{t('rentalRequests.createContract', 'Create Contract')}</Button>
+                  <FileSignature size={16} />{t('landlordRequests.createContract')}</Button>
               </div>
             )}
           </div>
@@ -508,7 +508,7 @@ const RentalRequestsPage = () => {
         <div className="modal-backdrop" onClick={() => setShowRejectModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{t('rentalRequests.rejectRequest', 'Reject Request')}</h3>
+              <h3>{t('landlordRequests.rejectRequest')}</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setShowRejectModal(false)}
@@ -518,10 +518,10 @@ const RentalRequestsPage = () => {
             </div>
 
             <div className="modal-body">
-              <p className="reject-info">{t('rentalRequests.pleaseProvideAReasonFor', 'Please provide a reason for rejecting this rental request. This will be sent to the tenant.')}</p>
+              <p className="reject-info">{t('landlordRequests.rejectInfo')}</p>
               <textarea
                 className="reject-textarea"
-                placeholder={t('rentalRequests.enterRejectionReasonPlaceholder', 'Enter rejection reason...')}
+                placeholder={t('landlordRequests.rejectPlaceholder')}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 rows="5"
@@ -534,13 +534,13 @@ const RentalRequestsPage = () => {
                 variant="secondary"
                 onClick={() => setShowRejectModal(false)}
                 disabled={isSubmitting}
-              >{t('rentalRequests.cancel', 'Cancel')}</Button>
+              >{t('landlordRequests.cancel')}</Button>
               <Button
                 variant="danger"
                 onClick={handleRejectSubmit}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Rejecting...' : 'Reject Request'}
+                {isSubmitting ? t('landlordRequests.rejecting') : t('landlordRequests.rejectRequest')}
               </Button>
             </div>
           </div>
@@ -552,7 +552,7 @@ const RentalRequestsPage = () => {
         <div className="modal-backdrop" onClick={() => setShowApproveModal(false)}>
           <div className="modal-content" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{t('rentalRequests.approveRequest', 'Approve Request')}</h3>
+              <h3>{t('landlordRequests.approveRequest')}</h3>
               <button
                 className="modal-close-btn"
                 onClick={() => setShowApproveModal(false)}
@@ -561,7 +561,7 @@ const RentalRequestsPage = () => {
               </button>
             </div>
             <div className="modal-body">
-              <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: '1.5', margin: 0 }}>{t('rentalRequests.areYouSureYouWant', 'Are you sure you want to approve this rental request from')}<strong>{selectedRequest.tenant?.full_name}</strong>?
+              <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: '1.5', margin: 0 }}>{t('landlordRequests.approveConfirm')}<strong>{selectedRequest.tenant?.full_name}</strong>?
               </p>
             </div>
             <div className="modal-footer">
@@ -569,13 +569,13 @@ const RentalRequestsPage = () => {
                 variant="secondary"
                 onClick={() => setShowApproveModal(false)}
                 disabled={isSubmitting}
-              >{t('rentalRequests.cancel', 'Cancel')}</Button>
+              >{t('landlordRequests.cancel')}</Button>
               <Button
                 variant="primary"
                 onClick={handleApprove}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Approving...' : 'Yes, Approve'}
+                {isSubmitting ? t('landlordRequests.approving') : t('landlordRequests.yesApprove')}
               </Button>
             </div>
           </div>
@@ -587,7 +587,7 @@ const RentalRequestsPage = () => {
         <div className="modal-backdrop" onClick={() => setShowContractModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', padding: '40px 20px', overflowY: 'auto', display: 'block' }}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', margin: '0 auto', background: '#fff', borderRadius: '12px', padding: '0', position: 'relative' }}>
             <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#1e293b' }}>{t('rentalRequests.createContract', 'Create Contract')}</h3>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#1e293b' }}>{t('landlordRequests.createContract')}</h3>
               <button className="modal-close-btn" onClick={() => setShowContractModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
                 <X size={20} />
               </button>
@@ -596,14 +596,14 @@ const RentalRequestsPage = () => {
             <div className="modal-body" style={{ padding: '24px', maxHeight: '70vh', overflowY: 'auto' }}>
               <div style={{ display: 'grid', gap: '20px' }}>
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <h4 style={{ margin: '0 0 12px 0', color: '#334155', fontSize: '1rem' }}>{t('rentalRequests.roomDetails', 'Room Details')}</h4>
-                  <p style={{ margin: '0 0 8px 0', color: '#475569' }}><strong>{t('rentalRequests.room', 'Room:')}</strong> {selectedRequest.room?.title}</p>
-                  <p style={{ margin: 0, color: '#475569' }}><strong>{t('rentalRequests.monthlyRent', 'Monthly Rent:')}</strong> {selectedRequest.room?.price_per_month?.toLocaleString()} VNĐ</p>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#334155', fontSize: '1rem' }}>{t('landlordRequests.roomDetails')}</h4>
+                  <p style={{ margin: '0 0 8px 0', color: '#475569' }}><strong>{t('landlordRequests.room')}:</strong> {selectedRequest.room?.title}</p>
+                  <p style={{ margin: 0, color: '#475569' }}><strong>{t('landlordRequests.monthlyRent')}:</strong> {selectedRequest.room?.price_per_month?.toLocaleString('vi-VN')} {t('landlordRequests.vndPerMonth')}</p>
                   <div className="form-group" style={{ marginTop: '12px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#334155' }}>Assign Room Number (Physical Room) *</label>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#334155' }}>{t('landlordRequests.assignRoomNumber')}</label>
                     <input 
                       type="text" 
-                      placeholder={t('rentalRequests.eg101A2Placeholder', 'e.g. 101, A2')} 
+                      placeholder="e.g. 101, A2" 
                       value={contractData.assignedRoomNumber} 
                       onChange={(e) => setContractData({...contractData, assignedRoomNumber: e.target.value})}
                       style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
@@ -612,44 +612,44 @@ const RentalRequestsPage = () => {
                 </div>
 
                 <div>
-                  <h4 style={{ margin: '0 0 12px 0', color: '#334155', fontSize: '1rem' }}>Your Identity Information (Landlord)</h4>
+                  <h4 style={{ margin: '0 0 12px 0', color: '#334155', fontSize: '1rem' }}>{t('landlordRequests.identityInfo')}</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="form-group">
-                      <label>{t('rentalRequests.fullName', 'Full Name')}</label>
+                      <label>{t('landlordRequests.fullName')}</label>
                       <input type="text" value={contractData.landlordName} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
                     </div>
                     <div className="form-group">
-                      <label>{t('rentalRequests.cccdCmnd', 'CCCD / CMND')}</label>
+                      <label>{t('landlordRequests.cccd')}</label>
                       <input type="text" value={contractData.landlordIc} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
                     </div>
                     <div className="form-group" style={{ flex: 1 }}>
-                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>{t('rentalRequests.ngyCp', 'Ngày Cấp *')}</label>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>{t('landlordRequests.issueDate')}</label>
                       <input type="date" lang="en-GB" value={contractData.landlordIcIssueDate} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
                     </div>
                     <div className="form-group">
-                      <label>{t('rentalRequests.issuePlace', 'Issue Place')}</label>
+                      <label>{t('landlordRequests.issuePlace')}</label>
                       <input type="text" value={contractData.landlordIcIssuePlace} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
                     </div>
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                      <label>{t('rentalRequests.permanentAddress', 'Permanent Address')}</label>
+                      <label>{t('landlordRequests.permanentAddress')}</label>
                       <input type="text" value={contractData.landlordPermanentAddress} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
                     </div>
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#334155' }}>Additional Terms & Conditions (Optional)</label>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#334155' }}>{t('landlordRequests.additionalTerms')}</label>
                   <textarea 
                     value={contractData.termsAndConditions} 
                     onChange={(e) => setContractData({...contractData, termsAndConditions: e.target.value})}
-                    placeholder={t('rentalRequests.enterAnySpecificTermsRulesPlaceholder', 'Enter any specific terms, rules, or conditions...')}
+                    placeholder={t('landlordRequests.termsPlaceholder')}
                     rows="4"
                     style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', resize: 'vertical' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#334155' }}>{t('rentalRequests.yourSignature', 'Your Signature')}</label>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#334155' }}>{t('landlordRequests.yourSignature')}</label>
                   <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', background: '#f8fafc', overflow: 'hidden' }}>
                     <SignatureCanvas 
                       ref={landlordSigCanvas}
@@ -659,16 +659,16 @@ const RentalRequestsPage = () => {
                     />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-                    <button type="button" onClick={() => landlordSigCanvas.current.clear()} style={{ padding: '6px 12px', background: '#e2e8f0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>{t('rentalRequests.clearSignature', 'Clear Signature')}</button>
+                    <button type="button" onClick={() => landlordSigCanvas.current.clear()} style={{ padding: '6px 12px', background: '#e2e8f0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>{t('landlordRequests.clearSignature')}</button>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="modal-footer" style={{ padding: '20px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: '#f8fafc', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
-              <Button variant="secondary" onClick={() => setShowContractModal(false)} disabled={isSubmitting}>{t('rentalRequests.cancel', 'Cancel')}</Button>
+              <Button variant="secondary" onClick={() => setShowContractModal(false)} disabled={isSubmitting}>{t('landlordRequests.cancel')}</Button>
               <Button variant="primary" onClick={handleCreateContract} disabled={isSubmitting} style={{ background: '#7c3aed' }}>
-                {isSubmitting ? 'Sending...' : 'Sign & Send to Tenant'}
+                {isSubmitting ? t('landlordRequests.sending') : t('landlordRequests.signAndSend')}
               </Button>
             </div>
           </div>

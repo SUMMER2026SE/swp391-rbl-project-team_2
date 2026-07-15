@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MoreVertical, Eye, Download } from 'lucide-react';
 import { ROUTES } from '../../../constants';
 import { formatCurrency, formatDateTime, getAvatarUrl } from '../../../utils/format';
@@ -7,17 +8,18 @@ import './TransactionTable.css';
 
 const TransactionTable = ({ transactions, onViewInvoice }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case 'success':
       case 'completed':
-        return <span className="status-badge status-success">Success</span>;
+        return <span className="status-badge status-success">{t('adminTransactions.success')}</span>;
       case 'pending':
-        return <span className="status-badge status-pending">Pending</span>;
+        return <span className="status-badge status-pending">{t('adminTransactions.pending')}</span>;
       case 'refunded':
-        return <span className="status-badge status-refunded">Refunded</span>;
+        return <span className="status-badge status-refunded">{t('adminTransactions.refunded')}</span>;
       case 'failed':
-        return <span className="status-badge status-failed">Failed</span>;
+        return <span className="status-badge status-failed">{t('adminTransactions.failed')}</span>;
       default:
         return <span className="status-badge">{status}</span>;
     }
@@ -28,14 +30,14 @@ const TransactionTable = ({ transactions, onViewInvoice }) => {
       <table className="transaction-table">
         <thead>
           <tr>
-            <th>Transaction ID</th>
-            <th>Date & Time</th>
-            <th>Tenant</th>
-            <th>Property</th>
-            <th>Type</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th className="th-actions">Actions</th>
+            <th>{t('adminTransactions.transactionId')}</th>
+            <th>{t('adminTransactions.dateTime')}</th>
+            <th>{t('adminTransactions.tenant')}</th>
+            <th>{t('adminTransactions.property')}</th>
+            <th>{t('adminTransactions.type')}</th>
+            <th>{t('adminTransactions.amount')}</th>
+            <th>{t('adminTransactions.status')}</th>
+            <th className="th-actions">{t('adminTransactions.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -85,7 +87,7 @@ const TransactionTable = ({ transactions, onViewInvoice }) => {
                   }}
                   onClick={() => onViewInvoice && onViewInvoice(tx)}
                   >
-                    <Eye size={16} /> View Invoice
+                    <Eye size={16} /> {t('adminTransactions.viewInvoice')}
                   </button>
                 </div>
               </td>

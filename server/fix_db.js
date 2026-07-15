@@ -1,19 +1,41 @@
+/**
+ * Quick fix script to add missing columns to the rooms table.
+ * Run with: node fix_db.js
+ */
 const sequelize = require('./src/config/database');
 
-async function fixDb() {
+async function fix() {
   try {
     await sequelize.authenticate();
-    console.log('Connected to DB.');
-    
-    // Alter payments table to allow NULL for contract_id
-    await sequelize.query('ALTER TABLE payments ALTER COLUMN contract_id INT NULL;');
-    console.log('Successfully altered payments table.');
-    
+    console.log('✅ Connected to database');
+
+    // Add missing columns to rooms table
+    await sequelize.query(`
+      IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'quantity')
+      BEGIN
+          ALTER TABLE rooms ADD quantity INT DEFAULT 1;
+          PRINT 'Added quantity column';
+      END
+      ELSE
+          PRINT 'quantity column already exists';
+    `);
+
+    await sequelize.query(`
+      IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'available_quantity')
+      BEGIN
+          ALTER TABLE rooms ADD available_quantity INT DEFAULT 1;
+          PRINT 'Added available_quantity column';
+      END
+      ELSE
+          PRINT 'available_quantity column already exists';
+    `);
+
+    console.log('✅ Fix applied successfully!');
     process.exit(0);
-  } catch (error) {
-    console.error('Error altering table:', error);
+  } catch (err) {
+    console.error('❌ Error:', err.message);
     process.exit(1);
   }
 }
 
-fixDb();
+fix();

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import {
   MapPin, CheckCircle, Bed, Users, Maximize, Home, ChevronLeft,
@@ -13,47 +14,12 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import '../../tenant/pages/RoomDetailPage.css';
 import './ReviewListingPage.css';
 
-const STATUS_CONFIG = {
-  pending: {
-    label: 'Chờ duyệt',
-    color: '#d97706',
-    bg: '#fffbeb',
-    border: '#fde68a',
-    icon: Clock,
-  },
-  available: {
-    label: 'Đang hoạt động',
-    color: '#059669',
-    bg: '#ecfdf5',
-    border: '#6ee7b7',
-    icon: ShieldCheck,
-  },
-  rejected: {
-    label: 'Đã từ chối',
-    color: '#dc2626',
-    bg: '#fef2f2',
-    border: '#fca5a5',
-    icon: ShieldX,
-  },
-  hidden: {
-    label: 'Vi phạm / Ẩn',
-    color: '#7c3aed',
-    bg: '#f5f3ff',
-    border: '#c4b5fd',
-    icon: AlertTriangle,
-  },
-  rented: {
-    label: 'Đang cho thuê',
-    color: '#0284c7',
-    bg: '#e0f2fe',
-    border: '#7dd3fc',
-    icon: Eye,
-  },
-};
+// We will translate STATUS_CONFIG inside the component so it updates reactively.
 
 const ReviewListingPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [roomData, setRoomData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,6 +28,44 @@ const ReviewListingPage = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
+  const STATUS_CONFIG = {
+    pending: {
+      label: t('adminReview.status.pending'),
+      color: '#d97706',
+      bg: '#fffbeb',
+      border: '#fde68a',
+      icon: Clock,
+    },
+    available: {
+      label: t('adminReview.status.available'),
+      color: '#059669',
+      bg: '#ecfdf5',
+      border: '#6ee7b7',
+      icon: ShieldCheck,
+    },
+    rejected: {
+      label: t('adminReview.status.rejected'),
+      color: '#dc2626',
+      bg: '#fef2f2',
+      border: '#fca5a5',
+      icon: ShieldX,
+    },
+    hidden: {
+      label: t('adminReview.status.hidden'),
+      color: '#7c3aed',
+      bg: '#f5f3ff',
+      border: '#c4b5fd',
+      icon: AlertTriangle,
+    },
+    rented: {
+      label: t('adminReview.status.rented'),
+      color: '#0284c7',
+      bg: '#e0f2fe',
+      border: '#7dd3fc',
+      icon: Eye,
+    },
+  };
+
   useEffect(() => {
     const fetchListing = async () => {
       try {
@@ -69,11 +73,11 @@ const ReviewListingPage = () => {
         if (response.data.success) {
           setRoomData(response.data.data);
         } else {
-          setError('Không tìm thấy phòng.');
+          setError(t('adminReview.notFound'));
         }
       } catch (err) {
         console.error(err);
-        setError('Không thể tải thông tin phòng.');
+        setError(t('adminReview.loadError'));
       } finally {
         setLoading(false);
       }
@@ -87,17 +91,17 @@ const ReviewListingPage = () => {
       const res = await adminService.updateRoomStatus(id, status, reason);
       if (res.success) {
         const messages = {
-          available: '✅ Đã duyệt phòng thành công!',
-          rejected: '❌ Đã từ chối phòng.',
-          hidden: '⚠️ Đã ẩn phòng do vi phạm.',
+          available: t('adminReview.toast.approveSuccess'),
+          rejected: t('adminReview.toast.rejectSuccess'),
+          hidden: t('adminReview.toast.hideSuccess'),
         };
-        toast.success(messages[status] || 'Cập nhật thành công!');
+        toast.success(messages[status] || t('adminReview.toast.updateSuccess'));
         setRoomData(prev => ({ ...prev, status }));
         setShowRejectModal(false);
         setRejectReason('');
       }
     } catch (err) {
-      toast.error('Cập nhật thất bại: ' + (err?.response?.data?.message || err.message));
+      toast.error(t('adminReview.toast.updateFail') + (err?.response?.data?.message || err.message));
     } finally {
       setActionLoading(false);
     }
@@ -108,7 +112,7 @@ const ReviewListingPage = () => {
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <div style={{ textAlign: 'center', color: '#6b7280' }}>
           <div className="spinner-border text-primary" role="status" />
-          <p style={{ marginTop: 12 }}>Đang tải thông tin phòng...</p>
+          <p style={{ marginTop: 12 }}>{t('adminReview.loading')}</p>
         </div>
       </div>
     );
@@ -119,7 +123,7 @@ const ReviewListingPage = () => {
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <div style={{ textAlign: 'center', color: '#dc2626' }}>
           <XCircle size={48} style={{ marginBottom: 12 }} />
-          <p>{error || 'Không tìm thấy phòng.'}</p>
+          <p>{error || t('adminReview.notFound')}</p>
         </div>
       </div>
     );
@@ -147,7 +151,7 @@ const ReviewListingPage = () => {
         style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontWeight: 500, marginBottom: 20, fontSize: '0.95rem' }}
       >
         <ChevronLeft size={18} />
-        Quay lại danh sách phòng
+        {t('adminReview.backToList')}
       </button>
 
       {/* Image Carousel */}
@@ -183,24 +187,24 @@ const ReviewListingPage = () => {
             <div className="feature-card">
               <Bed className="feature-icon" />
               <span className="feature-value">{roomData.bedrooms || 1}</span>
-              <span className="feature-label">Giường</span>
+              <span className="feature-label">{t('adminReview.features.beds')}</span>
             </div>
             <div className="feature-card">
               <Users className="feature-icon" />
               <span className="feature-value">{roomData.maxOccupants || roomData.max_occupants || 1}</span>
-              <span className="feature-label">Người tối đa</span>
+              <span className="feature-label">{t('adminReview.features.maxOccupants')}</span>
             </div>
             <div className="feature-card">
               <Maximize className="feature-icon" />
               <span className="feature-value">{roomData.areaSqm || roomData.area_sqm || 15}</span>
-              <span className="feature-label">m²</span>
+              <span className="feature-label">{t('adminReview.features.sqm')}</span>
             </div>
             <div className="feature-card">
               <Home className="feature-icon" />
               <span className="feature-value" style={{ textTransform: 'capitalize', fontSize: '0.9rem' }}>
-                Phòng cá nhân
+                {t('adminReview.personalRoom')}
               </span>
-              <span className="feature-label">Loại phòng</span>
+              <span className="feature-label">{t('adminReview.roomType')}</span>
             </div>
           </div>
 
@@ -211,13 +215,13 @@ const ReviewListingPage = () => {
             <div className="host-info">
               <img
                 src={getGlobalAvatar(roomData.landlord?.full_name, roomData.landlord?.avatar_url || roomData.landlord?.avatarUrl, 100)}
-                alt={roomData.landlord?.full_name || 'Chủ trọ'}
+                alt={roomData.landlord?.full_name || t('adminReview.landlordInfo')}
                 className="host-avatar"
               />
               <div className="host-text">
-                <h3>Quản lý bởi {roomData.landlord?.full_name || 'Chủ trọ'}</h3>
-                <p>SĐT: {roomData.landlord?.phone || 'Chưa cập nhật'}</p>
-                <p style={{ fontSize: '0.85rem', color: '#9ca3af' }}>Email: {roomData.landlord?.email || 'Chưa cập nhật'}</p>
+                <h3>{t('adminReview.managedBy', { name: roomData.landlord?.full_name || '' })}</h3>
+                <p>SĐT: {roomData.landlord?.phone || t('adminReview.notUpdated')}</p>
+                <p style={{ fontSize: '0.85rem', color: '#9ca3af' }}>Email: {roomData.landlord?.email || t('adminReview.notUpdated')}</p>
               </div>
             </div>
           </section>
@@ -226,10 +230,10 @@ const ReviewListingPage = () => {
 
           {/* About Section */}
           <section className="about-section">
-            <h2>Mô tả phòng</h2>
+            <h2>{t('adminReview.description')}</h2>
             <div className={`about-text ${showMoreAbout ? 'expanded' : ''}`}
               style={!showMoreAbout ? { maxHeight: '120px', overflow: 'hidden', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' } : {}}>
-              <p style={{ color: '#4b5563', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{roomData.description || 'Chưa có mô tả.'}</p>
+              <p style={{ color: '#4b5563', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{roomData.description || t('adminReview.noDescription')}</p>
             </div>
             {roomData.description && roomData.description.length > 200 && (
               <button
@@ -237,7 +241,7 @@ const ReviewListingPage = () => {
                 onClick={() => setShowMoreAbout(!showMoreAbout)}
                 style={{ background: 'none', border: 'none', color: '#3b82f6', fontWeight: 600, cursor: 'pointer', marginTop: 8 }}
               >
-                {showMoreAbout ? 'Thu gọn ▲' : 'Xem thêm ▼'}
+                {showMoreAbout ? t('adminReview.showLess') : t('adminReview.showMore')}
               </button>
             )}
           </section>
@@ -246,10 +250,10 @@ const ReviewListingPage = () => {
 
           {/* Amenities Section */}
           <section className="amenities-section">
-            <h2>Tiện ích phòng</h2>
+            <h2>{t('adminReview.roomAmenities')}</h2>
             {roomFacilities.length > 0 && (
               <div style={{ marginTop: '1rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>Trong phòng</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>{t('adminReview.inRoom')}</h3>
                 <div className="amenities-grid">
                   {roomFacilities.map((amenity, idx) => (
                     <div className="amenity-item" key={`room-${idx}`}>
@@ -262,7 +266,7 @@ const ReviewListingPage = () => {
             )}
             {nearbyFacilities.length > 0 && (
               <div style={{ marginTop: '1.5rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>Tiện ích lân cận</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155' }}>{t('adminReview.nearby')}</h3>
                 <div className="amenities-grid">
                   {nearbyFacilities.map((amenity, idx) => (
                     <div className="amenity-item" key={`nearby-${idx}`}>
@@ -274,7 +278,7 @@ const ReviewListingPage = () => {
               </div>
             )}
             {roomFacilities.length === 0 && nearbyFacilities.length === 0 && (
-              <p style={{ color: '#9ca3af' }}>Chưa có tiện ích được liệt kê.</p>
+              <p style={{ color: '#9ca3af' }}>{t('adminReview.noAmenities')}</p>
             )}
           </section>
         </div>
@@ -289,7 +293,7 @@ const ReviewListingPage = () => {
                 <span className="price-value">
                   {(roomData.pricePerMonth || roomData.price_per_month)?.toLocaleString('vi-VN')} đ
                 </span>
-                <span className="price-unit">/ tháng</span>
+                <span className="price-unit">{t('adminReview.priceUnit')}</span>
               </div>
 
               {/* Status Badge */}
@@ -303,7 +307,7 @@ const ReviewListingPage = () => {
                   <p style={{ margin: 0, fontWeight: 600, color: statusInfo.color, fontSize: '0.9rem' }}>
                     {statusInfo.label}
                   </p>
-                  <p style={{ margin: 0, fontSize: '0.78rem', color: '#6b7280' }}>Trạng thái hiện tại</p>
+                  <p style={{ margin: 0, fontSize: '0.78rem', color: '#6b7280' }}>{t('adminReview.currentStatus')}</p>
                 </div>
               </div>
 
@@ -313,22 +317,22 @@ const ReviewListingPage = () => {
               {/* Room Info Summary */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                  <span style={{ color: '#9ca3af' }}>Thành phố</span>
+                  <span style={{ color: '#9ca3af' }}>{t('adminReview.city')}</span>
                   <span style={{ fontWeight: 500, color: '#1f2937' }}>{roomData.city || '—'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                  <span style={{ color: '#9ca3af' }}>Quận / Huyện</span>
+                  <span style={{ color: '#9ca3af' }}>{t('adminReview.district')}</span>
                   <span style={{ fontWeight: 500, color: '#1f2937' }}>{roomData.district || '—'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                  <span style={{ color: '#9ca3af' }}>Loại phòng</span>
+                  <span style={{ color: '#9ca3af' }}>{t('adminReview.roomType')}</span>
                   <span style={{ fontWeight: 500, color: '#1f2937', textTransform: 'capitalize' }}>
-                    Phòng cá nhân
+                    {t('adminReview.personalRoom')}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                  <span style={{ color: '#9ca3af' }}>Diện tích</span>
-                  <span style={{ fontWeight: 500, color: '#1f2937' }}>{roomData.areaSqm || roomData.area_sqm || '—'} m²</span>
+                  <span style={{ color: '#9ca3af' }}>{t('adminReview.area')}</span>
+                  <span style={{ fontWeight: 500, color: '#1f2937' }}>{roomData.areaSqm || roomData.area_sqm || '—'} {t('adminReview.features.sqm')}</span>
                 </div>
               </div>
 
@@ -341,7 +345,7 @@ const ReviewListingPage = () => {
                     disabled={actionLoading}
                   >
                     <ShieldCheck size={18} />
-                    {actionLoading ? 'Đang xử lý...' : 'Duyệt phòng'}
+                    {actionLoading ? t('adminReview.processing') : t('adminReview.approveBtn')}
                   </button>
                   <button
                     className="admin-action-btn reject"
@@ -349,7 +353,7 @@ const ReviewListingPage = () => {
                     disabled={actionLoading}
                   >
                     <ShieldX size={18} />
-                    Từ chối
+                    {t('adminReview.rejectBtn')}
                   </button>
                 </div>
               )}
@@ -358,7 +362,7 @@ const ReviewListingPage = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ background: '#ecfdf5', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <CheckCircle size={16} style={{ color: '#059669' }} />
-                    <span style={{ fontSize: '0.85rem', color: '#047857', fontWeight: 500 }}>Phòng đã được duyệt</span>
+                    <span style={{ fontSize: '0.85rem', color: '#047857', fontWeight: 500 }}>{t('adminReview.roomApproved')}</span>
                   </div>
                   <button
                     className="admin-action-btn violation"
@@ -366,7 +370,7 @@ const ReviewListingPage = () => {
                     disabled={actionLoading}
                   >
                     <AlertTriangle size={18} />
-                    Ẩn do vi phạm
+                    {t('adminReview.hideBtn')}
                   </button>
                 </div>
               )}
@@ -375,7 +379,7 @@ const ReviewListingPage = () => {
                 <div>
                   <div style={{ background: '#fef2f2', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <XCircle size={16} style={{ color: '#dc2626' }} />
-                    <span style={{ fontSize: '0.85rem', color: '#b91c1c', fontWeight: 500 }}>Phòng đã bị từ chối</span>
+                    <span style={{ fontSize: '0.85rem', color: '#b91c1c', fontWeight: 500 }}>{t('adminReview.roomRejected')}</span>
                   </div>
                   <button
                     className="admin-action-btn approve"
@@ -383,7 +387,7 @@ const ReviewListingPage = () => {
                     disabled={actionLoading}
                   >
                     <ShieldCheck size={18} />
-                    Duyệt lại phòng
+                    {t('adminReview.reApproveBtn')}
                   </button>
                 </div>
               )}
@@ -392,7 +396,7 @@ const ReviewListingPage = () => {
                 <div>
                   <div style={{ background: '#f5f3ff', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <AlertTriangle size={16} style={{ color: '#7c3aed' }} />
-                    <span style={{ fontSize: '0.85rem', color: '#6d28d9', fontWeight: 500 }}>Phòng đang bị ẩn</span>
+                    <span style={{ fontSize: '0.85rem', color: '#6d28d9', fontWeight: 500 }}>{t('adminReview.roomHidden')}</span>
                   </div>
                   <button
                     className="admin-action-btn approve"
@@ -400,7 +404,7 @@ const ReviewListingPage = () => {
                     disabled={actionLoading}
                   >
                     <ShieldCheck size={18} />
-                    Khôi phục phòng
+                    {t('adminReview.restoreBtn')}
                   </button>
                 </div>
               )}
@@ -408,14 +412,14 @@ const ReviewListingPage = () => {
               {roomData.status === 'rented' && (
                 <div style={{ background: '#e0f2fe', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Eye size={16} style={{ color: '#0284c7' }} />
-                  <span style={{ fontSize: '0.85rem', color: '#0369a1', fontWeight: 500 }}>Phòng đang được thuê</span>
+                  <span style={{ fontSize: '0.85rem', color: '#0369a1', fontWeight: 500 }}>{t('adminReview.roomRented')}</span>
                 </div>
               )}
             </div>
 
             {/* Landlord Quick Info */}
             <div style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#374151', marginBottom: 12 }}>Thông tin chủ trọ</h4>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#374151', marginBottom: 12 }}>{t('adminReview.landlordInfo')}</h4>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <img
                   src={getGlobalAvatar(roomData.landlord?.full_name, roomData.landlord?.avatar_url || roomData.landlord?.avatarUrl, 80)}
@@ -424,10 +428,10 @@ const ReviewListingPage = () => {
                 />
                 <div>
                   <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: '#1f2937' }}>
-                    {roomData.landlord?.full_name || 'Chủ trọ'}
+                    {roomData.landlord?.full_name || t('adminReview.landlordInfo')}
                   </p>
                   <p style={{ margin: 0, fontSize: '0.8rem', color: '#6b7280' }}>
-                    {roomData.landlord?.phone || 'Chưa có SĐT'}
+                    {roomData.landlord?.phone || t('adminReview.noPhone')}
                   </p>
                 </div>
               </div>
@@ -442,15 +446,15 @@ const ReviewListingPage = () => {
           <div className="modal-container" onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
               <ShieldX size={24} style={{ color: '#dc2626' }} />
-              <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>Từ chối phòng</h2>
+              <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{t('adminReview.rejectTitle')}</h2>
             </div>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: 8, color: '#374151', fontSize: '0.9rem' }}>
-              Lý do từ chối (tùy chọn)
+              {t('adminReview.rejectReasonLabel')}
             </label>
             <textarea
               value={rejectReason}
               onChange={e => setRejectReason(e.target.value)}
-              placeholder="Nhập lý do từ chối để thông báo cho chủ trọ..."
+              placeholder={t('adminReview.rejectReasonPlaceholder')}
               rows={4}
               style={{
                 width: '100%', padding: 12, border: '1px solid #d1d5db',
@@ -463,7 +467,7 @@ const ReviewListingPage = () => {
                 className="btn-cancel"
                 onClick={() => { setShowRejectModal(false); setRejectReason(''); }}
               >
-                Hủy
+                {t('adminReview.cancel')}
               </button>
               <button
                 className="btn-confirm"
@@ -472,7 +476,7 @@ const ReviewListingPage = () => {
                 disabled={actionLoading}
               >
                 <ShieldX size={16} />
-                {actionLoading ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+                {actionLoading ? t('adminReview.processing') : t('adminReview.confirmReject')}
               </button>
             </div>
           </div>
