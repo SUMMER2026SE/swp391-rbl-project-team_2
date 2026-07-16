@@ -1833,7 +1833,7 @@
       "contract_created": "Contract Created",
       "completed": "Completed",
       "rejected": "Rejected",
-      "cancelled": "Cancelled",
+      "cancelled": "Tenant cancelled",
       "deposit_paid": "Deposit Paid"
     }
   },

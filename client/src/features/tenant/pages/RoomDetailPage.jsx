@@ -233,6 +233,8 @@ const RoomDetailPage = () => {
       const response = await rentalRequestService.createRequest({
         roomId: roomData.roomId || roomData.room_id,
         message: rentalRequestMessage || null,
+        requestedMoveInDate: moveInDate,
+        leaseDurationMonths: parseInt(leaseDuration, 10),
       });
 
       if (response.success) {
@@ -756,6 +758,35 @@ const RoomDetailPage = () => {
                   {t('roomDetail.rentalRequestDesc', 'Gửi lời nhắn của bạn đến chủ trọ để đăng ký thuê phòng. Sau khi chủ trọ đồng ý yêu cầu, bạn mới thực hiện tạo hợp đồng.')}
                 </span>
               </p>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ngày chuyển vào *</label>
+                <input 
+                  type="date" 
+                  value={moveInDate}
+                  onChange={(e) => setMoveInDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                  onFocus={(e) => e.target.style.borderColor = '#059669'}
+                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Thời hạn thuê (Tháng) *</label>
+                <select 
+                  value={leaseDuration}
+                  onChange={(e) => setLeaseDuration(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
+                  onFocus={(e) => e.target.style.borderColor = '#059669'}
+                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24].map(m => (
+                    <option key={m} value={m}>{m} Tháng</option>
+                  ))}
+                </select>
+              </div>
             </div>
             
             <textarea

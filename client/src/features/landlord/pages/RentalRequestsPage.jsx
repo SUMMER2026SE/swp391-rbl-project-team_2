@@ -458,6 +458,22 @@ const RentalRequestsPage = () => {
                     <label>{t('landlordRequests.requestType')}</label>
                     <div className="detail-value">{t('landlordRequests.rentalRequest')}</div>
                   </div>
+                  <div className="detail-item">
+                    <label>{t('landlordRequests.moveInDate', 'Thời gian chuyển vào')}</label>
+                    <div className="detail-value">
+                      {selectedRequest.requested_move_in_date || selectedRequest.requestedMoveInDate
+                        ? new Date(selectedRequest.requested_move_in_date || selectedRequest.requestedMoveInDate).toLocaleDateString('vi-VN') 
+                        : 'Chưa xác định'}
+                    </div>
+                  </div>
+                  <div className="detail-item">
+                    <label>{t('landlordRequests.rentalDuration', 'Thời hạn thuê')}</label>
+                    <div className="detail-value">
+                      {selectedRequest.lease_duration_months || selectedRequest.leaseDurationMonths
+                        ? `${selectedRequest.lease_duration_months || selectedRequest.leaseDurationMonths} tháng`
+                        : 'Chưa xác định'}
+                    </div>
+                  </div>
                 </div>
               </div>
 

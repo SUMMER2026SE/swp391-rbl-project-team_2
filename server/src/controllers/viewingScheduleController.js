@@ -28,15 +28,15 @@ function sortObject(obj) {
 
 function generateVnpayUrl(payment, ipAddr, roomId) {
   let date = new Date();
-  const createDate = date.getFullYear().toString() + 
-      (date.getMonth() + 1).toString().padStart(2, '0') + 
-      date.getDate().toString().padStart(2, '0') + 
-      date.getHours().toString().padStart(2, '0') + 
-      date.getMinutes().toString().padStart(2, '0') + 
-      date.getSeconds().toString().padStart(2, '0');
+  const createDate = date.getFullYear().toString() +
+    (date.getMonth() + 1).toString().padStart(2, '0') +
+    date.getDate().toString().padStart(2, '0') +
+    date.getHours().toString().padStart(2, '0') +
+    date.getMinutes().toString().padStart(2, '0') +
+    date.getSeconds().toString().padStart(2, '0');
 
   let orderId = payment.payment_id.toString();
-  
+
   let vnp_Params = {};
   vnp_Params['vnp_Version'] = '2.1.0';
   vnp_Params['vnp_Command'] = 'pay';
@@ -56,7 +56,7 @@ function generateVnpayUrl(payment, ipAddr, roomId) {
 
   let signData = Object.keys(vnp_Params).map(key => `${key}=${vnp_Params[key]}`).join('&');
   let hmac = crypto.createHmac("sha512", vnp_HashSecret);
-  let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex"); 
+  let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
   vnp_Params['vnp_SecureHash'] = signed;
   let vnpUrl = vnp_Url + '?' + Object.keys(vnp_Params).map(key => `${key}=${vnp_Params[key]}`).join('&');
 
@@ -146,7 +146,7 @@ const getLandlordViewingSchedules = async (req, res, next) => {
     const { status, page = 1, limit = 10 } = req.query;
 
     const { Op } = require('sequelize');
-    const where = { 
+    const where = {
       landlord_id: landlordId,
       status: { [Op.ne]: 'pending_payment' }
     };
@@ -161,9 +161,9 @@ const getLandlordViewingSchedules = async (req, res, next) => {
     const { count, rows } = await ViewingSchedule.findAndCountAll({
       where,
       include: [
-        { 
-          model: Room, 
-          as: 'room', 
+        {
+          model: Room,
+          as: 'room',
           attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month', 'room_number'],
           include: [
             { model: RoomImage, as: 'images', attributes: ['image_url', 'is_primary'] }
@@ -177,7 +177,7 @@ const getLandlordViewingSchedules = async (req, res, next) => {
     });
 
     const { Contract } = require('../models');
-    
+
     const enhancedRows = await Promise.all(rows.map(async (schedule) => {
       let draftContract = null;
       if (schedule.status === 'contract_requested') {
@@ -298,7 +298,7 @@ const updateViewingSchedule = async (req, res, next) => {
         const payment = await Payment.findOne({
           where: { viewing_schedule_id: schedule.schedule_id, status: 'completed' }
         });
-        
+
         if (payment) {
           payment.status = 'refunded';
           payment.refund_amount = payment.amount;
@@ -306,7 +306,7 @@ const updateViewingSchedule = async (req, res, next) => {
           payment.net_amount = 0;
           await payment.save();
         }
-        
+
         // Restore room status to available
         if (schedule.room_id) {
           await Room.update({ status: 'available' }, { where: { room_id: schedule.room_id } });
@@ -321,7 +321,7 @@ const updateViewingSchedule = async (req, res, next) => {
     if (status) {
       let statusTitle = 'Viewing Schedule Updated';
       let statusMessage = `Your viewing schedule status has been updated to ${status}.`;
-      
+
       if (status === 'rejected') {
         statusTitle = 'Viewing Request Rejected';
         statusMessage = `Your viewing request has been rejected by the landlord.`;
@@ -383,9 +383,9 @@ const confirmViewing = async (req, res, next) => {
     }
 
     if (schedule.status !== 'scheduled') {
-      return res.status(400).json({ 
-        success: false, 
-        message: `Cannot confirm viewing. Current status: ${schedule.status}. Only "scheduled" viewings can be confirmed.` 
+      return res.status(400).json({
+        success: false,
+        message: `Cannot confirm viewing. Current status: ${schedule.status}. Only "scheduled" viewings can be confirmed.`
       });
     }
 
@@ -398,8 +398,8 @@ const confirmViewing = async (req, res, next) => {
     await Notification.create({
       user_id: schedule.tenant_id,
       title: 'Viewing Confirmed',
-      message: `Your room viewing for "${schedule.room.title}" has been confirmed by the landlord. You can now decide to rent or report an issue.`,
-      notification_type: 'viewing_schedule',
+      message: `Chủ nhà đã xác nhận bạn tới xem phòng "${schedule.room.title}". Bạn có muốn gửi yêu cầu thuê phòng này không?`,
+      notification_type: 'viewing_confirmed',
       related_id: schedule.schedule_id,
     });
 
@@ -407,8 +407,8 @@ const confirmViewing = async (req, res, next) => {
     if (io) {
       io.to(`user_${schedule.tenant_id}`).emit('new_notification', {
         title: 'Viewing Confirmed',
-        message: `Your room viewing for "${schedule.room.title}" has been confirmed by the landlord. You can now decide to rent or report an issue.`,
-        type: 'viewing_schedule'
+        message: `Chủ nhà đã xác nhận bạn tới xem phòng "${schedule.room.title}". Bạn có muốn gửi yêu cầu thuê phòng này không?`,
+        type: 'viewing_confirmed'
       });
     }
 
@@ -441,9 +441,9 @@ const markNoShow = async (req, res, next) => {
     }
 
     if (schedule.status !== 'scheduled') {
-      return res.status(400).json({ 
-        success: false, 
-        message: `Cannot mark as no-show. Current status: ${schedule.status}.` 
+      return res.status(400).json({
+        success: false,
+        message: `Cannot mark as no-show. Current status: ${schedule.status}.`
       });
     }
 
@@ -552,9 +552,9 @@ const getTenantViewingSchedules = async (req, res, next) => {
     const { count, rows } = await ViewingSchedule.findAndCountAll({
       where,
       include: [
-        { 
-          model: Room, 
-          as: 'room', 
+        {
+          model: Room,
+          as: 'room',
           attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month'],
           include: [
             { model: RoomImage, as: 'images', attributes: ['image_url', 'is_primary'] }
@@ -642,9 +642,9 @@ const requestViewing = async (req, res, next) => {
 
     // Check if room is available
     if (room.status !== 'available') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'This room is not available for viewing.' 
+      return res.status(400).json({
+        success: false,
+        message: 'This room is not available for viewing.'
       });
     }
 
@@ -657,9 +657,9 @@ const requestViewing = async (req, res, next) => {
     });
 
     if (existingSchedule) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'You already have an active viewing request for this room.' 
+      return res.status(400).json({
+        success: false,
+        message: 'You already have an active viewing request for this room.'
       });
     }
 
@@ -723,26 +723,26 @@ const retryPayment = async (req, res, next) => {
     }
 
     if (schedule.status !== 'pending_payment') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'This schedule is not awaiting payment.' 
+      return res.status(400).json({
+        success: false,
+        message: 'This schedule is not awaiting payment.'
       });
     }
 
     // Check if deadline has passed
     if (schedule.payment_deadline && new Date() > new Date(schedule.payment_deadline)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Payment deadline has expired. Please create a new viewing request.' 
+      return res.status(400).json({
+        success: false,
+        message: 'Payment deadline has expired. Please create a new viewing request.'
       });
     }
 
     // Find existing pending payment or create new one
     let payment = await Payment.findOne({
-      where: { 
-        viewing_schedule_id: schedule.schedule_id, 
+      where: {
+        viewing_schedule_id: schedule.schedule_id,
         tenant_id: tenantId,
-        status: 'pending' 
+        status: 'pending'
       }
     });
 
@@ -763,9 +763,9 @@ const retryPayment = async (req, res, next) => {
     }
 
     const ipAddr = req.headers['x-forwarded-for'] ||
-        req.connection?.remoteAddress ||
-        req.socket?.remoteAddress ||
-        (req.connection?.socket ? req.connection.socket.remoteAddress : '127.0.0.1');
+      req.connection?.remoteAddress ||
+      req.socket?.remoteAddress ||
+      (req.connection?.socket ? req.connection.socket.remoteAddress : '127.0.0.1');
 
     const vnpUrl = generateVnpayUrl(payment, ipAddr, schedule.room_id);
 
@@ -994,10 +994,10 @@ const createContractFromViewing = async (req, res, next) => {
         message: 'Bạn phải xác thực căn cước công dân trước khi có thể tạo hợp đồng.'
       });
     }
-    const { 
-      startDate, 
-      endDate, 
-      monthlyRent, 
+    const {
+      startDate,
+      endDate,
+      monthlyRent,
       termsAndConditions,
       landlordName,
       landlordIc,
@@ -1033,7 +1033,7 @@ const createContractFromViewing = async (req, res, next) => {
     }
 
     if (!startDate && !termsAndConditions) { // keep some fallback for legacy requests if needed, but we'll enforce finding the draft contract.
-       // actually let's just find the draft contract directly
+      // actually let's just find the draft contract directly
     }
 
     const { Contract } = require('../models');
@@ -1053,7 +1053,7 @@ const createContractFromViewing = async (req, res, next) => {
       }
       const timestamp = Date.now().toString().slice(-6);
       const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      
+
       let signatureUrl = landlordSignature;
       if (landlordSignature && landlordSignature.startsWith('data:image') && process.env.CLOUDINARY_URL) {
         try {
@@ -1247,12 +1247,32 @@ const signContract = async (req, res, next) => {
     // Mark OTP as used
     await otpRecord.update({ is_used: true });
 
-    contract.status = 'pending_payment'; // Wait for deposit payment before making active
     contract.tenant_agreed = true;
     if (tenantSignature) {
       contract.tenant_signature = tenantSignature;
     }
-    contract.updated_at = new Date();
+
+    // Check if this is a renewal contract (is there an original contract pointing to this one?)
+    const originalContract = await Contract.findOne({
+      where: { renewal_contract_id: contract.contract_id }
+    });
+
+    const isRenewal = !!originalContract;
+
+    if (isRenewal) {
+      contract.status = 'active';
+      contract.updated_at = new Date();
+      
+      // Update original contract to completed if it's not already
+      if (originalContract.status === 'active') {
+        originalContract.status = 'completed';
+        await originalContract.save();
+      }
+    } else {
+      contract.status = 'pending_payment'; // Wait for deposit payment before making active
+      contract.updated_at = new Date();
+    }
+
     await contract.save();
 
     // Send contract PDF email to landlord and tenant if provided
@@ -1266,65 +1286,62 @@ const signContract = async (req, res, next) => {
       }
     }
 
-
-    // Update room status to rented
-    // We don't do this here anymore, VNPay return will do it.
-    // await Room.update(
-    //   { status: 'rented', updated_at: new Date() },
-    //   { where: { room_id: contract.room_id } }
-    // );
-
-    // Process deposit: 5% platform fee, 95% to landlord
-    const viewingSchedule = await ViewingSchedule.findOne({
-      where: { room_id: contract.room_id, tenant_id: tenantId, status: 'contract_created' }
-    });
-
-    if (viewingSchedule) {
-      viewingSchedule.status = 'completed';
-      viewingSchedule.tenant_decision = 'rented';
-      viewingSchedule.updated_at = new Date();
-      await viewingSchedule.save();
-
-      const payment = await Payment.findOne({
-        where: { viewing_schedule_id: viewingSchedule.schedule_id, status: 'completed' }
+    if (!isRenewal) {
+      // Process deposit: 5% platform fee, 95% to landlord
+      const viewingSchedule = await ViewingSchedule.findOne({
+        where: { room_id: contract.room_id, tenant_id: tenantId, status: 'contract_created' }
       });
 
-      if (payment) {
-        const total = parseFloat(payment.amount);
-        payment.platform_fee = total * PLATFORM_FEE_RATE;
-        payment.net_amount = total * (1 - PLATFORM_FEE_RATE);
-        payment.refund_amount = 0;
-        payment.payout_status = 'pending';
-        await payment.save();
+      if (viewingSchedule) {
+        viewingSchedule.status = 'completed';
+        viewingSchedule.tenant_decision = 'rented';
+        viewingSchedule.updated_at = new Date();
+        await viewingSchedule.save();
+
+        const payment = await Payment.findOne({
+          where: { viewing_schedule_id: viewingSchedule.schedule_id, status: 'completed' }
+        });
+
+        if (payment) {
+          const total = parseFloat(payment.amount);
+          payment.platform_fee = total * PLATFORM_FEE_RATE;
+          payment.net_amount = total * (1 - PLATFORM_FEE_RATE);
+          payment.refund_amount = 0;
+          payment.payout_status = 'pending';
+          await payment.save();
+        }
+      }
+
+      const { RentalRequest } = require('../models');
+      const rentalRequest = await RentalRequest.findOne({
+        where: { room_id: contract.room_id, tenant_id: tenantId, status: 'contract_created' }
+      });
+
+      if (rentalRequest) {
+        rentalRequest.status = 'completed';
+        rentalRequest.updated_at = new Date();
+        await rentalRequest.save();
       }
     }
 
-    const { RentalRequest } = require('../models');
-    const rentalRequest = await RentalRequest.findOne({
-      where: { room_id: contract.room_id, tenant_id: tenantId, status: 'contract_created' }
-    });
-
-    if (rentalRequest) {
-      rentalRequest.status = 'completed';
-      rentalRequest.updated_at = new Date();
-      await rentalRequest.save();
-    }
-
-    // Notify landlord that contract is signed and waiting for payment
+    // Notify landlord that contract is signed
     await Notification.create({
       user_id: contract.landlord_id,
-      title: 'Contract Signed (Pending Payment)',
-      message: `Tenant has signed the rental contract for "${contract.room.title}". Waiting for deposit payment.`,
+      title: isRenewal ? 'Contract Renewed' : 'Contract Signed (Pending Payment)',
+      message: isRenewal 
+        ? `Tenant has signed the renewal contract for "${contract.room.title}". The contract is now active.`
+        : `Tenant has signed the rental contract for "${contract.room.title}". Waiting for deposit payment.`,
       notification_type: 'contract',
       related_id: contract.contract_id,
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Contract signed successfully! Please proceed to payment.',
+      message: isRenewal ? 'Contract renewed successfully!' : 'Contract signed successfully! Please proceed to payment.',
       data: {
         contractId: contract.contract_id,
         status: contract.status,
+        isRenewal: isRenewal,
       },
     });
   } catch (error) {
@@ -1400,7 +1417,7 @@ const cancelContract = async (req, res, next) => {
     if (contract.status === 'active' || contract.status === 'completed') {
       return res.status(400).json({ success: false, message: 'Cannot cancel an active or completed contract.' });
     }
-
+    
     contract.status = 'cancelled';
     await contract.save();
 
@@ -1413,24 +1430,107 @@ const cancelContract = async (req, res, next) => {
   }
 };
 
-module.exports = {
-  createViewingSchedule,
-  getLandlordViewingSchedules,
-  getViewingScheduleDetails,
-  updateViewingSchedule,
-  confirmViewing,
-  markNoShow,
-  deleteViewingSchedule,
-  getTenantViewingSchedules,
-  requestViewing,
-  retryPayment,
-  requestContract,
-  disputeViewingSchedule,
-  cancelViewingScheduleTenant,
-  declineViewingScheduleTenant,
-  createContractFromViewing,
-  sendContractOtp,
-  signContract,
-  getTenantContracts,
-  cancelContract,
-};
+  // =========================================================
+  // POST /api/tenant/contracts/:contractId/renew
+  // Tenant requests contract renewal
+  // =========================================================
+  const renewContract = async (req, res, next) => {
+    try {
+      const { contractId } = req.params;
+      const tenantId = req.user.userId;
+      const { durationMonths } = req.body;
+
+      const oldContract = await Contract.findOne({
+        where: { contract_id: contractId, tenant_id: tenantId, status: 'active' },
+        include: [{ model: Room, as: 'room' }]
+      });
+
+      if (!oldContract) {
+        return res.status(404).json({ success: false, message: 'Không tìm thấy hợp đồng đang hoạt động.' });
+      }
+
+      if (oldContract.is_renewed) {
+        return res.status(400).json({ success: false, message: 'Hợp đồng này đã được gia hạn.' });
+      }
+
+      // Mark old as renewed
+      oldContract.is_renewed = true;
+      await oldContract.save();
+
+      // Create new draft contract
+      const start = new Date(oldContract.end_date);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + parseInt(durationMonths || 12));
+
+      const timestamp = Date.now().toString().slice(-6);
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+
+      const newContract = await Contract.create({
+        room_id: oldContract.room_id,
+        tenant_id: oldContract.tenant_id,
+        landlord_id: oldContract.landlord_id,
+        contract_number: `CT-${timestamp}-${random}`,
+        status: 'draft',
+        start_date: start,
+        end_date: end,
+        monthly_rent: oldContract.monthly_rent,
+        deposit_amount: oldContract.deposit_amount,
+        tenant_name: oldContract.tenant_name,
+        tenant_ic: oldContract.tenant_ic,
+        tenant_ic_issue_date: oldContract.tenant_ic_issue_date,
+        tenant_ic_issue_place: oldContract.tenant_ic_issue_place,
+        tenant_permanent_address: oldContract.tenant_permanent_address,
+        renewal_contract_id: oldContract.contract_id
+      });
+
+      // Notify landlord
+      await Notification.create({
+        user_id: oldContract.landlord_id,
+        title: 'Yêu cầu gia hạn hợp đồng',
+        message: `Khách thuê đã yêu cầu gia hạn hợp đồng phòng "${oldContract.room ? oldContract.room.title : oldContract.room_id}". Vui lòng kiểm tra và gửi lại hợp đồng.`,
+        notification_type: 'contract',
+        related_id: newContract.contract_id,
+      });
+
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`user_${oldContract.landlord_id}`).emit('new_notification', {
+          title: 'Yêu cầu gia hạn hợp đồng',
+          message: `Khách thuê đã yêu cầu gia hạn hợp đồng phòng "${oldContract.room ? oldContract.room.title : oldContract.room_id}". Vui lòng kiểm tra và gửi lại hợp đồng.`,
+          type: 'contract'
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Đã gửi yêu cầu gia hạn. Vui lòng chờ chủ nhà duyệt.',
+        data: newContract
+      });
+
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  module.exports = {
+    createViewingSchedule,
+    getLandlordViewingSchedules,
+    getViewingScheduleDetails,
+    updateViewingSchedule,
+    confirmViewing,
+    markNoShow,
+    deleteViewingSchedule,
+    getTenantViewingSchedules,
+    requestViewing,
+    retryPayment,
+    requestContract,
+    disputeViewingSchedule,
+    cancelViewingScheduleTenant,
+    declineViewingScheduleTenant,
+    createContractFromViewing,
+    sendContractOtp,
+    signContract,
+    getTenantContracts,
+    cancelContract,
+    renewContract,
+  };

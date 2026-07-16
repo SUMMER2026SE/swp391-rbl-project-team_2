@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import ThemeToggle from '../ui/ThemeToggle';
 import { API_URL } from '../../config';
 import { getAvatarUrl as getGlobalAvatar } from '../../utils/format';
+import httpClient from '../../services/httpClient';
 import './Header.css';
 
 const Header = ({ toggleSidebar }) => {
@@ -29,7 +30,33 @@ const Header = ({ toggleSidebar }) => {
     setQuickSearch(keywordParam);
   }, [keywordParam]);
 
-  const isNotificationsPage = location.pathname === ROUTES.TENANT.NOTIFICATIONS;
+  React.useEffect(() => {
+    if (isAuthenticated && (user?.role === 'LANDLORD' || user?.role === 'TENANT')) {
+      const fetchUnreadCount = async () => {
+        try {
+          const endpoint = user.role === 'LANDLORD' 
+            ? '/landlord/notifications/unread/count' 
+            : '/tenant/notifications/unread/count';
+          const res = await httpClient.get(endpoint);
+          setHasUnreadNotifications(res.data?.count > 0);
+        } catch (error) {
+          console.error('Failed to fetch unread notifications count:', error);
+        }
+      };
+      fetchUnreadCount();
+      
+      const handleNewNotification = () => {
+        setHasUnreadNotifications(true);
+      };
+      window.addEventListener('new_notification_received', handleNewNotification);
+      
+      return () => {
+        window.removeEventListener('new_notification_received', handleNewNotification);
+      };
+    }
+  }, [isAuthenticated, user?.role, location.pathname]);
+
+  const isNotificationsPage = location.pathname === ROUTES.TENANT.NOTIFICATIONS || location.pathname === ROUTES.LANDLORD.NOTIFICATIONS;
 
   const getAvatarUrl = () => {
     if (user?.avatarUrl) {
@@ -144,9 +171,9 @@ const Header = ({ toggleSidebar }) => {
           </button>
           {isAuthenticated && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {user?.role === 'LANDLORD' && (
+              {(user?.role === 'LANDLORD' || user?.role === 'TENANT') && (
                 <Link
-                  to={ROUTES.LANDLORD.NOTIFICATIONS}
+                  to={user?.role === 'LANDLORD' ? ROUTES.LANDLORD.NOTIFICATIONS : ROUTES.TENANT.NOTIFICATIONS}
                   className={`header-bell-btn ${isNotificationsPage ? 'active' : ''}`}
                 >
                   <Bell size={20} />

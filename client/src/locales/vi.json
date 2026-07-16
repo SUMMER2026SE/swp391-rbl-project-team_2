@@ -1801,7 +1801,7 @@
       "contract_created": "Đã tạo hợp đồng",
       "completed": "Hoàn thành",
       "rejected": "Đã từ chối",
-      "cancelled": "Đã hủy",
+      "cancelled": "Người thuê đã hủy",
       "deposit_paid": "Đã đặt cọc"
     }
   },

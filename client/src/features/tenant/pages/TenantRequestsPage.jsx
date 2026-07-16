@@ -74,6 +74,11 @@ const TenantRequestsPage = () => {
     cancelText: 'Cancel',
     type: 'primary'
   });
+  
+  const [showRenewModal, setShowRenewModal] = useState(false);
+  const [renewContractTarget, setRenewContractTarget] = useState(null);
+  const [renewDuration, setRenewDuration] = useState('6');
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -229,8 +234,17 @@ const TenantRequestsPage = () => {
       setSelectedRoomId(null);
     }
     setContractMessage('');
-    setContractStartDate('');
-    setContractDuration('6');
+    
+    // Format date to YYYY-MM-DD if it exists
+    let defaultDate = '';
+    if (item.requested_move_in_date) {
+      defaultDate = new Date(item.requested_move_in_date).toISOString().split('T')[0];
+    } else if (item.requestedMoveInDate) {
+      defaultDate = new Date(item.requestedMoveInDate).toISOString().split('T')[0];
+    }
+    
+    setContractStartDate(defaultDate);
+    setContractDuration(item.lease_duration_months?.toString() || item.leaseDurationMonths?.toString() || '6');
     setTenantName(user?.full_name || '');
     setTenantIc('');
     setTenantIcIssueDate('');
@@ -255,20 +269,20 @@ const TenantRequestsPage = () => {
   };
 
   const handleSubmitContractRequest = async () => {
+    if (!contractStartDate) {
+      toast.error('Please select a move-in date.');
+      return;
+    }
+
+    const selectedDate = new Date(contractStartDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to midnight for accurate comparison
+    if (selectedDate < today) {
+      toast.error('Move-in date cannot be in the past.');
+      return;
+    }
+
     if (modalMode !== 'create_request') {
-      if (!contractStartDate) {
-        toast.error('Please select a move-in date.');
-        return;
-      }
-
-      const selectedDate = new Date(contractStartDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time to midnight for accurate comparison
-      if (selectedDate < today) {
-        toast.error('Move-in date cannot be in the past.');
-        return;
-      }
-
       if (!tenantName || !tenantIc || !tenantIcIssueDate || !tenantIcIssuePlace || !tenantPermanentAddress) {
         toast.error('Please fill in all identity details for the contract.');
         return;
@@ -286,6 +300,8 @@ const TenantRequestsPage = () => {
         await rentalRequestService.createRequest({
           roomId,
           message: contractMessage || null,
+          requestedMoveInDate: contractStartDate,
+          leaseDurationMonths: parseInt(contractDuration, 10)
         });
         toast.success(t('tenantRequests.sendRentalRequestSuccess', 'Gửi yêu cầu thuê phòng thành công!'));
         handleCloseContractRequest();
@@ -373,15 +389,21 @@ const TenantRequestsPage = () => {
         pdfBase64 = await html2pdf().from(element).outputPdf('datauristring');
       }
 
-      await rentalRequestService.signContract(pendingContractId, { 
+      const response = await rentalRequestService.signContract(pendingContractId, { 
         tenantSignature: pendingSignatureData, 
         otp: otpCode,
         contractPdf: pdfBase64
       });
       setShowOtpModal(false);
       setSelectedContractToSign(null);
-      toast.success('Contract signed successfully!');
-      navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${pendingRoomId}&contractId=${pendingContractId}`);
+
+      if (response?.data?.data?.isRenewal || response?.data?.isRenewal) {
+        toast.success('Hợp đồng gia hạn đã được ký và kích hoạt thành công!');
+        fetchContracts();
+      } else {
+        toast.success('Contract signed successfully! Redirecting to payment...');
+        navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${pendingRoomId}&contractId=${pendingContractId}`);
+      }
     } catch (err) {
       toast.error('Failed to sign contract: ' + (err.response?.data?.message || err.message));
     } finally {
@@ -404,6 +426,40 @@ const TenantRequestsPage = () => {
           fetchContracts();
         } catch (err) {
           toast.error('Failed to cancel contract: ' + (err.response?.data?.message || err.message));
+        }
+      }
+    });
+  };
+
+  const handleRenewContract = (contract) => {
+    setRenewContractTarget(contract);
+    setRenewDuration('6');
+    setShowRenewModal(true);
+  };
+
+  const handleRenewContractConfirm = () => {
+    const durationNum = parseInt(renewDuration, 10);
+    if (isNaN(durationNum) || durationNum <= 0) {
+      toast.error('Số tháng gia hạn không hợp lệ.');
+      return;
+    }
+    
+    setShowRenewModal(false);
+    
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Xác nhận gia hạn hợp đồng',
+      message: `Bạn có chắc chắn muốn gia hạn hợp đồng này thêm ${durationNum} tháng? Chủ nhà sẽ nhận được yêu cầu và soạn hợp đồng mới.`,
+      confirmText: 'Xác nhận',
+      cancelText: 'Hủy',
+      type: 'primary',
+      onConfirm: async () => {
+        try {
+          await rentalRequestService.renewContract(renewContractTarget.contractId || renewContractTarget.contract_id, durationNum);
+          toast.success('Đã gửi yêu cầu gia hạn thành công.');
+          fetchContracts();
+        } catch (err) {
+          toast.error('Gửi yêu cầu gia hạn thất bại: ' + (err.response?.data?.message || err.message));
         }
       }
     });
@@ -547,7 +603,7 @@ const TenantRequestsPage = () => {
               const statusInfo = getStatusInfo(schedule.status);
               const existingRequest = rentalRequests.find(r => 
                 (r.roomId === schedule.roomId || r.room_id === schedule.roomId) && 
-                r.status !== 'cancelled' && r.status !== 'canceled'
+                !['cancelled', 'canceled', 'rejected'].includes(r.status)
               );
               const primaryImage = schedule.room?.images?.find(img => img.is_primary)?.image_url || schedule.room?.images?.[0]?.image_url;
               const roomImage = primaryImage
@@ -798,15 +854,15 @@ const TenantRequestsPage = () => {
 
                     <div className="request-actions-row">
                       <div className="action-buttons">
-                        {request.status === 'pending' && (
-                          <button onClick={() => handleCancelRequest(request.requestId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
-                            <X size={16} /> {t('tenantRequests.cancelRequest', 'Cancel Request')}
-                          </button>
-                        )}
-
                         {request.status === 'approved' && (
                           <button onClick={() => handleOpenContractRequest(request)} className="btn-action btn-contract">
                             <FileSignature size={16} /> {t('tenantRequests.requestContract', 'Request Contract')}
+                          </button>
+                        )}
+
+                        {(request.status === 'pending' || request.status === 'approved') && (
+                          <button onClick={() => handleCancelRequest(request.requestId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3', marginLeft: request.status === 'approved' ? '8px' : '0' }}>
+                            <X size={16} /> {t('tenantRequests.cancelRequest', 'Từ chối / Hủy')}
                           </button>
                         )}
                         
@@ -919,6 +975,20 @@ const TenantRequestsPage = () => {
                           >
                             <FileText size={14} /> {t('tenantRequests.viewContract', 'View Contract')}
                           </button>
+                          {contract.status === 'active' && !contract.is_renewed && (
+                            <button
+                              onClick={() => handleRenewContract(contract)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '6px 12px', background: '#059669', 
+                                border: 'none',
+                                borderRadius: '6px', color: 'white', 
+                                fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                              }}
+                            >
+                              <FileText size={14} /> Gia hạn
+                            </button>
+                          )}
                           {contract.status === 'pending_payment' && (
                             <button
                               onClick={() => navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${contract.roomId}&contractId=${contract.contractId}`)}
@@ -1009,36 +1079,37 @@ const TenantRequestsPage = () => {
               </p>
             </div>
             
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Move-in Date *</label>
+                <input 
+                  type="date" 
+                  value={contractStartDate}
+                  onChange={(e) => setContractStartDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                  onFocus={(e) => e.target.style.borderColor = '#059669'}
+                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Duration (Months) *</label>
+                <select 
+                  value={contractDuration}
+                  onChange={(e) => setContractDuration(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
+                  onFocus={(e) => e.target.style.borderColor = '#059669'}
+                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => (
+                    <option key={m} value={m}>{m} Month{m > 1 ? 's' : ''}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
             {modalMode !== 'create_request' && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Move-in Date *</label>
-                    <input 
-                      type="date" 
-                      value={contractStartDate}
-                      onChange={(e) => setContractStartDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
-                      onFocus={(e) => e.target.style.borderColor = '#059669'}
-                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Duration (Months) *</label>
-                    <select 
-                      value={contractDuration}
-                      onChange={(e) => setContractDuration(e.target.value)}
-                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
-                      onFocus={(e) => e.target.style.borderColor = '#059669'}
-                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => (
-                        <option key={m} value={m}>{m} Month{m > 1 ? 's' : ''}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
 
                 <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '20px 0 12px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>
                   {t('tenantRequests.tenantInfoContract', 'Thông tin người thuê (Lập hợp đồng)')}
@@ -1269,6 +1340,66 @@ const TenantRequestsPage = () => {
                 handleCancelContract(id);
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Renew Modal */}
+      {showRenewModal && renewContractTarget && (
+        <div className="modal-overlay" onClick={() => setShowRenewModal(false)}>
+          <div className="modal-container" style={{ maxWidth: '400px', background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+              <h2 className="modal-title" style={{ fontSize: '18px' }}>{t('tenantRequests.renewContract', 'Gia hạn hợp đồng')}</h2>
+              <button 
+                className="modal-close" 
+                onClick={() => setShowRenewModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="modal-body" style={{ padding: '24px' }}>
+              <p style={{ margin: '0 0 16px 0', fontSize: '15px', color: '#4b5563', lineHeight: 1.5 }}>
+                {t('tenantRequests.renewContractDesc', 'Vui lòng nhập số tháng bạn muốn gia hạn cho hợp đồng này.')}
+              </p>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>{t('tenantRequests.durationMonths', 'Số tháng gia hạn')} *</label>
+                <input 
+                  type="number" 
+                  min="1"
+                  value={renewDuration}
+                  onChange={(e) => setRenewDuration(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                />
+              </div>
+            </div>
+            
+            <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowRenewModal(false)}
+                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontWeight: 500 }}
+              >
+                {t('tenantRequests.cancel', 'Hủy')}
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleRenewContractConfirm}
+                disabled={!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0}
+                style={{ 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  background: (!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0) ? '#9ca3af' : '#10b981', 
+                  color: '#fff', 
+                  cursor: (!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0) ? 'not-allowed' : 'pointer', 
+                  fontWeight: 600,
+                  marginLeft: '12px'
+                }}
+              >
+                {t('tenantRequests.continue', 'Tiếp tục')}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -8,6 +8,7 @@ const favoriteController = require('../controllers/favoriteController');
 const tenantRentalRequestController = require('../controllers/tenantRentalRequestController');
 const paymentController = require('../controllers/paymentController');
 const viewingScheduleController = require('../controllers/viewingScheduleController');
+const notificationController = require('../controllers/notificationController');
 
 // =========================================================
 // PUBLIC PAYMENT ROUTES (No Auth required for webhooks / mock checkout)
@@ -64,5 +65,16 @@ router.get('/contracts', viewingScheduleController.getTenantContracts);
 router.post('/contracts/:contractId/send-otp', viewingScheduleController.sendContractOtp);
 router.put('/contracts/:contractId/sign', viewingScheduleController.signContract);
 router.put('/contracts/:contractId/cancel', viewingScheduleController.cancelContract);
+router.post('/contracts/:contractId/renew', viewingScheduleController.renewContract);
+
+// =========================================================
+// NOTIFICATION ROUTES (Tenant-side)
+// =========================================================
+router.get('/notifications', notificationController.getUserNotifications);
+router.get('/notifications/unread/count', notificationController.getUnreadNotificationCount);
+router.put('/notifications/:notificationId/read', notificationController.markNotificationAsRead);
+router.put('/notifications/read-all', notificationController.markAllNotificationsAsRead);
+router.delete('/notifications/:notificationId', notificationController.deleteNotification);
+router.delete('/notifications/delete-all', notificationController.deleteAllNotifications);
 
 module.exports = router;
