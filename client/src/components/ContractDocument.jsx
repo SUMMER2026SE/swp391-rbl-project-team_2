@@ -150,9 +150,22 @@ const ContractDocument = ({ contract, role, onSign, onCancel, onRenew, onTermina
               {contract.landlordSignature ? (
                 <img src={contract.landlordSignature} alt="Landlord Signature" style={{ maxHeight: '100px', maxWidth: '100%' }} />
               ) : (
-                <div className="signature-name-placeholder" style={{ marginTop: '10px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-                  Chưa ký
-                </div>
+                role === 'landlord' && statusLower === 'draft' ? (
+                  <div style={{ border: '1px solid #e2e8f0', borderRadius: '4px', background: '#f8fafc', marginTop: '10px', position: 'relative' }}>
+                    <SignatureCanvas 
+                      ref={sigCanvas}
+                      penColor="black"
+                      canvasProps={{width: 300, height: 150, className: 'sigCanvas'}} 
+                    />
+                    <button onClick={clearSignature} style={{ position: 'absolute', top: 5, right: 5, background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }} title="Clear">
+                      <Eraser size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="signature-name-placeholder" style={{ marginTop: '10px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                    Chưa ký
+                  </div>
+                )
               )}
               {(() => {
                 const landlordName = contract.landlordName || contract.landlord?.full_name || (role === 'landlord' ? user?.fullName : null);
@@ -204,6 +217,12 @@ const ContractDocument = ({ contract, role, onSign, onCancel, onRenew, onTermina
             </button>
           )}
           
+          {role === 'landlord' && statusLower === 'draft' && onSign && (
+            <button onClick={handleSignProceed} style={{ padding: '8px 16px', background: '#2563eb', border: 'none', color: 'white', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 500 }}>
+              <FileSignature size={16} /> Duyệt và Ký tên
+            </button>
+          )}
+
           {showSignButton && onSign && (
             <button onClick={handleSignProceed} style={{ padding: '8px 16px', background: '#2563eb', border: 'none', color: 'white', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 500 }}>
               <FileSignature size={16} /> Đồng ý và Thanh toán

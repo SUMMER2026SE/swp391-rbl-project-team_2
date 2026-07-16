@@ -85,6 +85,17 @@ export const useContracts = (params = {}) => {
     }
   };
 
+  const approveRenewal = async (id, signatureData) => {
+    try {
+      const approved = await landlordService.approveRenewal(id, { landlordSignature: signatureData });
+      fetchContracts(); // refresh to get updated status
+      return approved;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
   const terminateContract = async (id, reason) => {
     try {
       const terminated = await landlordService.terminateContract(id, reason);
@@ -105,6 +116,7 @@ export const useContracts = (params = {}) => {
     createContract,
     updateContract,
     renewContract,
+    approveRenewal,
     terminateContract,
   };
 };

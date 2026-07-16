@@ -11,6 +11,7 @@ const errorHandler = require('./middlewares/errorHandler');
 const initDatabase = require('./config/initDatabase');
 const initSocket = require('./config/socket');
 const initCronJobs = require('./cron/refundJobs');
+const { checkExpiringContracts } = require('./cron/contractRenewalJob');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -29,6 +30,7 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = initSocket(server);
 app.set('io', io); // make io accessible in controllers via req.app.get('io')
+global.io = io; // make io accessible in cron jobs
 
 const PORT = process.env.PORT || 5000;
 
@@ -115,6 +117,7 @@ const startServer = async () => {
 
     // Initialize Cron Jobs
     initCronJobs();
+    checkExpiringContracts();
 
     // Test database connection
     await sequelize.authenticate();

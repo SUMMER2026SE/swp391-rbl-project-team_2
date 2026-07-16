@@ -361,6 +361,16 @@ export const landlordService = {
     }
   },
 
+  approveRenewal: async (id, data) => {
+    try {
+      const response = await httpClient.put(`/landlord/contracts/${id}/approve-renewal`, data);
+      return response;
+    } catch (error) {
+      console.error('Error approving renewal contract:', error);
+      throw error;
+    }
+  },
+
   terminateContract: async (id, reason) => {
     try {
       const response = await httpClient.put(`/landlord/contracts/${id}/terminate`, { reason });

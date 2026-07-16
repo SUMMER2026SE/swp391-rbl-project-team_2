@@ -178,4 +178,14 @@ export const rentalRequestService = {
       throw error;
     }
   },
+
+  renewContract: async (contractId, durationMonths) => {
+    try {
+      const response = await httpClient.post(`/tenant/contracts/${contractId}/renew`, { durationMonths });
+      return response;
+    } catch (error) {
+      console.error('Error renewing contract:', error);
+      throw error;
+    }
+  },
 };

@@ -374,6 +374,74 @@ const renewContract = async (req, res, next) => {
 };
 
 // =========================================================
+// PUT /api/landlord/contracts/:contractId/approve-renewal
+// Landlord approves and signs a draft renewal contract
+// =========================================================
+const approveRenewal = async (req, res, next) => {
+  try {
+    const { contractId } = req.params;
+    const landlordId = req.user.userId;
+    const { landlordSignature } = req.body;
+
+    const contract = await Contract.findOne({
+      where: { contract_id: contractId, landlord_id: landlordId, status: 'draft' },
+      include: [
+        { model: Room, as: 'room' },
+      ],
+    });
+
+    if (!contract) {
+      return res.status(404).json({
+        success: false,
+        message: 'Draft renewal contract not found.',
+      });
+    }
+
+    if (!landlordSignature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Landlord signature is required to approve the renewal.',
+      });
+    }
+
+    contract.status = 'pending_signature'; // Tenant needs to sign it now
+    contract.landlord_signature = landlordSignature;
+    contract.updated_at = new Date();
+    await contract.save();
+
+    // Notify tenant
+    const { Notification } = require('../models');
+    await Notification.create({
+      user_id: contract.tenant_id,
+      title: 'Hợp đồng gia hạn đã được duyệt',
+      message: `Chủ nhà đã duyệt và gửi hợp đồng gia hạn cho phòng "${contract.room?.title || contract.room_id}". Vui lòng kiểm tra và ký tên.`,
+      notification_type: 'contract',
+      related_id: contract.contract_id,
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${contract.tenant_id}`).emit('new_notification', {
+        title: 'Hợp đồng gia hạn đã được duyệt',
+        message: `Chủ nhà đã duyệt và gửi hợp đồng gia hạn cho phòng "${contract.room?.title || contract.room_id}". Vui lòng kiểm tra và ký tên.`,
+        type: 'contract'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Renewal contract approved and sent to tenant for signature.',
+      data: {
+        contractId: contract.contract_id,
+        status: contract.status,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================================
 // PUT /api/landlord/contracts/:contractId/terminate
 // Terminate contract
 // =========================================================
@@ -434,5 +502,6 @@ module.exports = {
   getContractDetails,
   updateContract,
   renewContract,
+  approveRenewal,
   terminateContract,
 };

@@ -66,6 +66,7 @@ const TENANT_NAV = [
   { icon: <CreditCard size={20} />, label: 'Lịch sử cọc', tKey: 'sidebar.depositHistory', path: ROUTES.TENANT.DEPOSIT_HISTORY },
   { icon: <Heart size={20} />, label: 'Yêu thích', tKey: 'sidebar.favorites', path: ROUTES.TENANT.FAVORITES },
   { icon: <MessageSquare size={20} />, label: 'Tin nhắn', tKey: 'sidebar.messages', path: '/messages' },
+  { icon: <Bell size={20} />, label: 'Thông báo', tKey: 'sidebar.notifications', path: ROUTES.TENANT.NOTIFICATIONS },
   { icon: <UserCircle size={20} />, label: 'Hồ sơ', tKey: 'sidebar.profile', path: ROUTES.TENANT.PROFILE },
   { icon: <Settings size={20} />, label: 'Cài đặt', tKey: 'sidebar.settings', path: ROUTES.TENANT.SETTINGS },
 ];
@@ -111,6 +112,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         duration: 5000,
         position: 'bottom-right',
       });
+      
+      // Dispatch custom event to notify Header.jsx
+      window.dispatchEvent(new CustomEvent('new_notification_received'));
       
       // Auto refetch stats when new notification arrives to update sidebar badges
       if (location.pathname.startsWith('/landlord')) {

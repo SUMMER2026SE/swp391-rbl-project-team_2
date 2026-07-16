@@ -356,10 +356,10 @@ const cancelRentalRequest = async (req, res, next) => {
       });
     }
 
-    if (rentalRequest.status !== 'pending') {
+    if (rentalRequest.status !== 'pending' && rentalRequest.status !== 'approved') {
       return res.status(400).json({
         success: false,
-        message: 'Only pending requests can be cancelled.',
+        message: 'Only pending or approved requests can be cancelled.',
       });
     }
 

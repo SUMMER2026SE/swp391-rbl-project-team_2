@@ -48,7 +48,7 @@ const ContractsPage = () => {
   const [terminateReason, setTerminateReason] = useState('');
 
   const navigate = useNavigate();
-  const { contracts, loading, error, renewContract, terminateContract, updateContract, fetchContracts } = useContracts();
+  const { contracts, loading, error, renewContract, terminateContract, updateContract, fetchContracts, approveRenewal } = useContracts();
 
   const filteredContracts = contracts.filter(contract => {
     const searchLower = (searchTerm || '').toLowerCase();
@@ -485,6 +485,15 @@ const ContractsPage = () => {
               onRenew={() => {
                 setShowContractModal(false);
                 setShowRenewModal(true);
+              }}
+              onSign={async (contract, signatureDataUrl) => {
+                try {
+                  await approveRenewal(contract.id || contract.contractId, signatureDataUrl);
+                  toast.success('Hợp đồng gia hạn đã được duyệt và gửi cho khách!');
+                  setShowContractModal(false);
+                } catch (err) {
+                  toast.error(err.message || 'Lỗi khi duyệt hợp đồng');
+                }
               }}
             />
           </div>
