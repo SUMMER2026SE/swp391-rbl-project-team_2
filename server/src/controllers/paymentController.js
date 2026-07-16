@@ -312,7 +312,17 @@ const createPaymentUrl = async (req, res, next) => {
     }
 
     if (paymentMethod === 'payos') {
-      const orderCode = payment.payment_id;
+      // Generate a unique 9-digit random orderCode that fits in Int32 (less than 2,147,483,647)
+      let orderCode;
+      let isUnique = false;
+      while (!isUnique) {
+        orderCode = Math.floor(100000000 + Math.random() * 900000000);
+        const existing = await Payment.findOne({ where: { notes: `payos_order_${orderCode}` } });
+        if (!existing) {
+          isUnique = true;
+        }
+      }
+
       const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : 'http://localhost:5173');
       const cancelUrl = `${origin}/tenant/payment/return?cancel=true&status=CANCELLED&orderCode=${orderCode}`;
       const returnUrl = `${origin}/tenant/payment/return?status=PAID&orderCode=${orderCode}`;
@@ -330,6 +340,7 @@ const createPaymentUrl = async (req, res, next) => {
       
       await payment.update({
         transaction_id: result.paymentLinkId,
+        notes: `payos_order_${orderCode}`,
       });
 
       return res.status(200).json({ success: true, url: result.checkoutUrl });
@@ -747,12 +758,28 @@ const cancelPayment = async (req, res, next) => {
           { where: { schedule_id: payment.viewing_schedule_id } }
         );
       }
+
+      // Revert room status to available
+      if (payment.room_id) {
+        await Room.update(
+          { status: 'available' },
+          { where: { room_id: payment.room_id } }
+        );
+      }
     } else {
       payment.status = 'cancelled';
       if (payment.viewing_schedule_id) {
         await ViewingSchedule.update(
           { status: 'cancelled' },
           { where: { schedule_id: payment.viewing_schedule_id } }
+        );
+      }
+
+      // Revert room status to available
+      if (payment.room_id) {
+        await Room.update(
+          { status: 'available' },
+          { where: { room_id: payment.room_id } }
         );
       }
     }
@@ -1019,7 +1046,15 @@ const payosReturn = async (req, res, next) => {
   try {
     const { status, orderCode } = req.query;
 
-    const payment = await Payment.findByPk(orderCode);
+    // Search for payment using primary key (legacy) or payos_order_xxx in notes
+    const payment = await Payment.findOne({
+      where: {
+        [Op.or]: [
+          { payment_id: orderCode },
+          { notes: `payos_order_${orderCode}` }
+        ]
+      }
+    });
     if (!payment) {
       return res.status(404).json({ success: false, message: 'Payment not found' });
     }
@@ -1061,7 +1096,15 @@ const payosWebhook = async (req, res, next) => {
     const verifiedData = payos.verifyPaymentWebhookData(req.body);
     const { orderCode, status } = verifiedData;
 
-    const payment = await Payment.findByPk(orderCode);
+    // Search for payment using primary key (legacy) or payos_order_xxx in notes
+    const payment = await Payment.findOne({
+      where: {
+        [Op.or]: [
+          { payment_id: orderCode },
+          { notes: `payos_order_${orderCode}` }
+        ]
+      }
+    });
     if (payment && (status === 'PAID' || status === 'completed')) {
       await processPaymentSuccess(payment, payment.transaction_id || `payos_webhook_${orderCode}`);
     }
@@ -1076,7 +1119,15 @@ const payosWebhook = async (req, res, next) => {
 const mockPayosCheckout = async (req, res, next) => {
   try {
     const { paymentId, amount } = req.query;
-    const payment = await Payment.findByPk(paymentId, {
+    
+    // Search for payment using primary key (legacy) or payos_order_xxx in notes
+    const payment = await Payment.findOne({
+      where: {
+        [Op.or]: [
+          { payment_id: paymentId },
+          { notes: `payos_order_${paymentId}` }
+        ]
+      },
       include: [
         { model: Room, as: 'room' },
         { model: User, as: 'landlordPayment' }

@@ -61,6 +61,8 @@ const TenantRequestsPage = () => {
   const [tenantPermanentAddress, setTenantPermanentAddress] = useState('');
   const [modalMode, setModalMode] = useState('request_contract'); // 'request_contract' or 'create_request'
   const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const [phone, setPhone] = useState('');
+  const [rentalPurpose, setRentalPurpose] = useState('');
 
   const [selectedContractToSign, setSelectedContractToSign] = useState(null);
   const [showContractModal, setShowContractModal] = useState(false);
@@ -230,8 +232,18 @@ const TenantRequestsPage = () => {
     setSelectedContractSchedule(item);
     if (mode === 'create_request') {
       setSelectedRoomId(item.roomId || item.room_id);
+      setContractStartDate('');
+      setContractDuration('6');
+      setPhone(user?.phone || '');
+      setRentalPurpose('');
     } else {
       setSelectedRoomId(null);
+      // Autofill start date and duration from request
+      const reqDate = item.requestedMoveInDate || item.requested_move_in_date;
+      setContractStartDate(reqDate ? reqDate.split('T')[0] : '');
+      setContractDuration(item.leaseDurationMonths || item.lease_duration_months || '6');
+      setPhone(item.tenantPhone || item.tenant_phone || '');
+      setRentalPurpose(item.rentalPurpose || item.rental_purpose || '');
     }
     setContractMessage('');
     
@@ -266,6 +278,8 @@ const TenantRequestsPage = () => {
     setTenantIcIssueDate('');
     setTenantIcIssuePlace('');
     setTenantPermanentAddress('');
+    setPhone('');
+    setRentalPurpose('');
   };
 
   const handleSubmitContractRequest = async () => {
@@ -296,12 +310,34 @@ const TenantRequestsPage = () => {
     try {
       setSubmittingDispute(true);
       if (modalMode === 'create_request') {
+        if (!phone) {
+          toast.error('Vui lòng nhập số điện thoại.');
+          return;
+        }
+        if (!contractStartDate) {
+          toast.error('Vui lòng chọn ngày nhận phòng.');
+          return;
+        }
+        if (!rentalPurpose) {
+          toast.error('Vui lòng nhập mục đích thuê phòng.');
+          return;
+        }
+        const selectedDate = new Date(contractStartDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate < today) {
+          toast.error('Ngày nhận phòng không thể ở quá khứ.');
+          return;
+        }
+
         const roomId = parseInt(selectedRoomId || selectedContractSchedule.roomId || selectedContractSchedule.room_id, 10);
         await rentalRequestService.createRequest({
           roomId,
           message: contractMessage || null,
           requestedMoveInDate: contractStartDate,
-          leaseDurationMonths: parseInt(contractDuration, 10)
+          leaseDurationMonths: parseInt(contractDuration, 10),
+          phone: phone,
+          rentalPurpose: rentalPurpose
         });
         toast.success(t('tenantRequests.sendRentalRequestSuccess', 'Gửi yêu cầu thuê phòng thành công!'));
         handleCloseContractRequest();
@@ -1079,37 +1115,88 @@ const TenantRequestsPage = () => {
               </p>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Move-in Date *</label>
-                <input 
-                  type="date" 
-                  value={contractStartDate}
-                  onChange={(e) => setContractStartDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
-                  onFocus={(e) => e.target.style.borderColor = '#059669'}
-                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Duration (Months) *</label>
-                <select 
-                  value={contractDuration}
-                  onChange={(e) => setContractDuration(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
-                  onFocus={(e) => e.target.style.borderColor = '#059669'}
-                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => (
-                    <option key={m} value={m}>{m} Month{m > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            {modalMode !== 'create_request' && (
+            {modalMode === 'create_request' ? (
               <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Số điện thoại *</label>
+                    <input 
+                      type="text" 
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                      onFocus={(e) => e.target.style.borderColor = '#059669'}
+                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ngày dọn vào *</label>
+                    <input 
+                      type="date" 
+                      value={contractStartDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setContractStartDate(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                      onFocus={(e) => e.target.style.borderColor = '#059669'}
+                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Thời hạn thuê (Tháng) *</label>
+                    <select 
+                      value={contractDuration}
+                      onChange={(e) => setContractDuration(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
+                      onFocus={(e) => e.target.style.borderColor = '#059669'}
+                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                    >
+                      {[3, 6, 9, 12, 18, 24].map(m => (
+                        <option key={m} value={m}>{m} Month{m > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Mục đích vào ở *</label>
+                    <input 
+                      type="text" 
+                      value={rentalPurpose}
+                      placeholder="Ví dụ: Đi học, Đi làm..."
+                      onChange={(e) => setRentalPurpose(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                      onFocus={(e) => e.target.style.borderColor = '#059669'}
+                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Move-in Date (Tự động điền) *</label>
+                    <input 
+                      type="date" 
+                      value={contractStartDate}
+                      disabled
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Duration (Tự động điền) *</label>
+                    <select 
+                      value={contractDuration}
+                      disabled
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24].map(m => (
+                        <option key={m} value={m}>{m} Month{m > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
                 <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '20px 0 12px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>
                   {t('tenantRequests.tenantInfoContract', 'Thông tin người thuê (Lập hợp đồng)')}

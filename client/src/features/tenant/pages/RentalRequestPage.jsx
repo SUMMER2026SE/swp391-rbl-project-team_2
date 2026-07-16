@@ -47,6 +47,8 @@ const RentalRequestPage = () => {
     moveInDate: initialMoveIn,
     leaseDuration: '6',
     tenantName: user?.full_name || '',
+    phone: user?.phone || '',
+    rentalPurpose: '',
     tenantIc: '',
     tenantIcIssueDate: '',
     tenantIcIssuePlace: 'Cục Cảnh sát Quản lý hành chính về trật tự xã hội',
@@ -56,8 +58,12 @@ const RentalRequestPage = () => {
   });
 
   useEffect(() => {
-    if (user && !formData.tenantName) {
-      setFormData(prev => ({ ...prev, tenantName: user.full_name || '' }));
+    if (user) {
+      setFormData(prev => ({ 
+        ...prev, 
+        tenantName: prev.tenantName || user.full_name || '',
+        phone: prev.phone || user.phone || ''
+      }));
     }
   }, [user]);
 
@@ -84,6 +90,11 @@ const RentalRequestPage = () => {
       return;
     }
 
+    if (!formData.phone || !formData.rentalPurpose) {
+      toast.error('Vui lòng nhập số điện thoại và mục đích thuê.');
+      return;
+    }
+
     if (!formData.tenantName || !formData.tenantIc || !formData.tenantIcIssueDate || !formData.tenantIcIssuePlace || !formData.tenantPermanentAddress) {
       toast.error('Vui lòng nhập đầy đủ thông tin cá nhân của bạn phục vụ cho hợp đồng.');
       return;
@@ -101,6 +112,8 @@ const RentalRequestPage = () => {
         message: formData.message,
         requestedMoveInDate: formData.moveInDate,
         leaseDurationMonths: parseInt(formData.leaseDuration, 10),
+        phone: formData.phone,
+        rentalPurpose: formData.rentalPurpose,
         tenantName: formData.tenantName,
         tenantIc: formData.tenantIc,
         tenantIcIssueDate: formData.tenantIcIssueDate,
@@ -231,6 +244,32 @@ const RentalRequestPage = () => {
                         <option value="24">24 Months</option>
                       </select>
                     </div>
+                  </div>
+                </div>
+
+                <div className="form-double-cols">
+                  <div className="form-group-field">
+                    <label className="form-input-label">Phone Number <span className="text-danger">*</span></label>
+                    <input 
+                      type="text" 
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="form-text-input"
+                      required
+                    />
+                  </div>
+                  <div className="form-group-field">
+                    <label className="form-input-label">Rental Purpose <span className="text-danger">*</span></label>
+                    <input 
+                      type="text" 
+                      name="rentalPurpose"
+                      value={formData.rentalPurpose}
+                      onChange={handleChange}
+                      className="form-text-input"
+                      placeholder="e.g. Học tập, Làm việc"
+                      required
+                    />
                   </div>
                 </div>
 

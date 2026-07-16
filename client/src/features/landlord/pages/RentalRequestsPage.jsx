@@ -424,58 +424,68 @@ const RentalRequestsPage = () => {
                       {selectedRequest.tenant?.email || 'N/A'}
                     </div>
                   </div>
-                  <div className="detail-item">
-                    <label>{t('landlordRequests.phone')}</label>
-                    <div className="detail-value">
-                      <Phone size={14} />
-                      {selectedRequest.tenant?.phone || 'N/A'}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <label>{t('landlordRequests.status')}</label>
-                    <div className="detail-value">
-                      <Badge variant={getStatusColor(selectedRequest.status)}>
-                        {t(`landlordRequests.statusLabels.${selectedRequest.status}`)}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                   <div className="detail-item">
+                     <label>{t('landlordRequests.phone')}</label>
+                     <div className="detail-value">
+                       <Phone size={14} />
+                       {selectedRequest.tenantPhone || selectedRequest.tenant_phone || selectedRequest.tenant?.phone || 'N/A'}
+                     </div>
+                   </div>
+                   <div className="detail-item">
+                     <label>{t('landlordRequests.status')}</label>
+                     <div className="detail-value">
+                       <Badge variant={getStatusColor(selectedRequest.status)}>
+                         {t(`landlordRequests.statusLabels.${selectedRequest.status}`)}
+                       </Badge>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+ 
+               {/* Room Info */}
+               <div className="detail-section">
+                 <h4 className="section-title">{t('landlordRequests.roomInfo')}</h4>
+                 <div className="detail-grid">
+                   <div className="detail-item">
+                     <label>{t('landlordRequests.roomTitle')}</label>
+                     <div className="detail-value">{selectedRequest.room?.title || 'N/A'}</div>
+                   </div>
+                   <div className="detail-item">
+                     <label>{t('landlordRequests.monthlyRent')}</label>
+                     <div className="detail-value">{selectedRequest.room?.price_per_month?.toLocaleString('vi-VN') || 0} {t('landlordRequests.vndPerMonth')}</div>
+                   </div>
+                   <div className="detail-item">
+                     <label>{t('landlordRequests.requestType')}</label>
+                     <div className="detail-value">{t('landlordRequests.rentalRequest')}</div>
+                   </div>
+                 </div>
+               </div>
 
-              {/* Room Info */}
-              <div className="detail-section">
-                <h4 className="section-title">{t('landlordRequests.roomInfo')}</h4>
-                <div className="detail-grid">
-                  <div className="detail-item">
-                    <label>{t('landlordRequests.roomTitle')}</label>
-                    <div className="detail-value">{selectedRequest.room?.title || 'N/A'}</div>
-                  </div>
-                  <div className="detail-item">
-                    <label>{t('landlordRequests.monthlyRent')}</label>
-                    <div className="detail-value">{selectedRequest.room?.price_per_month?.toLocaleString('vi-VN') || 0} {t('landlordRequests.vndPerMonth')}</div>
-                  </div>
-                  <div className="detail-item">
-                    <label>{t('landlordRequests.requestType')}</label>
-                    <div className="detail-value">{t('landlordRequests.rentalRequest')}</div>
-                  </div>
-                  <div className="detail-item">
-                    <label>{t('landlordRequests.moveInDate', 'Thời gian chuyển vào')}</label>
-                    <div className="detail-value">
-                      {selectedRequest.requested_move_in_date || selectedRequest.requestedMoveInDate
-                        ? new Date(selectedRequest.requested_move_in_date || selectedRequest.requestedMoveInDate).toLocaleDateString('vi-VN') 
-                        : 'Chưa xác định'}
-                    </div>
-                  </div>
-                  <div className="detail-item">
-                    <label>{t('landlordRequests.rentalDuration', 'Thời hạn thuê')}</label>
-                    <div className="detail-value">
-                      {selectedRequest.lease_duration_months || selectedRequest.leaseDurationMonths
-                        ? `${selectedRequest.lease_duration_months || selectedRequest.leaseDurationMonths} tháng`
-                        : 'Chưa xác định'}
-                    </div>
-                  </div>
-                </div>
-              </div>
+               {/* Rental Details */}
+               <div className="detail-section">
+                 <h4 className="section-title">Thông tin đăng ký thuê</h4>
+                 <div className="detail-grid">
+                   <div className="detail-item">
+                     <label>Ngày dọn vào</label>
+                     <div className="detail-value">
+                       <Calendar size={14} />
+                       {selectedRequest.requestedMoveInDate ? new Date(selectedRequest.requestedMoveInDate).toLocaleDateString('en-GB') : 'TBD'}
+                     </div>
+                   </div>
+                   <div className="detail-item">
+                     <label>Thời hạn hợp đồng</label>
+                     <div className="detail-value">
+                       {selectedRequest.leaseDurationMonths || 6} tháng
+                     </div>
+                   </div>
+                   <div className="detail-item">
+                     <label>Mục đích vào ở</label>
+                     <div className="detail-value">
+                       {selectedRequest.rentalPurpose || selectedRequest.rental_purpose || 'N/A'}
+                     </div>
+                   </div>
+                 </div>
+               </div>
 
               {/* Request Message */}
               {selectedRequest.message && (
