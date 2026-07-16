@@ -22,6 +22,29 @@ const initDatabase = async () => {
 
     // Manual migrations to ensure schema is correct before sync
     try {
+      // Add missing identity verification columns to users table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'cccd_front_url')
+        BEGIN
+            ALTER TABLE users ADD 
+                cccd_front_url NVARCHAR(500) NULL,
+                cccd_back_url NVARCHAR(500) NULL,
+                face_photo_url NVARCHAR(500) NULL,
+                verification_status VARCHAR(20) DEFAULT 'unverified',
+                verification_notes NVARCHAR(1000) NULL;
+        END
+      `);
+
+      // Add missing columns to rental_requests table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rental_requests') AND name = 'tenant_phone')
+        BEGIN
+            ALTER TABLE rental_requests ADD 
+                tenant_phone VARCHAR(20) NULL,
+                rental_purpose NVARCHAR(500) NULL;
+        END
+      `);
+
       await sequelize.query(`
         IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'properties')
         BEGIN
@@ -34,6 +57,8 @@ const initDatabase = async () => {
                 city NVARCHAR(100) NOT NULL,
                 district NVARCHAR(100) NULL,
                 ward NVARCHAR(100) NULL,
+                latitude DECIMAL(10, 8) NULL,
+                longitude DECIMAL(11, 8) NULL,
                 total_floors INT DEFAULT 1,
                 thumbnail_url NVARCHAR(500) NULL,
                 status VARCHAR(15) DEFAULT 'active',
@@ -44,6 +69,15 @@ const initDatabase = async () => {
             );
         END
       `);
+
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('properties') AND name = 'latitude')
+        BEGIN
+            ALTER TABLE properties ADD 
+                latitude DECIMAL(10, 8) NULL,
+                longitude DECIMAL(11, 8) NULL;
+        END
+      `);
       
       await sequelize.query(`
         IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'property_id')
@@ -52,6 +86,15 @@ const initDatabase = async () => {
             ALTER TABLE rooms ADD floor INT NULL;
             ALTER TABLE rooms ADD room_number VARCHAR(20) NULL;
             ALTER TABLE rooms ADD CONSTRAINT FK_rooms_properties FOREIGN KEY (property_id) REFERENCES properties(property_id);
+        END
+      `);
+
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'latitude')
+        BEGIN
+            ALTER TABLE rooms ADD 
+                latitude DECIMAL(10, 8) NULL,
+                longitude DECIMAL(11, 8) NULL;
         END
       `);
 

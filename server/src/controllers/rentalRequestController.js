@@ -42,6 +42,10 @@ const getLandlordRentalRequests = async (req, res, next) => {
         requested_move_in_date: req.requested_move_in_date,
         leaseDurationMonths: req.lease_duration_months,
         lease_duration_months: req.lease_duration_months,
+        tenantPhone: req.tenant_phone,
+        tenant_phone: req.tenant_phone,
+        rentalPurpose: req.rental_purpose,
+        rental_purpose: req.rental_purpose,
         message: req.message,
         rejectionReason: req.rejection_reason,
         rejection_reason: req.rejection_reason,
@@ -102,6 +106,10 @@ const getRentalRequestDetails = async (req, res, next) => {
         requested_move_in_date: rentalRequest.requested_move_in_date,
         leaseDurationMonths: rentalRequest.lease_duration_months,
         lease_duration_months: rentalRequest.lease_duration_months,
+        tenantPhone: rentalRequest.tenant_phone,
+        tenant_phone: rentalRequest.tenant_phone,
+        rentalPurpose: rentalRequest.rental_purpose,
+        rental_purpose: rentalRequest.rental_purpose,
         message: rentalRequest.message,
         rejectionReason: rentalRequest.rejection_reason,
         rejection_reason: rentalRequest.rejection_reason,
@@ -154,10 +162,44 @@ const approveRentalRequest = async (req, res, next) => {
     rentalRequest.updated_at = safeNow;
     await rentalRequest.save();
 
-    // Do not update room status to rented yet. VNPay return will do it after payment.
-    // rentalRequest.room.status = 'rented';
-    // rentalRequest.room.updated_at = safeNow;
-    // await rentalRequest.room.save();
+    // Cancel all active viewing schedules for this room with reason 'Phòng này đã được thuê'
+    const { ViewingSchedule } = require('../models');
+    const activeSchedules = await ViewingSchedule.findAll({
+      where: {
+        room_id: rentalRequest.room_id,
+        status: { [Op.in]: ['pending', 'pending_payment', 'scheduled'] }
+      }
+    });
+
+    for (const schedule of activeSchedules) {
+      schedule.status = 'cancelled';
+      schedule.notes = 'Lịch xem phòng bị hủy do phòng này đã được thuê.';
+      schedule.updated_at = safeNow;
+      await schedule.save();
+
+      // Create notification for tenant
+      await Notification.create({
+        user_id: schedule.tenant_id,
+        title: 'Lịch xem phòng bị hủy',
+        message: `Lịch xem phòng của bạn cho phòng "${rentalRequest.room.title}" đã bị hủy do phòng này đã được thuê.`,
+        notification_type: 'viewing_schedule',
+        related_id: schedule.schedule_id,
+      });
+
+      // Emit socket event to tenant
+      if (io) {
+        io.to(`user_${schedule.tenant_id}`).emit('new_notification', {
+          title: 'Lịch xem phòng bị hủy',
+          message: `Lịch xem phòng của bạn cho phòng "${rentalRequest.room.title}" đã bị hủy do phòng này đã được thuê.`,
+          type: 'viewing_schedule'
+        });
+      }
+    }
+
+    // Update room status to reserved so other guests can see it is Booking in progress / no longer bookable
+    rentalRequest.room.status = 'reserved';
+    rentalRequest.room.updated_at = safeNow;
+    await rentalRequest.room.save();
 
     // Create notification for tenant
     await Notification.create({

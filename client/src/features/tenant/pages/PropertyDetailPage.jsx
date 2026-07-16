@@ -131,10 +131,10 @@ const PropertyDetailPage = () => {
                        { icon: 'bed', text: `${room.bedrooms || 1} ${t('roomDetail.bed', 'Bed')}` },
                        { icon: 'square', text: `${room.areaSqm || 0} m²` }
                      ],
-                     imageTags: [{ 
-                        text: room.status === 'available' ? t('roomDetail.statusAvailable', 'Available') : (room.status === 'rented' ? t('roomDetail.statusOccupied', 'Occupied') : (room.status === 'maintenance' ? 'Maintenance' : t('roomDetail.statusOccupied', 'Occupied'))), 
-                        type: room.status === 'available' ? 'primary' : (room.status === 'maintenance' ? 'warning' : 'danger') 
-                     }],
+                      imageTags: [{ 
+                         text: room.status === 'available' ? t('roomDetail.statusAvailable', 'Available') : (room.status === 'reserved' ? 'Booking in progress' : (room.status === 'rented' ? t('roomDetail.statusOccupied', 'Occupied') : (room.status === 'maintenance' ? 'Maintenance' : t('roomDetail.statusOccupied', 'Occupied')))), 
+                         type: room.status === 'available' ? 'primary' : (room.status === 'reserved' ? 'warning' : (room.status === 'maintenance' ? 'warning' : 'danger')) 
+                      }],
                      image: room.thumbnailUrl ? (room.thumbnailUrl.startsWith('http') ? room.thumbnailUrl : `http://localhost:5000${room.thumbnailUrl}`) : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500'
                    };
                    return <RoomCard key={mappedRoom.id} room={mappedRoom} variant="standard" />

@@ -62,6 +62,8 @@ const RoomDetailPage = () => {
   const [rentalRequestMessage, setRentalRequestMessage] = useState('');
   const [moveInDate, setMoveInDate] = useState('');
   const [leaseDuration, setLeaseDuration] = useState('6');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [rentalPurpose, setRentalPurpose] = useState('');
   const [tenantName, setTenantName] = useState(user?.full_name || '');
   const [tenantIc, setTenantIc] = useState('');
   const [tenantIcIssueDate, setTenantIcIssueDate] = useState('');
@@ -69,8 +71,9 @@ const RoomDetailPage = () => {
   const [tenantPermanentAddress, setTenantPermanentAddress] = useState('');
 
   useEffect(() => {
-    if (user && !tenantName) {
-      setTenantName(user.full_name || '');
+    if (user) {
+      if (!tenantName) setTenantName(user.full_name || '');
+      if (!phone) setPhone(user.phone || '');
     }
   }, [user]);
 
@@ -227,12 +230,37 @@ const RoomDetailPage = () => {
       navigate('/login');
       return;
     }
+
+    if (!phone) {
+      toast.error('Vui lòng nhập số điện thoại.');
+      return;
+    }
+    if (!moveInDate) {
+      toast.error('Vui lòng chọn ngày nhận phòng.');
+      return;
+    }
+    if (!rentalPurpose) {
+      toast.error('Vui lòng nhập mục đích thuê phòng.');
+      return;
+    }
+
+    const selectedDate = new Date(moveInDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selectedDate < today) {
+      toast.error('Ngày nhận phòng không thể ở quá khứ.');
+      return;
+    }
     
     try {
       setLoading(true);
       const response = await rentalRequestService.createRequest({
         roomId: roomData.roomId || roomData.room_id,
         message: rentalRequestMessage || null,
+        requestedMoveInDate: moveInDate,
+        leaseDurationMonths: parseInt(leaseDuration, 10),
+        phone: phone,
+        rentalPurpose: rentalPurpose
       });
 
       if (response.success) {
@@ -538,7 +566,7 @@ const RoomDetailPage = () => {
                   <span className="price-unit">{t('roomDetail.perMonth', '/ tháng')}</span>
                 </div>
                 <span className={`status-badge ${roomData.status || 'available'}`}>
-                  {roomData.status === 'available' ? t('roomDetail.statusAvailable', 'Còn phòng') : (roomData.status === 'rented' ? t('roomDetail.statusRented', 'Đã thuê') : (roomData.status === 'occupied' ? t('roomDetail.statusOccupied', 'Đang ở') : t('roomDetail.statusUnavailable', 'Trống')))}
+                  {roomData.status === 'available' ? t('roomDetail.statusAvailable', 'Còn phòng') : (roomData.status === 'reserved' ? 'Booking in progress' : (roomData.status === 'rented' ? t('roomDetail.statusRented', 'Đã thuê') : (roomData.status === 'occupied' ? t('roomDetail.statusOccupied', 'Đang ở') : t('roomDetail.statusUnavailable', 'Trống'))))}
                 </span>
               </div>
               <div className="booking-info-row">
@@ -600,9 +628,9 @@ const RoomDetailPage = () => {
               
               <hr className="my-4 border-gray-200" style={{ margin: '1.5rem 0', borderColor: '#e2e8f0' }} />
               {isAuthenticated && user?.role === 'LANDLORD' && (roomData.landlordId === user?.userId || roomData.landlord?.user_id === user?.userId) ? (
-                ['rented', 'occupied'].includes((roomData.status || '').toLowerCase()) ? (
+                ['rented', 'occupied', 'reserved'].includes((roomData.status || '').toLowerCase()) ? (
                   <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
-                    {t('roomDetail.cannotEditOccupied', 'Không thể sửa phòng đã cho thuê')}
+                    {t('roomDetail.cannotEditOccupied', 'Không thể sửa phòng đã cho thuê hoặc đang xử lý')}
                   </button>
                 ) : isEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -648,7 +676,7 @@ const RoomDetailPage = () => {
                 </>
               ) : (
                 <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
-                  {roomData.status === 'rented' ? t('roomDetail.roomIsRented', 'Phòng đã được cho thuê') : (roomData.status === 'occupied' ? t('roomDetail.roomIsOccupied', 'Phòng đang có người ở') : t('roomDetail.roomUnavailable', 'Phòng hiện không trống'))}
+                  {roomData.status === 'reserved' ? 'Booking in progress (Đang xử lý thuê)' : (roomData.status === 'rented' ? t('roomDetail.roomIsRented', 'Phòng đã được cho thuê') : (roomData.status === 'occupied' ? t('roomDetail.roomIsOccupied', 'Phòng đang có người ở') : t('roomDetail.roomUnavailable', 'Phòng hiện không trống')))}
                 </button>
               )}
             </div>
@@ -758,6 +786,60 @@ const RoomDetailPage = () => {
               </p>
             </div>
             
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Số điện thoại *</label>
+                <input 
+                  type="text" 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ngày dọn vào *</label>
+                <input 
+                  type="date" 
+                  value={moveInDate}
+                  min={todayDate}
+                  onChange={(e) => setMoveInDate(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Thời hạn hợp đồng (Tháng) *</label>
+                <select 
+                  value={leaseDuration}
+                  onChange={(e) => setLeaseDuration(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
+                >
+                  <option value="3">3 tháng</option>
+                  <option value="6">6 tháng</option>
+                  <option value="9">9 tháng</option>
+                  <option value="12">12 tháng</option>
+                  <option value="18">18 tháng</option>
+                  <option value="24">24 tháng</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Mục đích vào ở *</label>
+                <input 
+                  type="text" 
+                  value={rentalPurpose}
+                  placeholder="Ví dụ: Đi học, Đi làm..."
+                  onChange={(e) => setRentalPurpose(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+            </div>
+
             <textarea
               style={{ width: '100%', padding: '14px', border: '2px solid #E5E7EB', borderRadius: '10px', minHeight: '100px', marginBottom: '16px', fontSize: '0.95rem', transition: 'border-color 0.2s', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
               placeholder={t('roomDetail.msgPlaceholder', 'Lời nhắn cho Chủ trọ (Tùy chọn)')}

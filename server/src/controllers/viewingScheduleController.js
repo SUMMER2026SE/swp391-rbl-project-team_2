@@ -1404,6 +1404,13 @@ const cancelContract = async (req, res, next) => {
     contract.status = 'cancelled';
     await contract.save();
 
+    // Revert room status to available
+    const { Room } = require('../models');
+    await Room.update(
+      { status: 'available' },
+      { where: { room_id: contract.room_id } }
+    );
+
     return res.status(200).json({
       success: true,
       message: 'Contract cancelled successfully.',
