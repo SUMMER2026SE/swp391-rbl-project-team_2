@@ -394,10 +394,40 @@ const submitVerification = async (req, res, next) => {
   }
 };
 
+// =========================================================
+// POST /api/landlord/profile/ocr
+// Scan CCCD automatically
+// =========================================================
+const scanOcr = async (req, res, next) => {
+  try {
+    const cccdFrontFile = req.files && req.files['cccdFront'] ? req.files['cccdFront'][0] : null;
+    const cccdBackFile = req.files && req.files['cccdBack'] ? req.files['cccdBack'][0] : null;
+
+    if (!cccdFrontFile || !cccdBackFile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp cả 2 mặt CCCD để quét.',
+      });
+    }
+
+    const OcrService = require('../services/ocrService');
+    const result = await OcrService.scanCCCD(cccdFrontFile.path, cccdBackFile.path);
+
+    if (result.success) {
+      return res.status(200).json(result);
+    } else {
+      return res.status(400).json(result);
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getLandlordProfile,
   updateLandlordProfile,
   updateAvatar,
   changePassword,
   submitVerification,
+  scanOcr,
 };

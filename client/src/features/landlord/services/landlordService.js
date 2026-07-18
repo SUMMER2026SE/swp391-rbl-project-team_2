@@ -628,10 +628,24 @@ export const landlordService = {
     try {
       const response = await httpClient.post('/landlord/profile/verify', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000,
       });
       return response;
     } catch (error) {
       console.error('Error submitting verification:', error);
+      throw error;
+    }
+  },
+
+  scanOcr: async (formData) => {
+    try {
+      const response = await httpClient.post('/landlord/profile/ocr', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
+      });
+      return response;
+    } catch (error) {
+      console.error('Error scanning OCR:', error);
       throw error;
     }
   },

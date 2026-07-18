@@ -81,6 +81,7 @@ const LandlordProfilePage = () => {
   const [cccdBackPreview, setCccdBackPreview] = useState('');
   const [facePhotoPreview, setFacePhotoPreview] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [scanLoading, setScanLoading] = useState(false);
 
   useEffect(() => {
     const displayProfile = profile || user || {};
@@ -91,6 +92,44 @@ const LandlordProfilePage = () => {
       permanentAddress: displayProfile.permanentAddress || '',
     });
   }, [profile, user]);
+
+  useEffect(() => {
+    if (cccdFront && cccdBack) {
+      handleScanOcr();
+    }
+  }, [cccdFront, cccdBack]);
+
+  const handleScanOcr = async () => {
+    if (!cccdFront || !cccdBack) return;
+    
+    setScanLoading(true);
+    toast.loading('Đang tự động quét thông tin CCCD...', { id: 'ocrScan' });
+
+    try {
+      const formData = new FormData();
+      formData.append('cccdFront', cccdFront);
+      formData.append('cccdBack', cccdBack);
+
+      const response = await landlordService.scanOcr(formData);
+      
+      if (response.success && response.data) {
+        toast.success('Quét thông tin thành công!', { id: 'ocrScan' });
+        setVerifyForm(prev => ({
+          ...prev,
+          icNumber: response.data.icNumber || prev.icNumber,
+          icIssueDate: response.data.icIssueDate || prev.icIssueDate,
+          icIssuePlace: response.data.icIssuePlace || prev.icIssuePlace,
+          permanentAddress: response.data.permanentAddress || prev.permanentAddress,
+        }));
+      } else {
+        toast.error(response.message || 'Lỗi khi quét thông tin CCCD', { id: 'ocrScan' });
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Lỗi khi quét thông tin CCCD', { id: 'ocrScan' });
+    } finally {
+      setScanLoading(false);
+    }
+  };
 
   const handleVerifyFileChange = (e, type) => {
     const file = e.target.files?.[0];
@@ -612,6 +651,12 @@ const LandlordProfilePage = () => {
                 (displayProfile.verificationStatus || displayProfile.verification_status) === 'rejected' ||
                 !(displayProfile.verificationStatus || displayProfile.verification_status)) && (
                 <form onSubmit={handleVerifySubmit} className="verification-form">
+                  {scanLoading && (
+                    <div style={{ marginBottom: '1rem', padding: '10px', background: '#e0f2fe', color: '#0369a1', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Loader size={18} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
+                      <span>Hệ thống đang tự động trích xuất thông tin thẻ...</span>
+                    </div>
+                  )}
                   <div className="edit-form-group">
                     <label>{t('profile.verification.idNumberLabel')}</label>
                     <input 
