@@ -49,6 +49,19 @@ const upload = multer({
   },
 });
 
+const uploadMemory = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.'));
+    }
+  },
+});
+
 // =========================================================
 // MIDDLEWARE
 // =========================================================
@@ -68,6 +81,14 @@ router.post(
     { name: 'facePhoto', maxCount: 1 }
   ]),
   landlordProfileController.submitVerification
+);
+router.post(
+  '/profile/ocr',
+  upload.fields([
+    { name: 'cccdFront', maxCount: 1 },
+    { name: 'cccdBack', maxCount: 1 }
+  ]),
+  landlordProfileController.scanOcr
 );
 
 // =========================================================

@@ -436,96 +436,107 @@ const UsersPage = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Detail verification modal */}
       <Modal show={!!selectedVerif && !showRejectModal} onHide={() => setSelectedVerif(null)} size="lg" centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Chi tiết Hồ sơ Xác thực CCCD Chủ trọ</Modal.Title>
+        <Modal.Header closeButton style={{ borderBottom: '1px solid #f1f5f9', padding: '1.25rem 1.5rem' }}>
+          <Modal.Title style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>
+            Chi tiết Hồ sơ Xác thực CCCD Chủ trọ
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body style={{ padding: '1.5rem' }}>
           {selectedVerif && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               
               {/* User details */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', backgroundColor: '#f8fafc', padding: '1.25rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <h4 style={{ gridColumn: 'span 2', fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.25rem 0', color: '#475569', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg style={{ width: '18px', height: '18px', color: '#64748b' }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  Thông tin tài khoản chủ nhà
+                </h4>
                 <div>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Họ và tên chủ nhà</p>
-                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600 }}>{selectedVerif.fullName}</p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Họ và tên chủ nhà</p>
+                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600, color: '#0f172a', fontSize: '0.95rem' }}>{selectedVerif.fullName}</p>
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Email liên hệ</p>
-                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600 }}>{selectedVerif.email}</p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email liên hệ</p>
+                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600, color: '#0f172a', fontSize: '0.95rem' }}>{selectedVerif.email}</p>
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Số điện thoại</p>
-                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600 }}>{selectedVerif.phone || 'N/A'}</p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Số điện thoại</p>
+                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600, color: '#0f172a', fontSize: '0.95rem' }}>{selectedVerif.phone || 'N/A'}</p>
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Ngày gửi hồ sơ</p>
-                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600 }}>{new Date(selectedVerif.submittedAt).toLocaleDateString('vi-VN')}</p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ngày gửi hồ sơ</p>
+                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600, color: '#0f172a', fontSize: '0.95rem' }}>{new Date(selectedVerif.submittedAt).toLocaleDateString('vi-VN')}</p>
                 </div>
               </div>
-
+ 
               {/* CCCD details */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem' }}>
-                <h4 style={{ gridColumn: 'span 2', fontSize: '1rem', fontWeight: 700, margin: '0 0 0.5rem 0', color: '#334155' }}>Thông tin thẻ CCCD</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1.25rem', backgroundColor: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                <h4 style={{ gridColumn: 'span 2', fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.25rem 0', color: '#1e293b', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg style={{ width: '18px', height: '18px', color: '#3b82f6' }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.333 0 4 1 4 3v1m-4-1H9m6-4H9m3 4h3" /></svg>
+                  Thông tin thẻ CCCD từ hồ sơ
+                </h4>
                 <div>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Số CCCD</p>
-                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600, fontSize: '1.05rem', color: '#0f172a' }}>{selectedVerif.icNumber}</p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Số CCCD</p>
+                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 700, fontSize: '1.1rem', color: '#0f172a', letterSpacing: '0.5px' }}>{selectedVerif.icNumber}</p>
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Ngày cấp</p>
-                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600 }}>{selectedVerif.icIssueDate ? new Date(selectedVerif.icIssueDate).toLocaleDateString('vi-VN') : 'N/A'}</p>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ngày cấp</p>
+                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600, color: '#334155', fontSize: '0.95rem' }}>{selectedVerif.icIssueDate ? new Date(selectedVerif.icIssueDate).toLocaleDateString('vi-VN') : 'N/A'}</p>
                 </div>
-                <div>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Nơi cấp</p>
-                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600 }}>{selectedVerif.icIssuePlace}</p>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nơi cấp</p>
+                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600, color: '#334155', fontSize: '0.95rem', lineHeight: 1.4 }}>{selectedVerif.icIssuePlace}</p>
                 </div>
-                <div>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Địa chỉ thường trú</p>
-                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600 }}>{selectedVerif.permanentAddress}</p>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Địa chỉ thường trú</p>
+                  <p style={{ margin: '0.2rem 0 0 0', fontWeight: 600, color: '#334155', fontSize: '0.95rem', lineHeight: 1.4 }}>{selectedVerif.permanentAddress}</p>
                 </div>
               </div>
-
+ 
               {/* Photos comparison */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: '#334155' }}>Hình ảnh đối chiếu (Nhấp để xem ảnh gốc)</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg style={{ width: '18px', height: '18px', color: '#64748b' }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  Hình ảnh đối chiếu (Nhấp để xem ảnh gốc)
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '0.25rem' }}>
                   
                   {/* CCCD Front */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Mặt trước CCCD</span>
-                    <a href={selectedVerif.cccdFrontUrl} target="_blank" rel="noreferrer" style={{ display: 'block', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', height: '150px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', textAlign: 'center' }}>Mặt trước CCCD</span>
+                    <a href={selectedVerif.cccdFrontUrl} target="_blank" rel="noreferrer" style={{ display: 'block', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', height: '150px', transition: 'all 0.2s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.03)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
                       <img src={selectedVerif.cccdFrontUrl} alt="Mặt trước CCCD" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </a>
                   </div>
-
+ 
                   {/* CCCD Back */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Mặt sau CCCD</span>
-                    <a href={selectedVerif.cccdBackUrl} target="_blank" rel="noreferrer" style={{ display: 'block', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', height: '150px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', textAlign: 'center' }}>Mặt sau CCCD</span>
+                    <a href={selectedVerif.cccdBackUrl} target="_blank" rel="noreferrer" style={{ display: 'block', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', height: '150px', transition: 'all 0.2s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.03)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
                       <img src={selectedVerif.cccdBackUrl} alt="Mặt sau CCCD" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </a>
                   </div>
-
+ 
                   {/* Face selfie */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Ảnh chân dung</span>
-                    <a href={selectedVerif.facePhotoUrl} target="_blank" rel="noreferrer" style={{ display: 'block', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', height: '150px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', textAlign: 'center' }}>Ảnh chân dung</span>
+                    <a href={selectedVerif.facePhotoUrl} target="_blank" rel="noreferrer" style={{ display: 'block', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1', height: '150px', transition: 'all 0.2s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.03)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
                       <img src={selectedVerif.facePhotoUrl} alt="Ảnh chân dung" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </a>
                   </div>
-
+ 
                 </div>
               </div>
-
+ 
             </div>
           )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="danger" disabled={actionLoading} onClick={() => setShowRejectModal(true)}>
+        <Modal.Footer style={{ borderTop: '1px solid #f1f5f9', padding: '1rem 1.5rem', gap: '0.75rem' }}>
+          <Button variant="danger" disabled={actionLoading} onClick={() => setShowRejectModal(true)} style={{ padding: '8px 16px', borderRadius: '6px', fontWeight: 600, boxShadow: '0 1px 2px rgba(239, 68, 68, 0.1)', transition: 'all 0.2s' }}>
             Từ chối duyệt
           </Button>
-          <Button variant="success" disabled={actionLoading} onClick={() => handleApproveVerification(selectedVerif.userId)}>
+          <Button variant="success" disabled={actionLoading} onClick={() => handleApproveVerification(selectedVerif.userId)} style={{ padding: '8px 20px', borderRadius: '6px', fontWeight: 600, boxShadow: '0 1px 2px rgba(34, 197, 94, 0.1)', transition: 'all 0.2s' }}>
             {actionLoading ? 'Đang duyệt...' : 'Phê duyệt xác thực'}
           </Button>
         </Modal.Footer>
