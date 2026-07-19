@@ -1394,6 +1394,10 @@ const getTenantContracts = async (req, res, next) => {
         landlordIcIssuePlace: c.landlord_ic_issue_place,
         landlordPermanentAddress: c.landlord_permanent_address,
         landlordSignature: c.landlord_signature,
+        is_renewed: c.is_renewed,
+        isRenewed: c.is_renewed,
+        renewalStatus: c.renewal_status,
+        renewal_status: c.renewal_status,
       })),
     });
   } catch (error) {
@@ -1462,6 +1466,7 @@ const cancelContract = async (req, res, next) => {
 
       // Mark old as renewed
       oldContract.is_renewed = true;
+      oldContract.renewal_status = 'renewed';
       await oldContract.save();
 
       // Create new draft contract
@@ -1519,6 +1524,66 @@ const cancelContract = async (req, res, next) => {
     }
   };
 
+  // =========================================================
+  // POST /api/tenant/contracts/:contractId/decline-renewal
+  // Tenant declines renewal (declares they will move out on contract expiry)
+  // =========================================================
+  const declineContractRenewal = async (req, res, next) => {
+    try {
+      const { contractId } = req.params;
+      const tenantId = req.user.userId;
+
+      const contract = await Contract.findOne({
+        where: { contract_id: contractId, tenant_id: tenantId, status: 'active' },
+        include: [{ model: Room, as: 'room' }]
+      });
+
+      if (!contract) {
+        return res.status(404).json({ success: false, message: 'Không tìm thấy hợp đồng đang hoạt động.' });
+      }
+
+      // Mark the contract as not renewing
+      contract.is_renewed = false;
+      contract.renewal_status = 'declined';
+      await contract.save();
+
+      // Update Room availability date to end_date + 1 day
+      const room = await Room.findByPk(contract.room_id);
+      if (room) {
+        const nextDay = new Date(contract.end_date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        room.available_from = nextDay.toISOString().substring(0, 10);
+        await room.save();
+      }
+
+      // Notify landlord
+      const { Notification } = require('../models');
+      await Notification.create({
+        user_id: contract.landlord_id,
+        title: 'Khách thuê từ chối gia hạn',
+        message: `Khách thuê phòng "${contract.room ? contract.room.title : contract.room_id}" đã xác nhận không gia hạn và sẽ chuyển đi vào ngày ${new Date(contract.end_date).toLocaleDateString('vi-VN')}. Phòng này hiện đã khả dụng để người khác đặt trước.`,
+        notification_type: 'contract',
+        related_id: contract.contract_id,
+      });
+
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`user_${contract.landlord_id}`).emit('new_notification', {
+          title: 'Khách thuê từ chối gia hạn',
+          message: `Khách thuê phòng "${contract.room ? contract.room.title : contract.room_id}" đã xác nhận không gia hạn và sẽ chuyển đi vào ngày ${new Date(contract.end_date).toLocaleDateString('vi-VN')}.`,
+          type: 'contract'
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Bạn đã xác nhận không gia hạn hợp đồng thành công. Ngày trả phòng dự kiến: ' + new Date(contract.end_date).toLocaleDateString('vi-VN'),
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   module.exports = {
     createViewingSchedule,
     getLandlordViewingSchedules,
@@ -1540,4 +1605,5 @@ const cancelContract = async (req, res, next) => {
     getTenantContracts,
     cancelContract,
     renewContract,
+    declineContractRenewal,
   };

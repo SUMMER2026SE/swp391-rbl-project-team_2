@@ -82,10 +82,21 @@ const createRentalRequest = async (req, res, next) => {
     }
 
     if (room.status !== 'available') {
-      return res.status(400).json({
-        success: false,
-        message: 'Room is not available for rent.',
-      });
+      const isRentedWithFutureVacancy = room.status === 'rented' && room.available_from !== null;
+      if (!isRentedWithFutureVacancy) {
+        return res.status(400).json({
+          success: false,
+          message: 'Phòng này hiện tại không khả dụng để thuê / Room is not available for rent.',
+        });
+      }
+
+      const availableDate = new Date(room.available_from);
+      if (selectedDate < availableDate) {
+        return res.status(400).json({
+          success: false,
+          message: `Ngày dọn vào mong muốn phải từ ngày ${room.available_from} trở đi (khi phòng trống).`,
+        });
+      }
     }
 
     // Tenant cannot rent their own room

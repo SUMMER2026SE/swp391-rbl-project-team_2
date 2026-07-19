@@ -514,12 +514,31 @@ export const landlordService = {
     }
   },
 
-  sendMessage: async (conversationId, content) => {
+  sendMessage: async (conversationId, content, messageType = 'text', fileUrl = null, fileName = null) => {
     try {
-      const response = await httpClient.post(`/chat/conversations/${conversationId}/messages`, { content });
+      const response = await httpClient.post(`/chat/conversations/${conversationId}/messages`, {
+        content,
+        messageType,
+        fileUrl,
+        fileName
+      });
       return response;
     } catch (error) {
       console.error('Error sending message:', error);
+      throw error;
+    }
+  },
+
+  uploadChatAttachment: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await httpClient.post('/chat/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response;
+    } catch (error) {
+      console.error('Error uploading chat attachment:', error);
       throw error;
     }
   },

@@ -58,9 +58,89 @@ const runContractRenewalCheck = async () => {
 
     }
 
+    await runFutureContractTransitions();
+
     console.log('Daily cron job finished successfully.');
   } catch (error) {
     console.error('Error running checkExpiringContracts cron job:', error);
+  }
+};
+
+const runFutureContractTransitions = async () => {
+  try {
+    console.log('Running daily cron job: Transitioning future and expiring contracts...');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Find all active contracts that have ended (end_date < today)
+    const expiredContracts = await Contract.findAll({
+      where: {
+        status: 'active',
+        end_date: {
+          [Op.lt]: today
+        }
+      },
+      include: [{ model: Room, as: 'room' }]
+    });
+
+    for (const contract of expiredContracts) {
+      await contract.update({ status: 'completed' });
+      console.log(`Contract ${contract.contract_number} has expired. Status updated to completed.`);
+
+      await Notification.create({
+        user_id: contract.tenant_id,
+        title: 'Hợp đồng hết hạn',
+        message: `Hợp đồng phòng "${contract.room?.title || contract.room_id}" của bạn đã hết hiệu lực.`,
+        notification_type: 'contract',
+        related_id: contract.contract_id,
+      });
+    }
+
+    // 2. Find all pre-booked contracts that start today or earlier (start_date <= today)
+    const futureContracts = await Contract.findAll({
+      where: {
+        status: 'pre_booked_active',
+        start_date: {
+          [Op.lte]: today
+        }
+      },
+      include: [{ model: Room, as: 'room' }]
+    });
+
+    for (const contract of futureContracts) {
+      await contract.update({ status: 'active' });
+      console.log(`Pre-booked contract ${contract.contract_number} is now active.`);
+
+      const room = contract.room;
+      if (room) {
+        room.status = 'rented';
+        
+        // Clear or update available_from if needed
+        const otherFuture = await Contract.findOne({
+          where: {
+            room_id: room.room_id,
+            status: 'pre_booked_active',
+            start_date: { [Op.gt]: today }
+          }
+        });
+        if (!otherFuture) {
+          room.available_from = null;
+        } else {
+          room.available_from = otherFuture.end_date;
+        }
+        await room.save();
+      }
+
+      await Notification.create({
+        user_id: contract.tenant_id,
+        title: 'Hợp đồng bắt đầu hiệu lực',
+        message: `Hợp đồng phòng "${room?.title || contract.room_id}" của bạn bắt đầu có hiệu lực từ hôm nay.`,
+        notification_type: 'contract',
+        related_id: contract.contract_id,
+      });
+    }
+  } catch (error) {
+    console.error('Error running runFutureContractTransitions cron job:', error);
   }
 };
 
@@ -69,4 +149,4 @@ const checkExpiringContracts = () => {
   cron.schedule('0 0 * * *', runContractRenewalCheck);
 };
 
-module.exports = { checkExpiringContracts, runContractRenewalCheck };
+module.exports = { checkExpiringContracts, runContractRenewalCheck, runFutureContractTransitions };

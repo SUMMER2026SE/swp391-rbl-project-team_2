@@ -188,4 +188,14 @@ export const rentalRequestService = {
       throw error;
     }
   },
+
+  declineContractRenewal: async (contractId) => {
+    try {
+      const response = await httpClient.post(`/tenant/contracts/${contractId}/decline-renewal`);
+      return response;
+    } catch (error) {
+      console.error('Error declining contract renewal:', error);
+      throw error;
+    }
+  },
 };
