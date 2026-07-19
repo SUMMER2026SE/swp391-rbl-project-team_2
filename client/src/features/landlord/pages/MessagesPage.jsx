@@ -15,6 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { useConversations } from '../hooks/useConversations';
+import { landlordService } from '../services/landlordService';
 import './MessagesPage.css';
 
 const MessagesPage = () => {
@@ -28,7 +29,11 @@ const MessagesPage = () => {
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newChatEmail, setNewChatEmail] = useState('');
   const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [attachment, setAttachment] = useState(null); // { fileUrl, messageType, fileName }
+  const [isUploading, setIsUploading] = useState(false);
+  
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const { 
     conversations, 
@@ -65,16 +70,65 @@ const MessagesPage = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!messageText.trim() || !selectedConversationId) return;
+    const hasText = messageText.trim() !== '';
+    const hasAttachment = attachment !== null;
+    if ((!hasText && !hasAttachment) || !selectedConversationId) return;
 
     try {
       setIsSending(true);
-      await sendMessage(selectedConversationId, messageText);
+      await sendMessage(
+        selectedConversationId, 
+        messageText.trim(),
+        attachment ? attachment.messageType : 'text',
+        attachment ? attachment.fileUrl : null,
+        attachment ? attachment.fileName : null
+      );
       setMessageText('');
+      setAttachment(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (err) {
       toast.error(err.message || 'Failed to send message');
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error(t('messages.fileSizeLimit', 'File size must be less than 50MB'));
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const res = await landlordService.uploadChatAttachment(file);
+      const fileData = res?.data || res;
+      if (fileData && fileData.fileUrl) {
+        setAttachment({
+          fileUrl: fileData.fileUrl,
+          messageType: fileData.messageType || 'file',
+          fileName: fileData.fileName || file.name,
+        });
+        toast.success(t('messages.fileUploaded', 'File uploaded successfully!'));
+      } else {
+        toast.error('Failed to parse uploaded file data.');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to upload file');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveAttachment = () => {
+    setAttachment(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -201,19 +255,62 @@ const MessagesPage = () => {
             {/* Messages Area */}
             <div className="messages-area">
               {currentConversation.messages && currentConversation.messages.length > 0 ? (
-                currentConversation.messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`message-bubble ${(msg.sender_id || msg.senderId) === currentConversation.userId ? 'sent' : 'received'}`}
-                  >
-                    <div className="message-content">
-                      <p className="message-text">{msg.content}</p>
-                      <span className="message-time">
-                        {(msg.created_at || msg.createdAt) ? new Date(msg.created_at || msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
-                      </span>
+                currentConversation.messages.map((msg, idx) => {
+                  const isSent = (msg.sender_id || msg.senderId) === currentConversation.userId;
+                  const hasImage = msg.messageType === 'image' || msg.message_type === 'image';
+                  const hasVideo = msg.messageType === 'video' || msg.message_type === 'video';
+                  const hasFile = msg.messageType === 'file' || msg.message_type === 'file';
+                  const fileUrl = msg.fileUrl || msg.file_url;
+                  const fileName = msg.fileName || msg.file_name;
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className={`message-bubble ${isSent ? 'sent' : 'received'}`}
+                    >
+                      <div className="message-content">
+                        {hasImage && fileUrl && (
+                          <div className="chat-media-wrapper">
+                            <img 
+                              src={fileUrl.startsWith('http') ? fileUrl : `http://localhost:5000${fileUrl}`} 
+                              alt={fileName || "Attachment"} 
+                              className="chat-image" 
+                              onClick={() => window.open(fileUrl.startsWith('http') ? fileUrl : `http://localhost:5000${fileUrl}`, '_blank')}
+                            />
+                          </div>
+                        )}
+                        {hasVideo && fileUrl && (
+                          <div className="chat-media-wrapper">
+                            <video 
+                              src={fileUrl.startsWith('http') ? fileUrl : `http://localhost:5000${fileUrl}`} 
+                              controls 
+                              className="chat-video" 
+                            />
+                          </div>
+                        )}
+                        {hasFile && fileUrl && (
+                          <div className="chat-media-wrapper">
+                            <a 
+                              href={fileUrl.startsWith('http') ? fileUrl : `http://localhost:5000${fileUrl}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="chat-file-link"
+                            >
+                              <Paperclip size={14} style={{ marginRight: '4px' }} />
+                              <span>{fileName || 'Download attachment'}</span>
+                            </a>
+                          </div>
+                        )}
+                        {msg.content && !['[Hình ảnh]', '[Video]'].includes(msg.content) && (
+                          <p className="message-text">{msg.content}</p>
+                        )}
+                        <span className="message-time">
+                          {(msg.created_at || msg.createdAt) ? new Date(msg.created_at || msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="empty-messages">
                   <p>{t('messages.noMessagesYetSayHello', 'No messages yet. Say hello!')}</p>
@@ -222,20 +319,65 @@ const MessagesPage = () => {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Attachment Preview (if any) */}
+            {attachment && (
+              <div className="chat-attachment-preview">
+                <div className="preview-file-info">
+                  {attachment.messageType === 'image' ? (
+                    <img 
+                      src={attachment.fileUrl.startsWith('http') ? attachment.fileUrl : `http://localhost:5000${attachment.fileUrl}`} 
+                      alt="Preview" 
+                      className="preview-thumbnail" 
+                    />
+                  ) : (
+                    <div className="preview-file-icon">
+                      <Paperclip size={24} />
+                    </div>
+                  )}
+                  <div className="preview-file-details">
+                    <h4>{attachment.fileName || (attachment.messageType === 'image' ? 'Image' : attachment.messageType === 'video' ? 'Video' : 'File')}</h4>
+                    <span>{attachment.messageType.toUpperCase()}</span>
+                  </div>
+                </div>
+                <button type="button" className="btn-remove-attachment" onClick={handleRemoveAttachment}>
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+
             {/* Input Form at Bottom */}
             <form className="message-input-form" onSubmit={handleSendMessage}>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                style={{ display: 'none' }} 
+                accept="image/*,video/*" 
+              />
+              
+              <button 
+                type="button" 
+                className="btn-attach" 
+                title={t('messages.attachFile', 'Attach Image/Video')}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSending || isUploading}
+              >
+                {isUploading ? <Loader size={18} className="spinner" /> : <Paperclip size={18} />}
+              </button>
+
               <input
                 type="text"
                 className="message-input"
                 placeholder={t('messages.typeYourMessagePlaceholder', 'Type your message...')}
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
-                disabled={isSending}
+                disabled={isSending || isUploading}
               />
+              
               <button 
                 type="submit" 
                 className="btn-send"
-                disabled={isSending || !messageText.trim()}
+                disabled={isSending || isUploading || (!messageText.trim() && !attachment)}
               >
                 {isSending ? <Loader size={18} className="spinner" /> : <Send size={18} />}
               </button>

@@ -454,17 +454,30 @@ const vnpayReturn = async (req, res, next) => {
           } else if (payment.contract_id) {
             const contract = await Contract.findByPk(payment.contract_id);
             if (contract) {
-              await contract.update({ status: 'active', tenant_agreed: true });
+              const start = new Date(contract.start_date);
+              const now = new Date();
+              now.setHours(0, 0, 0, 0);
+
+              const isFutureContract = start > now;
+              if (isFutureContract) {
+                await contract.update({ status: 'pre_booked_active', tenant_agreed: true });
+              } else {
+                await contract.update({ status: 'active', tenant_agreed: true });
+              }
               
               const room = await Room.findByPk(contract.room_id);
               if (room) {
-                if (room.available_quantity !== null) {
-                  room.available_quantity -= 1;
-                  if (room.available_quantity <= 0) {
+                if (isFutureContract) {
+                  room.available_from = contract.end_date;
+                } else {
+                  if (room.available_quantity !== null) {
+                    room.available_quantity -= 1;
+                    if (room.available_quantity <= 0) {
+                      room.status = 'rented';
+                    }
+                  } else {
                     room.status = 'rented';
                   }
-                } else {
-                  room.status = 'rented';
                 }
                 await room.save();
               }
@@ -829,17 +842,30 @@ const processPaymentSuccess = async (payment, transactionId) => {
   } else if (payment.contract_id) {
     const contract = await Contract.findByPk(payment.contract_id);
     if (contract) {
-      await contract.update({ status: 'active', tenant_agreed: true });
+      const start = new Date(contract.start_date);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      const isFutureContract = start > now;
+      if (isFutureContract) {
+        await contract.update({ status: 'pre_booked_active', tenant_agreed: true });
+      } else {
+        await contract.update({ status: 'active', tenant_agreed: true });
+      }
       
       const room = await Room.findByPk(contract.room_id);
       if (room) {
-        if (room.available_quantity !== null) {
-          room.available_quantity -= 1;
-          if (room.available_quantity <= 0) {
+        if (isFutureContract) {
+          room.available_from = contract.end_date;
+        } else {
+          if (room.available_quantity !== null) {
+            room.available_quantity -= 1;
+            if (room.available_quantity <= 0) {
+              room.status = 'rented';
+            }
+          } else {
             room.status = 'rented';
           }
-        } else {
-          room.status = 'rented';
         }
         await room.save();
       }

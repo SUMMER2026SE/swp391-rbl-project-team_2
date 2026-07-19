@@ -347,6 +347,7 @@ const renewContract = async (req, res, next) => {
     // Update original contract
     originalContract.status = 'renewed';
     originalContract.is_renewed = true;
+    originalContract.renewal_status = 'renewed';
     originalContract.renewal_contract_id = newContract.contract_id;
     await originalContract.save();
 

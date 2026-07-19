@@ -566,7 +566,7 @@ const RoomDetailPage = () => {
                   <span className="price-unit">{t('roomDetail.perMonth', '/ tháng')}</span>
                 </div>
                 <span className={`status-badge ${roomData.status || 'available'}`}>
-                  {roomData.status === 'available' ? t('roomDetail.statusAvailable', 'Còn phòng') : (roomData.status === 'reserved' ? 'Booking in progress' : (roomData.status === 'rented' ? t('roomDetail.statusRented', 'Đã thuê') : (roomData.status === 'occupied' ? t('roomDetail.statusOccupied', 'Đang ở') : t('roomDetail.statusUnavailable', 'Trống'))))}
+                  {roomData.status === 'available' ? t('roomDetail.statusAvailable', 'Còn phòng') : (roomData.status === 'reserved' ? 'Booking in progress' : (roomData.status === 'rented' ? (roomData.available_from || roomData.availableFrom ? `Sắp trống (${new Date(roomData.available_from || roomData.availableFrom).toLocaleDateString('vi-VN')})` : t('roomDetail.statusRented', 'Đã thuê')) : (roomData.status === 'occupied' ? t('roomDetail.statusOccupied', 'Đang ở') : t('roomDetail.statusUnavailable', 'Trống'))))}
                 </span>
               </div>
               <div className="booking-info-row">
@@ -653,17 +653,19 @@ const RoomDetailPage = () => {
                     {t('roomDetail.editRoom', 'Chỉnh sửa phòng trực tiếp')}
                   </button>
                 )
-              ) : roomData.status === 'available' ? (
+              ) : (roomData.status === 'available' || (roomData.status === 'rented' && (roomData.available_from || roomData.availableFrom))) ? (
                 <>
-                  <button className="btn-schedule-viewing" onClick={() => {
-                    if (!isAuthenticated) {
-                      navigate('/login');
-                    } else {
-                      setShowDateModal(true);
-                    }
-                  }}>
-                    {t('roomDetail.scheduleViewing', 'Đặt lịch xem phòng')}
-                  </button>
+                  {roomData.status === 'available' && (
+                    <button className="btn-schedule-viewing" onClick={() => {
+                      if (!isAuthenticated) {
+                        navigate('/login');
+                      } else {
+                        setShowDateModal(true);
+                      }
+                    }}>
+                      {t('roomDetail.scheduleViewing', 'Đặt lịch xem phòng')}
+                    </button>
+                  )}
                   <button className="btn-schedule-viewing mt-2" onClick={() => {
                     if (!isAuthenticated) {
                       navigate('/login');
@@ -671,7 +673,7 @@ const RoomDetailPage = () => {
                       setShowRentalRequestModal(true);
                     }
                   }} style={{ background: '#10B981' }}>
-                    {t('roomDetail.sendRentalRequest', 'Gửi yêu cầu thuê phòng')}
+                    {roomData.status === 'rented' ? 'Đặt phòng trước (Pre-book)' : t('roomDetail.sendRentalRequest', 'Gửi yêu cầu thuê phòng')}
                   </button>
                 </>
               ) : (
@@ -802,7 +804,7 @@ const RoomDetailPage = () => {
                 <input 
                   type="date" 
                   value={moveInDate}
-                  min={todayDate}
+                  min={roomData.available_from || roomData.availableFrom || todayDate}
                   onChange={(e) => setMoveInDate(e.target.value)}
                   disabled={loading}
                   style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}

@@ -109,9 +109,9 @@ export const useConversations = (params = {}) => {
     }
   }, [currentConversation?.conversationId, currentConversation?.id]);
 
-  const sendMessage = async (conversationId, content) => {
+  const sendMessage = async (conversationId, content, messageType = 'text', fileUrl = null, fileName = null) => {
     try {
-      const response = await landlordService.sendMessage(conversationId, content);
+      const response = await landlordService.sendMessage(conversationId, content, messageType, fileUrl, fileName);
       const message = response?.data || response;
       if (currentConversation && (currentConversation.conversationId == conversationId || currentConversation.id == conversationId)) {
         setCurrentConversation(prev => {

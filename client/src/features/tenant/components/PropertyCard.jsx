@@ -11,7 +11,7 @@ const PropertyCard = ({ property }) => {
   const { 
     id, title, address, district, city, 
     thumbnailUrl, minPrice, maxPrice, 
-    totalRooms, availableRooms 
+    totalRooms, availableRooms, preBookableRooms 
   } = property;
 
   const handleClick = () => {
@@ -36,9 +36,13 @@ const PropertyCard = ({ property }) => {
         <div className="room-card-image-tags">
           <span className={clsx(
             "image-tag", 
-            availableRooms > 0 ? "primary-tag" : "danger-tag"
+            availableRooms > 0 ? "primary-tag" : (preBookableRooms > 0 ? "warning-tag" : "danger-tag")
           )}>
-            {availableRooms > 0 ? `${availableRooms} ${t('propertyCard.roomsAvailable', 'phòng trống')}` : t('propertyCard.soldOut', 'Hết phòng')}
+            {availableRooms > 0 
+              ? `${availableRooms} ${t('propertyCard.roomsAvailable', 'phòng trống')}` 
+              : (preBookableRooms > 0 
+                ? `Đặt trước (${preBookableRooms} phòng sắp trống)` 
+                : t('propertyCard.soldOut', 'Hết phòng'))}
           </span>
         </div>
 

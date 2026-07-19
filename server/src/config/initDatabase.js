@@ -196,6 +196,42 @@ const initDatabase = async () => {
         END
       `);
 
+      // Add message attachments columns to messages table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('messages') AND name = 'message_type')
+        BEGIN
+            ALTER TABLE messages ADD 
+                message_type VARCHAR(20) DEFAULT 'text' NULL,
+                file_url NVARCHAR(500) NULL,
+                file_name NVARCHAR(255) NULL;
+        END
+      `);
+
+      // Alter content column in messages table to allow NULL
+      try {
+        await sequelize.query(`
+          ALTER TABLE messages ALTER COLUMN content NVARCHAR(MAX) NULL;
+        `);
+      } catch (err) {
+        console.warn('⚠️ Could not alter messages.content column (might already be nullable):', err.message);
+      }
+
+      // Add available_from to rooms table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'available_from')
+        BEGIN
+            ALTER TABLE rooms ADD available_from DATE NULL;
+        END
+      `);
+
+      // Add renewal_status to contracts table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('contracts') AND name = 'renewal_status')
+        BEGIN
+            ALTER TABLE contracts ADD renewal_status VARCHAR(50) DEFAULT 'pending' NULL;
+        END
+      `);
+
       console.log('✅ Applied schema migrations');
     } catch (err) {
       console.warn('⚠️ Could not apply schema migrations:', err.message);

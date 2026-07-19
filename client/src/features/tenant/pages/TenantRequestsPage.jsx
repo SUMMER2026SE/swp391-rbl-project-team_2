@@ -473,6 +473,26 @@ const TenantRequestsPage = () => {
     setShowRenewModal(true);
   };
 
+  const handleDeclineRenewal = (contract) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Xác nhận không gia hạn',
+      message: 'Bạn có chắc chắn xác nhận KHÔNG gia hạn hợp đồng này và sẽ dọn đi khi hết hạn? Sau khi xác nhận, phòng của bạn sẽ được hiển thị ngày trống để người khác có thể đặt trước.',
+      confirmText: 'Xác nhận không gia hạn',
+      cancelText: 'Hủy',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await rentalRequestService.declineContractRenewal(contract.contractId || contract.contract_id);
+          toast.success('Xác nhận từ chối gia hạn thành công.');
+          fetchContracts();
+        } catch (err) {
+          toast.error('Thao tác thất bại: ' + (err.response?.data?.message || err.message));
+        }
+      }
+    });
+  };
+
   const handleRenewContractConfirm = () => {
     const durationNum = parseInt(renewDuration, 10);
     if (isNaN(durationNum) || durationNum <= 0) {
@@ -992,10 +1012,17 @@ const TenantRequestsPage = () => {
                         {duration} {t('tenantRequests.months', 'months')}
                       </td>
                       <td style={{ padding: '16px' }}>
-                        <div className={`status-badge ${contract.status}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: statusInfo.bg, color: statusInfo.color, fontWeight: '600', fontSize: '12px', border: `1px solid ${statusInfo.color}33` }}>
-                          {statusInfo.icon}
-                          {statusInfo.label}
-                        </div>
+                        {(contract.renewalStatus === 'declined' || contract.renewal_status === 'declined') ? (
+                          <div className="status-badge declined" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: '#fee2e2', color: '#dc2626', fontWeight: '600', fontSize: '12px', border: '1px solid #fecdd3' }}>
+                            <Ban size={12} />
+                            Không gia hạn
+                          </div>
+                        ) : (
+                          <div className={`status-badge ${contract.status}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: statusInfo.bg, color: statusInfo.color, fontWeight: '600', fontSize: '12px', border: `1px solid ${statusInfo.color}33` }}>
+                            {statusInfo.icon}
+                            {statusInfo.label}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '16px' }}>
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -1011,19 +1038,33 @@ const TenantRequestsPage = () => {
                           >
                             <FileText size={14} /> {t('tenantRequests.viewContract', 'View Contract')}
                           </button>
-                          {contract.status === 'active' && !contract.is_renewed && (
-                            <button
-                              onClick={() => handleRenewContract(contract)}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                padding: '6px 12px', background: '#059669', 
-                                border: 'none',
-                                borderRadius: '6px', color: 'white', 
-                                fontSize: '13px', cursor: 'pointer', fontWeight: 500
-                              }}
-                            >
-                              <FileText size={14} /> Gia hạn
-                            </button>
+                          {contract.status === 'active' && !contract.is_renewed && contract.renewalStatus !== 'declined' && contract.renewal_status !== 'declined' && (
+                            <>
+                              <button
+                                onClick={() => handleRenewContract(contract)}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '6px',
+                                  padding: '6px 12px', background: '#059669', 
+                                  border: 'none',
+                                  borderRadius: '6px', color: 'white', 
+                                  fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                                }}
+                              >
+                                <FileText size={14} /> Gia hạn
+                              </button>
+                              <button
+                                onClick={() => handleDeclineRenewal(contract)}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '6px',
+                                  padding: '6px 12px', background: '#dc2626', 
+                                  border: 'none',
+                                  borderRadius: '6px', color: 'white', 
+                                  fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                                }}
+                              >
+                                <X size={14} /> Không gia hạn
+                              </button>
+                            </>
                           )}
                           {contract.status === 'pending_payment' && (
                             <button

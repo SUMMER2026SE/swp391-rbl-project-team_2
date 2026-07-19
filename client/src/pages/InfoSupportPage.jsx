@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import api from '../services/api';
 import './InfoSupportPage.css';
 
 const TABS = [
@@ -137,9 +139,55 @@ const GuideContent = () => (
 );
 
 const ReportContent = () => {
-  const handleSubmit = (e) => {
+  const [violationType, setViolationType] = useState('');
+  const [roomUrl, setRoomUrl] = useState('');
+  const [description, setDescription] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xử lý trong thời gian sớm nhất!');
+    
+    const match = roomUrl.trim().match(/(?:rooms\/)?(\d+)$/);
+    const roomId = match ? parseInt(match[1], 10) : null;
+
+    if (!roomId || isNaN(roomId)) {
+      toast.error('Đường dẫn phòng không hợp lệ. Vui lòng nhập link chứa mã số phòng (ví dụ: /rooms/12)');
+      return;
+    }
+
+    const typeNames = {
+      fraud: 'Tin đăng lừa đảo / Phí môi giới ẩn',
+      fake_image: 'Phòng không giống hình ảnh',
+      fake_price: 'Giá phòng sai sự thật',
+      sold: 'Phòng đã cho thuê nhưng không gỡ',
+      inappropriate: 'Nội dung phản cảm / Không phù hợp',
+      other: 'Lý do khác'
+    };
+
+    const title = `Báo cáo vi phạm: ${typeNames[violationType] || 'Khác'}`;
+
+    try {
+      setSubmitting(true);
+      const response = await api.post('/tenant/complaints', {
+        roomId,
+        title,
+        description,
+        complaintType: violationType,
+      });
+
+      if (response.success) {
+        toast.success('Gửi báo cáo thành công! Admin sẽ kiểm duyệt và xử lý vi phạm.');
+        setViolationType('');
+        setRoomUrl('');
+        setDescription('');
+      } else {
+        toast.error(response.message || 'Gửi báo cáo thất bại.');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Thao tác thất bại.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -150,7 +198,13 @@ const ReportContent = () => {
       <form className="report-form" onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Loại vi phạm <span className="required">*</span></label>
-          <select required className="form-control">
+          <select 
+            required 
+            className="form-control"
+            value={violationType}
+            onChange={(e) => setViolationType(e.target.value)}
+            disabled={submitting}
+          >
             <option value="">Chọn loại vi phạm</option>
             <option value="fraud">Tin đăng lừa đảo / Phí môi giới ẩn</option>
             <option value="fake_image">Phòng không giống hình ảnh</option>
@@ -163,15 +217,33 @@ const ReportContent = () => {
 
         <div className="form-group">
           <label>Đường dẫn (Link) phòng vi phạm <span className="required">*</span></label>
-          <input type="url" required className="form-control" placeholder="https://rentwise.vn/rooms/..." />
+          <input 
+            type="text" 
+            required 
+            className="form-control" 
+            placeholder="Ví dụ: http://localhost:5173/rooms/12 hoặc nhập số 12"
+            value={roomUrl}
+            onChange={(e) => setRoomUrl(e.target.value)}
+            disabled={submitting}
+          />
         </div>
 
         <div className="form-group">
           <label>Mô tả chi tiết <span className="required">*</span></label>
-          <textarea required className="form-control" rows="4" placeholder="Vui lòng cung cấp thêm chi tiết để chúng tôi xác minh (VD: Số điện thoại lừa đảo, số tiền bị yêu cầu cọc...)"></textarea>
+          <textarea 
+            required 
+            className="form-control" 
+            rows="4" 
+            placeholder="Vui lòng cung cấp thêm chi tiết để chúng tôi xác minh (VD: Số điện thoại lừa đảo, số tiền bị yêu cầu cọc...)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={submitting}
+          ></textarea>
         </div>
 
-        <button type="submit" className="submit-report-btn">Gửi báo cáo</button>
+        <button type="submit" className="submit-report-btn" disabled={submitting}>
+          {submitting ? 'Đang gửi...' : 'Gửi báo cáo'}
+        </button>
       </form>
     </div>
   );
