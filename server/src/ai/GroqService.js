@@ -2,7 +2,7 @@ const Groq = require('groq-sdk');
 
 const groqApiKey = process.env.GROQ_API_KEY || 'dummy_key';
 const groq = new Groq({ apiKey: groqApiKey });
-const DEFAULT_MODEL = 'llama-3.1-8b-instant';
+const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 
 /**
  * Service to manage communication with Groq API

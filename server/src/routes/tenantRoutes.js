@@ -10,6 +10,7 @@ const paymentController = require('../controllers/paymentController');
 const viewingScheduleController = require('../controllers/viewingScheduleController');
 const notificationController = require('../controllers/notificationController');
 const complaintController = require('../controllers/complaintController');
+const contractRenewalController = require('../controllers/contractRenewalController');
 
 // =========================================================
 // PUBLIC PAYMENT ROUTES (No Auth required for webhooks / mock checkout)
@@ -66,7 +67,9 @@ router.get('/contracts', viewingScheduleController.getTenantContracts);
 router.post('/contracts/:contractId/send-otp', viewingScheduleController.sendContractOtp);
 router.put('/contracts/:contractId/sign', viewingScheduleController.signContract);
 router.put('/contracts/:contractId/cancel', viewingScheduleController.cancelContract);
-router.post('/contracts/:contractId/renew', viewingScheduleController.renewContract);
+router.post('/contracts/:contractId/renew', contractRenewalController.tenantRequestRenewal);
+router.post('/contracts/:contractId/renew-otp', contractRenewalController.tenantSendOtpForRenewal);
+router.put('/contracts/:contractId/renew-sign', contractRenewalController.tenantSignRenewal);
 router.post('/contracts/:contractId/decline-renewal', viewingScheduleController.declineContractRenewal);
 
 // =========================================================

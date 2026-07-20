@@ -130,6 +130,7 @@ const getLandlordContracts = async (req, res, next) => {
       include: [
         { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'room_type', 'bedrooms', 'max_occupants', 'area_sqm'] },
         { model: User, as: 'tenant', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
+        { model: RenewalRequest, as: 'renewalRequests', limit: 1, order: [['created_at', 'DESC']] }
       ],
       offset,
       limit: parseInt(limit),
@@ -165,6 +166,7 @@ const getLandlordContracts = async (req, res, next) => {
         landlordPermanentAddress: contract.landlord_permanent_address,
         landlordSignature: contract.landlord_signature,
         assignedRoomNumber: contract.assigned_room_number,
+        renewalRequest: contract.renewalRequests && contract.renewalRequests.length > 0 ? contract.renewalRequests[0] : null,
       })),
       pagination: {
         total: count,

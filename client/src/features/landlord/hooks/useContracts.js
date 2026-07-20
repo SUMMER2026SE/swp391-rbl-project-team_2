@@ -31,6 +31,7 @@ export const useContracts = (params = {}) => {
         status: (c.status || '').toUpperCase(),
         terms: c.termsAndConditions,
         duration: Math.round((new Date(c.endDate) - new Date(c.startDate)) / (1000 * 60 * 60 * 24 * 30)) || 0,
+        renewalRequest: c.renewalRequest,
         ...c
       }));
       
@@ -96,6 +97,17 @@ export const useContracts = (params = {}) => {
     }
   };
 
+  const declineRenewal = async (id) => {
+    try {
+      const declined = await landlordService.declineRenewal(id);
+      fetchContracts();
+      return declined;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
   const terminateContract = async (id, reason) => {
     try {
       const terminated = await landlordService.terminateContract(id, reason);
@@ -117,6 +129,7 @@ export const useContracts = (params = {}) => {
     updateContract,
     renewContract,
     approveRenewal,
+    declineRenewal,
     terminateContract,
   };
 };

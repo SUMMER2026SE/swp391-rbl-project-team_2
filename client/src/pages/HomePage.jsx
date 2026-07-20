@@ -105,6 +105,7 @@ const HomePage = () => {
           maxPrice: prop.maxPrice,
           totalRooms: prop.totalRooms,
           availableRooms: prop.availableRooms,
+          preBookableRooms: prop.preBookableRooms,
         }));
         setNewRooms(mappedProperties);
       } catch (err) {
