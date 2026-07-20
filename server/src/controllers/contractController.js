@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Contract, Room, User, Notification } = require('../models');
+const { Contract, Room, User, Notification, RenewalRequest, TerminationRequest, TerminationRecord } = require('../models');
 
 // Generate unique contract number
 const generateContractNumber = async () => {

@@ -273,6 +273,8 @@ const initDatabase = async () => {
                 compensation DECIMAL(10, 2) DEFAULT 0.00,
                 total_payout_to_tenant DECIMAL(10, 2) DEFAULT 0.00,
                 final_note NVARCHAR(MAX) NULL,
+                refund_status VARCHAR(50) DEFAULT 'NONE',
+                refund_proof_url NVARCHAR(MAX) NULL,
                 created_at DATETIME DEFAULT GETDATE()
             );
         END

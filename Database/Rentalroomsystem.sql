@@ -2024,8 +2024,34 @@ BEGIN
         compensation DECIMAL(10, 2) DEFAULT 0.00,
         total_payout_to_tenant DECIMAL(10, 2) DEFAULT 0.00,
         final_note NVARCHAR(MAX) NULL,
+        refund_status VARCHAR(50) DEFAULT 'NONE',
+        refund_proof_url NVARCHAR(MAX) NULL,
         created_at DATETIME DEFAULT GETDATE(),
         CONSTRAINT FK_termination_records_contract FOREIGN KEY (contract_id) REFERENCES contracts(contract_id)
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'contract_renewal_requests')
+BEGIN
+    CREATE TABLE contract_renewal_requests (
+        id INT IDENTITY PRIMARY KEY,
+        contract_id INT NOT NULL,
+        tenant_id INT NOT NULL,
+        landlord_id INT NOT NULL,
+        requested_duration_months INT NOT NULL,
+        proposed_new_rent DECIMAL(10, 2) NULL,
+        additional_terms NVARCHAR(MAX) NULL,
+        landlord_signed_at DATETIME NULL,
+        tenant_signed_at DATETIME NULL,
+        status VARCHAR(50) DEFAULT 'PENDING_INTENT' NOT NULL,
+        new_contract_id INT NULL,
+        deadline_to_sign DATETIME NULL,
+        created_at DATETIME DEFAULT GETDATE(),
+        updated_at DATETIME DEFAULT GETDATE(),
+        CONSTRAINT FK_renewal_requests_contract FOREIGN KEY (contract_id) REFERENCES contracts(contract_id),
+        CONSTRAINT FK_renewal_requests_tenant FOREIGN KEY (tenant_id) REFERENCES users(user_id),
+        CONSTRAINT FK_renewal_requests_landlord FOREIGN KEY (landlord_id) REFERENCES users(user_id)
     );
 END
 GO
