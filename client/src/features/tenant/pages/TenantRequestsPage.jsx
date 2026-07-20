@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../../../store/useAuthStore';
 import { 
   Loader, 
@@ -33,13 +33,27 @@ import { rentalRequestService } from '../services/rentalRequestService';
 import Button from '../../../components/common/Button';
 import { ROUTES } from '../../../constants';
 import ContractDocument from '../../../components/ContractDocument';
+import TerminationRequestModal from '../../../components/termination/TerminationRequestModal';
+import TerminationHistoryPage from '../../../components/termination/TerminationHistoryPage';
 import { useTranslation } from 'react-i18next';
 import './TenantRequestsPage.css';
 
 const TenantRequestsPage = () => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('viewing'); // 'viewing', 'requests', or 'contracts'
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(location.search || '');
+    return params.get('tab') || location.state?.activeTab || 'viewing';
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || '');
+    const tabFromUrl = params.get('tab') || location.state?.activeTab;
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [location.search, location.state]);
   const [viewingSchedules, setViewingSchedules] = useState([]);
   const [rentalRequests, setRentalRequests] = useState([]);
   const [contracts, setContracts] = useState([]);
@@ -80,55 +94,58 @@ const TenantRequestsPage = () => {
   const [showRenewModal, setShowRenewModal] = useState(false);
   const [renewContractTarget, setRenewContractTarget] = useState(null);
   const [renewDuration, setRenewDuration] = useState('6');
+
+  const [showTerminationModal, setShowTerminationModal] = useState(false);
+  const [selectedContractForTermination, setSelectedContractForTermination] = useState(null);
   
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch all initially to get counts for badges
-    fetchViewingSchedules();
-    fetchRentalRequests();
-    fetchContracts();
+    const fetchAll = async () => {
+      setLoading(true);
+      try {
+        await Promise.allSettled([
+          fetchViewingSchedules(),
+          fetchRentalRequests(),
+          fetchContracts(),
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
   }, []);
 
   const fetchViewingSchedules = async () => {
     try {
-      setLoading(true);
-      const data = await rentalRequestService.getMyViewingSchedules();
-      const items = Array.isArray(data) ? data : (data.data || []);
-      setViewingSchedules(items);
+      const res = await rentalRequestService.getMyViewingSchedules();
+      const items = Array.isArray(res) ? res : (res?.data || []);
+      setViewingSchedules(Array.isArray(items) ? items : []);
     } catch (err) {
       console.error(err);
       setViewingSchedules([]);
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchRentalRequests = async () => {
     try {
-      setLoading(true);
       const response = await rentalRequestService.getMyRequests();
-      const data = response.data?.data || response.data || [];
-      setRentalRequests(data);
+      const items = Array.isArray(response) ? response : (response?.data?.data || response?.data || []);
+      setRentalRequests(Array.isArray(items) ? items : []);
     } catch (err) {
       console.error(err);
       setRentalRequests([]);
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchContracts = async () => {
     try {
-      setLoading(true);
-      const data = await rentalRequestService.getMyContracts();
-      const items = Array.isArray(data) ? data : (data.data || []);
-      setContracts(items);
+      const res = await rentalRequestService.getMyContracts();
+      const items = Array.isArray(res) ? res : (res?.data || []);
+      setContracts(Array.isArray(items) ? items : []);
     } catch (err) {
       console.error(err);
       setContracts([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -601,23 +618,21 @@ const TenantRequestsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-transparent">
-        <div className="flex flex-col items-center gap-3 text-primary">
-          <Loader size={40} className="animate-spin" />
-          <p className="font-medium animate-pulse">{t('tenantRequests.loading', 'Loading your requests...')}</p>
-        </div>
+      <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '40px' }}>
+        <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '4px solid #2563eb', borderTopColor: 'transparent', animation: 'tmSpin 0.8s linear infinite' }} />
+        <p style={{ fontSize: '15px', color: '#64748b', fontWeight: 500 }}>{t('tenantRequests.loading', 'Đang tải dữ liệu của bạn...')}</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-transparent">
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-red-100 max-w-md text-center">
-          <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Oops!</h3>
-          <p className="text-gray-600">{error}</p>
-          <Button onClick={() => activeTab === 'viewing' ? fetchViewingSchedules() : fetchContracts()} className="mt-6 w-full">Try Again</Button>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+        <div style={{ background: '#ffffff', padding: '32px', borderRadius: '16px', border: '1px solid #fecdd3', maxWidth: '400px', textAlign: 'center' }}>
+          <AlertCircle size={48} color="#ef4444" style={{ margin: '0 auto 16px auto' }} />
+          <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>Có lỗi xảy ra</h3>
+          <p style={{ color: '#64748b', fontSize: '14px' }}>{error}</p>
+          <Button onClick={() => { fetchViewingSchedules(); fetchRentalRequests(); fetchContracts(); }} className="mt-6 w-full">Thử lại</Button>
         </div>
       </div>
     );
@@ -641,7 +656,7 @@ const TenantRequestsPage = () => {
             style={{ position: 'relative' }}
           >
             <Eye size={16} /> {t('tenantRequests.tabViewing', 'Lịch xem phòng')}
-            {viewingSchedules.some(s => s.status === 'pending_payment' || s.status === 'confirmed') && (
+            {Array.isArray(viewingSchedules) && viewingSchedules.some(s => s?.status === 'pending_payment' || s?.status === 'confirmed') && (
               <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
             )}
           </button>
@@ -651,7 +666,7 @@ const TenantRequestsPage = () => {
             style={{ position: 'relative' }}
           >
             <Home size={16} /> {t('tenantRequests.tabRequests', 'Yêu cầu thuê')}
-            {rentalRequests.some(r => r.status === 'approved') && (
+            {Array.isArray(rentalRequests) && rentalRequests.some(r => r?.status === 'approved') && (
               <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
             )}
           </button>
@@ -661,11 +676,23 @@ const TenantRequestsPage = () => {
             style={{ position: 'relative' }}
           >
             <FileText size={16} /> {t('tenantRequests.tabContracts', 'Hợp đồng')}
-            {contracts.some(c => c.status === 'pending_tenant_signature') && (
+            {Array.isArray(contracts) && contracts.some(c => c?.status === 'pending_tenant_signature') && (
               <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
             )}
           </button>
+          <button 
+            className={`tab-btn ${activeTab === 'terminations' ? 'active' : ''}`}
+            onClick={() => setActiveTab('terminations')}
+            style={{ position: 'relative' }}
+          >
+            Chấm dứt & Quyết toán
+          </button>
         </div>
+        
+        {/* =================== TERMINATION TAB =================== */}
+        {activeTab === 'terminations' && (
+          <TerminationHistoryPage currentUserId={user?.user_id || user?.userId} userRole="Tenant" />
+        )}
         
 
         {/* =================== VIEWING SCHEDULES TAB =================== */}
@@ -1097,6 +1124,23 @@ const TenantRequestsPage = () => {
                                 </button>
                               )}
                             </>
+                          )}
+                          {contract.status === 'active' && (
+                            <button
+                              onClick={() => {
+                                setSelectedContractForTermination(contract);
+                                setShowTerminationModal(true);
+                              }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '6px 12px', background: '#ef4444', 
+                                border: 'none',
+                                borderRadius: '6px', color: 'white', 
+                                fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                              }}
+                            >
+                              Hủy hợp đồng
+                            </button>
                           )}
                           {contract.status === 'pending_payment' && (
                             <button
@@ -1562,6 +1606,19 @@ const TenantRequestsPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Termination Request Modal */}
+      {showTerminationModal && selectedContractForTermination && (
+        <TerminationRequestModal
+          contract={selectedContractForTermination}
+          userRole="Tenant"
+          onClose={() => setShowTerminationModal(false)}
+          onSuccess={() => {
+            fetchContracts();
+            toast.success('Đã gửi yêu cầu chấm dứt hợp đồng thành công!');
+          }}
+        />
       )}
     </div>
   );
