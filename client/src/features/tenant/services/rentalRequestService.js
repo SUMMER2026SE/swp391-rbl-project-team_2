@@ -179,12 +179,32 @@ export const rentalRequestService = {
     }
   },
 
-  renewContract: async (contractId, durationMonths) => {
+  renewContract: async (contractId, requestedDurationMonths) => {
     try {
-      const response = await httpClient.post(`/tenant/contracts/${contractId}/renew`, { durationMonths });
+      const response = await httpClient.post(`/tenant/contracts/${contractId}/renew`, { requestedDurationMonths });
       return response;
     } catch (error) {
       console.error('Error renewing contract:', error);
+      throw error;
+    }
+  },
+
+  sendRenewalOtp: async (contractId) => {
+    try {
+      const response = await httpClient.post(`/tenant/contracts/${contractId}/renew-otp`);
+      return response;
+    } catch (error) {
+      console.error('Error sending renewal OTP:', error);
+      throw error;
+    }
+  },
+
+  signRenewal: async (contractId, data) => {
+    try {
+      const response = await httpClient.put(`/tenant/contracts/${contractId}/renew-sign`, data);
+      return response;
+    } catch (error) {
+      console.error('Error signing renewal:', error);
       throw error;
     }
   },

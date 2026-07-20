@@ -40,10 +40,17 @@ Everything else. E.g., programming, math, technology, shopping, cooking, movies,
 ---
 TASK:
 1. Classify the user's latest query into EITHER "RENTWISE" or "GENERAL".
-2. If the intent is "RENTWISE", classify the subIntent into EITHER "ROOM_SEARCH" (looking for rooms to rent) or "POLICY_FAQ" (asking about rules, deposits, contracts, complaints, platform usage).
-3. If the subIntent is "ROOM_SEARCH", extract search criteria if the user is looking for rooms. Match these fields (set to null if not mentioned):
+2. Detect the language of the user's message: "vi" for Vietnamese, "en" for English.
+3. If the intent is "RENTWISE", classify the subIntent into EITHER "ROOM_SEARCH" (looking for rooms to rent) or "POLICY_FAQ" (asking about rules, deposits, contracts, complaints, platform usage).
+4. If the subIntent is "ROOM_SEARCH", extract search criteria if the user is looking for rooms. Match these fields (set to null if not mentioned):
+   - status: room availability status. CRITICAL RULE: ONLY set this if the user EXPLICITLY mentions room availability.
+     Choose from: "available", "rented", "upcoming_vacancy", or null.
+     - "còn trống", "available", "trống", "phòng trống" → "available"
+     - "đã thuê", "rented", "occupied" → "rented"
+     - "sắp trống", "upcoming vacancy", "available soon" → "upcoming_vacancy"
+     - If the user does NOT mention room status at all → null. DO NOT assume "available" by default.
    - keyword: any specific keywords (e.g. "gần đại học", "hẻm xe hơi").
-   - city: standardized city name. Resolve abbreviations like "HCM", "Sài Gòn", "SG" -> "Thành phố Hồ Chí Minh", "HN" -> "Thành phố Hà Nội", "ĐN", "Đà Nẵng" -> "Thành phố Đà Nẵng", "HP" -> "Thành phố Hải Phòng", "CT", "Cần Thơ" -> "Thành phố Cần Thơ", "VT", "Vũng Tàu" -> "Tỉnh Bà Rịa - Vũng Tàu", "BD" -> "Tỉnh Bình Dương", "ĐNai" -> "Tỉnh Đồng Nai". Must map exactly to Vietnam official province names.
+   - city: standardized city name. Resolve abbreviations like "HCM", "Sài Gòn", "SG" -> "Thành phố Hồ Chí Minh", "HN" -> "Thành phố Hà Nội", "ĐN", "Đà Nẵng" -> "Thành phố Đà Nẵng", "HP" -> "Thành phố Hải Phòng", "CT", "Cần Thơ" -> "Thành phố Cần Thơ", "VT", "Vũng Tàu" -> "Tỉnh Bà Rịa - Vũng Tàu", "BD" -> "Tỉnh Bình Dương", "ĐNai" -> "Tỉnh Đồng Nai", "Huế" -> "Tỉnh Thừa Thiên Huế". Must map exactly to Vietnam official province names.
    - district: standardized district name (e.g. "Quận 1", "Quận Bình Thạnh", "Quận Gò Vấp", "Quận 10", etc. Resolve "Q1", "Bình Thạnh", "quận tân bình" accordingly).
    - priceMin: minimum price in VND (number). Use this ONLY if the user specifies a lower bound (e.g., "trên 2 triệu", "từ 2 triệu trở lên", "hơn 3 triệu"). Do NOT use this for maximum budgets or single target prices.
    - priceMax: maximum price in VND (number). If the user specifies a maximum budget or price limit (e.g., "dưới 3 triệu", "tầm 3 triệu trở xuống", "tối đa 4 triệu"), map it to priceMax. If the user specifies a single target price (e.g., "trọ 4 triệu", "phòng 3 triệu", "tầm 5 triệu"), map it to priceMax. If the user specifies a range (e.g., "từ 2 đến 4 triệu"), map the upper bound to priceMax and lower bound to priceMin.
@@ -59,17 +66,19 @@ TASK:
 ---
 FEW-SHOT EXAMPLES:
 
-Example 1: "cho tôi phòng dưới 3 triệu"
+Example 1: "Tôi muốn thuê phòng còn trống."
 Response:
 {
   "intent": "RENTWISE",
   "subIntent": "ROOM_SEARCH",
+  "language": "vi",
   "searchCriteria": {
+    "status": "available",
     "keyword": null,
     "city": null,
     "district": null,
     "priceMin": null,
-    "priceMax": 3000000,
+    "priceMax": null,
     "maxOccupants": null,
     "minArea": null,
     "facilities": [],
@@ -77,12 +86,114 @@ Response:
   }
 }
 
-Example 2: "phòng trên 3 triệu ở quận 1"
+Example 2: "Show me available rooms in Da Nang."
 Response:
 {
   "intent": "RENTWISE",
   "subIntent": "ROOM_SEARCH",
+  "language": "en",
   "searchCriteria": {
+    "status": "available",
+    "keyword": null,
+    "city": "Thành phố Đà Nẵng",
+    "district": null,
+    "priceMin": null,
+    "priceMax": null,
+    "maxOccupants": null,
+    "minArea": null,
+    "facilities": [],
+    "nearbyFacilities": []
+  }
+}
+
+Example 3: "Tôi muốn phòng giá khoảng 5 triệu."
+Response:
+{
+  "intent": "RENTWISE",
+  "subIntent": "ROOM_SEARCH",
+  "language": "vi",
+  "searchCriteria": {
+    "status": null,
+    "keyword": null,
+    "city": null,
+    "district": null,
+    "priceMin": null,
+    "priceMax": 5000000,
+    "maxOccupants": null,
+    "minArea": null,
+    "facilities": [],
+    "nearbyFacilities": []
+  }
+}
+
+Example 4: "Cho tôi phòng dưới 4 triệu."
+Response:
+{
+  "intent": "RENTWISE",
+  "subIntent": "ROOM_SEARCH",
+  "language": "vi",
+  "searchCriteria": {
+    "status": null,
+    "keyword": null,
+    "city": null,
+    "district": null,
+    "priceMin": null,
+    "priceMax": 4000000,
+    "maxOccupants": null,
+    "minArea": null,
+    "facilities": [],
+    "nearbyFacilities": []
+  }
+}
+
+Example 5: "Phòng 2 người ở tại Huế."
+Response:
+{
+  "intent": "RENTWISE",
+  "subIntent": "ROOM_SEARCH",
+  "language": "vi",
+  "searchCriteria": {
+    "status": null,
+    "keyword": null,
+    "city": "Tỉnh Thừa Thiên Huế",
+    "district": null,
+    "priceMin": null,
+    "priceMax": null,
+    "maxOccupants": 2,
+    "minArea": null,
+    "facilities": [],
+    "nearbyFacilities": []
+  }
+}
+
+Example 6: "Cho tôi phòng còn trống dưới 6 triệu tại Đà Nẵng."
+Response:
+{
+  "intent": "RENTWISE",
+  "subIntent": "ROOM_SEARCH",
+  "language": "vi",
+  "searchCriteria": {
+    "status": "available",
+    "keyword": null,
+    "city": "Thành phố Đà Nẵng",
+    "district": null,
+    "priceMin": null,
+    "priceMax": 6000000,
+    "maxOccupants": null,
+    "minArea": null,
+    "facilities": [],
+    "nearbyFacilities": []
+  }
+}
+
+Example 7: "phòng trên 3 triệu ở quận 1"
+Response:
+{
+  "intent": "RENTWISE",
+  "subIntent": "ROOM_SEARCH",
+  "language": "vi",
+  "searchCriteria": {
+    "status": null,
     "keyword": null,
     "city": null,
     "district": "Quận 1",
@@ -95,17 +206,19 @@ Response:
   }
 }
 
-Example 3: "tìm phòng trọ giá từ 2 đến 4 triệu"
+Example 8: "Show me rooms under 6 million VND."
 Response:
 {
   "intent": "RENTWISE",
   "subIntent": "ROOM_SEARCH",
+  "language": "en",
   "searchCriteria": {
+    "status": null,
     "keyword": null,
     "city": null,
     "district": null,
-    "priceMin": 2000000,
-    "priceMax": 4000000,
+    "priceMin": null,
+    "priceMax": 6000000,
     "maxOccupants": null,
     "minArea": null,
     "facilities": [],
@@ -126,7 +239,9 @@ You MUST respond with exactly a JSON object matching this structure (no markdown
 {
   "intent": "RENTWISE" or "GENERAL",
   "subIntent": "ROOM_SEARCH" or "POLICY_FAQ" or null,
+  "language": "vi" or "en",
   "searchCriteria": {
+    "status": "available" or "rented" or "upcoming_vacancy" or null,
     "keyword": string|null,
     "city": string|null,
     "district": string|null,
@@ -166,6 +281,7 @@ You MUST respond with exactly a JSON object matching this structure (no markdown
       return {
         intent: parsed.intent || 'GENERAL',
         subIntent: parsed.subIntent || null,
+        language: parsed.language || 'vi',
         searchCriteria: parsed.searchCriteria || {}
       };
     } catch (err) {
@@ -222,9 +338,11 @@ You MUST respond with exactly a JSON object matching this structure (no markdown
     ];
     
     const isRental = rentalKeywords.some(kw => q.includes(kw));
+    const hasVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(q);
     return {
       intent: isRental ? 'RENTWISE' : 'GENERAL',
       subIntent: isRental ? 'ROOM_SEARCH' : null,
+      language: hasVietnamese ? 'vi' : (/^[a-zA-Z0-9\s.,!?'"\-]+$/.test(q) ? 'en' : 'vi'),
       searchCriteria: {}
     };
   }

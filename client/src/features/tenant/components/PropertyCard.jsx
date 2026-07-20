@@ -41,7 +41,7 @@ const PropertyCard = ({ property }) => {
             {availableRooms > 0 
               ? `${availableRooms} ${t('propertyCard.roomsAvailable', 'phòng trống')}` 
               : (preBookableRooms > 0 
-                ? `Đặt trước (${preBookableRooms} phòng sắp trống)` 
+                ? `${preBookableRooms} ${t('propertyCard.roomsPrebookable', 'phòng sắp trống')}` 
                 : t('propertyCard.soldOut', 'Hết phòng'))}
           </span>
         </div>

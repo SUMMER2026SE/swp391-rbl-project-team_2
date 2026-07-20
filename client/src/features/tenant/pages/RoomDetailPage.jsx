@@ -565,7 +565,7 @@ const RoomDetailPage = () => {
                   )}
                   <span className="price-unit">{t('roomDetail.perMonth', '/ tháng')}</span>
                 </div>
-                <span className={`status-badge ${roomData.status || 'available'}`}>
+                <span className={`status-badge ${roomData.status || 'available'} ${(roomData.status === 'rented' && (roomData.available_from || roomData.availableFrom)) ? 'prebookable' : ''}`}>
                   {roomData.status === 'available' ? t('roomDetail.statusAvailable', 'Còn phòng') : (roomData.status === 'reserved' ? 'Booking in progress' : (roomData.status === 'rented' ? (roomData.available_from || roomData.availableFrom ? `Sắp trống (${new Date(roomData.available_from || roomData.availableFrom).toLocaleDateString('vi-VN')})` : t('roomDetail.statusRented', 'Đã thuê')) : (roomData.status === 'occupied' ? t('roomDetail.statusOccupied', 'Đang ở') : t('roomDetail.statusUnavailable', 'Trống'))))}
                 </span>
               </div>

@@ -379,6 +379,7 @@ const TenantRequestsPage = () => {
   const [pendingSignatureData, setPendingSignatureData] = useState('');
   const [pendingContractId, setPendingContractId] = useState(null);
   const [pendingRoomId, setPendingRoomId] = useState(null);
+  const [otpMode, setOtpMode] = useState('sign'); // 'sign' or 'renew'
 
   const triggerOtpFlow = async (contractId, roomId, signatureDataUrl) => {
     try {
@@ -388,6 +389,7 @@ const TenantRequestsPage = () => {
       setPendingContractId(contractId);
       setPendingRoomId(roomId);
       setOtpCode('');
+      setOtpMode('sign');
       setShowOtpModal(true);
       setShowContractModal(false);
       toast.success('OTP sent to your email.');
@@ -409,6 +411,22 @@ const TenantRequestsPage = () => {
     await triggerOtpFlow(contractId, roomId, signatureDataUrl);
   };
 
+  const handleSignRenewalContract = async (contract) => {
+    try {
+      setSubmittingContract(true);
+      await rentalRequestService.sendRenewalOtp(contract.contractId || contract.contract_id);
+      setPendingContractId(contract.contractId || contract.contract_id);
+      setOtpCode('');
+      setOtpMode('renew');
+      setShowOtpModal(true);
+      toast.success('Mã OTP đã được gửi đến email của bạn để ký gia hạn.');
+    } catch (err) {
+      toast.error('Gửi OTP thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmittingContract(false);
+    }
+  };
+
   const handleVerifyOtpAndSign = async () => {
     if (!otpCode || otpCode.length !== 6) {
       toast.error('Please enter a valid 6-digit OTP.');
@@ -416,6 +434,15 @@ const TenantRequestsPage = () => {
     }
     try {
       setSubmittingContract(true);
+      
+      if (otpMode === 'renew') {
+        await rentalRequestService.signRenewal(pendingContractId, { otp: otpCode });
+        setShowOtpModal(false);
+        toast.success('Hợp đồng gia hạn đã được ký và kích hoạt thành công!');
+        fetchContracts();
+        return;
+      }
+
       // Generate PDF
       const element = document.querySelector('.contract-document-wrapper') || document.querySelector('.contract-modal-container');
       let pdfBase64 = '';
@@ -1040,30 +1067,35 @@ const TenantRequestsPage = () => {
                           </button>
                           {contract.status === 'active' && !contract.is_renewed && contract.renewalStatus !== 'declined' && contract.renewal_status !== 'declined' && (
                             <>
-                              <button
-                                onClick={() => handleRenewContract(contract)}
-                                style={{
-                                  display: 'flex', alignItems: 'center', gap: '6px',
-                                  padding: '6px 12px', background: '#059669', 
-                                  border: 'none',
-                                  borderRadius: '6px', color: 'white', 
-                                  fontSize: '13px', cursor: 'pointer', fontWeight: 500
-                                }}
-                              >
-                                <FileText size={14} /> Gia hạn
-                              </button>
-                              <button
-                                onClick={() => handleDeclineRenewal(contract)}
-                                style={{
-                                  display: 'flex', alignItems: 'center', gap: '6px',
-                                  padding: '6px 12px', background: '#dc2626', 
-                                  border: 'none',
-                                  borderRadius: '6px', color: 'white', 
-                                  fontSize: '13px', cursor: 'pointer', fontWeight: 500
-                                }}
-                              >
-                                <X size={14} /> Không gia hạn
-                              </button>
+                              {(!contract.renewalRequest || contract.renewalRequest.status === 'PENDING_INTENT') && (
+                                <>
+                                  <button
+                                    onClick={() => handleRenewContract(contract)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#059669', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                                  >
+                                    <FileText size={14} /> Gia hạn
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeclineRenewal(contract)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#dc2626', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                                  >
+                                    <X size={14} /> Không gia hạn
+                                  </button>
+                                </>
+                              )}
+                              {contract.renewalRequest?.status === 'PENDING_LANDLORD' && (
+                                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <Clock size={14}/> Đang chờ chủ nhà duyệt
+                                </span>
+                              )}
+                              {contract.renewalRequest?.status === 'WAITING_TENANT_SIGN' && (
+                                <button
+                                  onClick={() => handleSignRenewalContract(contract)}
+                                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#2563eb', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                                >
+                                  <FileSignature size={14} /> Ký HĐ Gia Hạn
+                                </button>
+                              )}
                             </>
                           )}
                           {contract.status === 'pending_payment' && (

@@ -112,9 +112,9 @@ const aiController = {
 
       // 1. Classify search query
       const classification = await IntentClassifier.classify(query);
-      const { intent, subIntent, searchCriteria } = classification;
+      const { intent, subIntent, language, searchCriteria } = classification;
 
-      console.log(`[AI Search] Query: "${query}" | Intent: ${intent} | SubIntent: ${subIntent} | Criteria:`, JSON.stringify(searchCriteria));
+      console.log(`[AI Search] Query: "${query}" | Intent: ${intent} | SubIntent: ${subIntent} | Lang: ${language} | Criteria:`, JSON.stringify(searchCriteria));
 
       const hasSearchCriteria = !!(
         searchCriteria && (
@@ -125,6 +125,7 @@ const aiController = {
           searchCriteria.maxOccupants ||
           searchCriteria.minArea ||
           searchCriteria.keyword ||
+          searchCriteria.status ||
           (searchCriteria.facilities && searchCriteria.facilities.length > 0) ||
           (searchCriteria.nearbyFacilities && searchCriteria.nearbyFacilities.length > 0)
         )
@@ -142,17 +143,35 @@ const aiController = {
         // 3. Generate a friendly summary
         let aiSummary = '';
         if (totalCount === 0) {
-          aiSummary = 'Em xin lỗi vì không tìm thấy phòng trọ nào phù hợp với yêu cầu của bạn. Bạn hãy thử điều chỉnh lại bộ lọc (như chọn khoảng giá khác, thay đổi khu vực...) hoặc nhập mô tả rõ ràng hơn nhé!';
+          // Smart no-result handling: use LLM to explain and suggest alternatives
+          try {
+            if (groqApiKey !== 'dummy_key') {
+              const noResultPrompt = PromptBuilder.buildNoResultPrompt(query, searchCriteria, language);
+              aiSummary = await GroqService.chatCompletion([{ role: 'user', content: noResultPrompt }], { temperature: 0.3 });
+            } else {
+              aiSummary = language === 'en'
+                ? 'Sorry, no rooms were found matching your criteria. Try adjusting your filters.'
+                : 'Em xin lỗi vì không tìm thấy phòng trọ nào phù hợp với yêu cầu của bạn. Bạn hãy thử điều chỉnh lại bộ lọc nhé!';
+            }
+          } catch (e) {
+            aiSummary = language === 'en'
+              ? 'Sorry, no rooms were found matching your criteria. Try adjusting your filters.'
+              : 'Em xin lỗi vì không tìm thấy phòng trọ nào phù hợp với yêu cầu của bạn. Bạn hãy thử điều chỉnh lại bộ lọc nhé!';
+          }
         } else {
-          const summaryPrompt = PromptBuilder.buildSearchSummaryPrompt(rooms, query, searchCriteria, totalCount);
+          const summaryPrompt = PromptBuilder.buildSearchSummaryPrompt(rooms, query, searchCriteria, totalCount, language);
           try {
             if (groqApiKey !== 'dummy_key') {
               aiSummary = await GroqService.chatCompletion([{ role: 'user', content: summaryPrompt }], { temperature: 0.3 });
             } else {
-              aiSummary = `Tìm thấy ${totalCount} phòng phù hợp với yêu cầu của bạn tại hệ thống RentWise.`;
+              aiSummary = language === 'en'
+                ? `Found ${totalCount} rooms matching your criteria on RentWise.`
+                : `Tìm thấy ${totalCount} phòng phù hợp với yêu cầu của bạn tại hệ thống RentWise.`;
             }
           } catch (e) {
-            aiSummary = `Tìm thấy ${totalCount} phòng phù hợp với yêu cầu của bạn tại hệ thống RentWise.`;
+            aiSummary = language === 'en'
+              ? `Found ${totalCount} rooms matching your criteria on RentWise.`
+              : `Tìm thấy ${totalCount} phòng phù hợp với yêu cầu của bạn tại hệ thống RentWise.`;
           }
         }
 
@@ -174,6 +193,7 @@ const aiController = {
           })),
           totalMatched: totalCount,
           data: {
+            status: searchCriteria.status || null,
             keyword: searchCriteria.keyword || null,
             city: searchCriteria.city || null,
             district: searchCriteria.district || null,

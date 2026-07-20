@@ -157,7 +157,7 @@ const LandlordDashboard = () => {
   const [showPeriodFilter, setShowPeriodFilter] = useState(false);
   const [filterPeriod, setFilterPeriod] = useState('Last 30 Days');
 
-  const { stats: statsData, recentActivity, revenueChart, loading, error } = useLandlordStats(filterPeriod);
+  const { stats: statsData, recentActivity, revenueChart, expiringSummary, loading, error } = useLandlordStats(filterPeriod);
 
   // Stats matching Figma design precisely
   const stats = [
@@ -409,6 +409,115 @@ const LandlordDashboard = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Contract Expiration & Vacancy Tracking */}
+      <div className="dashboard-main-layout-row" style={{ marginTop: '24px' }}>
+        
+        {/* Left Column: Upcoming Contract Expirations */}
+        <div className="dashboard-chart-card" style={{ flex: 1 }}>
+          <div className="dashboard-chart-header">
+            <div className="dashboard-chart-title-block">
+              <h3 className="chart-card-title">Phòng sắp hết hạn thuê</h3>
+              <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Hợp đồng còn ≤ 30 ngày và đang chờ xử lý gia hạn</p>
+            </div>
+          </div>
+          <div style={{ marginTop: '16px', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Phòng</th>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Khách thuê</th>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Ngày hết hạn</th>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expiringSummary?.upcomingExpirations?.length > 0 ? (
+                  expiringSummary.upcomingExpirations.map((item, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '12px 8px', fontWeight: 500, color: '#0f172a' }}>{item.roomTitle}</td>
+                      <td style={{ padding: '12px 8px', color: '#334155' }}>{item.tenantName}</td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <span style={{ color: '#334155', display: 'block' }}>{new Date(item.endDate).toLocaleDateString('vi-VN')}</span>
+                        <span style={{ fontSize: '12px', color: item.daysLeft <= 10 ? '#ef4444' : '#f59e0b', fontWeight: 500 }}>
+                          Còn {item.daysLeft} ngày
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <span style={{ 
+                          padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 500,
+                          background: item.requestStatus === 'WAITING_TENANT_SIGN' ? '#dbeafe' : 
+                                      item.requestStatus === 'PENDING_LANDLORD' ? '#fef3c7' : '#f1f5f9',
+                          color: item.requestStatus === 'WAITING_TENANT_SIGN' ? '#1e40af' : 
+                                 item.requestStatus === 'PENDING_LANDLORD' ? '#92400e' : '#475569'
+                        }}>
+                          {item.requestStatus === 'PENDING_INTENT' ? 'Chờ Khách Phản Hồi' : 
+                           item.requestStatus === 'PENDING_LANDLORD' ? 'Chờ Bạn Duyệt' : 
+                           item.requestStatus === 'WAITING_TENANT_SIGN' ? 'Chờ Khách Ký' : 'Chưa Rõ'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                      Không có phòng nào sắp hết hạn.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Right Column: Upcoming Vacancies */}
+        <div className="dashboard-chart-card" style={{ flex: 1 }}>
+          <div className="dashboard-chart-header">
+            <div className="dashboard-chart-title-block">
+              <h3 className="chart-card-title">Phòng sắp trống</h3>
+              <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Khách từ chối gia hạn hoặc quá hạn xử lý</p>
+            </div>
+          </div>
+          <div style={{ marginTop: '16px', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Phòng</th>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Ngày trống</th>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Lý do</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expiringSummary?.upcomingVacancies?.length > 0 ? (
+                  expiringSummary.upcomingVacancies.map((item, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '12px 8px', fontWeight: 500, color: '#0f172a' }}>{item.roomTitle}</td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <span style={{ color: '#334155', display: 'block' }}>{new Date(item.endDate).toLocaleDateString('vi-VN')}</span>
+                        <span style={{ fontSize: '12px', color: '#ef4444', fontWeight: 500 }}>
+                          {item.daysLeft > 0 ? `Còn ${item.daysLeft} ngày` : 'Đã trống'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <span style={{ color: '#475569' }}>
+                          {item.reason === 'Tenant Declined' ? 'Khách từ chối' : 
+                           item.reason === 'Landlord Declined' ? 'Bạn từ chối' : 'Quá hạn / Hủy'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                      Chưa có phòng nào sắp trống.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
     </div>

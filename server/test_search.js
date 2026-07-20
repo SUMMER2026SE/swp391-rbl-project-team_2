@@ -1,22 +1,12 @@
-const { Sequelize } = require('sequelize');
-const { Room, sequelize } = require('./src/models');
-
-async function testSearch() {
-  const keyword = "da nang";
+const axios = require('axios');
+async function run() {
   try {
-    const rooms = await Room.findAll({
-      where: sequelize.where(
-        sequelize.col('title'),
-        'LIKE',
-        sequelize.literal(`${sequelize.escape('%' + keyword + '%')} COLLATE SQL_Latin1_General_CP1_CI_AI`)
-      ),
-      limit: 1,
-      logging: console.log
-    });
-    console.log("Success! Found:", rooms.length);
-  } catch (err) {
-    console.error("Error:", err.message);
+    const res = await axios.get('http://localhost:5000/api/listings/properties/search?page=1&limit=9&sort=newest');
+    const properties = res.data.data;
+    const khaProperty = properties.find(p => p.title.includes('Kha'));
+    console.log(JSON.stringify(khaProperty, null, 2));
+  } catch(e) {
+    console.log(e);
   }
 }
-
-testSearch();
+run();

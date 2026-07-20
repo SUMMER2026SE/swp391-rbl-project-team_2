@@ -11,6 +11,7 @@ const facilityController = require('../controllers/facilityController');
 const rentalRequestController = require('../controllers/rentalRequestController');
 const paymentController = require('../controllers/paymentController');
 const contractController = require('../controllers/contractController');
+const contractRenewalController = require('../controllers/contractRenewalController');
 const viewingScheduleController = require('../controllers/viewingScheduleController');
 const { runContractRenewalCheck } = require('../cron/contractRenewalJob');
 
@@ -110,6 +111,7 @@ router.get('/dashboard/statistics', dashboardController.getDashboardStatistics);
 router.get('/dashboard/recent-activity', dashboardController.getRecentActivity);
 router.get('/dashboard/revenue-chart', dashboardController.getRevenueChart);
 router.get('/dashboard/room-status', dashboardController.getRoomStatusDistribution);
+router.get('/dashboard/expiring-summary', dashboardController.getExpiringSummary);
 
 // =========================================================
 // PROPERTY ROUTES (Multi-property management)
@@ -172,7 +174,8 @@ router.post('/contracts', contractController.createContract);
 router.get('/contracts', contractController.getLandlordContracts);
 router.get('/contracts/:contractId', contractController.getContractDetails);
 router.put('/contracts/:contractId', contractController.updateContract);
-router.put('/contracts/:contractId/approve-renewal', contractController.approveRenewal);
+router.put('/renewal-requests/:requestId/approve', contractRenewalController.landlordApproveRenewal);
+router.put('/renewal-requests/:requestId/decline', contractRenewalController.landlordDeclineRenewal);
 router.post('/contracts/:contractId/renew', contractController.renewContract);
 router.put('/contracts/:contractId/terminate', contractController.terminateContract);
 

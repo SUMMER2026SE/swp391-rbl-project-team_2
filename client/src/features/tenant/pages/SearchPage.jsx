@@ -101,6 +101,7 @@ const SearchPage = () => {
   const [maxArea, setMaxArea] = useState(searchParams.get('maxArea') || '');
 
   const [maxOccupants, setMaxOccupants] = useState(searchParams.get('maxOccupants') || '');
+  const [status, setStatus] = useState(searchParams.get('status') || '');
   const [facilities, setFacilities] = useState(searchParams.get('facilities') ? searchParams.get('facilities').split(',') : []);
   const [nearbyFacilities, setNearbyFacilities] = useState(searchParams.get('nearbyFacilities') ? searchParams.get('nearbyFacilities').split(',') : []);
   const [landlordId, setLandlordId] = useState(searchParams.get('landlordId') || '');
@@ -173,6 +174,7 @@ const SearchPage = () => {
     if (maxPrice) params.maxPrice = maxPrice;
     if (minArea) params.minArea = minArea;
     if (maxArea) params.maxArea = maxArea;
+    if (status) params.status = status;
 
     if (maxOccupants) params.maxOccupants = maxOccupants;
     if (facilities.length > 0) params.facilities = facilities.join(',');
@@ -181,7 +183,7 @@ const SearchPage = () => {
     if (landlordId) params.landlordId = landlordId;
 
     return params;
-  }, [keyword, city, district, minPrice, maxPrice, minArea, maxArea, maxOccupants, facilities, nearbyFacilities, sort, landlordId]);
+  }, [keyword, city, district, minPrice, maxPrice, minArea, maxArea, maxOccupants, facilities, nearbyFacilities, sort, landlordId, status]);
 
   const updateUrlParams = useCallback((params) => {
     const searchObj = {};
@@ -211,6 +213,7 @@ const SearchPage = () => {
         maxPrice: prop.maxPrice,
         totalRooms: prop.totalRooms,
         availableRooms: prop.availableRooms,
+        preBookableRooms: prop.preBookableRooms,
       }));
 
       if (!append) {
@@ -244,15 +247,19 @@ const SearchPage = () => {
     if (isAIMode) {
       if (!searchInput.trim()) return;
       
+      // Detect language from user input for loading messages
+      const isVietnameseInput = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(searchInput)
+        || !/^[a-zA-Z0-9\s.,!?'"\-]+$/.test(searchInput);
+      
       setLoadingAI(true);
-      setAiLoadingMessage('AI đang phân tích yêu cầu...');
+      setAiLoadingMessage(isVietnameseInput ? 'AI đang phân tích yêu cầu...' : 'AI is analyzing your request...');
       
       try {
         const response = await api.post('/ai/search', { query: searchInput });
         
         if (response.success) {
           if (response.switchToChatbot) {
-            setAiLoadingMessage('Đang chuyển sang Chatbot AI...');
+            setAiLoadingMessage(isVietnameseInput ? 'Đang chuyển sang Chatbot AI...' : 'Switching to AI Chatbot...');
             setTimeout(() => {
               window.dispatchEvent(new CustomEvent('inject-ai-message', {
                 detail: { query: searchInput, reply: response.reply }
@@ -261,7 +268,7 @@ const SearchPage = () => {
               setAiOverview('');
             }, 800);
           } else {
-            setAiLoadingMessage('Đã tìm thấy bộ lọc phù hợp!');
+            setAiLoadingMessage(isVietnameseInput ? 'Đã tìm thấy bộ lọc phù hợp!' : 'Found matching filters!');
             const data = response.data || {};
             
             // Cập nhật local filter states
@@ -339,6 +346,7 @@ const SearchPage = () => {
             }
             if (matchedCity !== undefined) setCity(matchedCity);
             if (data.district !== undefined) setDistrict(data.district || '');
+            if (data.status !== undefined) setStatus(data.status || '');
             
             if (data.priceMin !== undefined || data.priceMax !== undefined) {
               setMinPrice(data.priceMin || '');
@@ -358,6 +366,7 @@ const SearchPage = () => {
             if (data.keyword) params.append('keyword', data.keyword);
             if (matchedCity) params.append('city', matchedCity);
             if (data.district) params.append('district', data.district);
+            if (data.status) params.append('status', data.status);
             if (data.priceMin) params.append('minPrice', data.priceMin);
             if (data.priceMax) params.append('maxPrice', data.priceMax);
             
@@ -421,7 +430,7 @@ const SearchPage = () => {
 
     return () => clearTimeout(debounceRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyword, city, district, minPrice, maxPrice, minArea, maxArea, maxOccupants, facilities, nearbyFacilities, sort, landlordId]);
+  }, [keyword, city, district, minPrice, maxPrice, minArea, maxArea, maxOccupants, facilities, nearbyFacilities, sort, landlordId, status]);
 
   const handleReset = () => {
     setKeyword('');
@@ -432,6 +441,7 @@ const SearchPage = () => {
     setMaxPrice('');
     setMinArea('');
     setMaxArea('');
+    setStatus('');
 
     setMaxOccupants('');
     setFacilities([]);

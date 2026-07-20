@@ -569,6 +569,21 @@
   margin-left: 0;
 }
 
+.status-badge.rented {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.status-badge.prebookable {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.status-badge.occupied {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
 /* Sidebar Specifications Row */
 .booking-info-row {
   display: flex;

@@ -32,6 +32,16 @@ export const landlordService = {
     }
   },
 
+  getExpiringSummary: async () => {
+    try {
+      const response = await httpClient.get('/landlord/dashboard/expiring-summary');
+      return response;
+    } catch (error) {
+      console.error('Error fetching expiring summary:', error);
+      throw error;
+    }
+  },
+
   // ===== PROPERTIES MANAGEMENT =====
   getPropertyDetails: async (propertyId) => {
     try {
@@ -363,10 +373,20 @@ export const landlordService = {
 
   approveRenewal: async (id, data) => {
     try {
-      const response = await httpClient.put(`/landlord/contracts/${id}/approve-renewal`, data);
+      const response = await httpClient.put(`/landlord/renewal-requests/${id}/approve`, data);
       return response;
     } catch (error) {
       console.error('Error approving renewal contract:', error);
+      throw error;
+    }
+  },
+
+  declineRenewal: async (id) => {
+    try {
+      const response = await httpClient.put(`/landlord/renewal-requests/${id}/decline`);
+      return response;
+    } catch (error) {
+      console.error('Error declining renewal contract:', error);
       throw error;
     }
   },

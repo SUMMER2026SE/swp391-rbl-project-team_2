@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Room, Contract, Payment, RentalRequest, Complaint, Notification, ViewingSchedule } = require('../models');
+const { Room, Contract, Payment, RentalRequest, Complaint, Notification, ViewingSchedule, RenewalRequest } = require('../models');
 
 // =========================================================
 // GET /api/landlord/dashboard/statistics
@@ -298,9 +298,87 @@ const getRoomStatusDistribution = async (req, res, next) => {
   }
 };
 
+// =========================================================
+// GET /api/landlord/dashboard/expiring-summary
+// Get expiring contracts and upcoming vacancies
+// =========================================================
+const getExpiringSummary = async (req, res, next) => {
+  try {
+    const landlordId = req.user.userId;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const targetDate = new Date(today);
+    targetDate.setDate(targetDate.getDate() + 60);
+    targetDate.setHours(23, 59, 59, 999);
+
+    const activeContracts = await Contract.findAll({
+      where: {
+        landlord_id: landlordId,
+        status: 'active',
+        end_date: {
+          [Op.lte]: targetDate,
+        }
+      },
+      include: [
+        { model: Room, as: 'room', attributes: ['room_id', 'room_number', 'title'] },
+        { model: RenewalRequest, as: 'renewalRequests', order: [['created_at', 'DESC']], limit: 1 }
+      ],
+      order: [['end_date', 'ASC']]
+    });
+
+    const upcomingExpirations = [];
+    const upcomingVacancies = [];
+
+    activeContracts.forEach(contract => {
+      const renewalReq = contract.renewalRequests && contract.renewalRequests.length > 0 ? contract.renewalRequests[0] : null;
+      const daysLeft = Math.ceil((new Date(contract.end_date) - new Date()) / (1000 * 60 * 60 * 24));
+
+      const contractData = {
+        contractId: contract.contract_id,
+        roomId: contract.room_id,
+        roomTitle: contract.room?.title || `Room ${contract.room?.room_number}`,
+        tenantName: contract.tenant_name,
+        endDate: contract.end_date,
+        daysLeft,
+        renewalStatus: contract.renewal_status,
+        requestStatus: renewalReq ? renewalReq.status : null,
+      };
+
+      if (contract.is_renewed === true || contract.renewal_status === 'renewed' || (renewalReq && renewalReq.status === 'COMPLETED')) {
+        // Already successfully renewed, do nothing
+      } else if (contract.renewal_status === 'declined' || (renewalReq && (renewalReq.status === 'EXPIRED' || renewalReq.status === 'REJECTED'))) {
+        // Tenant declined, expired, or landlord rejected
+        upcomingVacancies.push({
+          ...contractData,
+          reason: contract.renewal_status === 'declined' ? 'Tenant Declined' 
+                 : renewalReq?.status === 'REJECTED' ? 'Landlord Declined' : 'Expired (T-30)'
+        });
+      } else {
+        // Still in process
+        upcomingExpirations.push(contractData);
+      }
+    });
+
+    console.log("Expiring summary response:", JSON.stringify({ upcomingExpirations, upcomingVacancies }, null, 2));
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        upcomingExpirations,
+        upcomingVacancies
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDashboardStatistics,
   getRecentActivity,
   getRevenueChart,
   getRoomStatusDistribution,
+  getExpiringSummary
 };

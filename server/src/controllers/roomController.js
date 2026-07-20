@@ -1055,8 +1055,9 @@ const searchProperties = async (req, res, next) => {
        group.totalRooms += qty;
        if (room.status === 'available') {
            group.availableRooms += availQty;
-       } else if (room.status === 'rented' && room.available_from) {
-           group.preBookableRooms += availQty;
+       } 
+       if (room.status === 'rented' && room.available_from) {
+           group.preBookableRooms += 1;
        }
        group.rooms.push({
            roomId: room.room_id,

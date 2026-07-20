@@ -1,20 +1,25 @@
 const cron = require('node-cron');
 const { Op } = require('sequelize');
-const { Contract, Room, User, Notification } = require('../models');
+const { Contract, Room, User, Notification, RenewalRequest } = require('../models');
 
 const runContractRenewalCheck = async () => {
+  console.log('Running daily cron job: Checking for contract renewals (60-30-10 rules)...');
+  await checkT60Renewals();
+  await checkT30Renewals();
+  await checkT10Renewals();
+  await runFutureContractTransitions();
+  console.log('Daily cron job finished successfully.');
+};
+
+const checkT60Renewals = async () => {
   try {
-    console.log('Running daily cron job: Checking for contracts expiring in 15 days...');
-    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const targetDate = new Date(today);
-    targetDate.setDate(targetDate.getDate() + 15);
+    targetDate.setDate(targetDate.getDate() + 60); // T-60
     
     const startOfTargetDate = new Date(targetDate);
     startOfTargetDate.setHours(0, 0, 0, 0);
-    
     const endOfTargetDate = new Date(targetDate);
     endOfTargetDate.setHours(23, 59, 59, 999);
 
@@ -28,15 +33,25 @@ const runContractRenewalCheck = async () => {
       },
       include: [
         { model: Room, as: 'room' },
-        { model: User, as: 'tenant' },
       ],
     });
 
-    console.log(`Found ${expiringContracts.length} contracts expiring in 15 days.`);
-
     for (const contract of expiringContracts) {
-      const message = `Hợp đồng phòng "${contract.room?.title || contract.room_id}" của bạn sẽ hết hạn sau 15 ngày nữa (${contract.end_date.toLocaleDateString('vi-VN')}). Bạn có muốn gia hạn hợp đồng không? Hãy vào mục Hợp đồng để yêu cầu gia hạn.`;
+      // Check if request already exists
+      const existingReq = await RenewalRequest.findOne({ where: { contract_id: contract.contract_id } });
+      if (existingReq) continue;
 
+      // Create new PENDING_INTENT request
+      await RenewalRequest.create({
+        contract_id: contract.contract_id,
+        tenant_id: contract.tenant_id,
+        landlord_id: contract.landlord_id,
+        requested_duration_months: 0,
+        status: 'PENDING_INTENT'
+      });
+
+      const message = `Hợp đồng phòng "${contract.room?.room_number || contract.room_id}" của bạn sẽ hết hạn sau 60 ngày nữa (${contract.end_date.toLocaleDateString('vi-VN')}). Bạn có muốn gia hạn hợp đồng không? Vui lòng xác nhận trước 30 ngày.`;
+      
       const notification = await Notification.create({
         user_id: contract.tenant_id,
         title: 'Sắp hết hạn hợp đồng',
@@ -55,14 +70,125 @@ const runContractRenewalCheck = async () => {
           createdAt: notification.created_at
         });
       }
-
     }
-
-    await runFutureContractTransitions();
-
-    console.log('Daily cron job finished successfully.');
   } catch (error) {
-    console.error('Error running checkExpiringContracts cron job:', error);
+    console.error('Error in checkT60Renewals:', error);
+  }
+};
+
+const checkT30Renewals = async () => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const targetDate = new Date(today);
+    targetDate.setDate(targetDate.getDate() + 30); // T-30
+
+    const startOfTargetDate = new Date(targetDate);
+    startOfTargetDate.setHours(0, 0, 0, 0);
+    const endOfTargetDate = new Date(targetDate);
+    endOfTargetDate.setHours(23, 59, 59, 999);
+
+    const pendingRequests = await RenewalRequest.findAll({
+      where: { status: 'PENDING_INTENT' },
+      include: [{
+        model: Contract, as: 'contract',
+        where: {
+          status: 'active',
+          end_date: {
+            [Op.between]: [startOfTargetDate, endOfTargetDate],
+          }
+        },
+        include: [{ model: Room, as: 'room' }]
+      }]
+    });
+
+    for (const req of pendingRequests) {
+      await req.update({ status: 'EXPIRED' });
+      
+      const contract = req.contract;
+      const room = contract.room;
+      
+      if (room) {
+        await room.update({ available_from: contract.end_date });
+      }
+
+      await Notification.create({
+        user_id: contract.landlord_id,
+        title: 'Tenant không phản hồi gia hạn',
+        message: `Tenant phòng "${room?.room_number || contract.room_id}" không phản hồi gia hạn. Phòng sẽ trống vào ngày ${contract.end_date.toLocaleDateString('vi-VN')}.`,
+        notification_type: 'renewal_failed',
+        related_id: contract.contract_id,
+      });
+      await Notification.create({
+        user_id: contract.tenant_id,
+        title: 'Hết hạn yêu cầu gia hạn',
+        message: `Bạn đã không phản hồi yêu cầu gia hạn phòng "${room?.room_number || contract.room_id}". Hợp đồng sẽ không được gia hạn.`,
+        notification_type: 'renewal_failed',
+        related_id: contract.contract_id,
+      });
+    }
+  } catch (error) {
+    console.error('Error in checkT30Renewals:', error);
+  }
+};
+
+const checkT10Renewals = async () => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const targetDate = new Date(today);
+    targetDate.setDate(targetDate.getDate() + 10); // T-10
+
+    const startOfTargetDate = new Date(targetDate);
+    startOfTargetDate.setHours(0, 0, 0, 0);
+    const endOfTargetDate = new Date(targetDate);
+    endOfTargetDate.setHours(23, 59, 59, 999);
+
+    const pendingRequests = await RenewalRequest.findAll({
+      where: { 
+        status: {
+          [Op.in]: ['PENDING_LANDLORD', 'WAITING_TENANT_SIGN']
+        }
+      },
+      include: [{
+        model: Contract, as: 'contract',
+        where: {
+          status: 'active',
+          end_date: {
+            [Op.between]: [startOfTargetDate, endOfTargetDate],
+          }
+        },
+        include: [{ model: Room, as: 'room' }]
+      }]
+    });
+
+    for (const req of pendingRequests) {
+      await req.update({ status: 'EXPIRED' });
+      
+      const contract = req.contract;
+      const room = contract.room;
+      
+      if (room) {
+        await room.update({ available_from: contract.end_date });
+      }
+
+      await Notification.create({
+        user_id: contract.landlord_id,
+        title: 'Hủy gia hạn hợp đồng',
+        message: `Quá hạn ký kết gia hạn phòng "${room?.room_number || contract.room_id}". Quá trình gia hạn bị hủy.`,
+        notification_type: 'renewal_failed',
+        related_id: contract.contract_id,
+      });
+      await Notification.create({
+        user_id: contract.tenant_id,
+        title: 'Hủy gia hạn hợp đồng',
+        message: `Quá hạn chốt hợp đồng gia hạn phòng "${room?.room_number || contract.room_id}". Quá trình gia hạn bị hủy.`,
+        notification_type: 'renewal_failed',
+        related_id: contract.contract_id,
+      });
+    }
+  } catch (error) {
+    console.error('Error in checkT10Renewals:', error);
   }
 };
 

@@ -232,6 +232,40 @@ const initDatabase = async () => {
         END
       `);
 
+      // Add upcoming_vacancy_date to rooms table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'upcoming_vacancy_date')
+        BEGIN
+            ALTER TABLE rooms ADD upcoming_vacancy_date DATE NULL;
+        END
+      `);
+
+      // Create contract_renewal_requests table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'contract_renewal_requests')
+        BEGIN
+            CREATE TABLE contract_renewal_requests (
+                id INT IDENTITY PRIMARY KEY,
+                contract_id INT NOT NULL,
+                tenant_id INT NOT NULL,
+                landlord_id INT NOT NULL,
+                requested_duration_months INT NOT NULL,
+                proposed_new_rent DECIMAL(10, 2) NULL,
+                additional_terms NVARCHAR(MAX) NULL,
+                landlord_signed_at DATETIME NULL,
+                tenant_signed_at DATETIME NULL,
+                status VARCHAR(50) DEFAULT 'PENDING_INTENT' NOT NULL,
+                new_contract_id INT NULL,
+                deadline_to_sign DATETIME NULL,
+                created_at DATETIME DEFAULT GETDATE(),
+                updated_at DATETIME DEFAULT GETDATE(),
+                FOREIGN KEY (contract_id) REFERENCES contracts(contract_id),
+                FOREIGN KEY (tenant_id) REFERENCES users(user_id),
+                FOREIGN KEY (landlord_id) REFERENCES users(user_id)
+            );
+        END
+      `);
+
       console.log('✅ Applied schema migrations');
     } catch (err) {
       console.warn('⚠️ Could not apply schema migrations:', err.message);
