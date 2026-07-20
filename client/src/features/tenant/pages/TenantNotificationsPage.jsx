@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Home, CreditCard, Wrench, Clipboard, CheckCircle, Bell, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './TenantNotificationsPage.css';
@@ -8,6 +9,7 @@ import httpClient from '../../../services/httpClient';
 
 const TenantNotificationsPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [activeFilter, setActiveFilter] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -102,6 +104,20 @@ const TenantNotificationsPage = () => {
     }
   };
 
+  const handleNotificationClick = async (notif) => {
+    if (notif.isUnread) {
+      await handleToggleRead(notif.id, true);
+    }
+    const titleStr = (notif.title || '').toLowerCase();
+    const descStr = (notif.description || '').toLowerCase();
+
+    if (titleStr.includes('chấm dứt') || descStr.includes('chấm dứt')) {
+      navigate('/tenant/requests', { state: { activeTab: 'terminations' } });
+    } else {
+      navigate('/tenant/requests');
+    }
+  };
+
   const filteredNotifications = notifications.filter(n => {
     if (activeFilter === 'All') return true;
     return n.category === activeFilter;
@@ -141,7 +157,7 @@ const TenantNotificationsPage = () => {
               <div
                 key={notif.id}
                 className={`notification-row-item ${notif.isUnread ? 'unread' : 'read'} ${index > 0 ? 'with-top-border' : ''}`}
-                onClick={() => handleToggleRead(notif.id, notif.isUnread)}
+                onClick={() => handleNotificationClick(notif)}
               >
                 {/* Icon Column */}
                 <div className="notification-icon-col">

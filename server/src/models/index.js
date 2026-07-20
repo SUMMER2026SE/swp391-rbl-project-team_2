@@ -19,6 +19,8 @@ const Booking = require('./Booking');
 const Favorite = require('./Favorite');
 const UserBankDetail = require('./UserBankDetail');
 const WithdrawalRequest = require('./WithdrawalRequest');
+const TerminationRequest = require('./TerminationRequest');
+const TerminationRecord = require('./TerminationRecord');
 
 // =========================================================
 // ASSOCIATIONS - Only define if not already defined
@@ -182,6 +184,26 @@ const defineAssociations = () => {
   // Payment <-> WithdrawalRequest
   WithdrawalRequest.hasMany(Payment, { foreignKey: 'withdrawal_id', as: 'payments' });
   Payment.belongsTo(WithdrawalRequest, { foreignKey: 'withdrawal_id', as: 'withdrawal' });
+
+  // Contract <-> TerminationRequest
+  Contract.hasMany(TerminationRequest, { foreignKey: 'contract_id', as: 'terminationRequests' });
+  TerminationRequest.belongsTo(Contract, { foreignKey: 'contract_id', as: 'contract' });
+
+  // User <-> TerminationRequest (requester)
+  User.hasMany(TerminationRequest, { foreignKey: 'requested_by', as: 'terminationRequestsCreated' });
+  TerminationRequest.belongsTo(User, { foreignKey: 'requested_by', as: 'requester' });
+
+  // User <-> TerminationRequest (reviewer)
+  User.hasMany(TerminationRequest, { foreignKey: 'reviewed_by', as: 'terminationRequestsReviewed' });
+  TerminationRequest.belongsTo(User, { foreignKey: 'reviewed_by', as: 'reviewer' });
+
+  // Contract <-> TerminationRecord
+  Contract.hasMany(TerminationRecord, { foreignKey: 'contract_id', as: 'terminationRecords' });
+  TerminationRecord.belongsTo(Contract, { foreignKey: 'contract_id', as: 'contract' });
+
+  // TerminationRequest <-> TerminationRecord
+  TerminationRequest.hasOne(TerminationRecord, { foreignKey: 'request_id', as: 'record' });
+  TerminationRecord.belongsTo(TerminationRequest, { foreignKey: 'request_id', as: 'request' });
 };
 
 module.exports = {
@@ -206,9 +228,12 @@ module.exports = {
   Favorite,
   UserBankDetail,
   WithdrawalRequest,
+  TerminationRequest,
+  TerminationRecord,
   defineAssociations,
 };
 
 // Automatically define associations once models are loaded
 defineAssociations();
+
 

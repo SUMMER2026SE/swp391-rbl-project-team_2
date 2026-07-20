@@ -144,6 +144,7 @@ CREATE TABLE [dbo].[contracts](
 	[monthly_rent] [decimal](10, 2) NOT NULL,
 	[deposit_amount] [decimal](10, 2) NULL,
 	[status] [varchar](50) NULL,
+	[renewal_status] [varchar](50) DEFAULT 'pending' NULL,
 	[tenant_agreed] [bit] NULL,
 	[terms_and_conditions] [nvarchar](max) NULL,
 	[document_url] [nvarchar](500) NULL,
@@ -233,7 +234,10 @@ CREATE TABLE [dbo].[messages](
 	[message_id] [int] IDENTITY(1,1) NOT NULL,
 	[conversation_id] [int] NOT NULL,
 	[sender_id] [int] NOT NULL,
-	[content] [nvarchar](max) NOT NULL,
+	[content] [nvarchar](max) NULL,
+	[message_type] [varchar](20) DEFAULT 'text' NULL,
+	[file_url] [nvarchar](500) NULL,
+	[file_name] [nvarchar](255) NULL,
 	[is_read] [bit] NULL,
 	[read_at] [datetime] NULL,
 	[created_at] [datetime] NULL,
@@ -437,6 +441,7 @@ CREATE TABLE [dbo].[rooms](
 	[max_occupants] [int] NULL,
 	[status] [varchar](15) NULL,
 	[thumbnail_url] [nvarchar](500) NULL,
+	[available_from] [date] NULL,
 	[rejection_reason] [nvarchar](max) NULL,
 	[is_deleted] [bit] NULL,
 	[updated_at] [datetime] NULL,
@@ -1975,4 +1980,54 @@ INSERT INTO notifications (notification_id, user_id, title, message, notificatio
 (46, 2, N'Listing Approved', N'Good news! Your listing "tfvghfg" has been approved and is now live.', N'system', 69, 0, NULL, '2026-06-29 13:17:20');
 SET IDENTITY_INSERT notifications OFF;
 GO
+
+-- =========================================================
+-- TERMINATION TABLES
+-- =========================================================
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'termination_requests')
+BEGIN
+    CREATE TABLE termination_requests (
+        request_id INT IDENTITY PRIMARY KEY,
+        contract_id INT NOT NULL,
+        requested_by INT NOT NULL,
+        termination_type VARCHAR(50) NOT NULL,
+        reason NVARCHAR(255) NOT NULL,
+        description NVARCHAR(MAX) NULL,
+        evidence_urls NVARCHAR(MAX) NULL,
+        request_date DATETIME DEFAULT GETDATE(),
+        requested_termination_date DATE NOT NULL,
+        is_unilateral BIT DEFAULT 0,
+        status VARCHAR(20) DEFAULT 'PENDING',
+        reviewed_by INT NULL,
+        review_date DATETIME NULL,
+        review_note NVARCHAR(MAX) NULL,
+        created_at DATETIME DEFAULT GETDATE(),
+        updated_at DATETIME DEFAULT GETDATE(),
+        CONSTRAINT FK_termination_requests_contract FOREIGN KEY (contract_id) REFERENCES contracts(contract_id),
+        CONSTRAINT FK_termination_requests_requested_by FOREIGN KEY (requested_by) REFERENCES users(user_id)
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'termination_records')
+BEGIN
+    CREATE TABLE termination_records (
+        termination_id INT IDENTITY PRIMARY KEY,
+        contract_id INT NOT NULL,
+        request_id INT NULL,
+        termination_date DATETIME DEFAULT GETDATE(),
+        final_reason NVARCHAR(MAX) NOT NULL,
+        deposit_refund DECIMAL(10, 2) DEFAULT 0.00,
+        deposit_retained DECIMAL(10, 2) DEFAULT 0.00,
+        remaining_rent DECIMAL(10, 2) DEFAULT 0.00,
+        compensation DECIMAL(10, 2) DEFAULT 0.00,
+        total_payout_to_tenant DECIMAL(10, 2) DEFAULT 0.00,
+        final_note NVARCHAR(MAX) NULL,
+        created_at DATETIME DEFAULT GETDATE(),
+        CONSTRAINT FK_termination_records_contract FOREIGN KEY (contract_id) REFERENCES contracts(contract_id)
+    );
+END
+GO
+
 

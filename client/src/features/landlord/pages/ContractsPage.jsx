@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Search,
@@ -26,11 +26,27 @@ import Badge from '../../../components/ui/Badge';
 import ContractDocument from '../../../components/ContractDocument';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import useAuthStore from '../../../store/useAuthStore';
+import TerminationRequestModal from '../../../components/termination/TerminationRequestModal';
+import TerminationHistoryPage from '../../../components/termination/TerminationHistoryPage';
 import './ContractsPage.css';
 
 const ContractsPage = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(location.search || '');
+    return (params.get('tab') || location.state?.tab) === 'terminations' ? 'terminations' : 'contracts';
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || '');
+    const currentTab = params.get('tab') || location.state?.tab;
+    if (currentTab === 'terminations') {
+      setActiveTab('terminations');
+    }
+  }, [location.search, location.state]);
   const [searchTerm, setSearchTerm] = useState(location.state?.search || '');
   const [statusFilter, setStatusFilter] = useState('All');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -144,6 +160,42 @@ const ContractsPage = () => {
           <Plus size={18} />{t('contracts.newContract', 'New Contract')}</Button>
       </div>
 
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid #e2e8f0', marginBottom: '20px' }}>
+        <button
+          onClick={() => setActiveTab('contracts')}
+          style={{
+            padding: '10px 16px',
+            fontWeight: 600,
+            fontSize: '14px',
+            borderBottom: activeTab === 'contracts' ? '2px solid #2563eb' : '2px solid transparent',
+            color: activeTab === 'contracts' ? '#2563eb' : '#64748b',
+            background: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          Danh sách Hợp đồng
+        </button>
+        <button
+          onClick={() => setActiveTab('terminations')}
+          style={{
+            padding: '10px 16px',
+            fontWeight: 600,
+            fontSize: '14px',
+            borderBottom: activeTab === 'terminations' ? '2px solid #2563eb' : '2px solid transparent',
+            color: activeTab === 'terminations' ? '#2563eb' : '#64748b',
+            background: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          Lịch sử Chấm dứt & Quyết toán
+        </button>
+      </div>
+
+      {activeTab === 'terminations' ? (
+        <TerminationHistoryPage currentUserId={user?.user_id || user?.userId} userRole="Landlord" />
+      ) : (
+        <>
       {/* Error Alert */}
       {error && (
         <div className="alert alert--error">
@@ -543,43 +595,20 @@ const ContractsPage = () => {
         </div>
       )}
 
-      {/* Terminate Modal */}
+      </>
+      )}
+
+      {/* Termination Request Modal */}
       {showTerminateModal && selectedContract && (
-        <div className="modal-backdrop" onClick={() => setShowTerminateModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t('contracts.terminateContract', 'Terminate Contract')}</h3>
-              <button
-                className="modal-close-btn"
-                onClick={() => setShowTerminateModal(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <p className="terminate-info">{t('contracts.pleaseProvideAReasonFor', 'Please provide a reason for terminating this contract.')}</p>
-              <textarea
-                className="terminate-textarea"
-                placeholder={t('contracts.enterTerminationReasonPlaceholder', 'Enter termination reason...')}
-                value={terminateReason}
-                onChange={(e) => setTerminateReason(e.target.value)}
-                rows="5"
-              />
-            </div>
-
-            <div className="modal-footer">
-              <Button
-                variant="secondary"
-                onClick={() => setShowTerminateModal(false)}
-              >{t('contracts.cancel', 'Cancel')}</Button>
-              <Button
-                variant="danger"
-                onClick={handleTerminate}
-              >{t('contracts.terminateContract', 'Terminate Contract')}</Button>
-            </div>
-          </div>
-        </div>
+        <TerminationRequestModal
+          contract={selectedContract}
+          userRole="Landlord"
+          onClose={() => setShowTerminateModal(false)}
+          onSuccess={() => {
+            fetchContracts();
+            toast.success('Đã xử lý yêu cầu chấm dứt hợp đồng!');
+          }}
+        />
       )}
     </div>
   );

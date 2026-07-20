@@ -7,6 +7,7 @@ require('dotenv').config();
 
 let storage;
 let chatStorage;
+let evidenceStorage;
 
 if (process.env.CLOUDINARY_URL) {
   cloudinary.config({
@@ -25,6 +26,14 @@ if (process.env.CLOUDINARY_URL) {
     cloudinary: cloudinary,
     params: {
       folder: 'chat_attachments',
+      resource_type: 'auto',
+    },
+  });
+
+  evidenceStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: 'termination_evidence',
       resource_type: 'auto',
     },
   });
@@ -81,10 +90,13 @@ if (process.env.CLOUDINARY_URL) {
       chatDiskStorage._removeFile(req, file, cb);
     }
   };
+
+  evidenceStorage = chatStorage;
 }
 
 module.exports = {
   cloudinary,
   storage,
   chatStorage,
+  evidenceStorage,
 };

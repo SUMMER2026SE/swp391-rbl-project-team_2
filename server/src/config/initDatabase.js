@@ -232,6 +232,52 @@ const initDatabase = async () => {
         END
       `);
 
+      // Create termination_requests table if not exists
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'termination_requests')
+        BEGIN
+            CREATE TABLE termination_requests (
+                request_id INT IDENTITY PRIMARY KEY,
+                contract_id INT NOT NULL,
+                requested_by INT NOT NULL,
+                termination_type VARCHAR(50) NOT NULL,
+                reason NVARCHAR(255) NOT NULL,
+                description NVARCHAR(MAX) NULL,
+                evidence_urls NVARCHAR(MAX) NULL,
+                request_date DATETIME DEFAULT GETDATE(),
+                requested_termination_date DATE NOT NULL,
+                is_unilateral BIT DEFAULT 0,
+                status VARCHAR(20) DEFAULT 'PENDING',
+                reviewed_by INT NULL,
+                review_date DATETIME NULL,
+                review_note NVARCHAR(MAX) NULL,
+                created_at DATETIME DEFAULT GETDATE(),
+                updated_at DATETIME DEFAULT GETDATE()
+            );
+        END
+      `);
+
+      // Create termination_records table if not exists
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'termination_records')
+        BEGIN
+            CREATE TABLE termination_records (
+                termination_id INT IDENTITY PRIMARY KEY,
+                contract_id INT NOT NULL,
+                request_id INT NULL,
+                termination_date DATETIME DEFAULT GETDATE(),
+                final_reason NVARCHAR(MAX) NOT NULL,
+                deposit_refund DECIMAL(10, 2) DEFAULT 0.00,
+                deposit_retained DECIMAL(10, 2) DEFAULT 0.00,
+                remaining_rent DECIMAL(10, 2) DEFAULT 0.00,
+                compensation DECIMAL(10, 2) DEFAULT 0.00,
+                total_payout_to_tenant DECIMAL(10, 2) DEFAULT 0.00,
+                final_note NVARCHAR(MAX) NULL,
+                created_at DATETIME DEFAULT GETDATE()
+            );
+        END
+      `);
+
       console.log('✅ Applied schema migrations');
     } catch (err) {
       console.warn('⚠️ Could not apply schema migrations:', err.message);
