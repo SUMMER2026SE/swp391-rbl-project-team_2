@@ -890,8 +890,6 @@ const TenantRequestsPage = () => {
                           >
                             <FileText size={14} /> {t('tenantRequests.viewContract', 'View Contract')}
                           </button>
-<<<<<<< Updated upstream
-=======
                           {contract.status === 'active' && !contract.is_renewed && contract.renewalStatus !== 'declined' && contract.renewal_status !== 'declined' && (
                             <>
                               {(!contract.renewalRequest || contract.renewalRequest.status === 'PENDING_INTENT') && (
@@ -957,7 +955,6 @@ const TenantRequestsPage = () => {
                               </button>
                             )
                           )}
->>>>>>> Stashed changes
                           {contract.status === 'pending_payment' && (
                             <button
                               onClick={() => navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${contract.roomId}&contractId=${contract.contractId}`)}
