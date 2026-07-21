@@ -164,8 +164,8 @@ Detail Link: http://localhost:5173/rooms/${r.room_id}`;
     return context;
   }
 
-  static buildSearchSummaryPrompt(rooms, query, searchCriteria, totalCount) {
-    let roomsData = 'Không tìm thấy phòng trọ nào.';
+  static buildSearchSummaryPrompt(rooms, query, searchCriteria, totalCount, language = 'vi') {
+    let roomsData = language === 'vi' ? 'Không tìm thấy phòng trọ nào.' : 'No rooms found.';
     let minPrice = Infinity;
     let maxPrice = -Infinity;
     let minArea = Infinity;
@@ -189,53 +189,96 @@ Detail Link: http://localhost:5173/rooms/${r.room_id}`;
         if (r.district) districts.add(r.district);
 
         const price = r.price_per_month ? Number(r.price_per_month).toLocaleString('vi-VN') : 'N/A';
-        const facilities = r.facilities ? r.facilities.map(f => f.facility_name).join(', ') : 'Không có';
-        return `Phòng ${idx + 1}:
-- Tên: ${r.title}
-- Giá: ${price} VND/tháng
-- Địa chỉ: ${r.address}, ${r.district || ''}, ${r.city}
-- Diện tích: ${r.area_sqm} m²
-- Số người tối đa: ${r.max_occupants}
-- Tiện ích: ${facilities}`;
-      }).join('\n\n');
+        const facilities = r.facilities ? r.facilities.map(f => f.facility_name).join(', ') : 'None';
+        const status = r.status || 'N/A';
+        return `Room ${idx + 1}:
+- Title: ${r.title}
+- Price: ${price} VND/month
+- Address: ${r.address}, ${r.district || ''}, ${r.city}
+- Area: ${r.area_sqm} sqm
+- Max Occupants: ${r.max_occupants}
+- Status: ${status}
+- Facilities: ${facilities}`;
+      }).join('\n\n---\n\n');
     }
 
-    const minPriceStr = minPrice !== Infinity ? (minPrice / 1000000).toLocaleString('vi-VN') + ' triệu' : 'N/A';
-    const maxPriceStr = maxPrice !== -Infinity ? (maxPrice / 1000000).toLocaleString('vi-VN') + ' triệu' : 'N/A';
-    const priceRangeStr = minPrice === maxPrice ? minPriceStr : `${minPriceStr} đến ${maxPriceStr}`;
-
-    const minAreaStr = minArea !== Infinity ? minArea + ' m²' : 'N/A';
-    const maxAreaStr = maxArea !== -Infinity ? maxArea + ' m²' : 'N/A';
-    const areaRangeStr = minArea === maxArea ? minAreaStr : `${minAreaStr} đến ${maxAreaStr}`;
+    const minPriceStr = minPrice !== Infinity ? (minPrice / 1000000).toLocaleString('vi-VN') + (language === 'vi' ? ' triệu' : 'M') : 'N/A';
+    const maxPriceStr = maxPrice !== -Infinity ? (maxPrice / 1000000).toLocaleString('vi-VN') + (language === 'vi' ? ' triệu' : 'M') : 'N/A';
+    const priceRangeStr = minPrice === maxPrice ? minPriceStr : `${minPriceStr} - ${maxPriceStr}`;
 
     const locationsStr = [...districts].join(', ') + (cities.size > 0 ? `, ${[...cities].join(', ')}` : '');
 
-    return `
-Bạn là trợ lý AI thông minh của RentWise. Người dùng vừa tìm kiếm phòng trọ bằng câu hỏi tự nhiên: "${query}".
-Hệ thống của chúng tôi đã truy xuất được ${totalCount} phòng trọ từ cơ sở dữ liệu SQL như dưới đây:
+    const langInstruction = language === 'en'
+      ? 'You MUST respond ENTIRELY in English. Use "I" and "you". Do NOT use Vietnamese.'
+      : 'You MUST respond ENTIRELY in Vietnamese. Xưng "em/mình" và gọi "bạn/anh/chị".';
 
-=== DANH SÁCH PHÒNG TRUY XUẤT ĐƯỢC ===
+    return `
+You are RentWise AI assistant. The user searched for rooms with this query: "${query}".
+The system retrieved ${totalCount} rooms from the SQL database as shown below:
+
+=== ROOMS RETRIEVED ===
 ${roomsData}
 
-=== THÔNG TIN THỐNG KÊ THỰC TẾ (BẮT BUỘC SỬ DỤNG SỐ LIỆU NÀY) ===
-- Số lượng phòng phù hợp: ${totalCount} phòng.
-- Khoảng giá thực tế: ${priceRangeStr} VND/tháng.
-- Khoảng diện tích thực tế: ${areaRangeStr}.
-- Khu vực thực tế: ${locationsStr || 'N/A'}.
+=== REAL STATISTICS (USE THESE EXACT NUMBERS) ===
+- Matching rooms: ${totalCount}
+- Price range: ${priceRangeStr} VND/month
+- Locations: ${locationsStr || 'N/A'}
 
-=== YÊU CẦU ===
-Hãy viết một đoạn TỔNG QUAN TÌM KIẾM CHI TIẾT (AI Overview) bằng chính ngôn ngữ mà người dùng đã sử dụng trong câu hỏi (khoảng 3-5 câu hoặc danh sách gạch đầu dòng ngắn gọn) để tổng hợp các kết quả này cho người dùng.
-Đoạn tổng quan cần nêu rõ:
-1. Số lượng phòng phù hợp tìm thấy.
-2. Khoảng giá dao động thực tế (SỬ DỤNG CHÍNH XÁC: ${priceRangeStr} VND/tháng).
-3. Khu vực phân bố chính (SỬ DỤNG CHÍNH XÁC: ${locationsStr}).
-4. Các đặc điểm tiện ích nổi bật hoặc sự phù hợp của các phòng.
-5. Chỉ ra 1-2 phòng nổi bật nhất để người dùng lưu ý (ví dụ: phòng giá tốt nhất hoặc diện tích rộng nhất).
+=== INSTRUCTIONS ===
+Write a brief AI Overview (3-5 bullet points) summarizing the search results.
+Mention:
+1. Number of matching rooms found.
+2. Actual price range (USE EXACTLY: ${priceRangeStr} VND/month).
+3. Main locations (USE EXACTLY: ${locationsStr}).
+4. Notable amenities or features.
 
-CHÚ Ý: 
-- Trình bày đẹp mắt, chuyên nghiệp theo phong cách "Google AI Overview". Sử dụng các định dạng gạch đầu dòng, chữ đậm (bold) và icon/emoji phù hợp để người dùng dễ theo dõi.
-- Không được bịa đặt bất kỳ thông tin nào ngoài danh sách phòng được cung cấp ở trên.
-- Phản hồi bằng chính ngôn ngữ mà người dùng đã sử dụng ("${query}"). Nếu tiếng Việt thì xưng "em/mình" và gọi "bạn/anh/chị". Nếu tiếng Anh thì dùng "I/you".
+Formatting: Use bullet points with bold text and emoji for readability (Google AI Overview style).
+Do NOT fabricate any information beyond what is provided above.
+
+=== LANGUAGE RULE (CRITICAL) ===
+${langInstruction}
+`;
+  }
+
+  /**
+   * Builds a prompt for when no rooms are found, to generate a helpful explanation + suggestions.
+   * @param {string} query Original user query
+   * @param {object} searchCriteria Extracted search criteria
+   * @param {string} language 'vi' or 'en'
+   * @returns {string}
+   */
+  static buildNoResultPrompt(query, searchCriteria, language = 'vi') {
+    const criteriaLines = [];
+    if (searchCriteria.status) criteriaLines.push(`Status: ${searchCriteria.status}`);
+    if (searchCriteria.city) criteriaLines.push(`City: ${searchCriteria.city}`);
+    if (searchCriteria.district) criteriaLines.push(`District: ${searchCriteria.district}`);
+    if (searchCriteria.priceMax) criteriaLines.push(`Max price: ${Number(searchCriteria.priceMax).toLocaleString('vi-VN')} VND`);
+    if (searchCriteria.priceMin) criteriaLines.push(`Min price: ${Number(searchCriteria.priceMin).toLocaleString('vi-VN')} VND`);
+    if (searchCriteria.maxOccupants) criteriaLines.push(`Capacity: ${searchCriteria.maxOccupants} people`);
+    if (searchCriteria.facilities && searchCriteria.facilities.length > 0) criteriaLines.push(`Facilities: ${searchCriteria.facilities.join(', ')}`);
+
+    const langInstruction = language === 'en'
+      ? 'You MUST respond ENTIRELY in English. Do NOT use Vietnamese.'
+      : 'You MUST respond ENTIRELY in Vietnamese. Xưng "em/mình" và gọi "bạn/anh/chị".';
+
+    return `
+You are RentWise AI assistant. The user searched: "${query}".
+The extracted search criteria were:
+${criteriaLines.length > 0 ? criteriaLines.join('\n') : '(No specific criteria)'}
+
+Result: ZERO rooms found matching these criteria.
+
+=== INSTRUCTIONS ===
+Write a short, helpful response (2-4 sentences) that:
+1. Explains that no rooms were found matching the criteria.
+2. Suggests 1-2 ways to broaden the search (e.g., increase budget, try a different area, remove status filter).
+3. Be encouraging and helpful.
+
+Formatting: Use bullet points with emoji for readability.
+Do NOT fabricate any room information.
+
+=== LANGUAGE RULE (CRITICAL) ===
+${langInstruction}
 `;
   }
 }

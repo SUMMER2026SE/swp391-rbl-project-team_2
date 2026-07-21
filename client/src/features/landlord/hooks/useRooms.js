@@ -53,8 +53,8 @@ export const useRooms = (params = {}) => {
             ...r,
             ...roomData,
             ...updated,
-            title: updated.title || roomData.title || r.title,
-            status: updated.status || roomData.status || r.status,
+            title: updated?.data?.title || updated?.title || roomData.title || r.title,
+            status: updated?.data?.status || updated?.status || roomData.status || r.status,
           };
         }
         return r;

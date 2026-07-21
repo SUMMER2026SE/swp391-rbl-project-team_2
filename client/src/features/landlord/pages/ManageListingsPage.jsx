@@ -136,9 +136,9 @@ const ManageListingsPage = () => {
           image: coverImg,
           tags: tags,
           performance: {
-            views: Math.floor((((room.roomId || room.id || 0) * 47) % 500) + 50),
-            inquiries: Math.floor((((room.roomId || room.id || 0) * 11) % 40) + 2),
-            revenue: room.status === 'rented' ? Number(room.pricePerMonth || 0) : 0
+            views: ['pending', 'rejected', 'inactive'].includes((room.status || '').toLowerCase()) ? 0 : Math.floor((((room.roomId || room.id || 0) * 47) % 500) + 50),
+            inquiries: ['pending', 'rejected', 'inactive'].includes((room.status || '').toLowerCase()) ? 0 : Math.floor((((room.roomId || room.id || 0) * 11) % 40) + 2),
+            revenue: ['rented', 'occupied'].includes((room.status || '').toLowerCase()) ? Number(room.pricePerMonth || room.price_per_month || 0) : 0
           },
           rawRoom: room
         };
@@ -327,7 +327,7 @@ const ManageListingsPage = () => {
       }
 
       const roomIdToUpdate = selectedListing.rawRoom?.roomId || selectedListing.id;
-      await updateRoom(roomIdToUpdate, roomPayload);
+      const updated = await updateRoom(roomIdToUpdate, roomPayload);
 
       if (formImageFiles && formImageFiles.length > 0) {
         // Delete old images first
@@ -346,6 +346,13 @@ const ManageListingsPage = () => {
         }
       }
 
+      const serverStatus = updated?.data?.status || roomPayload.status || formStatus;
+      const mappedStatus = serverStatus === 'available' ? 'Available' :
+        ['rented', 'occupied', 'rented'].includes(serverStatus.toLowerCase()) ? 'Occupied' :
+          serverStatus === 'pending' ? 'Pending' :
+            serverStatus === 'rejected' ? 'Rejected' :
+              serverStatus === 'maintenance' ? 'Maintenance' : 'Inactive';
+
       setListings(listings.map(item => {
         if (item.id === selectedListing.id) {
           return {
@@ -354,12 +361,13 @@ const ManageListingsPage = () => {
             description: formDescription,
             address: formAddress,
             price: Number(formPrice),
-            status: formStatus,
+            status: mappedStatus,
             type: 'Private Room',
             image: formImage || item.image,
             tags: formTags ? formTags.split(',').map(t => t.trim()).filter(Boolean) : item.tags,
             rawRoom: {
               ...item.rawRoom,
+              status: serverStatus,
               description: formDescription,
               maxOccupants: formMaxOccupants ? Number(formMaxOccupants) : 4,
               areaSqm: formAreaSqm ? Number(formAreaSqm) : null,
@@ -552,9 +560,18 @@ const ManageListingsPage = () => {
 
                   <div className="listing-card__actions">
                     <button
+                      className="action-icon-btn btn-performance"
+                      title="View Performance"
+                      onClick={() => handlePerfClick(listing)}
+                    >
+                      <Eye size={15} />
+                    </button>
+                    <button
                       className="action-icon-btn btn-edit"
-                      title={t('landlordListings.editListing')}
+                      title={['Occupied'].includes(listing.status) ? t('landlordListings.cannotEditOccupied', 'Cannot edit occupied room') : t('landlordListings.editListing')}
                       onClick={() => handleEditClick(listing)}
+                      disabled={['Occupied'].includes(listing.status)}
+                      style={['Occupied'].includes(listing.status) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                       <Pencil size={15} />
                     </button>
@@ -1041,24 +1058,49 @@ const ManageListingsPage = () => {
                         <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
                       </linearGradient>
                     </defs>
-                    <path
-                      d="M 20 100 Q 80 80 140 40 T 260 60 T 380 20 L 380 100 L 20 100 Z"
-                      fill="url(#miniChartGrad)"
-                    />
-                    <path
-                      d="M 20 100 Q 80 80 140 40 T 260 60 T 380 20"
-                      fill="none"
-                      stroke="#3B82F6"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-                    <circle cx="20" cy="100" r="4" fill="#3B82F6" />
-                    <circle cx="80" cy="88" r="4" fill="#3B82F6" />
-                    <circle cx="140" cy="40" r="4" fill="#3B82F6" />
-                    <circle cx="200" cy="50" r="4" fill="#3B82F6" />
-                    <circle cx="260" cy="60" r="4" fill="#3B82F6" />
-                    <circle cx="320" cy="35" r="4" fill="#3B82F6" />
-                    <circle cx="380" cy="20" r="4" fill="#3B82F6" />
+                    {selectedListing.performance.inquiries > 0 ? (
+                      <>
+                        <path
+                          d="M 20 100 Q 80 88 140 40 T 260 60 T 380 20 L 380 100 L 20 100 Z"
+                          fill="url(#miniChartGrad)"
+                        />
+                        <path
+                          d="M 20 100 Q 80 88 140 40 T 260 60 T 380 20"
+                          fill="none"
+                          stroke="#3B82F6"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                        <circle cx="20" cy="100" r="4" fill="#3B82F6" />
+                        <circle cx="80" cy="88" r="4" fill="#3B82F6" />
+                        <circle cx="140" cy="40" r="4" fill="#3B82F6" />
+                        <circle cx="200" cy="50" r="4" fill="#3B82F6" />
+                        <circle cx="260" cy="60" r="4" fill="#3B82F6" />
+                        <circle cx="320" cy="35" r="4" fill="#3B82F6" />
+                        <circle cx="380" cy="20" r="4" fill="#3B82F6" />
+                      </>
+                    ) : (
+                      <>
+                        <path
+                          d="M 20 100 L 380 100 L 380 100 L 20 100 Z"
+                          fill="url(#miniChartGrad)"
+                        />
+                        <path
+                          d="M 20 100 L 380 100"
+                          fill="none"
+                          stroke="#94a3b8"
+                          strokeWidth="2"
+                          strokeDasharray="4 4"
+                        />
+                        <circle cx="20" cy="100" r="4" fill="#94a3b8" />
+                        <circle cx="80" cy="100" r="4" fill="#94a3b8" />
+                        <circle cx="140" cy="100" r="4" fill="#94a3b8" />
+                        <circle cx="200" cy="100" r="4" fill="#94a3b8" />
+                        <circle cx="260" cy="100" r="4" fill="#94a3b8" />
+                        <circle cx="320" cy="100" r="4" fill="#94a3b8" />
+                        <circle cx="380" cy="100" r="4" fill="#94a3b8" />
+                      </>
+                    )}
                   </svg>
                 </div>
                 <div className="chart-days-row">

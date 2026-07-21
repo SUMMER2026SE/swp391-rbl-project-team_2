@@ -620,7 +620,7 @@
     "postedRooms": "Posted Rooms:",
     "rentedRooms": "Rented Rooms:",
     "chatWithHost": "Chat with Host",
-    "cannotEditOccupied": "Cannot edit occupied/pending room",
+    "cannotEditOccupied": "Cannot edit occupied room",
     "saveChanges": "Save Changes",
     "cancel": "Cancel",
     "editRoom": "Edit Room directly",
@@ -1833,7 +1833,7 @@
       "contract_created": "Contract Created",
       "completed": "Completed",
       "rejected": "Rejected",
-      "cancelled": "Cancelled",
+      "cancelled": "Tenant cancelled",
       "deposit_paid": "Deposit Paid"
     }
   },

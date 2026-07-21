@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Search,
@@ -16,7 +16,8 @@ import {
   Clock,
   Ban,
   Timer,
-  FileSignature
+  FileSignature,
+  Eraser
 } from 'lucide-react';
 import { useContracts } from '../hooks/useContracts';
 import Button from '../../../components/common/Button';
@@ -24,13 +25,32 @@ import Loading from '../../../components/ui/Loading';
 import EmptyState from '../../../components/ui/EmptyState';
 import Badge from '../../../components/ui/Badge';
 import ContractDocument from '../../../components/ContractDocument';
+import SignatureCanvas from 'react-signature-canvas';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import useAuthStore from '../../../store/useAuthStore';
+import TerminationRequestModal from '../../../components/termination/TerminationRequestModal';
+import TerminationHistoryPage from '../../../components/termination/TerminationHistoryPage';
 import './ContractsPage.css';
 
 const ContractsPage = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(location.search || '');
+    return (params.get('tab') || location.state?.tab) === 'terminations' ? 'terminations' : 'contracts';
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || '');
+    const currentTab = params.get('tab') || location.state?.tab;
+    if (currentTab === 'terminations') {
+      setActiveTab('terminations');
+    }
+  }, [location.search, location.state]);
+
+  const sigCanvasRef = React.useRef({});
   const [searchTerm, setSearchTerm] = useState(location.state?.search || '');
   const [statusFilter, setStatusFilter] = useState('All');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -44,11 +64,12 @@ const ContractsPage = () => {
   const [showContractModal, setShowContractModal] = useState(false);
   const [showRenewModal, setShowRenewModal] = useState(false);
   const [showTerminateModal, setShowTerminateModal] = useState(false);
+  const [showApproveRenewalModal, setShowApproveRenewalModal] = useState(false);
   const [renewData, setRenewData] = useState({ duration: 12 });
   const [terminateReason, setTerminateReason] = useState('');
 
   const navigate = useNavigate();
-  const { contracts, loading, error, renewContract, terminateContract, updateContract, fetchContracts } = useContracts();
+  const { contracts, loading, error, renewContract, terminateContract, updateContract, fetchContracts, approveRenewal, declineRenewal } = useContracts();
 
   const filteredContracts = contracts.filter(contract => {
     const searchLower = (searchTerm || '').toLowerCase();
@@ -144,6 +165,42 @@ const ContractsPage = () => {
           <Plus size={18} />{t('contracts.newContract', 'New Contract')}</Button>
       </div>
 
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid #e2e8f0', marginBottom: '20px' }}>
+        <button
+          onClick={() => setActiveTab('contracts')}
+          style={{
+            padding: '10px 16px',
+            fontWeight: 600,
+            fontSize: '14px',
+            borderBottom: activeTab === 'contracts' ? '2px solid #2563eb' : '2px solid transparent',
+            color: activeTab === 'contracts' ? '#2563eb' : '#64748b',
+            background: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          Danh sách Hợp đồng
+        </button>
+        <button
+          onClick={() => setActiveTab('terminations')}
+          style={{
+            padding: '10px 16px',
+            fontWeight: 600,
+            fontSize: '14px',
+            borderBottom: activeTab === 'terminations' ? '2px solid #2563eb' : '2px solid transparent',
+            color: activeTab === 'terminations' ? '#2563eb' : '#64748b',
+            background: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          Lịch sử Chấm dứt & Quyết toán
+        </button>
+      </div>
+
+      {activeTab === 'terminations' ? (
+        <TerminationHistoryPage currentUserId={user?.user_id || user?.userId} userRole="Landlord" />
+      ) : (
+        <>
       {/* Error Alert */}
       {error && (
         <div className="alert alert--error">
@@ -288,18 +345,58 @@ const ContractsPage = () => {
                     </div>
                   </td>
                   <td style={{ padding: '16px' }}>
-                    <button
-                      onClick={() => {
-                        setSelectedContract(contract);
-                        setShowContractModal(true);
-                      }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        padding: '6px 12px', background: '#f8fafc', border: '1px solid #cbd5e1',
-                        borderRadius: '6px', color: '#475569', fontSize: '13px', cursor: 'pointer', fontWeight: 500
-                      }}
-                    >
-                      <FileText size={14} />{t('contracts.viewContract', 'View Contract')}</button>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        onClick={() => {
+                          setSelectedContract(contract);
+                          setShowContractModal(true);
+                        }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                          padding: '6px 12px', background: '#f8fafc', border: '1px solid #cbd5e1',
+                          borderRadius: '6px', color: '#475569', fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                        }}
+                      >
+                        <FileText size={14} />{t('contracts.viewContract', 'View Contract')}
+                      </button>
+                      
+                      {contract.status === 'active' && contract.renewalRequest?.status === 'PENDING_LANDLORD' && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setSelectedContract(contract);
+                              setShowApproveRenewalModal(true);
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '6px',
+                              padding: '6px 12px', background: '#2563eb', border: 'none',
+                              borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                            }}
+                          >
+                            <FileSignature size={14} /> Duyệt Gia Hạn
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              if(window.confirm('Bạn có chắc chắn muốn từ chối yêu cầu gia hạn này? Khách thuê sẽ dọn đi vào cuối hợp đồng.')) {
+                                declineRenewal(contract.renewalRequest.id).then(() => {
+                                  toast.success('Đã từ chối yêu cầu gia hạn.');
+                                }).catch(err => {
+                                  toast.error(err.message || 'Lỗi khi từ chối.');
+                                });
+                              }
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '6px',
+                              padding: '6px 12px', background: '#ef4444', border: 'none',
+                              borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                            }}
+                          >
+                            <X size={14} /> Từ chối
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -486,6 +583,15 @@ const ContractsPage = () => {
                 setShowContractModal(false);
                 setShowRenewModal(true);
               }}
+              onSign={async (contract, signatureDataUrl) => {
+                try {
+                  await approveRenewal(contract.id || contract.contractId, signatureDataUrl);
+                  toast.success('Hợp đồng gia hạn đã được duyệt và gửi cho khách!');
+                  setShowContractModal(false);
+                } catch (err) {
+                  toast.error(err.message || 'Lỗi khi duyệt hợp đồng');
+                }
+              }}
             />
           </div>
         </div>
@@ -534,40 +640,81 @@ const ContractsPage = () => {
         </div>
       )}
 
-      {/* Terminate Modal */}
+      </>
+      )}
+
+      {/* Termination Request Modal */}
       {showTerminateModal && selectedContract && (
-        <div className="modal-backdrop" onClick={() => setShowTerminateModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <TerminationRequestModal
+          contract={selectedContract}
+          userRole="Landlord"
+          onClose={() => setShowTerminateModal(false)}
+          onSuccess={() => {
+            fetchContracts();
+            toast.success('Đã xử lý yêu cầu chấm dứt hợp đồng!');
+          }}
+        />
+      )}
+
+      {/* Approve Renewal Modal */}
+      {showApproveRenewalModal && selectedContract && (
+        <div className="modal-backdrop" onClick={() => setShowApproveRenewalModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
-              <h3>{t('contracts.terminateContract', 'Terminate Contract')}</h3>
+              <h3>Duyệt Yêu Cầu Gia Hạn</h3>
               <button
                 className="modal-close-btn"
-                onClick={() => setShowTerminateModal(false)}
+                onClick={() => setShowApproveRenewalModal(false)}
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="modal-body">
-              <p className="terminate-info">{t('contracts.pleaseProvideAReasonFor', 'Please provide a reason for terminating this contract.')}</p>
-              <textarea
-                className="terminate-textarea"
-                placeholder={t('contracts.enterTerminationReasonPlaceholder', 'Enter termination reason...')}
-                value={terminateReason}
-                onChange={(e) => setTerminateReason(e.target.value)}
-                rows="5"
-              />
+              <p>Khách thuê <strong>{selectedContract.tenantName}</strong> yêu cầu gia hạn hợp đồng phòng <strong>{selectedContract.roomTitle}</strong> thêm <strong>{selectedContract.renewalRequest?.requested_duration_months} tháng</strong>.</p>
+              
+              <div style={{ margin: '16px 0', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <p style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600, color: '#334155' }}>Chữ ký của bạn (Chủ nhà):</p>
+                <div style={{ position: 'relative', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white', overflow: 'hidden' }}>
+                  <SignatureCanvas 
+                    ref={sigCanvasRef}
+                    penColor="black"
+                    canvasProps={{ width: 450, height: 150, className: 'sigCanvas' }} 
+                  />
+                  <button 
+                    onClick={() => sigCanvasRef.current?.clear()} 
+                    style={{ position: 'absolute', top: 5, right: 5, background: '#f1f5f9', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px', borderRadius: '4px', display: 'flex', alignItems: 'center' }} 
+                    title="Xóa chữ ký"
+                  >
+                    <Eraser size={14} />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="modal-footer">
               <Button
                 variant="secondary"
-                onClick={() => setShowTerminateModal(false)}
-              >{t('contracts.cancel', 'Cancel')}</Button>
+                onClick={() => setShowApproveRenewalModal(false)}
+              >Hủy</Button>
               <Button
-                variant="danger"
-                onClick={handleTerminate}
-              >{t('contracts.terminateContract', 'Terminate Contract')}</Button>
+                variant="primary"
+                onClick={async () => {
+                  if (sigCanvasRef.current && sigCanvasRef.current.isEmpty && sigCanvasRef.current.isEmpty()) {
+                    toast.error("Vui lòng ký tên trước khi duyệt.");
+                    return;
+                  }
+                  try {
+                    const signatureDataUrl = sigCanvasRef.current.getCanvas().toDataURL('image/png');
+                    await approveRenewal(selectedContract.contractId || selectedContract.id, signatureDataUrl);
+                    toast.success('Đã duyệt gia hạn thành công!');
+                    setShowApproveRenewalModal(false);
+                    setSelectedContract(null);
+                  } catch (err) {
+                    toast.error(err.message || 'Lỗi khi duyệt gia hạn');
+                  }
+                }}
+              >Duyệt & Tạo HĐ Mới</Button>
             </div>
           </div>
         </div>

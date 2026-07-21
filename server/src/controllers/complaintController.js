@@ -211,9 +211,66 @@ const updateComplaintPriority = async (req, res, next) => {
   }
 };
 
+const createComplaint = async (req, res, next) => {
+  try {
+    const tenantId = req.user.userId;
+    const { roomId, title, description, complaintType, priority = 'medium' } = req.body;
+
+    if (!roomId || !title || !description) {
+      return res.status(400).json({
+        success: false,
+        message: 'Room ID, title, and description are required.',
+      });
+    }
+
+    const room = await Room.findOne({
+      where: { room_id: roomId, is_deleted: false },
+    });
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: 'Room not found.',
+      });
+    }
+
+    const mappedType = ['maintenance', 'noise', 'cleanliness', 'safety', 'utilities', 'other'].includes(complaintType)
+      ? complaintType
+      : 'other';
+
+    const complaint = await Complaint.create({
+      room_id: roomId,
+      tenant_id: tenantId,
+      landlord_id: room.landlord_id,
+      title,
+      description,
+      complaint_type: mappedType,
+      status: 'open',
+      priority,
+    });
+
+    await Notification.create({
+      user_id: room.landlord_id,
+      title: 'New Complaint Received',
+      message: `You have received a new complaint for room "${room.title}": ${title}`,
+      notification_type: 'complaint',
+      related_id: complaint.complaint_id,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Complaint submitted successfully!',
+      data: complaint,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getLandlordComplaints,
   getComplaintDetails,
   updateComplaintStatus,
   updateComplaintPriority,
+  createComplaint,
 };

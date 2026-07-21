@@ -8,6 +8,9 @@ const favoriteController = require('../controllers/favoriteController');
 const tenantRentalRequestController = require('../controllers/tenantRentalRequestController');
 const paymentController = require('../controllers/paymentController');
 const viewingScheduleController = require('../controllers/viewingScheduleController');
+const notificationController = require('../controllers/notificationController');
+const complaintController = require('../controllers/complaintController');
+const contractRenewalController = require('../controllers/contractRenewalController');
 
 // =========================================================
 // PUBLIC PAYMENT ROUTES (No Auth required for webhooks / mock checkout)
@@ -64,5 +67,24 @@ router.get('/contracts', viewingScheduleController.getTenantContracts);
 router.post('/contracts/:contractId/send-otp', viewingScheduleController.sendContractOtp);
 router.put('/contracts/:contractId/sign', viewingScheduleController.signContract);
 router.put('/contracts/:contractId/cancel', viewingScheduleController.cancelContract);
+router.post('/contracts/:contractId/renew', contractRenewalController.tenantRequestRenewal);
+router.post('/contracts/:contractId/renew-otp', contractRenewalController.tenantSendOtpForRenewal);
+router.put('/contracts/:contractId/renew-sign', contractRenewalController.tenantSignRenewal);
+router.post('/contracts/:contractId/decline-renewal', viewingScheduleController.declineContractRenewal);
+
+// =========================================================
+// COMPLAINT ROUTES (Tenant-side)
+// =========================================================
+router.post('/complaints', complaintController.createComplaint);
+
+// =========================================================
+// NOTIFICATION ROUTES (Tenant-side)
+// =========================================================
+router.get('/notifications', notificationController.getUserNotifications);
+router.get('/notifications/unread/count', notificationController.getUnreadNotificationCount);
+router.put('/notifications/:notificationId/read', notificationController.markNotificationAsRead);
+router.put('/notifications/read-all', notificationController.markAllNotificationsAsRead);
+router.delete('/notifications/:notificationId', notificationController.deleteNotification);
+router.delete('/notifications/delete-all', notificationController.deleteAllNotifications);
 
 module.exports = router;

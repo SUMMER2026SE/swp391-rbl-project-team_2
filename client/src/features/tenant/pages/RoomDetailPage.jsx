@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  MapPin, Share2, Heart, MessageSquare, CheckCircle, Bed, Users, Maximize, Home, Compass, ChevronLeft, ShieldCheck, ShieldAlert
+  MapPin, Share2, Heart, MessageSquare, CheckCircle, Bed, Users, Maximize, Home, Compass, ChevronLeft, ShieldCheck, ShieldAlert, FileSignature
 } from 'lucide-react';
 import { favoriteService } from '../services/favoriteService';
 import { rentalRequestService } from '../services/rentalRequestService';
@@ -24,6 +24,7 @@ const RoomDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, isAuthenticated } = useAuthStore();
   const [roomData, setRoomData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,8 +60,22 @@ const RoomDetailPage = () => {
   // Rental Request States
   const [showRentalRequestModal, setShowRentalRequestModal] = useState(false);
   const [rentalRequestMessage, setRentalRequestMessage] = useState('');
+  const [moveInDate, setMoveInDate] = useState('');
+  const [leaseDuration, setLeaseDuration] = useState('6');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [rentalPurpose, setRentalPurpose] = useState('');
+  const [tenantName, setTenantName] = useState(user?.full_name || '');
+  const [tenantIc, setTenantIc] = useState('');
+  const [tenantIcIssueDate, setTenantIcIssueDate] = useState('');
+  const [tenantIcIssuePlace, setTenantIcIssuePlace] = useState('Cục Cảnh sát Quản lý hành chính về trật tự xã hội');
+  const [tenantPermanentAddress, setTenantPermanentAddress] = useState('');
 
-  const { user, isAuthenticated } = useAuthStore();
+  useEffect(() => {
+    if (user) {
+      if (!tenantName) setTenantName(user.full_name || '');
+      if (!phone) setPhone(user.phone || '');
+    }
+  }, [user]);
 
   const todayDate = new Date().toISOString().split('T')[0];
 
@@ -215,11 +230,37 @@ const RoomDetailPage = () => {
       navigate('/login');
       return;
     }
+
+    if (!phone) {
+      toast.error('Vui lòng nhập số điện thoại.');
+      return;
+    }
+    if (!moveInDate) {
+      toast.error('Vui lòng chọn ngày nhận phòng.');
+      return;
+    }
+    if (!rentalPurpose) {
+      toast.error('Vui lòng nhập mục đích thuê phòng.');
+      return;
+    }
+
+    const selectedDate = new Date(moveInDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selectedDate < today) {
+      toast.error('Ngày nhận phòng không thể ở quá khứ.');
+      return;
+    }
     
     try {
+      setLoading(true);
       const response = await rentalRequestService.createRequest({
         roomId: roomData.roomId || roomData.room_id,
-        message: rentalRequestMessage
+        message: rentalRequestMessage || null,
+        requestedMoveInDate: moveInDate,
+        leaseDurationMonths: parseInt(leaseDuration, 10),
+        phone: phone,
+        rentalPurpose: rentalPurpose
       });
 
       if (response.success) {
@@ -229,6 +270,8 @@ const RoomDetailPage = () => {
       }
     } catch (err) {
       toast.error(t('roomDetail.requestFailed', 'Failed to submit request:') + ' ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -522,8 +565,8 @@ const RoomDetailPage = () => {
                   )}
                   <span className="price-unit">{t('roomDetail.perMonth', '/ tháng')}</span>
                 </div>
-                <span className={`status-badge ${roomData.status || 'available'}`}>
-                  {roomData.status === 'available' ? t('roomDetail.statusAvailable', 'Còn phòng') : (roomData.status === 'rented' ? t('roomDetail.statusRented', 'Đã thuê') : (roomData.status === 'occupied' ? t('roomDetail.statusOccupied', 'Đang ở') : t('roomDetail.statusUnavailable', 'Trống')))}
+                <span className={`status-badge ${roomData.status || 'available'} ${(roomData.status === 'rented' && (roomData.available_from || roomData.availableFrom)) ? 'prebookable' : ''}`}>
+                  {roomData.status === 'available' ? t('roomDetail.statusAvailable', 'Còn phòng') : (roomData.status === 'reserved' ? 'Booking in progress' : (roomData.status === 'rented' ? (roomData.available_from || roomData.availableFrom ? `Sắp trống (${new Date(roomData.available_from || roomData.availableFrom).toLocaleDateString('vi-VN')})` : t('roomDetail.statusRented', 'Đã thuê')) : (roomData.status === 'occupied' ? t('roomDetail.statusOccupied', 'Đang ở') : t('roomDetail.statusUnavailable', 'Trống'))))}
                 </span>
               </div>
               <div className="booking-info-row">
@@ -585,9 +628,9 @@ const RoomDetailPage = () => {
               
               <hr className="my-4 border-gray-200" style={{ margin: '1.5rem 0', borderColor: '#e2e8f0' }} />
               {isAuthenticated && user?.role === 'LANDLORD' && (roomData.landlordId === user?.userId || roomData.landlord?.user_id === user?.userId) ? (
-                ['pending', 'maintenance', 'rented', 'occupied', 'unavailable'].includes((roomData.status || '').toLowerCase()) ? (
+                ['rented', 'occupied', 'reserved'].includes((roomData.status || '').toLowerCase()) ? (
                   <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
-                    {t('roomDetail.cannotEditOccupied', 'Không thể sửa phòng đang có khách/chờ')}
+                    {t('roomDetail.cannotEditOccupied', 'Không thể sửa phòng đã cho thuê hoặc đang xử lý')}
                   </button>
                 ) : isEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -610,18 +653,32 @@ const RoomDetailPage = () => {
                     {t('roomDetail.editRoom', 'Chỉnh sửa phòng trực tiếp')}
                   </button>
                 )
-              ) : roomData.status === 'available' ? (
+              ) : (roomData.status === 'available' || (roomData.status === 'rented' && (roomData.available_from || roomData.availableFrom))) ? (
                 <>
-                  <button className="btn-schedule-viewing" onClick={() => setShowDateModal(true)}>
-                    {t('roomDetail.scheduleViewing', 'Đặt lịch xem phòng')}
-                  </button>
-                  <button className="btn-schedule-viewing mt-2" onClick={() => setShowRentalRequestModal(true)} style={{ background: '#10B981' }}>
-                    {t('roomDetail.sendRentalRequest', 'Gửi yêu cầu thuê phòng')}
+                  {roomData.status === 'available' && (
+                    <button className="btn-schedule-viewing" onClick={() => {
+                      if (!isAuthenticated) {
+                        navigate('/login');
+                      } else {
+                        setShowDateModal(true);
+                      }
+                    }}>
+                      {t('roomDetail.scheduleViewing', 'Đặt lịch xem phòng')}
+                    </button>
+                  )}
+                  <button className="btn-schedule-viewing mt-2" onClick={() => {
+                    if (!isAuthenticated) {
+                      navigate('/login');
+                    } else {
+                      setShowRentalRequestModal(true);
+                    }
+                  }} style={{ background: '#10B981' }}>
+                    {roomData.status === 'rented' ? 'Đặt phòng trước (Pre-book)' : t('roomDetail.sendRentalRequest', 'Gửi yêu cầu thuê phòng')}
                   </button>
                 </>
               ) : (
                 <button className="btn-schedule-viewing" disabled style={{ background: '#9ca3af', cursor: 'not-allowed' }}>
-                  {roomData.status === 'rented' ? t('roomDetail.roomIsRented', 'Phòng đã được cho thuê') : (roomData.status === 'occupied' ? t('roomDetail.roomIsOccupied', 'Phòng đang có người ở') : t('roomDetail.roomUnavailable', 'Phòng hiện không trống'))}
+                  {roomData.status === 'reserved' ? 'Booking in progress (Đang xử lý thuê)' : (roomData.status === 'rented' ? t('roomDetail.roomIsRented', 'Phòng đã được cho thuê') : (roomData.status === 'occupied' ? t('roomDetail.roomIsOccupied', 'Phòng đang có người ở') : t('roomDetail.roomUnavailable', 'Phòng hiện không trống')))}
                 </button>
               )}
             </div>
@@ -711,24 +768,104 @@ const RoomDetailPage = () => {
       )}
 
       {showRentalRequestModal && (
-        <div className="modal-overlay" onClick={() => setShowRentalRequestModal(false)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()}>
-            <h2>{t('roomDetail.rentalRequestTitle', 'Gửi yêu cầu thuê phòng')}</h2>
-            <p style={{ color: '#64748b', marginBottom: '16px', fontSize: '14px' }}>
-              {t('roomDetail.rentalRequestDesc', 'Bạn sắp gửi yêu cầu thuê phòng đến chủ trọ. Sau khi được phê duyệt, bạn có thể yêu cầu tạo hợp đồng.')}
-            </p>
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>{t('roomDetail.msgForHost', 'Lời nhắn cho Chủ trọ (Tùy chọn)')}</label>
-              <textarea 
-                value={rentalRequestMessage}
-                onChange={(e) => setRentalRequestMessage(e.target.value)}
-                placeholder={t('roomDetail.msgPlaceholder', 'Giới thiệu ngắn gọn về bản thân và các yêu cầu cụ thể...')}
-                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', minHeight: '100px' }}
-              />
+        <div className="modal-overlay" onClick={() => setShowRentalRequestModal(false)} style={{ overflowY: 'auto', padding: '20px 0', zIndex: 1050 }}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%', background: '#fff', borderRadius: '16px', padding: '28px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', margin: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FileSignature size={20} style={{ color: '#059669' }} />
+              </div>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#111827' }}>
+                {t('roomDetail.rentalRequestTitle', 'Gửi Yêu Cầu Thuê Phòng')}
+              </h2>
             </div>
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setShowRentalRequestModal(false)}>{t('roomDetail.cancel', 'Hủy')}</button>
-              <button className="btn-confirm" onClick={handleSendRentalRequest} style={{ background: '#10B981' }}>{t('roomDetail.sendRequest', 'Gửi yêu cầu')}</button>
+            
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#166534', lineHeight: 1.6 }}>
+                <strong>Room:</strong> {roomData?.title || 'Room Details'}<br />
+                <span style={{ fontSize: '0.8rem', color: '#15803d', display: 'block', marginTop: '4px' }}>
+                  {t('roomDetail.rentalRequestDesc', 'Gửi lời nhắn của bạn đến chủ trọ để đăng ký thuê phòng. Sau khi chủ trọ đồng ý yêu cầu, bạn mới thực hiện tạo hợp đồng.')}
+                </span>
+              </p>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Số điện thoại *</label>
+                <input 
+                  type="text" 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ngày dọn vào *</label>
+                <input 
+                  type="date" 
+                  value={moveInDate}
+                  min={roomData.available_from || roomData.availableFrom || todayDate}
+                  onChange={(e) => setMoveInDate(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Thời hạn hợp đồng (Tháng) *</label>
+                <select 
+                  value={leaseDuration}
+                  onChange={(e) => setLeaseDuration(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
+                >
+                  <option value="3">3 tháng</option>
+                  <option value="6">6 tháng</option>
+                  <option value="9">9 tháng</option>
+                  <option value="12">12 tháng</option>
+                  <option value="18">18 tháng</option>
+                  <option value="24">24 tháng</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Mục đích vào ở *</label>
+                <input 
+                  type="text" 
+                  value={rentalPurpose}
+                  placeholder="Ví dụ: Đi học, Đi làm..."
+                  onChange={(e) => setRentalPurpose(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+            </div>
+
+            <textarea
+              style={{ width: '100%', padding: '14px', border: '2px solid #E5E7EB', borderRadius: '10px', minHeight: '100px', marginBottom: '16px', fontSize: '0.95rem', transition: 'border-color 0.2s', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+              placeholder={t('roomDetail.msgPlaceholder', 'Lời nhắn cho Chủ trọ (Tùy chọn)')}
+              value={rentalRequestMessage}
+              onChange={(e) => setRentalRequestMessage(e.target.value)}
+              disabled={loading}
+              onFocus={(e) => e.target.style.borderColor = '#059669'}
+              onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button 
+                onClick={() => setShowRentalRequestModal(false)}
+                disabled={loading}
+                style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#fff', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSendRentalRequest}
+                disabled={loading}
+                style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#059669', color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontWeight: 600, fontSize: '0.9rem' }}
+              >
+                {loading ? 'Sending...' : t('roomDetail.sendRentalRequestSubmit', 'Gửi Yêu Cầu Thuê')}
+              </button>
             </div>
           </div>
         </div>

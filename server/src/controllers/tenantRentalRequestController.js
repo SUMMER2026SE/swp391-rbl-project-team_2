@@ -13,21 +13,14 @@ const createRentalRequest = async (req, res, next) => {
       message, 
       requestedMoveInDate, 
       leaseDurationMonths,
+      rentalPurpose,
+      phone,
       tenantName,
       tenantIc,
       tenantIcIssueDate,
       tenantIcIssuePlace,
       tenantPermanentAddress
     } = req.body;
-
-    // Verify tenant has a phone number
-    const tenant = await User.findByPk(tenantId);
-    if (!tenant || !tenant.phone) {
-      return res.status(400).json({
-        success: false,
-        message: 'Bạn phải cập nhật số điện thoại trong trang cá nhân trước khi gửi yêu cầu thuê phòng.'
-      });
-    }
 
     if (!roomId) {
       return res.status(400).json({
@@ -36,35 +29,44 @@ const createRentalRequest = async (req, res, next) => {
       });
     }
 
-    if (!requestedMoveInDate || !leaseDurationMonths) {
-      return res.status(400).json({
+    // Verify tenant exists
+    const tenant = await User.findByPk(tenantId);
+    if (!tenant) {
+      return res.status(404).json({
         success: false,
-        message: 'Vui lòng chọn ngày dọn vào và thời hạn thuê.',
+        message: 'Tenant not found.'
       });
     }
 
-    if (!tenantName || !tenantIc || !tenantIcIssueDate || !tenantIcIssuePlace || !tenantPermanentAddress) {
+    const finalPhone = phone || tenant.phone;
+    if (!finalPhone) {
       return res.status(400).json({
         success: false,
-        message: 'Vui lòng cung cấp đầy đủ thông tin cá nhân của bạn phục vụ cho hợp đồng.',
+        message: 'Vui lòng cung cấp số điện thoại liên hệ.'
       });
     }
 
-    if (tenantIc.length !== 12) {
+    if (!requestedMoveInDate || !leaseDurationMonths || !rentalPurpose) {
       return res.status(400).json({
         success: false,
-        message: 'Số CCCD phải có đúng 12 chữ số.',
+        message: 'Vui lòng điền đầy đủ thông tin: số điện thoại, ngày dọn vào ở, thời hạn hợp đồng, và mục đích thuê.'
       });
     }
 
-    const start = new Date(requestedMoveInDate);
+    // Validate date
+    const selectedDate = new Date(requestedMoveInDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (start < today) {
+    if (selectedDate < today) {
       return res.status(400).json({
         success: false,
-        message: 'Ngày nhận phòng không thể ở quá khứ.',
+        message: 'Ngày nhận phòng không thể ở quá khứ.'
       });
+    }
+
+    // Update tenant profile phone if not present
+    if (!tenant.phone) {
+      await tenant.update({ phone: finalPhone });
     }
 
     // Check if room exists and is available
@@ -80,10 +82,21 @@ const createRentalRequest = async (req, res, next) => {
     }
 
     if (room.status !== 'available') {
-      return res.status(400).json({
-        success: false,
-        message: 'Room is not available for rent.',
-      });
+      const isRentedWithFutureVacancy = room.status === 'rented' && room.available_from !== null;
+      if (!isRentedWithFutureVacancy) {
+        return res.status(400).json({
+          success: false,
+          message: 'Phòng này hiện tại không khả dụng để thuê / Room is not available for rent.',
+        });
+      }
+
+      const availableDate = new Date(room.available_from);
+      if (selectedDate < availableDate) {
+        return res.status(400).json({
+          success: false,
+          message: `Ngày dọn vào mong muốn phải từ ngày ${room.available_from} trở đi (khi phòng trống).`,
+        });
+      }
     }
 
     // Tenant cannot rent their own room
@@ -119,11 +132,13 @@ const createRentalRequest = async (req, res, next) => {
       message: message || null,
       requested_move_in_date: requestedMoveInDate || null,
       lease_duration_months: leaseDurationMonths || null,
-      tenant_name: tenantName,
-      tenant_ic: tenantIc,
+      tenant_phone: finalPhone,
+      rental_purpose: rentalPurpose,
+      tenant_name: tenantName || null,
+      tenant_ic: tenantIc || null,
       tenant_ic_issue_date: tenantIcIssueDate || null,
-      tenant_ic_issue_place: tenantIcIssuePlace,
-      tenant_permanent_address: tenantPermanentAddress,
+      tenant_ic_issue_place: tenantIcIssuePlace || null,
+      tenant_permanent_address: tenantPermanentAddress || null,
     });
 
     // Create notification for landlord
@@ -157,6 +172,10 @@ const createRentalRequest = async (req, res, next) => {
         message: rentalRequest.message,
         requestedMoveInDate: rentalRequest.requested_move_in_date,
         leaseDurationMonths: rentalRequest.lease_duration_months,
+        tenantPhone: rentalRequest.tenant_phone,
+        tenant_phone: rentalRequest.tenant_phone,
+        rentalPurpose: rentalRequest.rental_purpose,
+        rental_purpose: rentalRequest.rental_purpose,
         tenantName: rentalRequest.tenant_name,
         tenant_name: rentalRequest.tenant_name,
         tenantIc: rentalRequest.tenant_ic,
@@ -219,6 +238,10 @@ const getMyRentalRequests = async (req, res, next) => {
         requested_move_in_date: req.requested_move_in_date,
         leaseDurationMonths: req.lease_duration_months,
         lease_duration_months: req.lease_duration_months,
+        tenantPhone: req.tenant_phone,
+        tenant_phone: req.tenant_phone,
+        rentalPurpose: req.rental_purpose,
+        rental_purpose: req.rental_purpose,
         message: req.message,
         rejectionReason: req.rejection_reason,
         rejection_reason: req.rejection_reason,
@@ -291,6 +314,10 @@ const getRentalRequestDetail = async (req, res, next) => {
         requested_move_in_date: rentalRequest.requested_move_in_date,
         leaseDurationMonths: rentalRequest.lease_duration_months,
         lease_duration_months: rentalRequest.lease_duration_months,
+        tenantPhone: rentalRequest.tenant_phone,
+        tenant_phone: rentalRequest.tenant_phone,
+        rentalPurpose: rentalRequest.rental_purpose,
+        rental_purpose: rentalRequest.rental_purpose,
         message: rentalRequest.message,
         rejectionReason: rentalRequest.rejection_reason,
         rejection_reason: rentalRequest.rejection_reason,
@@ -340,10 +367,10 @@ const cancelRentalRequest = async (req, res, next) => {
       });
     }
 
-    if (rentalRequest.status !== 'pending') {
+    if (rentalRequest.status !== 'pending' && rentalRequest.status !== 'approved') {
       return res.status(400).json({
         success: false,
-        message: 'Only pending requests can be cancelled.',
+        message: 'Only pending or approved requests can be cancelled.',
       });
     }
 
@@ -392,7 +419,7 @@ const requestContract = async (req, res, next) => {
   try {
     const { requestId } = req.params;
     const tenantId = req.user.userId;
-    const { message, startDate, durationMonths, tenantName, tenantIc, tenantIcIssueDate, tenantIcIssuePlace, tenantPermanentAddress } = req.body;
+    const { message, tenantName, tenantIc, tenantIcIssueDate, tenantIcIssuePlace, tenantPermanentAddress } = req.body;
 
     const rentalRequest = await RentalRequest.findOne({
       where: { request_id: requestId, tenant_id: tenantId },
@@ -407,6 +434,43 @@ const requestContract = async (req, res, next) => {
 
     if (rentalRequest.status !== 'approved') {
       return res.status(400).json({ success: false, message: 'Rental request must be approved before requesting a contract.' });
+    }
+
+    // Autofill startDate and durationMonths from the approved request details
+    const startDate = req.body.startDate || rentalRequest.requested_move_in_date;
+    const durationMonths = req.body.durationMonths || rentalRequest.lease_duration_months;
+
+    if (!startDate || !durationMonths) {
+      return res.status(400).json({
+        success: false,
+        message: 'Yêu cầu thuê phòng không chứa thông tin ngày nhận phòng hoặc thời hạn thuê.',
+      });
+    }
+
+    if (!tenantName || !tenantIc || !tenantIcIssueDate || !tenantIcIssuePlace || !tenantPermanentAddress) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp đầy đủ thông tin cá nhân của bạn phục vụ cho hợp đồng.',
+      });
+    }
+
+    if (tenantIc.length !== 12 || !/^\d{12}$/.test(tenantIc)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Số CCCD phải có đúng 12 chữ số.',
+      });
+    }
+
+    const start = new Date(startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (start < today) {
+      if (req.body.startDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'Ngày nhận phòng không thể ở quá khứ.',
+        });
+      }
     }
 
     const { Contract } = require('../models');

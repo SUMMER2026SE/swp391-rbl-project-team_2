@@ -5,7 +5,7 @@
 }
 
 .tenant-requests-page > .container {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
@@ -366,6 +366,8 @@
   .request-actions-row {
     flex-direction: row;
     align-items: center;
+    flex-wrap: wrap;
+    row-gap: 12px;
   }
 }
 

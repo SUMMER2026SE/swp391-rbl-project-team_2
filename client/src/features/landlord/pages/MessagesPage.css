@@ -475,3 +475,125 @@
   background: #93c5fd;
   cursor: not-allowed;
 }
+
+/* Chat Attachments and Media Styling */
+.chat-media-wrapper {
+  margin-bottom: 0.5rem;
+  max-width: 100%;
+}
+
+.chat-image {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 8px;
+  cursor: pointer;
+  object-fit: cover;
+  transition: opacity 0.2s;
+  display: block;
+}
+
+.chat-image:hover {
+  opacity: 0.9;
+}
+
+.chat-video {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 8px;
+  display: block;
+}
+
+.chat-file-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: inherit;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+  word-break: break-all;
+}
+
+.message-bubble.received .chat-file-link {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.chat-file-link:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.message-bubble.received .chat-file-link:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Attachment Preview Container */
+.chat-attachment-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid var(--border-light, #e2e8f0);
+  background-color: #f8fafc;
+  gap: 1rem;
+}
+
+.preview-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.preview-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--border-light, #e2e8f0);
+}
+
+.preview-file-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  background-color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.preview-file-details h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-main, #0f172a);
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-file-details span {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+}
+
+.btn-remove-attachment {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.btn-remove-attachment:hover {
+  background-color: #fee2e2;
+}

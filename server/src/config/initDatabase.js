@@ -22,6 +22,29 @@ const initDatabase = async () => {
 
     // Manual migrations to ensure schema is correct before sync
     try {
+      // Add missing identity verification columns to users table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'cccd_front_url')
+        BEGIN
+            ALTER TABLE users ADD 
+                cccd_front_url NVARCHAR(500) NULL,
+                cccd_back_url NVARCHAR(500) NULL,
+                face_photo_url NVARCHAR(500) NULL,
+                verification_status VARCHAR(20) DEFAULT 'unverified',
+                verification_notes NVARCHAR(1000) NULL;
+        END
+      `);
+
+      // Add missing columns to rental_requests table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rental_requests') AND name = 'tenant_phone')
+        BEGIN
+            ALTER TABLE rental_requests ADD 
+                tenant_phone VARCHAR(20) NULL,
+                rental_purpose NVARCHAR(500) NULL;
+        END
+      `);
+
       await sequelize.query(`
         IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'properties')
         BEGIN
@@ -34,6 +57,8 @@ const initDatabase = async () => {
                 city NVARCHAR(100) NOT NULL,
                 district NVARCHAR(100) NULL,
                 ward NVARCHAR(100) NULL,
+                latitude DECIMAL(10, 8) NULL,
+                longitude DECIMAL(11, 8) NULL,
                 total_floors INT DEFAULT 1,
                 thumbnail_url NVARCHAR(500) NULL,
                 status VARCHAR(15) DEFAULT 'active',
@@ -44,6 +69,15 @@ const initDatabase = async () => {
             );
         END
       `);
+
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('properties') AND name = 'latitude')
+        BEGIN
+            ALTER TABLE properties ADD 
+                latitude DECIMAL(10, 8) NULL,
+                longitude DECIMAL(11, 8) NULL;
+        END
+      `);
       
       await sequelize.query(`
         IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'property_id')
@@ -52,6 +86,15 @@ const initDatabase = async () => {
             ALTER TABLE rooms ADD floor INT NULL;
             ALTER TABLE rooms ADD room_number VARCHAR(20) NULL;
             ALTER TABLE rooms ADD CONSTRAINT FK_rooms_properties FOREIGN KEY (property_id) REFERENCES properties(property_id);
+        END
+      `);
+
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'latitude')
+        BEGIN
+            ALTER TABLE rooms ADD 
+                latitude DECIMAL(10, 8) NULL,
+                longitude DECIMAL(11, 8) NULL;
         END
       `);
 
@@ -167,6 +210,124 @@ const initDatabase = async () => {
         BEGIN
             ALTER TABLE payments ADD withdrawal_id INT NULL;
             ALTER TABLE payments ADD CONSTRAINT FK_payments_withdrawal FOREIGN KEY (withdrawal_id) REFERENCES withdrawal_requests(withdrawal_id);
+        END
+      `);
+
+      // Add message attachments columns to messages table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('messages') AND name = 'message_type')
+        BEGIN
+            ALTER TABLE messages ADD 
+                message_type VARCHAR(20) DEFAULT 'text' NULL,
+                file_url NVARCHAR(500) NULL,
+                file_name NVARCHAR(255) NULL;
+        END
+      `);
+
+      // Alter content column in messages table to allow NULL
+      try {
+        await sequelize.query(`
+          ALTER TABLE messages ALTER COLUMN content NVARCHAR(MAX) NULL;
+        `);
+      } catch (err) {
+        console.warn('⚠️ Could not alter messages.content column (might already be nullable):', err.message);
+      }
+
+      // Add available_from to rooms table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'available_from')
+        BEGIN
+            ALTER TABLE rooms ADD available_from DATE NULL;
+        END
+      `);
+
+      // Add renewal_status to contracts table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('contracts') AND name = 'renewal_status')
+        BEGIN
+            ALTER TABLE contracts ADD renewal_status VARCHAR(50) DEFAULT 'pending' NULL;
+        END
+      `);
+
+      // Create termination_requests table if not exists
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'termination_requests')
+        BEGIN
+            CREATE TABLE termination_requests (
+                request_id INT IDENTITY PRIMARY KEY,
+                contract_id INT NOT NULL,
+                requested_by INT NOT NULL,
+                termination_type VARCHAR(50) NOT NULL,
+                reason NVARCHAR(255) NOT NULL,
+                description NVARCHAR(MAX) NULL,
+                evidence_urls NVARCHAR(MAX) NULL,
+                request_date DATETIME DEFAULT GETDATE(),
+                requested_termination_date DATE NOT NULL,
+                is_unilateral BIT DEFAULT 0,
+                status VARCHAR(20) DEFAULT 'PENDING',
+                reviewed_by INT NULL,
+                review_date DATETIME NULL,
+                review_note NVARCHAR(MAX) NULL,
+                created_at DATETIME DEFAULT GETDATE(),
+                updated_at DATETIME DEFAULT GETDATE()
+            );
+        END
+      `);
+
+      // Create termination_records table if not exists
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'termination_records')
+        BEGIN
+            CREATE TABLE termination_records (
+                termination_id INT IDENTITY PRIMARY KEY,
+                contract_id INT NOT NULL,
+                request_id INT NULL,
+                termination_date DATETIME DEFAULT GETDATE(),
+                final_reason NVARCHAR(MAX) NOT NULL,
+                deposit_refund DECIMAL(10, 2) DEFAULT 0.00,
+                deposit_retained DECIMAL(10, 2) DEFAULT 0.00,
+                remaining_rent DECIMAL(10, 2) DEFAULT 0.00,
+                compensation DECIMAL(10, 2) DEFAULT 0.00,
+                total_payout_to_tenant DECIMAL(10, 2) DEFAULT 0.00,
+                final_note NVARCHAR(MAX) NULL,
+                refund_status VARCHAR(50) DEFAULT 'NONE',
+                refund_proof_url NVARCHAR(MAX) NULL,
+                created_at DATETIME DEFAULT GETDATE()
+            );
+        END
+      `);
+
+      // Add upcoming_vacancy_date to rooms table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'upcoming_vacancy_date')
+        BEGIN
+            ALTER TABLE rooms ADD upcoming_vacancy_date DATE NULL;
+        END
+      `);
+
+      // Create contract_renewal_requests table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'contract_renewal_requests')
+        BEGIN
+            CREATE TABLE contract_renewal_requests (
+                id INT IDENTITY PRIMARY KEY,
+                contract_id INT NOT NULL,
+                tenant_id INT NOT NULL,
+                landlord_id INT NOT NULL,
+                requested_duration_months INT NOT NULL,
+                proposed_new_rent DECIMAL(10, 2) NULL,
+                additional_terms NVARCHAR(MAX) NULL,
+                landlord_signed_at DATETIME NULL,
+                tenant_signed_at DATETIME NULL,
+                status VARCHAR(50) DEFAULT 'PENDING_INTENT' NOT NULL,
+                new_contract_id INT NULL,
+                deadline_to_sign DATETIME NULL,
+                created_at DATETIME DEFAULT GETDATE(),
+                updated_at DATETIME DEFAULT GETDATE(),
+                FOREIGN KEY (contract_id) REFERENCES contracts(contract_id),
+                FOREIGN KEY (tenant_id) REFERENCES users(user_id),
+                FOREIGN KEY (landlord_id) REFERENCES users(user_id)
+            );
         END
       `);
 

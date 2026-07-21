@@ -554,13 +554,55 @@ const duplicateRoom = async (req, res, next) => {
     });
 
     const createdRooms = [];
+    const usedNumbersInBatch = new Set();
     for (let i = 0; i < duplicateCount; i++) {
       let roomNumber = '';
       if (isCustomNumbers && roomNumbers[i]) {
-        roomNumber = String(roomNumbers[i]);
+        roomNumber = String(roomNumbers[i]).trim();
+        
+        if (usedNumbersInBatch.has(roomNumber)) {
+          return res.status(409).json({
+            success: false,
+            message: 'Room is already exist',
+          });
+        }
+        
+        const collision = await Room.findOne({
+          where: { property_id: cleanPropertyId, room_number: roomNumber, is_deleted: false }
+        });
+        if (collision) {
+          return res.status(409).json({
+            success: false,
+            message: 'Room is already exist',
+          });
+        }
       } else {
-        roomNumber = `${floor}${String(existingOnFloor + i + 1).padStart(2, '0')}`;
+        let suffix = existingOnFloor + i + 1;
+        let candidate = `${floor}${String(suffix).padStart(2, '0')}`;
+        let isUnique = false;
+        
+        while (!isUnique) {
+          if (usedNumbersInBatch.has(candidate)) {
+            suffix++;
+            candidate = `${floor}${String(suffix).padStart(2, '0')}`;
+            continue;
+          }
+          
+          const exists = await Room.findOne({
+            where: { property_id: cleanPropertyId, room_number: candidate, is_deleted: false }
+          });
+          
+          if (!exists) {
+            isUnique = true;
+          } else {
+            suffix++;
+            candidate = `${floor}${String(suffix).padStart(2, '0')}`;
+          }
+        }
+        roomNumber = candidate;
       }
+      
+      usedNumbersInBatch.add(roomNumber);
 
       const newRoom = await Room.create({
         landlord_id: landlordId,

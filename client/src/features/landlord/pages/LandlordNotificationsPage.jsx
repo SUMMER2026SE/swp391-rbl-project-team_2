@@ -12,12 +12,14 @@ import {
   ClipboardList,
   CreditCard
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../../components/common/Button';
 import { landlordService } from '../services/landlordService';
 import './LandlordNotificationsPage.css';
 
 const LandlordNotificationsPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('All Alerts');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -120,6 +122,22 @@ const LandlordNotificationsPage = () => {
     }
   };
 
+  const handleNotificationClick = async (item) => {
+    if (item.isUnread) {
+      await handleToggleRead(item.id, true);
+    }
+    const titleStr = (item.title || '').toLowerCase();
+    const descStr = (item.description || '').toLowerCase();
+    
+    if (titleStr.includes('chấm dứt') || descStr.includes('chấm dứt')) {
+      navigate('/landlord/contracts?tab=terminations');
+    } else if (item.category === 'Requests' || item.type === 'Yêu cầu') {
+      navigate('/landlord/requests');
+    } else if (item.type === 'Hợp đồng') {
+      navigate('/landlord/contracts');
+    }
+  };
+
   const filteredNotifications = notifications.filter(item => {
     if (activeTab === 'All Alerts') return true;
     if (activeTab === 'Requests') return item.category === 'Requests';
@@ -171,7 +189,7 @@ const LandlordNotificationsPage = () => {
             <div
               key={item.id}
               className={`notification-card ${item.hasRedAccent ? 'card-accent-red' : ''} ${item.isUnread ? 'unread' : ''}`}
-              onClick={() => handleToggleRead(item.id, item.isUnread)}
+              onClick={() => handleNotificationClick(item)}
               style={{ cursor: 'pointer' }}
             >
               {/* Left Colored Icon box */}

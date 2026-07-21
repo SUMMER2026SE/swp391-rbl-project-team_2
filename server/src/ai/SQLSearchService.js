@@ -28,20 +28,33 @@ class SQLSearchService {
     }
 
     try {
-      const where = { status: 'available', is_deleted: false };
+      const where = { is_deleted: false };
+      const andConditions = [];
+
+      // Only filter by status if the user explicitly requested it
+      if (criteria.status) {
+        if (criteria.status === 'upcoming_vacancy') {
+          // "Sắp trống" = rented rooms with an available_from date set
+          where.status = 'rented';
+          where.available_from = { [Op.ne]: null };
+        } else {
+          where.status = criteria.status;
+        }
+      }
 
       if (criteria.district) {
         where.district = { [Op.like]: `%${criteria.district}%` };
       }
       if (criteria.city) {
         const normCity = normalizeCity(criteria.city) || criteria.city;
-        // Clean out prefix "Thành phố" or "Tỉnh" to allow broader LIKE matching if DB has different prefixes
         const cleanCityName = normCity.replace(/Thành phố\s+|Tỉnh\s+/gi, '').trim();
         
-        where[Op.or] = [
-          { city: { [Op.like]: `%${normCity}%` } },
-          { city: { [Op.like]: `%${cleanCityName}%` } }
-        ];
+        andConditions.push({
+          [Op.or]: [
+            { city: { [Op.like]: `%${normCity}%` } },
+            { city: { [Op.like]: `%${cleanCityName}%` } }
+          ]
+        });
       }
       if (criteria.priceMin || criteria.priceMax) {
         where.price_per_month = {};
@@ -55,11 +68,18 @@ class SQLSearchService {
         where.area_sqm = { [Op.gte]: criteria.minArea };
       }
       if (criteria.keyword) {
-        where[Op.or] = [
-          { title: { [Op.like]: `%${criteria.keyword}%` } },
-          { address: { [Op.like]: `%${criteria.keyword}%` } },
-          { description: { [Op.like]: `%${criteria.keyword}%` } },
-        ];
+        andConditions.push({
+          [Op.or]: [
+            { title: { [Op.like]: `%${criteria.keyword}%` } },
+            { address: { [Op.like]: `%${criteria.keyword}%` } },
+            { description: { [Op.like]: `%${criteria.keyword}%` } },
+          ]
+        });
+      }
+
+      // Combine all Op.or conditions using Op.and to avoid conflicts
+      if (andConditions.length > 0) {
+        where[Op.and] = andConditions;
       }
 
       // If specific facilities are required, we first find matching rooms or do a join

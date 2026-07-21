@@ -35,6 +35,23 @@ const createRoom = async (req, res, next) => {
       });
     }
 
+    // Check for duplicate room number under the same property
+    if (propertyId && roomNumber) {
+      const existingRoom = await Room.findOne({
+        where: {
+          property_id: propertyId,
+          room_number: roomNumber.toString().trim(),
+          is_deleted: false,
+        },
+      });
+      if (existingRoom) {
+        return res.status(409).json({
+          success: false,
+          message: 'Room is already exist',
+        });
+      }
+    }
+
     const roomData = {
       landlord_id: landlordId,
       title,
@@ -121,7 +138,6 @@ const getLandlordRooms = async (req, res, next) => {
       where,
       include: [
         { model: RoomImage, as: 'images' },
-        { model: Facility, as: 'facilities', through: { attributes: [] } },
         { model: Property, as: 'property', attributes: ['property_id', 'name', 'address', 'city', 'district'] },
       ],
       offset,
@@ -129,6 +145,23 @@ const getLandlordRooms = async (req, res, next) => {
       order: [['created_at', 'DESC']],
       distinct: true,
     });
+
+    if (rows.length > 0) {
+      const roomIds = rows.map(r => r.room_id);
+      const facilitiesData = await Room.findAll({
+        where: { room_id: roomIds },
+        include: [{ model: Facility, as: 'facilities', through: { attributes: [] } }]
+      });
+      const facilitiesMap = {};
+      facilitiesData.forEach(r => {
+        facilitiesMap[r.room_id] = r.facilities;
+      });
+      rows.forEach(room => {
+        const facs = facilitiesMap[room.room_id] || [];
+        room.facilities = facs;
+        room.setDataValue('facilities', facs);
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -152,7 +185,7 @@ const getLandlordRooms = async (req, res, next) => {
         roomNumber: room.room_number,
         property: room.property,
         images: room.images,
-        facilities: room.facilities,
+        facilities: room.facilities || [],
         createdAt: room.created_at,
       })),
       pagination: {
@@ -245,6 +278,16 @@ const updateRoom = async (req, res, next) => {
       });
     }
 
+    const originalPrice = room.price_per_month;
+    const originalRoomNumber = room.room_number;
+
+    if (room.status === 'rented') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot edit a room that is currently rented/occupied.',
+      });
+    }
+
     // Update fields
     if (title) room.title = title;
     if (description) room.description = description;
@@ -263,6 +306,25 @@ const updateRoom = async (req, res, next) => {
     }
     if (areaSqm) room.area_sqm = areaSqm;
     if (maxOccupants) room.max_occupants = Math.min(maxOccupants, 4);
+    if (roomNumber !== undefined && roomNumber !== room.room_number && room.property_id) {
+      const trimmedRoomNumber = roomNumber ? roomNumber.toString().trim() : null;
+      if (trimmedRoomNumber) {
+        const existingRoom = await Room.findOne({
+          where: {
+            property_id: room.property_id,
+            room_number: trimmedRoomNumber,
+            is_deleted: false,
+            room_id: { [Op.ne]: roomId }
+          }
+        });
+        if (existingRoom) {
+          return res.status(409).json({
+            success: false,
+            message: 'Room is already exist',
+          });
+        }
+      }
+    }
     if (roomNumber !== undefined) room.room_number = roomNumber || null;
     if (status) {
       if (room.status === 'pending' || room.status === 'rejected') {
@@ -276,6 +338,18 @@ const updateRoom = async (req, res, next) => {
     if (latitude !== undefined) room.latitude = latitude ? parseFloat(latitude) : null;
     if (longitude !== undefined) room.longitude = longitude ? parseFloat(longitude) : null;
     if (req.file) room.thumbnail_url = req.file.path;
+
+    // Automatic status transitions
+    if (room.status === 'rejected') {
+      room.status = 'pending';
+      room.rejection_reason = null;
+    } else if (room.status === 'available') {
+      const priceChanged = pricePerMonth !== undefined && Number(pricePerMonth) !== Number(originalPrice);
+      const roomNumChanged = roomNumber !== undefined && String(roomNumber).trim() !== String(originalRoomNumber).trim();
+      if (priceChanged || roomNumChanged) {
+        room.status = 'pending';
+      }
+    }
 
     room.updated_at = new Date();
     await room.save();
@@ -311,6 +385,13 @@ const deleteRoom = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Room not found.',
+      });
+    }
+
+    if (room.status === 'rented') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete a room that is currently rented/occupied.',
       });
     }
 
@@ -389,17 +470,34 @@ const getAllPublicRooms = async (req, res, next) => {
     const offset = (page - 1) * limit;
 
     const { count, rows } = await Room.findAndCountAll({
-      where: { is_deleted: false, status: { [Op.notIn]: ['inactive', 'pending', 'rejected'] } },
+      where: { is_deleted: false, status: { [Op.in]: ['available', 'rented'] } },
       include: [
         { model: RoomImage, as: 'images' },
-        { model: Facility, as: 'facilities', through: { attributes: [] } },
         { model: User, as: 'landlord', attributes: ['user_id', 'full_name', 'email', 'avatar_url', 'verification_status'] }
       ],
+
       offset,
       limit: parseInt(limit),
       order: [['created_at', 'DESC']],
       distinct: true,
     });
+
+    if (rows.length > 0) {
+      const roomIds = rows.map(r => r.room_id);
+      const facilitiesData = await Room.findAll({
+        where: { room_id: roomIds },
+        include: [{ model: Facility, as: 'facilities', through: { attributes: [] } }]
+      });
+      const facilitiesMap = {};
+      facilitiesData.forEach(r => {
+        facilitiesMap[r.room_id] = r.facilities;
+      });
+      rows.forEach(room => {
+        const facs = facilitiesMap[room.room_id] || [];
+        room.facilities = facs;
+        room.setDataValue('facilities', facs);
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -417,9 +515,11 @@ const getAllPublicRooms = async (req, res, next) => {
         maxOccupants: room.max_occupants,
         bedrooms: room.bedrooms,
         status: room.status,
+        availableFrom: room.available_from,
+        available_from: room.available_from,
         thumbnailUrl: room.thumbnail_url,
         images: room.images,
-        facilities: room.facilities,
+        facilities: room.facilities || [],
         landlord: room.landlord,
         createdAt: room.created_at,
       })),
@@ -488,6 +588,8 @@ const getPublicRoomDetails = async (req, res, next) => {
         maxOccupants: room.max_occupants,
         bedrooms: room.bedrooms,
         status: room.status,
+        availableFrom: room.available_from,
+        available_from: room.available_from,
         thumbnailUrl: room.thumbnail_url,
         roomNumber: room.room_number,
         images: room.images,
@@ -534,7 +636,7 @@ const searchRooms = async (req, res, next) => {
     if (status) {
       where.status = status;
     } else {
-      where.status = { [Op.notIn]: ['inactive', 'pending', 'rejected'] };
+      where.status = { [Op.in]: ['available', 'rented'] };
     }
 
     if (landlordId) {
@@ -632,8 +734,6 @@ const searchRooms = async (req, res, next) => {
       }
     }
 
-    include.push({ model: Facility, as: 'facilities', through: { attributes: [] }, required: false });
-
     let order = [['created_at', 'DESC']];
     if (sort) {
       if (sort === 'price_asc') order = [['price_per_month', 'ASC']];
@@ -650,6 +750,23 @@ const searchRooms = async (req, res, next) => {
       distinct: true,
     });
 
+    if (rows.length > 0) {
+      const roomIds = rows.map(r => r.room_id);
+      const facilitiesData = await Room.findAll({
+        where: { room_id: roomIds },
+        include: [{ model: Facility, as: 'facilities', through: { attributes: [] } }]
+      });
+      const facilitiesMap = {};
+      facilitiesData.forEach(r => {
+        facilitiesMap[r.room_id] = r.facilities;
+      });
+      rows.forEach(room => {
+        const facs = facilitiesMap[room.room_id] || [];
+        room.facilities = facs;
+        room.setDataValue('facilities', facs);
+      });
+    }
+
     return res.status(200).json({
       success: true,
       data: rows.map(room => ({
@@ -665,9 +782,11 @@ const searchRooms = async (req, res, next) => {
         bedrooms: room.bedrooms,
         maxOccupants: room.max_occupants,
         status: room.status,
+        availableFrom: room.available_from,
+        available_from: room.available_from,
         thumbnailUrl: room.thumbnail_url,
         images: room.images,
-        facilities: room.facilities,
+        facilities: room.facilities || [],
         landlord: room.landlord,
         createdAt: room.created_at,
       })),
@@ -877,8 +996,6 @@ const searchProperties = async (req, res, next) => {
       }
     }
 
-    include.push({ model: Facility, as: 'facilities', through: { attributes: [] }, required: false });
-
     // Fetch all matching rooms to group them (up to 1000 to prevent overload)
     const { count, rows } = await Room.findAndCountAll({
       where,
@@ -887,6 +1004,23 @@ const searchProperties = async (req, res, next) => {
       order: [['created_at', 'DESC']],
       distinct: true,
     });
+
+    if (rows.length > 0) {
+      const roomIds = rows.map(r => r.room_id);
+      const facilitiesData = await Room.findAll({
+        where: { room_id: roomIds },
+        include: [{ model: Facility, as: 'facilities', through: { attributes: [] } }]
+      });
+      const facilitiesMap = {};
+      facilitiesData.forEach(r => {
+        facilitiesMap[r.room_id] = r.facilities;
+      });
+      rows.forEach(room => {
+        const facs = facilitiesMap[room.room_id] || [];
+        room.facilities = facs;
+        room.setDataValue('facilities', facs);
+      });
+    }
 
     const groups = {};
     rows.forEach(room => {
@@ -905,6 +1039,7 @@ const searchProperties = async (req, res, next) => {
                maxPrice: parseFloat(room.price_per_month),
                totalRooms: 0,
                availableRooms: 0,
+               preBookableRooms: 0,
                rooms: []
            };
        }
@@ -920,6 +1055,9 @@ const searchProperties = async (req, res, next) => {
        group.totalRooms += qty;
        if (room.status === 'available') {
            group.availableRooms += availQty;
+       } 
+       if (room.status === 'rented' && room.available_from) {
+           group.preBookableRooms += 1;
        }
        group.rooms.push({
            roomId: room.room_id,
@@ -929,12 +1067,20 @@ const searchProperties = async (req, res, next) => {
            bedrooms: room.bedrooms,
            maxOccupants: room.max_occupants,
            status: room.status,
+           available_from: room.available_from,
+           availableFrom: room.available_from,
            thumbnailUrl: room.thumbnail_url,
            facilities: room.facilities,
        });
     });
 
     let resultList = Object.values(groups);
+
+    // Filter out completely sold out properties (availableRooms === 0) if status is not explicitly requested
+    // Disabled so tenants can see all properties/rooms regardless of availability
+    /* if (!status) {
+      resultList = resultList.filter(group => group.availableRooms > 0);
+    } */
     
     // Sort logic
     if (sort) {
@@ -1023,6 +1169,8 @@ const getPublicPropertyDetails = async (req, res, next) => {
            bedrooms: room.bedrooms,
            maxOccupants: room.max_occupants,
            status: room.status,
+           available_from: room.available_from,
+           availableFrom: room.available_from,
            thumbnailUrl: room.thumbnail_url,
            images: room.images,
            facilities: room.facilities,

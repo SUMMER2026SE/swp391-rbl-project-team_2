@@ -121,7 +121,7 @@ const PropertyDetailPage = () => {
              </h2>
              <div className="rooms-grid">
                {propertyData.rooms && propertyData.rooms.length > 0 ? (
-                 propertyData.rooms.filter(r => !showOnlyAvailable || r.status === 'available').map(room => {
+                 propertyData.rooms.filter(r => !showOnlyAvailable || r.status === 'available' || (r.status === 'rented' && (r.available_from || r.availableFrom))).map(room => {
                    const mappedRoom = {
                      id: room.roomId,
                      title: room.title,
@@ -131,10 +131,22 @@ const PropertyDetailPage = () => {
                        { icon: 'bed', text: `${room.bedrooms || 1} ${t('roomDetail.bed', 'Bed')}` },
                        { icon: 'square', text: `${room.areaSqm || 0} m²` }
                      ],
-                     imageTags: [{ 
-                        text: room.status === 'available' ? t('roomDetail.statusAvailable', 'Available') : (room.status === 'rented' ? t('roomDetail.statusOccupied', 'Occupied') : (room.status === 'maintenance' ? 'Maintenance' : t('roomDetail.statusOccupied', 'Occupied'))), 
-                        type: room.status === 'available' ? 'primary' : (room.status === 'maintenance' ? 'warning' : 'danger') 
-                     }],
+                      imageTags: [{ 
+                         text: room.status === 'available' 
+                            ? t('roomDetail.statusAvailable', 'Available') 
+                            : (room.status === 'rented' && (room.available_from || room.availableFrom)
+                              ? `Sắp trống (${new Date(room.available_from || room.availableFrom).toLocaleDateString('vi-VN')})`
+                              : (room.status === 'reserved' 
+                                ? 'Booking in progress' 
+                                : (room.status === 'rented' 
+                                  ? t('roomDetail.statusOccupied', 'Occupied') 
+                                  : (room.status === 'maintenance' ? 'Maintenance' : t('roomDetail.statusOccupied', 'Occupied'))))), 
+                         type: room.status === 'available' 
+                            ? 'primary' 
+                            : (room.status === 'rented' && (room.available_from || room.availableFrom)
+                              ? 'warning'
+                              : (room.status === 'reserved' ? 'warning' : (room.status === 'maintenance' ? 'warning' : 'danger'))) 
+                      }],
                      image: room.thumbnailUrl ? (room.thumbnailUrl.startsWith('http') ? room.thumbnailUrl : `http://localhost:5000${room.thumbnailUrl}`) : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500'
                    };
                    return <RoomCard key={mappedRoom.id} room={mappedRoom} variant="standard" />

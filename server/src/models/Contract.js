@@ -60,6 +60,10 @@ const Contract = sequelize.define('Contract', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  renewal_status: {
+    type: DataTypes.STRING(50),
+    defaultValue: 'pending',
+  },
   assigned_room_number: {
     type: DataTypes.STRING(50),
     allowNull: true,

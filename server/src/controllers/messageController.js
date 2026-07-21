@@ -190,6 +190,12 @@ const getConversationMessages = async (req, res, next) => {
         senderId: msg.sender_id,
         sender_id: msg.sender_id,
         content: msg.content,
+        messageType: msg.message_type,
+        message_type: msg.message_type,
+        fileUrl: msg.file_url,
+        file_url: msg.file_url,
+        fileName: msg.file_name,
+        file_name: msg.file_name,
         isRead: msg.is_read,
         readAt: msg.read_at,
         sender: msg.sender,
@@ -215,13 +221,16 @@ const getConversationMessages = async (req, res, next) => {
 const sendMessage = async (req, res, next) => {
   try {
     const { conversationId } = req.params;
-    const { content } = req.body;
+    const { content, messageType = 'text', fileUrl, fileName } = req.body;
     const userId = req.user.userId;
 
-    if (!content || content.trim() === '') {
+    const hasContent = content && content.trim() !== '';
+    const hasFile = fileUrl && fileUrl.trim() !== '';
+
+    if (!hasContent && !hasFile) {
       return res.status(400).json({
         success: false,
-        message: 'Message content is required.',
+        message: 'Message content or attachment is required.',
       });
     }
 
@@ -243,15 +252,25 @@ const sendMessage = async (req, res, next) => {
       });
     }
 
+    let defaultContent = content ? content.trim() : '';
+    if (!defaultContent) {
+      if (messageType === 'image') defaultContent = '[Hình ảnh]';
+      else if (messageType === 'video') defaultContent = '[Video]';
+      else defaultContent = `[Tệp tin: ${fileName || 'Attachment'}]`;
+    }
+
     const message = await Message.create({
       conversation_id: conversationId,
       sender_id: userId,
-      content: content.trim(),
+      content: defaultContent,
+      message_type: messageType,
+      file_url: fileUrl || null,
+      file_name: fileName || null,
       is_read: false,
     });
 
     // Update conversation last message
-    conversation.last_message = content.trim();
+    conversation.last_message = defaultContent;
     conversation.last_message_at = new Date();
     await conversation.save();
 
@@ -274,6 +293,12 @@ const sendMessage = async (req, res, next) => {
       senderId: message.sender_id,
       sender_id: message.sender_id,
       content: message.content,
+      messageType: message.message_type,
+      message_type: message.message_type,
+      fileUrl: message.file_url,
+      file_url: message.file_url,
+      fileName: message.file_name,
+      file_name: message.file_name,
       createdAt: message.created_at,
       created_at: message.created_at,
       sender: sender
@@ -392,6 +417,12 @@ const getConversationDetails = async (req, res, next) => {
           senderId: msg.sender_id,
           sender_id: msg.sender_id, // support snake_case
           content: msg.content,
+          messageType: msg.message_type,
+          message_type: msg.message_type,
+          fileUrl: msg.file_url,
+          file_url: msg.file_url,
+          fileName: msg.file_name,
+          file_name: msg.file_name,
           isRead: msg.is_read,
           readAt: msg.read_at,
           sender: msg.sender,
@@ -405,6 +436,42 @@ const getConversationDetails = async (req, res, next) => {
   }
 };
 
+// =========================================================
+// POST /api/chat/upload
+// Upload chat attachment
+// =========================================================
+const uploadChatAttachment = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded.',
+      });
+    }
+
+    let messageType = 'file';
+    if (req.file.mimetype.startsWith('image/')) {
+      messageType = 'image';
+    } else if (req.file.mimetype.startsWith('video/')) {
+      messageType = 'video';
+    }
+
+    const fileUrl = req.file.path;
+
+    return res.status(200).json({
+      success: true,
+      message: 'Attachment uploaded successfully!',
+      data: {
+        fileUrl: fileUrl,
+        messageType: messageType,
+        fileName: req.file.originalname,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createOrGetConversation,
   getUserConversations,
@@ -412,4 +479,5 @@ module.exports = {
   sendMessage,
   closeConversation,
   getConversationDetails,
+  uploadChatAttachment,
 };

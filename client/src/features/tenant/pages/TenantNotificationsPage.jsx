@@ -1,17 +1,78 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Home, CreditCard, Wrench, Clipboard, CheckCircle, Bell, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './TenantNotificationsPage.css';
 
-const INITIAL_NOTIFICATIONS = [];
+import httpClient from '../../../services/httpClient';
 
 
 const TenantNotificationsPage = () => {
   const { t } = useTranslation();
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
   const [activeFilter, setActiveFilter] = useState('All');
-
+  const [loading, setLoading] = useState(true);
+  
   const filters = ['All', 'Requests', 'Payments', 'System'];
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await httpClient.get('/tenant/notifications');
+      const apiNotifications = res.data || [];
+      
+      const mapped = apiNotifications.map(item => {
+        let category = 'System';
+        let icon = <CheckCircle size={18} />;
+        let iconType = 'info';
+        
+        const notifType = (item.notification_type || item.notificationType || '').toLowerCase();
+        
+        if (notifType.includes('request')) {
+          category = 'Requests';
+          icon = <Clipboard size={18} />;
+          iconType = 'warning';
+        } else if (notifType.includes('payment')) {
+          category = 'Payments';
+          icon = <CreditCard size={18} />;
+          iconType = 'success';
+        } else if (notifType === 'viewing_confirmed') {
+          category = 'Requests';
+          icon = <Home size={18} />;
+          iconType = 'success';
+        } else if (notifType === 'contract_expiring') {
+          category = 'System';
+          icon = <Bell size={18} />;
+          iconType = 'danger';
+        }
+
+        const dateObj = new Date(item.createdAt || item.created_at);
+        const timeStr = dateObj.toLocaleDateString('vi-VN');
+
+        return {
+          id: item.notification_id || item.notificationId,
+          category,
+          icon,
+          iconType,
+          isUnread: !item.is_read && !item.isRead,
+          title: item.title,
+          description: item.message,
+          time: timeStr
+        };
+      });
+
+      setNotifications(mapped);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchNotifications();
+  }, []);
   
   const getFilterLabel = (filter) => {
     switch(filter) {
@@ -23,13 +84,38 @@ const TenantNotificationsPage = () => {
     }
   };
 
-  const handleMarkAllRead = (e) => {
+  const handleMarkAllRead = async (e) => {
     e.preventDefault();
-    setNotifications(prev => prev.map(n => ({ ...n, isUnread: false })));
+    try {
+      await httpClient.put('/tenant/notifications/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, isUnread: false })));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleToggleRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isUnread: !n.isUnread } : n));
+  const handleToggleRead = async (id, isUnread) => {
+    if (!isUnread) return;
+    try {
+      await httpClient.put(`/tenant/notifications/${id}/read`);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isUnread: false } : n));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleNotificationClick = async (notif) => {
+    if (notif.isUnread) {
+      await handleToggleRead(notif.id, true);
+    }
+    const titleStr = (notif.title || '').toLowerCase();
+    const descStr = (notif.description || '').toLowerCase();
+
+    if (titleStr.includes('chấm dứt') || descStr.includes('chấm dứt')) {
+      navigate('/tenant/requests', { state: { activeTab: 'terminations' } });
+    } else {
+      navigate('/tenant/requests');
+    }
   };
 
   const filteredNotifications = notifications.filter(n => {
@@ -71,7 +157,7 @@ const TenantNotificationsPage = () => {
               <div
                 key={notif.id}
                 className={`notification-row-item ${notif.isUnread ? 'unread' : 'read'} ${index > 0 ? 'with-top-border' : ''}`}
-                onClick={() => handleToggleRead(notif.id)}
+                onClick={() => handleNotificationClick(notif)}
               >
                 {/* Icon Column */}
                 <div className="notification-icon-col">

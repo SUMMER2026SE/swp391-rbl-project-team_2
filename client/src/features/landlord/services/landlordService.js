@@ -32,6 +32,16 @@ export const landlordService = {
     }
   },
 
+  getExpiringSummary: async () => {
+    try {
+      const response = await httpClient.get('/landlord/dashboard/expiring-summary');
+      return response;
+    } catch (error) {
+      console.error('Error fetching expiring summary:', error);
+      throw error;
+    }
+  },
+
   // ===== PROPERTIES MANAGEMENT =====
   getPropertyDetails: async (propertyId) => {
     try {
@@ -361,6 +371,26 @@ export const landlordService = {
     }
   },
 
+  approveRenewal: async (id, data) => {
+    try {
+      const response = await httpClient.put(`/landlord/renewal-requests/${id}/approve`, data);
+      return response;
+    } catch (error) {
+      console.error('Error approving renewal contract:', error);
+      throw error;
+    }
+  },
+
+  declineRenewal: async (id) => {
+    try {
+      const response = await httpClient.put(`/landlord/renewal-requests/${id}/decline`);
+      return response;
+    } catch (error) {
+      console.error('Error declining renewal contract:', error);
+      throw error;
+    }
+  },
+
   terminateContract: async (id, reason) => {
     try {
       const response = await httpClient.put(`/landlord/contracts/${id}/terminate`, { reason });
@@ -504,12 +534,31 @@ export const landlordService = {
     }
   },
 
-  sendMessage: async (conversationId, content) => {
+  sendMessage: async (conversationId, content, messageType = 'text', fileUrl = null, fileName = null) => {
     try {
-      const response = await httpClient.post(`/chat/conversations/${conversationId}/messages`, { content });
+      const response = await httpClient.post(`/chat/conversations/${conversationId}/messages`, {
+        content,
+        messageType,
+        fileUrl,
+        fileName
+      });
       return response;
     } catch (error) {
       console.error('Error sending message:', error);
+      throw error;
+    }
+  },
+
+  uploadChatAttachment: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await httpClient.post('/chat/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response;
+    } catch (error) {
+      console.error('Error uploading chat attachment:', error);
       throw error;
     }
   },
@@ -618,10 +667,24 @@ export const landlordService = {
     try {
       const response = await httpClient.post('/landlord/profile/verify', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000,
       });
       return response;
     } catch (error) {
       console.error('Error submitting verification:', error);
+      throw error;
+    }
+  },
+
+  scanOcr: async (formData) => {
+    try {
+      const response = await httpClient.post('/landlord/profile/ocr', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
+      });
+      return response;
+    } catch (error) {
+      console.error('Error scanning OCR:', error);
       throw error;
     }
   },

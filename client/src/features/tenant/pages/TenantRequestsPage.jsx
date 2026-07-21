@@ -1,6 +1,6 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../../../store/useAuthStore';
 import { 
   Loader, 
@@ -33,13 +33,27 @@ import { rentalRequestService } from '../services/rentalRequestService';
 import Button from '../../../components/common/Button';
 import { ROUTES } from '../../../constants';
 import ContractDocument from '../../../components/ContractDocument';
+import TerminationRequestModal from '../../../components/termination/TerminationRequestModal';
+import TerminationHistoryPage from '../../../components/termination/TerminationHistoryPage';
 import { useTranslation } from 'react-i18next';
 import './TenantRequestsPage.css';
 
 const TenantRequestsPage = () => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('viewing'); // 'viewing', 'requests', or 'contracts'
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(location.search || '');
+    return params.get('tab') || location.state?.activeTab || 'viewing';
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || '');
+    const tabFromUrl = params.get('tab') || location.state?.activeTab;
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [location.search, location.state]);
   const [viewingSchedules, setViewingSchedules] = useState([]);
   const [rentalRequests, setRentalRequests] = useState([]);
   const [contracts, setContracts] = useState([]);
@@ -59,6 +73,10 @@ const TenantRequestsPage = () => {
   const [tenantIcIssueDate, setTenantIcIssueDate] = useState('');
   const [tenantIcIssuePlace, setTenantIcIssuePlace] = useState('');
   const [tenantPermanentAddress, setTenantPermanentAddress] = useState('');
+  const [modalMode, setModalMode] = useState('request_contract'); // 'request_contract' or 'create_request'
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const [phone, setPhone] = useState('');
+  const [rentalPurpose, setRentalPurpose] = useState('');
 
   const [selectedContractToSign, setSelectedContractToSign] = useState(null);
   const [showContractModal, setShowContractModal] = useState(false);
@@ -72,54 +90,62 @@ const TenantRequestsPage = () => {
     cancelText: 'Cancel',
     type: 'primary'
   });
+  
+  const [showRenewModal, setShowRenewModal] = useState(false);
+  const [renewContractTarget, setRenewContractTarget] = useState(null);
+  const [renewDuration, setRenewDuration] = useState('6');
+
+  const [showTerminationModal, setShowTerminationModal] = useState(false);
+  const [selectedContractForTermination, setSelectedContractForTermination] = useState(null);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch all initially to get counts for badges
-    fetchViewingSchedules();
-    fetchRentalRequests();
-    fetchContracts();
+    const fetchAll = async () => {
+      setLoading(true);
+      try {
+        await Promise.allSettled([
+          fetchViewingSchedules(),
+          fetchRentalRequests(),
+          fetchContracts(),
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
   }, []);
 
   const fetchViewingSchedules = async () => {
     try {
-      setLoading(true);
-      const data = await rentalRequestService.getMyViewingSchedules();
-      const items = Array.isArray(data) ? data : (data.data || []);
-      setViewingSchedules(items);
+      const res = await rentalRequestService.getMyViewingSchedules();
+      const items = Array.isArray(res) ? res : (res?.data || []);
+      setViewingSchedules(Array.isArray(items) ? items : []);
     } catch (err) {
       console.error(err);
       setViewingSchedules([]);
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchRentalRequests = async () => {
     try {
-      setLoading(true);
       const response = await rentalRequestService.getMyRequests();
-      const data = response.data?.data || response.data || [];
-      setRentalRequests(data);
+      const items = Array.isArray(response) ? response : (response?.data?.data || response?.data || []);
+      setRentalRequests(Array.isArray(items) ? items : []);
     } catch (err) {
       console.error(err);
       setRentalRequests([]);
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchContracts = async () => {
     try {
-      setLoading(true);
-      const data = await rentalRequestService.getMyContracts();
-      const items = Array.isArray(data) ? data : (data.data || []);
-      setContracts(items);
+      const res = await rentalRequestService.getMyContracts();
+      const items = Array.isArray(res) ? res : (res?.data || []);
+      setContracts(Array.isArray(items) ? items : []);
     } catch (err) {
       console.error(err);
       setContracts([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -218,15 +244,40 @@ const TenantRequestsPage = () => {
     }
   };
 
-  const handleOpenContractRequest = (schedule) => {
-    setSelectedContractSchedule(schedule);
+  const handleOpenContractRequest = (item, mode = 'request_contract') => {
+    setModalMode(mode);
+    setSelectedContractSchedule(item);
+    if (mode === 'create_request') {
+      setSelectedRoomId(item.roomId || item.room_id);
+      setContractStartDate('');
+      setContractDuration('6');
+      setPhone(user?.phone || '');
+      setRentalPurpose('');
+    } else {
+      setSelectedRoomId(null);
+      // Autofill start date and duration from request
+      const reqDate = item.requestedMoveInDate || item.requested_move_in_date;
+      setContractStartDate(reqDate ? reqDate.split('T')[0] : '');
+      setContractDuration(item.leaseDurationMonths || item.lease_duration_months || '6');
+      setPhone(item.tenantPhone || item.tenant_phone || '');
+      setRentalPurpose(item.rentalPurpose || item.rental_purpose || '');
+    }
     setContractMessage('');
-    setContractStartDate('');
-    setContractDuration('6');
+    
+    // Format date to YYYY-MM-DD if it exists
+    let defaultDate = '';
+    if (item.requested_move_in_date) {
+      defaultDate = new Date(item.requested_move_in_date).toISOString().split('T')[0];
+    } else if (item.requestedMoveInDate) {
+      defaultDate = new Date(item.requestedMoveInDate).toISOString().split('T')[0];
+    }
+    
+    setContractStartDate(defaultDate);
+    setContractDuration(item.lease_duration_months?.toString() || item.leaseDurationMonths?.toString() || '6');
     setTenantName(user?.full_name || '');
     setTenantIc('');
     setTenantIcIssueDate('');
-    setTenantIcIssuePlace('');
+    setTenantIcIssuePlace('Cục Cảnh sát Quản lý hành chính về trật tự xã hội');
     setTenantPermanentAddress('');
     setIsContractModalOpen(true);
   };
@@ -234,6 +285,8 @@ const TenantRequestsPage = () => {
   const handleCloseContractRequest = () => {
     setIsContractModalOpen(false);
     setSelectedContractSchedule(null);
+    setSelectedRoomId(null);
+    setModalMode('request_contract');
     setContractMessage('');
     setContractStartDate('');
     setContractDuration('6');
@@ -242,6 +295,8 @@ const TenantRequestsPage = () => {
     setTenantIcIssueDate('');
     setTenantIcIssuePlace('');
     setTenantPermanentAddress('');
+    setPhone('');
+    setRentalPurpose('');
   };
 
   const handleSubmitContractRequest = async () => {
@@ -258,19 +313,54 @@ const TenantRequestsPage = () => {
       return;
     }
 
-    if (!tenantName || !tenantIc || !tenantIcIssueDate || !tenantIcIssuePlace || !tenantPermanentAddress) {
-      toast.error('Please fill in all identity details for the contract.');
-      return;
-    }
-    if (tenantIc.length !== 12) {
-      toast.error('CCCD must be exactly 12 digits.');
-      return;
+    if (modalMode !== 'create_request') {
+      if (!tenantName || !tenantIc || !tenantIcIssueDate || !tenantIcIssuePlace || !tenantPermanentAddress) {
+        toast.error('Please fill in all identity details for the contract.');
+        return;
+      }
+      if (tenantIc.length !== 12) {
+        toast.error('CCCD must be exactly 12 digits.');
+        return;
+      }
     }
 
     try {
       setSubmittingDispute(true);
-      // Determine if requesting from a viewing schedule or rental request
-      if (selectedContractSchedule.scheduleId || selectedContractSchedule.schedule_id) {
+      if (modalMode === 'create_request') {
+        if (!phone) {
+          toast.error('Vui lòng nhập số điện thoại.');
+          return;
+        }
+        if (!contractStartDate) {
+          toast.error('Vui lòng chọn ngày nhận phòng.');
+          return;
+        }
+        if (!rentalPurpose) {
+          toast.error('Vui lòng nhập mục đích thuê phòng.');
+          return;
+        }
+        const selectedDate = new Date(contractStartDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate < today) {
+          toast.error('Ngày nhận phòng không thể ở quá khứ.');
+          return;
+        }
+
+        const roomId = parseInt(selectedRoomId || selectedContractSchedule.roomId || selectedContractSchedule.room_id, 10);
+        await rentalRequestService.createRequest({
+          roomId,
+          message: contractMessage || null,
+          requestedMoveInDate: contractStartDate,
+          leaseDurationMonths: parseInt(contractDuration, 10),
+          phone: phone,
+          rentalPurpose: rentalPurpose
+        });
+        toast.success(t('tenantRequests.sendRentalRequestSuccess', 'Gửi yêu cầu thuê phòng thành công!'));
+        handleCloseContractRequest();
+        fetchViewingSchedules();
+        fetchRentalRequests();
+      } else if (selectedContractSchedule.scheduleId || selectedContractSchedule.schedule_id) {
         await rentalRequestService.requestContract(
           selectedContractSchedule.scheduleId || selectedContractSchedule.schedule_id, 
           contractMessage, contractStartDate, contractDuration, 
@@ -290,7 +380,7 @@ const TenantRequestsPage = () => {
         fetchRentalRequests();
       }
     } catch (err) {
-      toast.error('Failed to request contract: ' + (err.response?.data?.message || err.message));
+      toast.error('Failed to process request: ' + (err.response?.data?.message || err.message));
     } finally {
       setSubmittingDispute(false);
     }
@@ -306,6 +396,7 @@ const TenantRequestsPage = () => {
   const [pendingSignatureData, setPendingSignatureData] = useState('');
   const [pendingContractId, setPendingContractId] = useState(null);
   const [pendingRoomId, setPendingRoomId] = useState(null);
+  const [otpMode, setOtpMode] = useState('sign'); // 'sign' or 'renew'
 
   const triggerOtpFlow = async (contractId, roomId, signatureDataUrl) => {
     try {
@@ -315,6 +406,7 @@ const TenantRequestsPage = () => {
       setPendingContractId(contractId);
       setPendingRoomId(roomId);
       setOtpCode('');
+      setOtpMode('sign');
       setShowOtpModal(true);
       setShowContractModal(false);
       toast.success('OTP sent to your email.');
@@ -336,6 +428,22 @@ const TenantRequestsPage = () => {
     await triggerOtpFlow(contractId, roomId, signatureDataUrl);
   };
 
+  const handleSignRenewalContract = async (contract) => {
+    try {
+      setSubmittingContract(true);
+      await rentalRequestService.sendRenewalOtp(contract.contractId || contract.contract_id);
+      setPendingContractId(contract.contractId || contract.contract_id);
+      setOtpCode('');
+      setOtpMode('renew');
+      setShowOtpModal(true);
+      toast.success('Mã OTP đã được gửi đến email của bạn để ký gia hạn.');
+    } catch (err) {
+      toast.error('Gửi OTP thất bại: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmittingContract(false);
+    }
+  };
+
   const handleVerifyOtpAndSign = async () => {
     if (!otpCode || otpCode.length !== 6) {
       toast.error('Please enter a valid 6-digit OTP.');
@@ -343,6 +451,15 @@ const TenantRequestsPage = () => {
     }
     try {
       setSubmittingContract(true);
+      
+      if (otpMode === 'renew') {
+        await rentalRequestService.signRenewal(pendingContractId, { otp: otpCode });
+        setShowOtpModal(false);
+        toast.success('Hợp đồng gia hạn đã được ký và kích hoạt thành công!');
+        fetchContracts();
+        return;
+      }
+
       // Generate PDF
       const element = document.querySelector('.contract-document-wrapper') || document.querySelector('.contract-modal-container');
       let pdfBase64 = '';
@@ -352,15 +469,21 @@ const TenantRequestsPage = () => {
         pdfBase64 = await html2pdf().from(element).outputPdf('datauristring');
       }
 
-      await rentalRequestService.signContract(pendingContractId, { 
+      const response = await rentalRequestService.signContract(pendingContractId, { 
         tenantSignature: pendingSignatureData, 
         otp: otpCode,
         contractPdf: pdfBase64
       });
       setShowOtpModal(false);
       setSelectedContractToSign(null);
-      toast.success('Contract signed successfully!');
-      navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${pendingRoomId}&contractId=${pendingContractId}`);
+
+      if (response?.data?.data?.isRenewal || response?.data?.isRenewal) {
+        toast.success('Hợp đồng gia hạn đã được ký và kích hoạt thành công!');
+        fetchContracts();
+      } else {
+        toast.success('Contract signed successfully! Redirecting to payment...');
+        navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${pendingRoomId}&contractId=${pendingContractId}`);
+      }
     } catch (err) {
       toast.error('Failed to sign contract: ' + (err.response?.data?.message || err.message));
     } finally {
@@ -383,6 +506,60 @@ const TenantRequestsPage = () => {
           fetchContracts();
         } catch (err) {
           toast.error('Failed to cancel contract: ' + (err.response?.data?.message || err.message));
+        }
+      }
+    });
+  };
+
+  const handleRenewContract = (contract) => {
+    setRenewContractTarget(contract);
+    setRenewDuration('6');
+    setShowRenewModal(true);
+  };
+
+  const handleDeclineRenewal = (contract) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Xác nhận không gia hạn',
+      message: 'Bạn có chắc chắn xác nhận KHÔNG gia hạn hợp đồng này và sẽ dọn đi khi hết hạn? Sau khi xác nhận, phòng của bạn sẽ được hiển thị ngày trống để người khác có thể đặt trước.',
+      confirmText: 'Xác nhận không gia hạn',
+      cancelText: 'Hủy',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await rentalRequestService.declineContractRenewal(contract.contractId || contract.contract_id);
+          toast.success('Xác nhận từ chối gia hạn thành công.');
+          fetchContracts();
+        } catch (err) {
+          toast.error('Thao tác thất bại: ' + (err.response?.data?.message || err.message));
+        }
+      }
+    });
+  };
+
+  const handleRenewContractConfirm = () => {
+    const durationNum = parseInt(renewDuration, 10);
+    if (isNaN(durationNum) || durationNum <= 0) {
+      toast.error('Số tháng gia hạn không hợp lệ.');
+      return;
+    }
+    
+    setShowRenewModal(false);
+    
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Xác nhận gia hạn hợp đồng',
+      message: `Bạn có chắc chắn muốn gia hạn hợp đồng này thêm ${durationNum} tháng? Chủ nhà sẽ nhận được yêu cầu và soạn hợp đồng mới.`,
+      confirmText: 'Xác nhận',
+      cancelText: 'Hủy',
+      type: 'primary',
+      onConfirm: async () => {
+        try {
+          await rentalRequestService.renewContract(renewContractTarget.contractId || renewContractTarget.contract_id, durationNum);
+          toast.success('Đã gửi yêu cầu gia hạn thành công.');
+          fetchContracts();
+        } catch (err) {
+          toast.error('Gửi yêu cầu gia hạn thất bại: ' + (err.response?.data?.message || err.message));
         }
       }
     });
@@ -441,23 +618,21 @@ const TenantRequestsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-transparent">
-        <div className="flex flex-col items-center gap-3 text-primary">
-          <Loader size={40} className="animate-spin" />
-          <p className="font-medium animate-pulse">{t('tenantRequests.loading', 'Loading your requests...')}</p>
-        </div>
+      <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '40px' }}>
+        <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '4px solid #2563eb', borderTopColor: 'transparent', animation: 'tmSpin 0.8s linear infinite' }} />
+        <p style={{ fontSize: '15px', color: '#64748b', fontWeight: 500 }}>{t('tenantRequests.loading', 'Đang tải dữ liệu của bạn...')}</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-transparent">
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-red-100 max-w-md text-center">
-          <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Oops!</h3>
-          <p className="text-gray-600">{error}</p>
-          <Button onClick={() => activeTab === 'viewing' ? fetchViewingSchedules() : fetchContracts()} className="mt-6 w-full">Try Again</Button>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+        <div style={{ background: '#ffffff', padding: '32px', borderRadius: '16px', border: '1px solid #fecdd3', maxWidth: '400px', textAlign: 'center' }}>
+          <AlertCircle size={48} color="#ef4444" style={{ margin: '0 auto 16px auto' }} />
+          <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>Có lỗi xảy ra</h3>
+          <p style={{ color: '#64748b', fontSize: '14px' }}>{error}</p>
+          <Button onClick={() => { fetchViewingSchedules(); fetchRentalRequests(); fetchContracts(); }} className="mt-6 w-full">Thử lại</Button>
         </div>
       </div>
     );
@@ -481,7 +656,7 @@ const TenantRequestsPage = () => {
             style={{ position: 'relative' }}
           >
             <Eye size={16} /> {t('tenantRequests.tabViewing', 'Lịch xem phòng')}
-            {viewingSchedules.some(s => s.status === 'pending_payment' || s.status === 'confirmed') && (
+            {Array.isArray(viewingSchedules) && viewingSchedules.some(s => s?.status === 'pending_payment' || s?.status === 'confirmed') && (
               <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
             )}
           </button>
@@ -491,7 +666,7 @@ const TenantRequestsPage = () => {
             style={{ position: 'relative' }}
           >
             <Home size={16} /> {t('tenantRequests.tabRequests', 'Yêu cầu thuê')}
-            {rentalRequests.some(r => r.status === 'approved') && (
+            {Array.isArray(rentalRequests) && rentalRequests.some(r => r?.status === 'approved') && (
               <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
             )}
           </button>
@@ -501,11 +676,23 @@ const TenantRequestsPage = () => {
             style={{ position: 'relative' }}
           >
             <FileText size={16} /> {t('tenantRequests.tabContracts', 'Hợp đồng')}
-            {contracts.some(c => c.status === 'pending_tenant_signature') && (
+            {Array.isArray(contracts) && contracts.some(c => c?.status === 'pending_tenant_signature') && (
               <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
             )}
           </button>
+          <button 
+            className={`tab-btn ${activeTab === 'terminations' ? 'active' : ''}`}
+            onClick={() => setActiveTab('terminations')}
+            style={{ position: 'relative' }}
+          >
+            Chấm dứt & Quyết toán
+          </button>
         </div>
+        
+        {/* =================== TERMINATION TAB =================== */}
+        {activeTab === 'terminations' && (
+          <TerminationHistoryPage currentUserId={user?.user_id || user?.userId} userRole="Tenant" />
+        )}
         
 
         {/* =================== VIEWING SCHEDULES TAB =================== */}
@@ -526,7 +713,7 @@ const TenantRequestsPage = () => {
               const statusInfo = getStatusInfo(schedule.status);
               const existingRequest = rentalRequests.find(r => 
                 (r.roomId === schedule.roomId || r.room_id === schedule.roomId) && 
-                r.status !== 'cancelled' && r.status !== 'canceled'
+                !['cancelled', 'canceled', 'rejected'].includes(r.status)
               );
               const primaryImage = schedule.room?.images?.find(img => img.is_primary)?.image_url || schedule.room?.images?.[0]?.image_url;
               const roomImage = primaryImage
@@ -637,35 +824,43 @@ const TenantRequestsPage = () => {
                         {/* After viewing confirmed/completed — tenant can request contract, decline, or dispute */}
                         {(schedule.status === 'confirmed' || schedule.status === 'completed') && (
                           <>
-                            {existingRequest ? (
-                              existingRequest.status === 'pending' ? (
-                                <span className="status-message-inline" style={{ color: '#b45309', background: '#fef3c7', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #fde68a' }}>
-                                  <Clock size={14} /> {t('tenantRequests.rentalRequestPending', 'Đã gửi yêu cầu thuê (Chờ duyệt)')}
-                                </span>
-                              ) : existingRequest.status === 'approved' ? (
-                                <span className="status-message-inline" style={{ color: '#059669', background: '#d1fae5', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #a7f3d0' }}>
-                                  <CheckCircle2 size={14} /> {t('tenantRequests.rentalRequestApproved', 'Yêu cầu thuê đã duyệt (Nhấp tab Yêu cầu thuê để yêu cầu hợp đồng)')}
-                                </span>
-                              ) : existingRequest.status === 'contract_requested' ? (
-                                <span className="status-message-inline" style={{ color: '#0891b2', background: '#cffafe', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #a5f3fc' }}>
-                                  <Clock size={14} /> {t('tenantRequests.contractRequested', 'Đã yêu cầu hợp đồng')}
-                                </span>
-                              ) : (
-                                <span className="status-message-inline" style={{ color: '#64748b', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #e2e8f0' }}>
-                                  <Info size={14} /> {t('tenantRequests.rentalRequestStatus', 'Yêu cầu thuê:')} {existingRequest.status}
-                                </span>
-                              )
+                            {schedule.tenantDecision === 'rejected' ? (
+                              <span className="status-message-inline" style={{ color: '#dc2626', background: '#fef2f2', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #fecdd3' }}>
+                                <Ban size={14} /> {t('tenantRequests.declinedToRent', 'Đã từ chối thuê')}
+                              </span>
                             ) : (
-                              <button onClick={() => navigate(`/rental-request?roomId=${schedule.roomId}`)} className="btn-action" style={{ background: '#10b981', color: '#ffffff', border: 'none' }}>
-                                <Home size={16} /> {t('tenantRequests.sendRentalRequest', 'Gửi yêu cầu thuê')}
-                              </button>
+                              <>
+                                {existingRequest ? (
+                                  existingRequest.status === 'pending' ? (
+                                    <span className="status-message-inline" style={{ color: '#b45309', background: '#fef3c7', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #fde68a' }}>
+                                      <Clock size={14} /> {t('tenantRequests.rentalRequestPending', 'Đã gửi yêu cầu thuê (Chờ duyệt)')}
+                                    </span>
+                                  ) : existingRequest.status === 'approved' ? (
+                                    <span className="status-message-inline" style={{ color: '#059669', background: '#d1fae5', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #a7f3d0' }}>
+                                      <CheckCircle2 size={14} /> {t('tenantRequests.rentalRequestApproved', 'Yêu cầu thuê đã duyệt')}
+                                    </span>
+                                  ) : existingRequest.status === 'contract_requested' ? (
+                                    <span className="status-message-inline" style={{ color: '#0891b2', background: '#cffafe', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #a5f3fc' }}>
+                                      <Clock size={14} /> {t('tenantRequests.contractRequested', 'Đã yêu cầu hợp đồng')}
+                                    </span>
+                                  ) : (
+                                    <span className="status-message-inline" style={{ color: '#64748b', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #e2e8f0' }}>
+                                      <Info size={14} /> {t('tenantRequests.rentalRequestStatus', 'Yêu cầu thuê:')} {existingRequest.status}
+                                    </span>
+                                  )
+                                ) : (
+                                  <button onClick={() => handleOpenContractRequest(schedule, 'create_request')} className="btn-action" style={{ background: '#10b981', color: '#ffffff', border: 'none' }}>
+                                    <Home size={16} /> {t('tenantRequests.sendRentalRequest', 'Gửi yêu cầu thuê')}
+                                  </button>
+                                )}
+                                <button onClick={() => handleDeclineToRent(schedule.scheduleId)} className="btn-action" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
+                                  <Ban size={16} /> {t('tenantRequests.decline', 'Decline')}
+                                </button>
+                                <button onClick={() => handleOpenDispute(schedule)} className="btn-action btn-dispute">
+                                  <MessageSquare size={16} /> {t('tenantRequests.reportIssue', 'Report Issue')}
+                                </button>
+                              </>
                             )}
-                            <button onClick={() => handleDeclineToRent(schedule.scheduleId)} className="btn-action" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
-                              <Ban size={16} /> {t('tenantRequests.decline', 'Decline')}
-                            </button>
-                            <button onClick={() => handleOpenDispute(schedule)} className="btn-action btn-dispute">
-                              <MessageSquare size={16} /> {t('tenantRequests.reportIssue', 'Report Issue')}
-                            </button>
                           </>
                         )}
 
@@ -769,15 +964,15 @@ const TenantRequestsPage = () => {
 
                     <div className="request-actions-row">
                       <div className="action-buttons">
-                        {request.status === 'pending' && (
-                          <button onClick={() => handleCancelRequest(request.requestId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
-                            <X size={16} /> {t('tenantRequests.cancelRequest', 'Cancel Request')}
-                          </button>
-                        )}
-
                         {request.status === 'approved' && (
                           <button onClick={() => handleOpenContractRequest(request)} className="btn-action btn-contract">
                             <FileSignature size={16} /> {t('tenantRequests.requestContract', 'Request Contract')}
+                          </button>
+                        )}
+
+                        {(request.status === 'pending' || request.status === 'approved') && (
+                          <button onClick={() => handleCancelRequest(request.requestId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3', marginLeft: request.status === 'approved' ? '8px' : '0' }}>
+                            <X size={16} /> {t('tenantRequests.cancelRequest', 'Từ chối / Hủy')}
                           </button>
                         )}
                         
@@ -871,10 +1066,17 @@ const TenantRequestsPage = () => {
                         {duration} {t('tenantRequests.months', 'months')}
                       </td>
                       <td style={{ padding: '16px' }}>
-                        <div className={`status-badge ${contract.status}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: statusInfo.bg, color: statusInfo.color, fontWeight: '600', fontSize: '12px', border: `1px solid ${statusInfo.color}33` }}>
-                          {statusInfo.icon}
-                          {statusInfo.label}
-                        </div>
+                        {(contract.renewalStatus === 'declined' || contract.renewal_status === 'declined') ? (
+                          <div className="status-badge declined" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: '#fee2e2', color: '#dc2626', fontWeight: '600', fontSize: '12px', border: '1px solid #fecdd3' }}>
+                            <Ban size={12} />
+                            Không gia hạn
+                          </div>
+                        ) : (
+                          <div className={`status-badge ${contract.status}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: statusInfo.bg, color: statusInfo.color, fontWeight: '600', fontSize: '12px', border: `1px solid ${statusInfo.color}33` }}>
+                            {statusInfo.icon}
+                            {statusInfo.label}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '16px' }}>
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -911,9 +1113,7 @@ const TenantRequestsPage = () => {
                               {contract.renewalRequest?.status === 'PENDING_LANDLORD' && (
                                 <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
                                   <Clock size={14}/> Đang chờ chủ nhà duyệt
-                                </span>
-                              )}
-                              {contract.renewalRequest?.status === 'WAITING_TENANT_SIGN' && (
+                      {contract.renewalRequest?.status === 'WAITING_TENANT_SIGN' && (
                                 <button
                                   onClick={() => handleSignRenewalContract(contract)}
                                   style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#2563eb', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
@@ -1030,104 +1230,166 @@ const TenantRequestsPage = () => {
               <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <FileSignature size={20} style={{ color: '#059669' }} />
               </div>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#111827' }}>Request Rental Contract</h2>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#111827' }}>
+                {modalMode === 'create_request' ? t('tenantRequests.sendRentalRequestHeader', 'Gửi Yêu Cầu Thuê Phòng') : t('tenantRequests.requestContractHeader', 'Yêu Cầu Hợp Đồng Thuê')}
+              </h2>
             </div>
             <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#166534', lineHeight: 1.6 }}>
                 <strong>Room:</strong> {selectedContractSchedule.room?.title}<br />
                 <span style={{ fontSize: '0.8rem', color: '#15803d', display: 'block', marginTop: '4px' }}>
-                  You will pay the security deposit and first month's rent when you sign the contract.
+                  {modalMode === 'create_request' 
+                    ? t('tenantRequests.sendRentalRequestDesc', 'Gửi lời nhắn của bạn đến chủ trọ để đăng ký thuê phòng. Sau khi chủ trọ đồng ý yêu cầu, bạn mới thực hiện tạo hợp đồng.')
+                    : t('tenantRequests.requestContractDesc', 'Bạn sẽ thanh toán tiền đặt cọc và tiền nhà tháng đầu tiên khi ký hợp đồng.')}
                 </span>
               </p>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Move-in Date *</label>
-                <input 
-                  type="date" 
-                  value={contractStartDate}
-                  onChange={(e) => setContractStartDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
-                  onFocus={(e) => e.target.style.borderColor = '#059669'}
-                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Duration (Months) *</label>
-                <select 
-                  value={contractDuration}
-                  onChange={(e) => setContractDuration(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
-                  onFocus={(e) => e.target.style.borderColor = '#059669'}
-                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => (
-                    <option key={m} value={m}>{m} Month{m > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            {modalMode === 'create_request' ? (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Số điện thoại *</label>
+                    <input 
+                      type="text" 
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                      onFocus={(e) => e.target.style.borderColor = '#059669'}
+                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ngày dọn vào *</label>
+                    <input 
+                      type="date" 
+                      value={contractStartDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setContractStartDate(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                      onFocus={(e) => e.target.style.borderColor = '#059669'}
+                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                    />
+                  </div>
+                </div>
 
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '20px 0 12px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>Tenant Information (For Contract)</h3>
-            
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Full Name *</label>
-              <input 
-                type="text" 
-                value={tenantName}
-                onChange={(e) => setTenantName(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
-                placeholder="Nguyễn Văn A"
-              />
-            </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Thời hạn thuê (Tháng) *</label>
+                    <select 
+                      value={contractDuration}
+                      onChange={(e) => setContractDuration(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
+                      onFocus={(e) => e.target.style.borderColor = '#059669'}
+                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                    >
+                      {[3, 6, 9, 12, 18, 24].map(m => (
+                        <option key={m} value={m}>{m} Month{m > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Mục đích vào ở *</label>
+                    <input 
+                      type="text" 
+                      value={rentalPurpose}
+                      placeholder="Ví dụ: Đi học, Đi làm..."
+                      onChange={(e) => setRentalPurpose(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                      onFocus={(e) => e.target.style.borderColor = '#059669'}
+                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Move-in Date (Tự động điền) *</label>
+                    <input 
+                      type="date" 
+                      value={contractStartDate}
+                      disabled
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Duration (Tự động điền) *</label>
+                    <select 
+                      value={contractDuration}
+                      disabled
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24].map(m => (
+                        <option key={m} value={m}>{m} Month{m > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>CCCD/CMND (12 digits) *</label>
-                <input 
-                  type="text" 
-                  maxLength={12}
-                  value={tenantIc}
-                  onChange={(e) => setTenantIc(e.target.value.replace(/\D/g, ''))}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
-                  placeholder="012345678901"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Date *</label>
-                <input 
-                  type="date" 
-                  value={tenantIcIssueDate}
-                  onChange={(e) => setTenantIcIssueDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
-                />
-              </div>
-            </div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '20px 0 12px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>
+                  {t('tenantRequests.tenantInfoContract', 'Thông tin người thuê (Lập hợp đồng)')}
+                </h3>
+                
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Full Name *</label>
+                  <input 
+                    type="text" 
+                    value={tenantName}
+                    onChange={(e) => setTenantName(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                    placeholder="Nguyễn Văn A"
+                  />
+                </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Place *</label>
-              <input 
-                type="text" 
-                value={tenantIcIssuePlace}
-                onChange={(e) => setTenantIcIssuePlace(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
-                placeholder="Cục Cảnh sát Quản lý hành chính về trật tự xã hội"
-              />
-            </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>CCCD/CMND (12 digits) *</label>
+                    <input 
+                      type="text" 
+                      maxLength={12}
+                      value={tenantIc}
+                      onChange={(e) => setTenantIc(e.target.value.replace(/\D/g, ''))}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                      placeholder="012345678901"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Date *</label>
+                    <input 
+                      type="date" 
+                      value={tenantIcIssueDate}
+                      onChange={(e) => setTenantIcIssueDate(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                    />
+                  </div>
+                </div>
 
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Permanent Address *</label>
-              <input 
-                type="text" 
-                value={tenantPermanentAddress}
-                onChange={(e) => setTenantPermanentAddress(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
-                placeholder="123 Duong ABC, Phuong XYZ, Quan 1, TP HCM"
-              />
-            </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Place *</label>
+                  <input 
+                    type="text" 
+                    value={tenantIcIssuePlace}
+                    onChange={(e) => setTenantIcIssuePlace(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                    placeholder="Cục Cảnh sát Quản lý hành chính về trật tự xã hội"
+                  />
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Permanent Address *</label>
+                  <input 
+                    type="text" 
+                    value={tenantPermanentAddress}
+                    onChange={(e) => setTenantPermanentAddress(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                    placeholder="123 Duong ABC, Phuong XYZ, Quan 1, TP HCM"
+                  />
+                </div>
+              </>
+            )}
 
             <textarea
               style={{ width: '100%', padding: '14px', border: '2px solid #E5E7EB', borderRadius: '10px', minHeight: '100px', marginBottom: '16px', fontSize: '0.95rem', transition: 'border-color 0.2s', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
@@ -1151,7 +1413,7 @@ const TenantRequestsPage = () => {
                 disabled={submittingContract}
                 style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#059669', color: '#fff', cursor: submittingContract ? 'not-allowed' : 'pointer', opacity: submittingContract ? 0.7 : 1, fontWeight: 600, fontSize: '0.9rem' }}
               >
-                {submittingContract ? 'Sending...' : 'Send Contract Request'}
+                {submittingContract ? 'Sending...' : (modalMode === 'create_request' ? t('tenantRequests.sendRentalRequestSubmit', 'Gửi Yêu Cầu Thuê') : t('tenantRequests.sendContractRequestSubmit', 'Gửi Yêu Cầu Hợp Đồng'))}
               </button>
             </div>
           </div>
@@ -1297,6 +1559,79 @@ const TenantRequestsPage = () => {
             />
           </div>
         </div>
+      )}
+
+      {/* Renew Modal */}
+      {showRenewModal && renewContractTarget && (
+        <div className="modal-overlay" onClick={() => setShowRenewModal(false)}>
+          <div className="modal-container" style={{ maxWidth: '400px', background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+              <h2 className="modal-title" style={{ fontSize: '18px' }}>{t('tenantRequests.renewContract', 'Gia hạn hợp đồng')}</h2>
+              <button 
+                className="modal-close" 
+                onClick={() => setShowRenewModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="modal-body" style={{ padding: '24px' }}>
+              <p style={{ margin: '0 0 16px 0', fontSize: '15px', color: '#4b5563', lineHeight: 1.5 }}>
+                {t('tenantRequests.renewContractDesc', 'Vui lòng nhập số tháng bạn muốn gia hạn cho hợp đồng này.')}
+              </p>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>{t('tenantRequests.durationMonths', 'Số tháng gia hạn')} *</label>
+                <input 
+                  type="number" 
+                  min="1"
+                  value={renewDuration}
+                  onChange={(e) => setRenewDuration(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                />
+              </div>
+            </div>
+            
+            <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowRenewModal(false)}
+                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontWeight: 500 }}
+              >
+                {t('tenantRequests.cancel', 'Hủy')}
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleRenewContractConfirm}
+                disabled={!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0}
+                style={{ 
+                  padding: '8px 16px', 
+                  borderRadius: '6px', 
+                  border: 'none', 
+                  background: (!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0) ? '#9ca3af' : '#10b981', 
+                  color: '#fff', 
+                  cursor: (!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0) ? 'not-allowed' : 'pointer', 
+                  fontWeight: 600,
+                  marginLeft: '12px'
+                }}
+              >
+                {t('tenantRequests.continue', 'Tiếp tục')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Termination Request Modal */}
+      {showTerminationModal && selectedContractForTermination && (
+        <TerminationRequestModal
+          contract={selectedContractForTermination}
+          userRole="Tenant"
+          onClose={() => setShowTerminationModal(false)}
+          onSuccess={() => {
+            fetchContracts();
+            toast.success('Đã gửi yêu cầu chấm dứt hợp đồng thành công!');
+          }}
+        />
       )}
     </div>
   );

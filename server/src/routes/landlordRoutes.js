@@ -11,7 +11,19 @@ const facilityController = require('../controllers/facilityController');
 const rentalRequestController = require('../controllers/rentalRequestController');
 const paymentController = require('../controllers/paymentController');
 const contractController = require('../controllers/contractController');
+const contractRenewalController = require('../controllers/contractRenewalController');
 const viewingScheduleController = require('../controllers/viewingScheduleController');
+const { runContractRenewalCheck } = require('../cron/contractRenewalJob');
+
+// Test Cron Job Route (For testing purposes only)
+router.get('/test-cron', async (req, res) => {
+  try {
+    await runContractRenewalCheck();
+    res.json({ success: true, message: 'Cron job executed successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to execute cron job' });
+  }
+});
 const complaintController = require('../controllers/complaintController');
 const messageController = require('../controllers/messageController');
 const notificationController = require('../controllers/notificationController');
@@ -27,6 +39,19 @@ const { storage } = require('../config/cloudinary');
 
 const upload = multer({
   storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.'));
+    }
+  },
+});
+
+const uploadMemory = multer({
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (req, file, cb) => {
     const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -58,6 +83,14 @@ router.post(
   ]),
   landlordProfileController.submitVerification
 );
+router.post(
+  '/profile/ocr',
+  upload.fields([
+    { name: 'cccdFront', maxCount: 1 },
+    { name: 'cccdBack', maxCount: 1 }
+  ]),
+  landlordProfileController.scanOcr
+);
 
 // =========================================================
 // BANK DETAILS & WITHDRAWAL ROUTES
@@ -78,6 +111,7 @@ router.get('/dashboard/statistics', dashboardController.getDashboardStatistics);
 router.get('/dashboard/recent-activity', dashboardController.getRecentActivity);
 router.get('/dashboard/revenue-chart', dashboardController.getRevenueChart);
 router.get('/dashboard/room-status', dashboardController.getRoomStatusDistribution);
+router.get('/dashboard/expiring-summary', dashboardController.getExpiringSummary);
 
 // =========================================================
 // PROPERTY ROUTES (Multi-property management)
@@ -140,6 +174,8 @@ router.post('/contracts', contractController.createContract);
 router.get('/contracts', contractController.getLandlordContracts);
 router.get('/contracts/:contractId', contractController.getContractDetails);
 router.put('/contracts/:contractId', contractController.updateContract);
+router.put('/renewal-requests/:requestId/approve', contractRenewalController.landlordApproveRenewal);
+router.put('/renewal-requests/:requestId/decline', contractRenewalController.landlordDeclineRenewal);
 router.post('/contracts/:contractId/renew', contractController.renewContract);
 router.put('/contracts/:contractId/terminate', contractController.terminateContract);
 
