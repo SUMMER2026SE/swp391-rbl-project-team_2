@@ -1113,7 +1113,9 @@ const TenantRequestsPage = () => {
                               {contract.renewalRequest?.status === 'PENDING_LANDLORD' && (
                                 <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
                                   <Clock size={14}/> Đang chờ chủ nhà duyệt
-                      {contract.renewalRequest?.status === 'WAITING_TENANT_SIGN' && (
+                                </span>
+                              )}
+                              {contract.renewalRequest?.status === 'WAITING_TENANT_SIGN' && (
                                 <button
                                   onClick={() => handleSignRenewalContract(contract)}
                                   style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#2563eb', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
