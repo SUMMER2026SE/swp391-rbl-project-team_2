@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { terminationService } from '../../services/terminationService';
 import './Termination.css';
 import { X, Trash2, FileText, Video, Image as ImageIcon } from 'lucide-react';
@@ -23,6 +23,48 @@ const TerminationRequestModal = ({ contract, userRole = 'Tenant', onClose, onSuc
   const [error, setError] = useState(null);
 
   const isLandlord = userRole === 'Landlord' || userRole === 'landlord';
+
+  useEffect(() => {
+    if (!isLandlord) {
+      if (contract?.status === 'pre_booked_active') {
+        if (terminationType === 'Mutual' || terminationType === 'LandlordViolationClaim') {
+          setCustomRefund(String(depositVal));
+          setCustomRetained('0');
+          setCustomCompensation('0');
+        } else {
+          const startDateStr = contract?.startDate || contract?.start_date;
+          let diffDays = 0;
+          if (startDateStr) {
+            const start = new Date(startDateStr);
+            const today = new Date();
+            const diffTime = start.getTime() - today.getTime();
+            diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          }
+          
+          if (diffDays > 7) {
+            const halfDeposit = depositVal / 2;
+            setCustomRefund(String(halfDeposit));
+            setCustomRetained(String(halfDeposit));
+            setCustomCompensation('0');
+          } else {
+            setCustomRefund('0');
+            setCustomRetained(String(depositVal));
+            setCustomCompensation('0');
+          }
+        }
+      } else {
+        if (terminationType === 'TenantVoluntaryBreak') {
+          setCustomRefund('0');
+          setCustomRetained(String(depositVal));
+          setCustomCompensation('0');
+        } else if (terminationType === 'Mutual' || terminationType === 'LandlordViolationClaim') {
+          setCustomRefund(String(depositVal));
+          setCustomRetained('0');
+          setCustomCompensation('0');
+        }
+      }
+    }
+  }, [terminationType, contract?.status, contract?.startDate, contract?.start_date, depositVal, isLandlord]);
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -337,6 +379,8 @@ const TerminationRequestModal = ({ contract, userRole = 'Tenant', onClose, onSuc
                     value={customRefund}
                     onChange={(e) => setCustomRefund(e.target.value)}
                     className="tm-input"
+                    style={{ backgroundColor: !isLandlord ? '#f1f5f9' : '#fff', cursor: !isLandlord ? 'not-allowed' : 'text', color: !isLandlord ? '#64748b' : 'inherit' }}
+                    readOnly={!isLandlord}
                     placeholder="0"
                   />
                 </div>
@@ -348,6 +392,8 @@ const TerminationRequestModal = ({ contract, userRole = 'Tenant', onClose, onSuc
                     value={customRetained}
                     onChange={(e) => setCustomRetained(e.target.value)}
                     className="tm-input"
+                    style={{ backgroundColor: !isLandlord ? '#f1f5f9' : '#fff', cursor: !isLandlord ? 'not-allowed' : 'text', color: !isLandlord ? '#64748b' : 'inherit' }}
+                    readOnly={!isLandlord}
                     placeholder="0"
                   />
                 </div>
@@ -359,6 +405,8 @@ const TerminationRequestModal = ({ contract, userRole = 'Tenant', onClose, onSuc
                     value={customCompensation}
                     onChange={(e) => setCustomCompensation(e.target.value)}
                     className="tm-input"
+                    style={{ backgroundColor: !isLandlord ? '#f1f5f9' : '#fff', cursor: !isLandlord ? 'not-allowed' : 'text', color: !isLandlord ? '#64748b' : 'inherit' }}
+                    readOnly={!isLandlord}
                     placeholder="0"
                   />
                 </div>

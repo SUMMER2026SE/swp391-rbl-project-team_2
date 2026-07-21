@@ -140,6 +140,23 @@ const initDatabase = async () => {
         END
       `);
 
+      // Add missing latitude/longitude columns
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('properties') AND name = 'latitude')
+        BEGIN
+            ALTER TABLE properties ADD latitude DECIMAL(10,8) NULL;
+            ALTER TABLE properties ADD longitude DECIMAL(11,8) NULL;
+        END
+      `);
+
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'latitude')
+        BEGIN
+            ALTER TABLE rooms ADD latitude DECIMAL(10,8) NULL;
+            ALTER TABLE rooms ADD longitude DECIMAL(11,8) NULL;
+        END
+      `);
+
       // Add missing contract columns
       await sequelize.query(`
         IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('contracts') AND name = 'assigned_room_number')

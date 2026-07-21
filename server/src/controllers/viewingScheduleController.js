@@ -1357,13 +1357,15 @@ const getTenantContracts = async (req, res, next) => {
   try {
     const tenantId = req.user.userId;
 
-    const { RenewalRequest } = require('../models');
+    const { RenewalRequest, TerminationRequest } = require('../models');
+    const { Op } = require('sequelize');
     const contracts = await Contract.findAll({
       where: { tenant_id: tenantId },
       include: [
         { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month', 'area_sqm', 'room_type', 'bedrooms', 'max_occupants'] },
         { model: User, as: 'landlordContract', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
-        { model: RenewalRequest, as: 'renewalRequests', limit: 1, order: [['created_at', 'DESC']] }
+        { model: RenewalRequest, as: 'renewalRequests', limit: 1, order: [['created_at', 'DESC']] },
+        { model: TerminationRequest, as: 'terminationRequests', where: { status: { [Op.in]: ['PENDING', 'ACCEPTED'] } }, required: false }
       ],
       order: [['created_at', 'DESC']],
     });
@@ -1401,6 +1403,7 @@ const getTenantContracts = async (req, res, next) => {
         renewalStatus: c.renewal_status,
         renewal_status: c.renewal_status,
         renewalRequest: c.renewalRequests && c.renewalRequests.length > 0 ? c.renewalRequests[0] : null,
+        hasPendingTermination: c.terminationRequests && c.terminationRequests.length > 0,
       })),
     });
   } catch (error) {

@@ -89,8 +89,8 @@ const createTerminationRequest = async (userId, data, evidenceFiles = [], io = n
     throw error;
   }
 
-  if (contract.status !== 'active') {
-    const error = new Error(`Chỉ có thể yêu cầu chấm dứt đối với hợp đồng đang hoạt động (ACTIVE). Trạng thái hiện tại: ${contract.status}`);
+  if (contract.status !== 'active' && contract.status !== 'pre_booked_active') {
+    const error = new Error(`Chỉ có thể yêu cầu chấm dứt đối với hợp đồng đang hoạt động (ACTIVE) hoặc đã giữ chỗ (PRE-BOOKED). Trạng thái hiện tại: ${contract.status}`);
     error.status = 400;
     throw error;
   }
