@@ -13,7 +13,16 @@ export const useComplaints = (params = {}) => {
     try {
       setLoading(true);
       const data = await landlordService.getComplaints(JSON.parse(paramsString));
-      setComplaints(data.complaints || data);
+      // Extract the array correctly from the backend response
+      const rawArray = data.data || data.complaints || [];
+      const mappedComplaints = rawArray.map(c => ({
+        ...c,
+        id: c.complaintId,
+        tenantName: c.tenant?.full_name || 'Unknown',
+        tenantAvatar: c.tenant?.avatar_url || null,
+        roomTitle: c.room ? (c.room.room_number ? `Phòng ${c.room.room_number} - ${c.room.title}` : c.room.title) : 'Unknown Room',
+      }));
+      setComplaints(mappedComplaints);
       if (data.pagination) {
         setPagination(data.pagination);
       }

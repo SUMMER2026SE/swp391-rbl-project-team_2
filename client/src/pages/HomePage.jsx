@@ -349,7 +349,7 @@ const HomePage = () => {
         <div className="container hero-search-content">
           <h1 className="hero-search-title">
             {t('home.heroTitle1', 'Tìm phòng trọ ưng ý')} <br />
-            <span style={{ color: '#2563EB' }}>{t('home.heroTitle2', 'nhanh chóng, dễ dàng')}</span>
+            <span style={{ color: 'var(--primary)' }}>{t('home.heroTitle2', 'nhanh chóng, dễ dàng')}</span>
           </h1>
           <p className="hero-search-subtitle">
             {t('home.heroSubtitle', 'Tìm kiếm nhanh · Lọc thông minh · Không mất phí môi giới')}
@@ -358,7 +358,7 @@ const HomePage = () => {
           <div className={`search-widget-glass ${isAIMode ? 'ai-active' : ''}`}>
              {/* Text Search */}
              <div className="search-top-row">
-               <Search className={isAIMode ? "search-icon-pink" : "search-icon-blue"} size={24} color={isAIMode ? "#EC4899" : "#2563EB"} />
+               <Search className={isAIMode ? "search-icon-pink" : "search-icon-blue"} size={24} color={isAIMode ? "#EC4899" : "var(--primary)"} />
                <input 
                  type="text" 
                  placeholder={isAIMode ? t('home.searchPlaceholderAI', 'Mô tả phòng bạn muốn tìm bằng AI (ví dụ: phòng dưới 4 triệu quận 1 có điều hòa)...') : t('home.searchPlaceholder', 'Bạn muốn tìm phòng ở đâu?')} 
@@ -398,7 +398,7 @@ const HomePage = () => {
                /* Standard Filters Row */
                <div className="search-bottom-row">
                  <div className="filter-select-wrapper">
-                   <MapPin className="filter-icon" size={18} color="#2563EB" />
+                   <MapPin className="filter-icon" size={18} color="var(--primary)" />
                    <select className="filter-select" value={city} onChange={e => { setCity(e.target.value); setDistrict(''); }}>
                      <option value="">{t('home.province', 'Tỉnh / Thành')}</option>
                      {provincesList.map((prov, index) => (
@@ -408,7 +408,7 @@ const HomePage = () => {
                  </div>
                  
                  <div className="filter-select-wrapper">
-                   <MapPin className="filter-icon" size={18} color="#2563EB" />
+                   <MapPin className="filter-icon" size={18} color="var(--primary)" />
                    <select className="filter-select" value={district} onChange={e => setDistrict(e.target.value)} disabled={!city || districtsList.length === 0}>
                      <option value="">{t('home.district', 'Quận / Huyện')}</option>
                      {districtsList.map((dist, index) => (
@@ -418,7 +418,7 @@ const HomePage = () => {
                  </div>
 
                  <div className="filter-select-wrapper">
-                   <DollarSign className="filter-icon" size={18} color="#2563EB" />
+                   <DollarSign className="filter-icon" size={18} color="var(--primary)" />
                    <select className="filter-select" value={priceRange} onChange={e => setPriceRange(e.target.value)}>
                       <option value="-">{t('home.allPrices', 'Mọi mức giá')}</option>
                       <option value="0-1000000">{t('home.price1', '< 1 triệu VNĐ')}</option>
@@ -432,7 +432,7 @@ const HomePage = () => {
 
                  <div className="filter-dropdown-wrapper" ref={facilitiesRef}>
                    <div className="filter-dropdown-btn" onClick={() => setShowFacilities(!showFacilities)}>
-                     <Grid className="filter-icon" size={18} color="#2563EB" />
+                     <Grid className="filter-icon" size={18} color="var(--primary)" />
                      <span className="dropdown-label">{t('home.amenities', 'Tiện ích')} {facilities.length > 0 && `(${facilities.length})`}</span>
                      <ChevronDown className="dropdown-icon" size={16} />
                    </div>
@@ -457,7 +457,7 @@ const HomePage = () => {
 
                  <div className="filter-dropdown-wrapper" ref={nearbyRef}>
                    <div className="filter-dropdown-btn" onClick={() => setShowNearbyFacilities(!showNearbyFacilities)}>
-                     <TreePine className="filter-icon" size={18} color="#2563EB" />
+                     <TreePine className="filter-icon" size={18} color="var(--primary)" />
                      <span className="dropdown-label">{t('home.nearby', 'Lân cận')} {nearbyFacilities.length > 0 && `(${nearbyFacilities.length})`}</span>
                      <ChevronDown className="dropdown-icon" size={16} />
                    </div>
@@ -629,22 +629,6 @@ const HomePage = () => {
             <button 
               className="view-all-btn-bottom" 
               onClick={() => navigate(ROUTES.ROOMS)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 24px',
-                backgroundColor: 'transparent',
-                color: '#2563eb',
-                border: '1px solid #2563eb',
-                borderRadius: '8px',
-                fontWeight: '600',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#eff6ff'; }}
-              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
               {t('home.viewAllRooms', 'View All Rooms')} <ChevronRight size={18} />
             </button>

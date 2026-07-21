@@ -24,6 +24,8 @@ import {
   TenantSettingsPage,
   TenantDashboardPage,
   TenantRequestsPage,
+  TenantMyRoomsPage,
+  TenantComplaintsPage,
   ListingsPage as TenantListingsPage,
   PropertyDetailPage
 } from '../features/tenant';
@@ -106,6 +108,8 @@ const AppRoutes = () => {
         <Route path={ROUTES.TENANT.DASHBOARD} element={<TenantDashboardPage />} />
         <Route path={ROUTES.TENANT.FAVORITES} element={<FavoritesPage />} />
         <Route path={ROUTES.TENANT.NOTIFICATIONS} element={<TenantNotificationsPage />} />
+        <Route path={ROUTES.TENANT.MY_ROOMS} element={<TenantMyRoomsPage />} />
+        <Route path={ROUTES.TENANT.COMPLAINTS} element={<TenantComplaintsPage />} />
         <Route path="/tenant/requests" element={<TenantRequestsPage />} />
         <Route path="/tenant/payment" element={<DepositPaymentPage />} />
         <Route path="/tenant/payment/return" element={<PaymentReturnPage />} />
@@ -148,12 +152,12 @@ const AppRoutes = () => {
         <Route path={ROUTES.LANDLORD.ANALYTICS} element={<AISystemMonitoringPage />} />
         <Route path={ROUTES.LANDLORD.PROFILE} element={<LandlordProfilePage />} />
         <Route path={ROUTES.LANDLORD.MESSAGES} element={<MessagesPage />} />
+        <Route path={ROUTES.LANDLORD.COMPLAINTS} element={<ComplaintsPage />} />
         <Route path={ROUTES.LANDLORD.NOTIFICATIONS} element={<LandlordNotificationsPage />} />
         <Route path={ROUTES.LANDLORD.MANAGE_ROOMS} element={<RoomManagementPage />} />
         <Route path={ROUTES.LANDLORD.PAYMENTS} element={<PaymentsPage />} />
         <Route path={ROUTES.LANDLORD.CONTRACTS} element={<ContractsPage />} />
         <Route path={ROUTES.LANDLORD.SCHEDULES} element={<ViewingSchedulesPage />} />
-        <Route path={ROUTES.LANDLORD.COMPLAINTS} element={<ComplaintsPage />} />
         <Route path={ROUTES.LANDLORD.PROPERTIES} element={<PropertiesPage />} />
         <Route path={ROUTES.LANDLORD.NEW_PROPERTY} element={<AddPropertyPage />} />
         <Route path={ROUTES.LANDLORD.PROPERTY_DASHBOARD} element={<PropertyDashboardPage />} />

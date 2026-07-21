@@ -455,6 +455,7 @@ const vnpayReturn = async (req, res, next) => {
             const contract = await Contract.findByPk(payment.contract_id);
             if (contract) {
               const start = new Date(contract.start_date);
+              start.setHours(0, 0, 0, 0);
               const now = new Date();
               now.setHours(0, 0, 0, 0);
 
@@ -843,6 +844,7 @@ const processPaymentSuccess = async (payment, transactionId) => {
     const contract = await Contract.findByPk(payment.contract_id);
     if (contract) {
       const start = new Date(contract.start_date);
+      start.setHours(0, 0, 0, 0);
       const now = new Date();
       now.setHours(0, 0, 0, 0);
 

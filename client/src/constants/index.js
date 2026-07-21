@@ -25,6 +25,8 @@ export const ROUTES = {
     CHAT_LANDLORD: '/messages',
     NOTIFICATIONS: '/notifications',
     SETTINGS: '/settings',
+    MY_ROOMS: '/my-rooms',
+    COMPLAINTS: '/complaints',
   },
 
   LANDLORD: {

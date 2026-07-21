@@ -75,6 +75,7 @@ router.post('/contracts/:contractId/decline-renewal', viewingScheduleController.
 // =========================================================
 // COMPLAINT ROUTES (Tenant-side)
 // =========================================================
+router.get('/complaints', complaintController.getTenantComplaints);
 router.post('/complaints', complaintController.createComplaint);
 
 // =========================================================

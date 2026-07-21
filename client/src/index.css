@@ -1,36 +1,44 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import './assets/styles/admin-shared.css';
 
 :root {
-  /* Brand Colors */
-  --primary: #2563EB;
-  --primary-hover: #1D4ED8;
-  --primary-light: #EFF6FF;
+  /* Brand Colors — Terracotta / Warm Earth Palette */
+  --primary: #C2703E;
+  --primary-hover: #A85C30;
+  --primary-light: #FFF8F0;
+
+  /* Secondary — Sage Green */
+  --secondary: #7C9A6E;
+  --secondary-light: #F0F5EC;
+
+  /* Accent — Golden Sand */
+  --accent: #D4A76A;
+  --accent-light: #FDF6E3;
 
   /* Background Colors */
-  --bg-main: #F8FAFC;
-  --bg-card: #FFFFFF;
-  --bg-dark: #0F172A;
-  --bg-hover: #F1F5F9;
+  --bg-main: #FAF7F2;
+  --bg-card: #FFFCF8;
+  --bg-dark: #2C2418;
+  --bg-hover: #F5F0E8;
 
   /* Text Colors */
-  --text-main: #1E293B;
-  --text-muted: #64748B;
-  --text-inverse: #FFFFFF;
+  --text-main: #2C2418;
+  --text-muted: #7A7062;
+  --text-inverse: #FFFCF8;
 
   /* Status Colors */
-  --success: #10B981;
-  --success-bg: #D1FAE5;
-  --warning: #F59E0B;
-  --warning-bg: #FEF3C7;
-  --danger: #EF4444;
-  --danger-bg: #FEE2E2;
+  --success: #7C9A6E;
+  --success-bg: #F0F5EC;
+  --warning: #D4A76A;
+  --warning-bg: #FDF6E3;
+  --danger: #C45B4A;
+  --danger-bg: #FDE8E4;
 
   /* Borders & Shadows */
-  --border-light: var(--border-light);
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --border-light: #E8E0D4;
+  --shadow-sm: 0 1px 3px 0 rgb(44 36 24 / 0.04), 0 1px 2px -1px rgb(44 36 24 / 0.04);
+  --shadow-md: 0 4px 6px -1px rgb(44 36 24 / 0.06), 0 2px 4px -2px rgb(44 36 24 / 0.04);
+  --shadow-lg: 0 10px 25px -3px rgb(44 36 24 / 0.08), 0 4px 6px -4px rgb(44 36 24 / 0.04);
 
   /* Radii */
   --radius-sm: 0.375rem;
@@ -87,33 +95,59 @@ select {
   color: var(--text-main);
 }
 
-/* Premium Dark Mode Override */
+/* ============================================================
+   Micro-Animation Utilities
+   ============================================================ */
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.hover-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 0 4px rgba(194, 112, 62, 0.12);
+}
+
+/* ============================================================
+   Premium Dark Mode Override — Warm Charcoal
+   ============================================================ */
 body.dark {
   background-color: var(--bg-main);
   color: var(--text-main);
-  
-  --bg-main: #0F1117;
-  --bg-card: #181C24;
-  --bg-secondary: #202634;
-  --bg-hover: #1E293B;
-  
-  --border-light: #2B3245;
-  
-  --text-main: #F5F7FA;
-  --text-muted: #B8C0CC;
-  
-  --primary: #6C63FF;
-  --primary-hover: #7C74FF;
-  --primary-light: #1C2230;
-  --success: #22C55E;
-  --warning: #F59E0B;
-  --danger: #EF4444;
+
+  --bg-main: #141110;
+  --bg-card: #1E1A16;
+  --bg-secondary: #252019;
+  --bg-hover: #2A241C;
+
+  --border-light: #3A3228;
+
+  --text-main: #F5F0E8;
+  --text-muted: #B8AFA2;
+
+  --primary: #D4884F;
+  --primary-hover: #E09A60;
+  --primary-light: #2A2118;
+  --secondary: #8DAF7D;
+  --secondary-light: #1D2A19;
+  --accent: #D4A76A;
+  --accent-light: #2D2518;
+  --success: #8DAF7D;
+  --warning: #D4A76A;
+  --danger: #D4675A;
 }
 
 /* Global Dark Mode Components */
 body.dark .btn-primary,
 body.dark button.primary {
-  background: linear-gradient(135deg, #6C63FF, #8B5CF6) !important;
+  background: linear-gradient(135deg, #D4884F, #C2703E) !important;
   color: #FFF !important;
   border: none;
   transition: all 200ms ease;
@@ -121,8 +155,8 @@ body.dark button.primary {
 
 body.dark .btn-primary:hover,
 body.dark button.primary:hover {
-  background: linear-gradient(135deg, #7C74FF, #9D75F8) !important;
-  box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+  background: linear-gradient(135deg, #E09A60, #D4884F) !important;
+  box-shadow: 0 4px 12px rgba(212, 136, 79, 0.35);
 }
 
 body.dark .room-card,
@@ -144,16 +178,16 @@ body.dark .room-card:hover {
 body.dark input,
 body.dark textarea,
 body.dark select {
-  background-color: #1C2230 !important;
-  border-color: #31384A !important;
+  background-color: #1E1A16 !important;
+  border-color: #3A3228 !important;
   color: var(--text-main);
 }
 
 body.dark input:focus,
 body.dark textarea:focus,
 body.dark select:focus {
-  border-color: #6C63FF !important;
-  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+  border-color: #D4884F !important;
+  box-shadow: 0 0 0 3px rgba(212, 136, 79, 0.2);
 }
 
 body.dark .sys-theme-card {
@@ -163,36 +197,36 @@ body.dark .sys-theme-card {
 }
 
 body.dark .sys-theme-card.selected {
-  border-color: #6C63FF;
-  background-color: rgba(108, 99, 255, 0.1);
+  border-color: #D4884F;
+  background-color: rgba(212, 136, 79, 0.1);
 }
 
 body.dark .sys-theme-preview.light-preview {
-  background-color: #F8FAFC;
+  background-color: #FAF7F2;
 }
 
 body.dark .sys-theme-preview.dark-preview {
-  background-color: #0F1117;
+  background-color: #141110;
 }
 
 /* Chat UI Dark Mode Overrides */
 body.dark .sidebar {
-  background-color: #181C24 !important;
+  background-color: #1E1A16 !important;
 }
 
 body.dark .messages-area,
 body.dark .chat-messages-container {
-  background-color: #202634 !important;
+  background-color: #252019 !important;
 }
 
 body.dark .message-bubble.sent .message-content,
 body.dark .chat-message-bubble.user .msg-text {
-  background-color: #6C63FF !important;
+  background-color: #C2703E !important;
   color: #FFF !important;
 }
 
 body.dark .message-bubble.received .message-content,
 body.dark .chat-message-bubble:not(.user) .msg-text {
-  background-color: #2B3245 !important;
-  color: #F5F7FA !important;
+  background-color: #2A241C !important;
+  color: #F5F0E8 !important;
 }

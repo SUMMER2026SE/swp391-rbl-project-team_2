@@ -23,7 +23,7 @@ const getLandlordComplaints = async (req, res, next) => {
     const { count, rows } = await Complaint.findAndCountAll({
       where,
       include: [
-        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address'] },
+        { model: Room, as: 'room', attributes: ['room_id', 'title', 'room_number', 'address'] },
         { model: User, as: 'tenant', attributes: ['user_id', 'full_name', 'email', 'phone'] },
       ],
       offset,
@@ -61,6 +61,62 @@ const getLandlordComplaints = async (req, res, next) => {
 };
 
 // =========================================================
+// GET /api/tenant/complaints
+// Get all complaints for tenant
+// =========================================================
+const getTenantComplaints = async (req, res, next) => {
+  try {
+    const tenantId = req.user.userId;
+    const { status, page = 1, limit = 10 } = req.query;
+
+    const where = { tenant_id: tenantId };
+    if (status) {
+      where.status = status;
+    }
+
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Complaint.findAndCountAll({
+      where,
+      include: [
+        { model: Room, as: 'room', attributes: ['room_id', 'title', 'room_number', 'address'] },
+        { model: User, as: 'landlordComplaint', attributes: ['user_id', 'full_name', 'email', 'phone'] },
+      ],
+      offset,
+      limit: parseInt(limit),
+      order: [['created_at', 'DESC']],
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: rows.map(complaint => ({
+        complaintId: complaint.complaint_id,
+        roomId: complaint.room_id,
+        tenantId: complaint.tenant_id,
+        title: complaint.title,
+        description: complaint.description,
+        complaintType: complaint.complaint_type,
+        status: complaint.status,
+        priority: complaint.priority,
+        resolutionNotes: complaint.resolution_notes,
+        room: complaint.room,
+        landlord: complaint.landlordComplaint,
+        createdAt: complaint.created_at,
+        updatedAt: complaint.updated_at,
+      })),
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(count / limit),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================================
 // GET /api/landlord/complaints/:complaintId
 // Get complaint details
 // =========================================================
@@ -72,7 +128,7 @@ const getComplaintDetails = async (req, res, next) => {
     const complaint = await Complaint.findOne({
       where: { complaint_id: complaintId, landlord_id: landlordId },
       include: [
-        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address'] },
+        { model: Room, as: 'room', attributes: ['room_id', 'title', 'room_number', 'address'] },
         { model: User, as: 'tenant', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
       ],
     });
@@ -273,4 +329,5 @@ module.exports = {
   updateComplaintStatus,
   updateComplaintPriority,
   createComplaint,
+  getTenantComplaints,
 };
