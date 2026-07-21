@@ -890,6 +890,74 @@ const TenantRequestsPage = () => {
                           >
                             <FileText size={14} /> {t('tenantRequests.viewContract', 'View Contract')}
                           </button>
+<<<<<<< Updated upstream
+=======
+                          {contract.status === 'active' && !contract.is_renewed && contract.renewalStatus !== 'declined' && contract.renewal_status !== 'declined' && (
+                            <>
+                              {(!contract.renewalRequest || contract.renewalRequest.status === 'PENDING_INTENT') && (
+                                <>
+                                  <button
+                                    onClick={() => handleRenewContract(contract)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#059669', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                                  >
+                                    <FileText size={14} /> Gia hạn
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeclineRenewal(contract)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#dc2626', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                                  >
+                                    <X size={14} /> Không gia hạn
+                                  </button>
+                                </>
+                              )}
+                              {contract.renewalRequest?.status === 'PENDING_LANDLORD' && (
+                                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <Clock size={14}/> Đang chờ chủ nhà duyệt
+                                </span>
+                              )}
+                              {contract.renewalRequest?.status === 'WAITING_TENANT_SIGN' && (
+                                <button
+                                  onClick={() => handleSignRenewalContract(contract)}
+                                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#2563eb', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                                >
+                                  <FileSignature size={14} /> Ký HĐ Gia Hạn
+                                </button>
+                              )}
+                            </>
+                          )}
+                          {(contract.status === 'active' || contract.status === 'pre_booked_active') && (
+                            contract.hasPendingTermination ? (
+                              <button
+                                disabled
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '6px',
+                                  padding: '6px 12px', background: '#94a3b8', 
+                                  border: 'none',
+                                  borderRadius: '6px', color: 'white', 
+                                  fontSize: '13px', cursor: 'not-allowed', fontWeight: 500
+                                }}
+                              >
+                                Đang chờ Hủy...
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setSelectedContractForTermination(contract);
+                                  setShowTerminationModal(true);
+                                }}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '6px',
+                                  padding: '6px 12px', background: '#ef4444', 
+                                  border: 'none',
+                                  borderRadius: '6px', color: 'white', 
+                                  fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                                }}
+                              >
+                                Hủy hợp đồng
+                              </button>
+                            )
+                          )}
+>>>>>>> Stashed changes
                           {contract.status === 'pending_payment' && (
                             <button
                               onClick={() => navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${contract.roomId}&contractId=${contract.contractId}`)}

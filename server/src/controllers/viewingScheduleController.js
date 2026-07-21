@@ -1340,11 +1340,21 @@ const getTenantContracts = async (req, res, next) => {
   try {
     const tenantId = req.user.userId;
 
+<<<<<<< Updated upstream
+=======
+    const { RenewalRequest, TerminationRequest } = require('../models');
+    const { Op } = require('sequelize');
+>>>>>>> Stashed changes
     const contracts = await Contract.findAll({
       where: { tenant_id: tenantId },
       include: [
         { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month', 'area_sqm', 'room_type', 'bedrooms', 'max_occupants'] },
         { model: User, as: 'landlordContract', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
+<<<<<<< Updated upstream
+=======
+        { model: RenewalRequest, as: 'renewalRequests', limit: 1, order: [['created_at', 'DESC']] },
+        { model: TerminationRequest, as: 'terminationRequests', where: { status: { [Op.in]: ['PENDING', 'ACCEPTED'] } }, required: false }
+>>>>>>> Stashed changes
       ],
       order: [['created_at', 'DESC']],
     });
@@ -1377,6 +1387,15 @@ const getTenantContracts = async (req, res, next) => {
         landlordIcIssuePlace: c.landlord_ic_issue_place,
         landlordPermanentAddress: c.landlord_permanent_address,
         landlordSignature: c.landlord_signature,
+<<<<<<< Updated upstream
+=======
+        is_renewed: c.is_renewed,
+        isRenewed: c.is_renewed,
+        renewalStatus: c.renewal_status,
+        renewal_status: c.renewal_status,
+        renewalRequest: c.renewalRequests && c.renewalRequests.length > 0 ? c.renewalRequests[0] : null,
+        hasPendingTermination: c.terminationRequests && c.terminationRequests.length > 0,
+>>>>>>> Stashed changes
       })),
     });
   } catch (error) {
