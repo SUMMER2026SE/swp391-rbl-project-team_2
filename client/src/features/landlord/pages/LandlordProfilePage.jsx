@@ -413,10 +413,10 @@ const LandlordProfilePage = () => {
   const statusInfo = getVerificationStatusLabel();
 
   const verificationItems = [
-    { label: t('profile.emailAddress'), status: displayProfile.email ? t('profile.verified') : t('profile.pending'), type: displayProfile.email ? 'success' : 'warning' },
-    { label: t('profile.phoneNumber'), status: displayProfile.phone ? t('profile.verified') : t('profile.pending'), type: displayProfile.phone ? 'success' : 'warning' },
-    { label: t('profile.accountStatus'), status: displayProfile.isActive ? t('profile.active') : t('profile.inactive'), type: displayProfile.isActive ? 'success' : 'warning' },
-    { label: t('profile.verification.title'), status: statusInfo.label, type: statusInfo.type },
+    { label: t('profile.emailAddress', 'Email'), status: displayProfile.email ? t('profile.verified', 'Verified') : t('profile.pending', 'Pending'), type: displayProfile.email ? 'success' : 'warning' },
+    { label: t('profile.phoneNumber', 'Phone'), status: displayProfile.phone ? t('profile.verified', 'Verified') : t('profile.pending', 'Pending'), type: displayProfile.phone ? 'success' : 'warning' },
+    { label: t('profile.accountStatus', 'Account Status'), status: (displayProfile.isActive !== undefined ? displayProfile.isActive : displayProfile.is_active) ? t('profile.active', 'Active') : t('profile.inactive', 'Inactive'), type: (displayProfile.isActive !== undefined ? displayProfile.isActive : displayProfile.is_active) ? 'success' : 'warning' },
+    { label: t('profile.verification.title', 'Verification'), status: statusInfo.label, type: statusInfo.type },
   ];
 
   return (
@@ -460,23 +460,21 @@ const LandlordProfilePage = () => {
             <h1 className="profile-full-name">{displayProfile.fullName || 'Landlord Name'}</h1>
             <span className="premium-host-badge">
               <Star size={12} fill="currentColor" />
-              <span>Premium Host</span>
+              <span>{t('profile.premiumHost', 'Premium Host')}</span>
             </span>
           </div>
 
           <p className="profile-bio-text">
-            Professional property manager overseeing premium boarding houses and long-term
-            rental units in the metropolitan area. Committed to providing exceptional living
-            experiences with a 98% tenant satisfaction rate.
+            {t('profile.bio', 'Professional property manager overseeing premium boarding houses and long-term rental units in the metropolitan area. Committed to providing exceptional living experiences with a 98% tenant satisfaction rate.')}
           </p>
 
           <div className="profile-action-buttons">
             <button className="btn-edit-profile-action" onClick={handleEditProfileClick}>
               <Pencil size={16} />
-              Edit Profile
+              {t('profile.editProfile', 'Edit Profile')}
             </button>
             <button className="btn-view-public-action">
-              View Public Profile
+              {t('profile.viewPublicProfile', 'View Public Profile')}
             </button>
           </div>
         </div>
@@ -491,7 +489,7 @@ const LandlordProfilePage = () => {
             <div className="section-card-header">
               <div className="card-header-left">
                 <Home size={20} className="header-icon-blue" />
-                <h2 className="section-card-title">Portfolio Overview</h2>
+                <h2 className="section-card-title">{t('profile.portfolioOverview', 'Portfolio Overview')}</h2>
               </div>
             </div>
 
@@ -499,15 +497,15 @@ const LandlordProfilePage = () => {
               {/* Stats Box Row */}
               <div className="stats-box-row">
                 <div className="stat-box-item">
-                  <span className="stat-label">Member Since</span>
+                  <span className="stat-label">{t('profile.memberSince', 'Member Since')}</span>
                   <span className="stat-value">
                     {displayProfile.createdAt ? new Date(displayProfile.createdAt).getFullYear() : 'N/A'}
                   </span>
                 </div>
                 <div className="stat-box-item">
-                  <span className="stat-label">Account Status</span>
+                  <span className="stat-label">{t('profile.accountStatus', 'Account Status')}</span>
                   <span className="stat-value highlight-occupancy">
-                    {displayProfile.isActive ? 'Active' : 'Inactive'}
+                    {(displayProfile.isActive !== undefined ? displayProfile.isActive : displayProfile.is_active) ? t('profile.active', 'Active') : t('profile.inactive', 'Inactive')}
                   </span>
                 </div>
               </div>
@@ -515,12 +513,12 @@ const LandlordProfilePage = () => {
           </div>
 
           {/* Account Settings Header Title */}
-          <h3 className="profile-subsection-title">Account Settings</h3>
+          <h3 className="profile-subsection-title">{t('profile.accountSettings', 'Account Settings')}</h3>
 
           {/* Contact Details */}
           <div className="profile-section-card">
             <div className="section-card-header">
-              <h2 className="section-card-title">Contact Details</h2>
+              <h2 className="section-card-title">{t('profile.contactDetails', 'Contact Details')}</h2>
               <button className="btn-icon-action" onClick={handleEditProfileClick}>
                 <Pencil size={16} />
               </button>
@@ -531,21 +529,21 @@ const LandlordProfilePage = () => {
                 <div className="contact-info-item">
                   <Mail size={16} className="contact-icon" />
                   <div>
-                    <span className="contact-label">Email</span>
-                    <span className="contact-val">{displayProfile.email || 'Not provided'}</span>
+                    <span className="contact-label">{t('profile.emailAddress', 'Email')}</span>
+                    <span className="contact-val">{displayProfile.email || t('profile.notProvided')}</span>
                   </div>
                 </div>
                 <div className="contact-info-item">
                   <Phone size={16} className="contact-icon" />
                   <div>
-                    <span className="contact-label">Phone</span>
-                    <span className="contact-val">{displayProfile.phone || 'Not provided'}</span>
+                    <span className="contact-label">{t('profile.phoneNumber', 'Phone')}</span>
+                    <span className="contact-val">{displayProfile.phone || t('profile.notProvided')}</span>
                   </div>
                 </div>
                 <div className="contact-info-item">
                   <Calendar size={16} className="contact-icon" />
                   <div>
-                    <span className="contact-label">Member Since</span>
+                    <span className="contact-label">{t('profile.memberSince', 'Member Since')}</span>
                     <span className="contact-val">
                       {displayProfile.createdAt ? formatDate(displayProfile.createdAt) : 'N/A'}
                     </span>
@@ -814,7 +812,7 @@ const LandlordProfilePage = () => {
             <div className="section-card-header">
               <div className="card-header-left">
                 <Award size={20} className="header-icon-blue" />
-                <h2 className="section-card-title">Trust & Verification</h2>
+                <h2 className="section-card-title">{t('profile.trustAndVerification', 'Trust & Verification')}</h2>
               </div>
             </div>
 
@@ -825,9 +823,9 @@ const LandlordProfilePage = () => {
                   <ShieldCheck size={18} />
                 </div>
                 <div className="banner-content">
-                  <h4 className="banner-title">Account Status</h4>
+                  <h4 className="banner-title">{t('profile.accountStatus', 'Account Status')}</h4>
                   <p className="banner-desc">
-                    {displayProfile.isActive ? 'Your account is active and verified.' : 'Your account is pending verification.'}
+                    {(displayProfile.isActive !== undefined ? displayProfile.isActive : displayProfile.is_active) ? t('profile.accountVerified', 'Your account is active and verified.') : t('profile.accountPending', 'Your account is pending verification.')}
                   </p>
                 </div>
               </div>

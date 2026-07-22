@@ -45,6 +45,7 @@ const LANDLORD_NAV = [
   { icon: <ClipboardList size={20} />, label: 'Yêu cầu thuê', tKey: 'sidebar.rentalRequests', path: ROUTES.LANDLORD.REQUESTS },
   { icon: <Calendar size={20} />, label: 'Lịch xem phòng', tKey: 'sidebar.viewings', path: ROUTES.LANDLORD.SCHEDULES },
   { icon: <MessageSquare size={20} />, label: 'Tin nhắn', tKey: 'sidebar.messages', path: ROUTES.LANDLORD.MESSAGES },
+  { icon: <HelpCircle size={20} />, label: 'Khiếu nại', tKey: 'sidebar.complaints', path: ROUTES.LANDLORD.COMPLAINTS },
   { icon: <UserCircle size={20} />, label: 'Hồ sơ', tKey: 'sidebar.profile', path: ROUTES.LANDLORD.PROFILE },
   { icon: <Settings size={20} />, label: 'Cài đặt', tKey: 'sidebar.settings', path: ROUTES.LANDLORD.SETTINGS },
 ];
@@ -62,7 +63,9 @@ const ADMIN_NAV = [
 const TENANT_NAV = [
   { icon: <Home size={20} />, label: 'Trang chủ', tKey: 'sidebar.home', path: ROUTES.HOME },
   { icon: <Compass size={20} />, label: 'Khám phá', tKey: 'sidebar.explore', path: ROUTES.ROOMS },
+  { icon: <Building2 size={20} />, label: 'Phòng đang thuê', tKey: 'sidebar.myRooms', path: ROUTES.TENANT.MY_ROOMS },
   { icon: <ClipboardList size={20} />, label: 'Yêu cầu', tKey: 'sidebar.requests', path: '/tenant/requests' },
+  { icon: <HelpCircle size={20} />, label: 'Khiếu nại', tKey: 'sidebar.complaints', path: ROUTES.TENANT.COMPLAINTS },
   { icon: <CreditCard size={20} />, label: 'Lịch sử cọc', tKey: 'sidebar.depositHistory', path: ROUTES.TENANT.DEPOSIT_HISTORY },
   { icon: <Heart size={20} />, label: 'Yêu thích', tKey: 'sidebar.favorites', path: ROUTES.TENANT.FAVORITES },
   { icon: <MessageSquare size={20} />, label: 'Tin nhắn', tKey: 'sidebar.messages', path: '/messages' },

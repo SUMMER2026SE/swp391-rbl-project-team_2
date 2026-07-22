@@ -138,7 +138,9 @@
     "landlordChannel": "Kênh Chủ Trọ",
     "adminChannel": "Kênh Quản Trị",
     "tenantChannel": "Kênh Người Thuê",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "myRooms": "Phòng đang thuê",
+    "complaints": "Khiếu nại"
   },
   "footer": {
     "systemDesc": "Hệ thống tìm phòng trọ uy tín.",
@@ -264,18 +266,18 @@
   },
   "facilities": {
     "WiFi": "WiFi",
-    "Air Conditioner": "Điều hòa",
-    "Parking": "Chỗ để xe",
+    "Air Conditioner": "Máy lạnh",
+    "Parking": "Bãi đậu xe",
     "Private Bathroom": "Phòng tắm riêng",
     "Balcony": "Ban công",
     "Bed": "Giường",
     "Wardrobe": "Tủ quần áo",
-    "Kitchen": "Bếp",
+    "Kitchen": "Nhà bếp",
     "Security Camera": "Camera an ninh",
-    "Near University": "Gần trường ĐH",
+    "Near University": "Gần trường đại học",
     "Near Hospital": "Gần bệnh viện",
     "Near Supermarket": "Gần siêu thị",
-    "Near Bus Station": "Gần trạm xe buýt",
+    "Near Bus Station": "Gần bến xe buýt",
     "Near Market": "Gần chợ",
     "Near Park": "Gần công viên",
     "Near Convenience Store": "Gần cửa hàng tiện lợi"
@@ -1722,24 +1724,6 @@
     "sat": "T7",
     "sun": "CN"
   },
-  "facilities": {
-    "WiFi": "WiFi",
-    "Air Conditioner": "Máy lạnh",
-    "Parking": "Bãi đậu xe",
-    "Private Bathroom": "Phòng tắm riêng",
-    "Balcony": "Ban công",
-    "Bed": "Giường",
-    "Wardrobe": "Tủ quần áo",
-    "Kitchen": "Nhà bếp",
-    "Security Camera": "Camera an ninh",
-    "Near University": "Gần trường đại học",
-    "Near Hospital": "Gần bệnh viện",
-    "Near Supermarket": "Gần siêu thị",
-    "Near Bus Station": "Gần bến xe buýt",
-    "Near Market": "Gần chợ",
-    "Near Park": "Gần công viên",
-    "Near Convenience Store": "Gần cửa hàng tiện lợi"
-  },
   "landlordRequests": {
     "title": "Yêu cầu thuê phòng",
     "subtitle": "Xem xét và quản lý các đơn xin thuê phòng",
@@ -1848,5 +1832,59 @@
     "discardChanges": "Hủy thay đổi",
     "savePrefs": "Lưu tùy chọn",
     "saved": "Đã lưu!"
+  },
+  "tenantMyRooms": {
+    "title": "Phòng đang thuê",
+    "subtitle": "Xem danh sách và quản lý các phòng mà bạn đang thuê.",
+    "noRoomsTitle": "Bạn chưa thuê phòng nào",
+    "noRoomsSubtitle": "Hãy bắt đầu tìm kiếm căn phòng phù hợp với bạn nhé!",
+    "searchNowBtn": "Tìm phòng ngay",
+    "statusActive": "Đang ở",
+    "statusPreBooked": "Chờ dọn vào",
+    "monthlyRent": "Giá thuê mỗi tháng",
+    "startDate": "Ngày bắt đầu HĐ",
+    "landlord": "Chủ trọ",
+    "updating": "Đang cập nhật",
+    "viewListingBtn": "Xem lại tin đăng",
+    "manageContractBtn": "Quản lý Hợp đồng"
+  },
+  "tenantComplaints": {
+    "title": "Khiếu nại của tôi",
+    "subtitle": "Xem và quản lý các khiếu nại, sự cố về phòng đang thuê.",
+    "newComplaintBtn": "Gửi khiếu nại mới",
+    "noComplaintsTitle": "Chưa có khiếu nại nào",
+    "noComplaintsSubtitle": "Bạn chưa gửi khiếu nại hoặc báo cáo sự cố nào.",
+    "room": "Phòng",
+    "landlord": "Chủ trọ",
+    "status": "Trạng thái",
+    "priority": "Mức độ",
+    "date": "Ngày gửi",
+    "actions": "Hành động",
+    "view": "Xem chi tiết",
+    "createTitle": "Gửi Khiếu nại / Báo cáo sự cố",
+    "selectRoom": "Chọn phòng đang thuê",
+    "complaintTitle": "Tiêu đề",
+    "complaintTitlePlaceholder": "Nhập tiêu đề ngắn gọn (VD: Hư ống nước)",
+    "complaintType": "Loại khiếu nại",
+    "description": "Mô tả chi tiết",
+    "descriptionPlaceholder": "Mô tả chi tiết vấn đề bạn đang gặp phải...",
+    "cancel": "Hủy bỏ",
+    "submit": "Gửi khiếu nại",
+    "success": "Gửi khiếu nại thành công!",
+    "error": "Có lỗi xảy ra khi gửi khiếu nại.",
+    "types": {
+      "maintenance": "Bảo trì & Sửa chữa",
+      "noise": "Tiếng ồn",
+      "cleanliness": "Vệ sinh",
+      "safety": "An ninh",
+      "utilities": "Điện nước & Tiện ích",
+      "other": "Khác"
+    },
+    "priorities": {
+      "low": "Thấp",
+      "medium": "Trung bình",
+      "high": "Cao",
+      "urgent": "Khẩn cấp"
+    }
   }
 }

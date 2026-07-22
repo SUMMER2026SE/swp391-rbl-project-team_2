@@ -14,6 +14,8 @@ export { default as TenantRequestsPage } from './pages/TenantRequestsPage';
 export { default as TenantProfilePage } from './pages/TenantProfilePage';
 export { default as TenantSettingsPage } from './pages/TenantSettingsPage';
 export { default as TenantDashboardPage } from './pages/TenantDashboardPage';
+export { default as TenantMyRoomsPage } from './pages/TenantMyRoomsPage';
+export { default as TenantComplaintsPage } from './pages/TenantComplaintsPage';
 
 // Components
 export { default as RoomCard } from './components/RoomCard';

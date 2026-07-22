@@ -138,7 +138,9 @@
     "landlordChannel": "Landlord Channel",
     "adminChannel": "Admin Channel",
     "tenantChannel": "Tenant Channel",
-    "logout": "Logout"
+    "logout": "Logout",
+    "myRooms": "My Rooms",
+    "complaints": "Complaints"
   },
   "footer": {
     "systemDesc": "Trusted room rental system.",
@@ -568,7 +570,7 @@
   "adminDashboard": {
     "loading": "Loading dashboard...",
     "title": "Dashboard",
-    "subtitle": "Welcome back! Here is what is happening today.",
+    "subtitle": "Welcome back! Here's what's happening today.",
     "totalRevenue": "Total Revenue (This Month)",
     "activeTenants": "Active Tenants",
     "totalListings": "Total Listings",
@@ -581,7 +583,32 @@
     "recentActivity": "Recent Activity",
     "noActivity": "No recent activity.",
     "requestActivity": "{{name}} submitted a rental request for {{room}}",
-    "paymentActivity": "{{name}} paid rent for {{room}}"
+    "paymentActivity": "{{name}} paid rent for {{room}}",
+    "months": {
+      "Jan": "Jan",
+      "Feb": "Feb",
+      "Mar": "Mar",
+      "Apr": "Apr",
+      "May": "May",
+      "Jun": "Jun",
+      "Jul": "Jul",
+      "Aug": "Aug",
+      "Sep": "Sep",
+      "Oct": "Oct",
+      "Nov": "Nov",
+      "Dec": "Dec"
+    },
+    "types": {
+      "Request": "REQUEST",
+      "Payment": "PAYMENT"
+    },
+    "timeAgo": {
+      "mins": "{{count}} min ago",
+      "hrs": "{{count}} hr ago",
+      "days": "{{count}} days ago",
+      "justNow": "Just now"
+    },
+    "million": "M"
   },
   "roomDetail": {
     "roomUpdated": "Room updated successfully!",
@@ -1405,49 +1432,6 @@
     "noDataToExport": "No data available to export.",
     "exportSuccess": "Report exported successfully! CSV file has been downloaded."
   },
-  "adminDashboard": {
-    "loading": "Loading dashboard...",
-    "title": "Dashboard",
-    "subtitle": "Welcome back! Here's what's happening today.",
-    "totalRevenue": "Total Revenue (This Month)",
-    "activeTenants": "Active Tenants",
-    "totalListings": "Total Listings",
-    "pendingApprovals": "Pending Approvals",
-    "actionNeeded": "Action needed",
-    "allClear": "All clear",
-    "occupancyRate": "Occupancy Rate",
-    "revenueOverview": "Revenue Overview",
-    "thisYear": "This Year",
-    "recentActivity": "Recent Activity",
-    "noActivity": "No recent activity.",
-    "requestActivity": "{{name}} submitted a rental request for {{room}}",
-    "paymentActivity": "{{name}} paid rent for {{room}}",
-    "months": {
-      "Jan": "Jan",
-      "Feb": "Feb",
-      "Mar": "Mar",
-      "Apr": "Apr",
-      "May": "May",
-      "Jun": "Jun",
-      "Jul": "Jul",
-      "Aug": "Aug",
-      "Sep": "Sep",
-      "Oct": "Oct",
-      "Nov": "Nov",
-      "Dec": "Dec"
-    },
-    "types": {
-      "Request": "REQUEST",
-      "Payment": "PAYMENT"
-    },
-    "timeAgo": {
-      "mins": "{{count}} min ago",
-      "hrs": "{{count}} hr ago",
-      "days": "{{count}} days ago",
-      "justNow": "Just now"
-    },
-    "million": "M"
-  },
   "adminListings": {
     "title": "Listing Management",
     "subtitle": "Manage properties, review flagged listings, and monitor performance.",
@@ -1754,24 +1738,6 @@
     "sat": "Sat",
     "sun": "Sun"
   },
-  "facilities": {
-    "WiFi": "WiFi",
-    "Air Conditioner": "Air Conditioner",
-    "Parking": "Parking",
-    "Private Bathroom": "Private Bathroom",
-    "Balcony": "Balcony",
-    "Bed": "Bed",
-    "Wardrobe": "Wardrobe",
-    "Kitchen": "Kitchen",
-    "Security Camera": "Security Camera",
-    "Near University": "Near University",
-    "Near Hospital": "Near Hospital",
-    "Near Supermarket": "Near Supermarket",
-    "Near Bus Station": "Near Bus Station",
-    "Near Market": "Near Market",
-    "Near Park": "Near Park",
-    "Near Convenience Store": "Near Convenience Store"
-  },
   "landlordRequests": {
     "title": "Rental Requests",
     "subtitle": "Review and manage tenant rental applications",
@@ -1880,5 +1846,59 @@
     "discardChanges": "Discard Changes",
     "savePrefs": "Save Preferences",
     "saved": "Saved!"
+  },
+  "tenantMyRooms": {
+    "title": "My Rooms",
+    "subtitle": "View and manage the rooms you are currently renting.",
+    "noRoomsTitle": "You have not rented any rooms yet",
+    "noRoomsSubtitle": "Start searching for a room that suits you!",
+    "searchNowBtn": "Search now",
+    "statusActive": "Active",
+    "statusPreBooked": "Waiting to move in",
+    "monthlyRent": "Monthly Rent",
+    "startDate": "Start Date",
+    "landlord": "Landlord",
+    "updating": "Updating...",
+    "viewListingBtn": "View Listing",
+    "manageContractBtn": "Manage Contract"
+  },
+  "tenantComplaints": {
+    "title": "My Complaints",
+    "subtitle": "View and manage your complaints or issues regarding your rented rooms.",
+    "newComplaintBtn": "Submit Complaint",
+    "noComplaintsTitle": "No complaints yet",
+    "noComplaintsSubtitle": "You have not submitted any complaints.",
+    "room": "Room",
+    "landlord": "Landlord",
+    "status": "Status",
+    "priority": "Priority",
+    "date": "Date",
+    "actions": "Actions",
+    "view": "View Details",
+    "createTitle": "Submit New Complaint",
+    "selectRoom": "Select Room",
+    "complaintTitle": "Title",
+    "complaintTitlePlaceholder": "Enter a brief title (e.g., Broken pipe)",
+    "complaintType": "Complaint Type",
+    "description": "Description",
+    "descriptionPlaceholder": "Please describe the issue in detail...",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "success": "Complaint submitted successfully!",
+    "error": "Failed to submit complaint.",
+    "types": {
+      "maintenance": "Maintenance & Repair",
+      "noise": "Noise",
+      "cleanliness": "Cleanliness",
+      "safety": "Safety",
+      "utilities": "Utilities (Water, Electricity, etc.)",
+      "other": "Other"
+    },
+    "priorities": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    }
   }
 }
