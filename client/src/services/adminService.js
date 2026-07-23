@@ -70,6 +70,16 @@ export const adminService = {
     return response;
   },
 
+  getTerminationDisputes: async () => {
+    const response = await api.get('/admin/termination-disputes');
+    return response;
+  },
+
+  resolveTerminationDispute: async (requestId, data) => {
+    const response = await api.post(`/admin/termination-disputes/${requestId}/resolve`, data);
+    return response;
+  },
+
   // Withdrawals Management
   getWithdrawals: async () => {
     const response = await api.get('/admin/withdrawals');

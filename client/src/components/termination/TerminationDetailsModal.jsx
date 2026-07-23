@@ -12,6 +12,7 @@ const TerminationDetailsModal = ({ request, currentUserId, onClose, onRefresh })
   const [reviewNote, setReviewNote] = useState('');
   const [showDisputeInput, setShowDisputeInput] = useState(false);
   const [disputeReason, setDisputeReason] = useState('');
+  const [rejectEvidenceFiles, setRejectEvidenceFiles] = useState([]);
   
   const [refundFile, setRefundFile] = useState(null);
 
@@ -65,7 +66,12 @@ const TerminationDetailsModal = ({ request, currentUserId, onClose, onRefresh })
     try {
       setLoading(true);
       setError(null);
-      await terminationService.rejectRequest(request.request_id, { reviewNote });
+      const formData = new FormData();
+      formData.append('reviewNote', reviewNote);
+      rejectEvidenceFiles.forEach(file => {
+        formData.append('evidenceFiles', file);
+      });
+      await terminationService.rejectRequest(request.request_id, formData);
       if (onRefresh) onRefresh();
       onClose();
     } catch (err) {
@@ -293,22 +299,46 @@ const TerminationDetailsModal = ({ request, currentUserId, onClose, onRefresh })
             </div>
           ) : isPending ? (() => {
              const depositAmount = contract.deposit_amount || contract.depositAmount || contract.deposit || 0;
+             const rentAmount = contract.monthly_rent || contract.monthlyRent || contract.room?.price_per_month || contract.room?.pricePerMonth || 0;
              let depositRefund = 0;
              let depositRetained = 0;
+             let compensation = 0;
              const termType = request.termination_type;
+             const isPrebooked = contract?.status === 'pre_booked_active';
 
-             if (termType === 'TenantVoluntaryBreak') {
-               depositRefund = 0;
-               depositRetained = depositAmount;
-             } else if (termType === 'LandlordViolationClaim' || termType === 'LandlordArbitraryBreak') {
-               depositRefund = depositAmount;
-               depositRetained = 0;
-             } else if (termType === 'TenantViolationClaim' || termType === 'UnilateralLandlord') {
-               depositRefund = 0;
-               depositRetained = depositAmount;
-             } else {
-               depositRefund = depositAmount;
-               depositRetained = 0;
+             if (isPrebooked) {
+               if (termType === 'LandlordViolationClaim') {
+                 depositRefund = depositAmount + rentAmount;
+                 depositRetained = 0;
+                 compensation = depositAmount;
+               } else if (termType === 'TenantVoluntaryBreak' || termType === 'Mutual') {
+                 const startDateStr = contract?.startDate || contract?.start_date;
+                 let diffDays = 0;
+                 if (startDateStr) {
+                   const start = new Date(startDateStr);
+                   const today = new Date();
+                   diffDays = Math.ceil((start.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                 }
+                 if (diffDays > 7) {
+                   depositRefund = (depositAmount / 2) + rentAmount;
+                   depositRetained = depositAmount / 2;
+                 } else {
+                   depositRefund = rentAmount;
+                   depositRetained = depositAmount;
+                 }
+               }
+             } else { // Active (Moved in)
+               if (termType === 'Mutual') {
+                 depositRefund = depositAmount / 2;
+                 depositRetained = (depositAmount / 2) + rentAmount;
+               } else if (termType === 'TenantVoluntaryBreak' || termType === 'TenantViolationClaim' || termType === 'UnilateralLandlord') {
+                 depositRefund = 0;
+                 depositRetained = depositAmount + rentAmount;
+               } else if (termType === 'LandlordViolationClaim' || termType === 'LandlordArbitraryBreak') {
+                 depositRefund = depositAmount + rentAmount;
+                 depositRetained = 0;
+                 compensation = depositAmount;
+               }
              }
 
              return (
@@ -317,8 +347,9 @@ const TerminationDetailsModal = ({ request, currentUserId, onClose, onRefresh })
                    Bảng Quyết toán Tài chính Dự kiến (Khi Chấp Nhận)
                  </div>
                  <div className="tm-financial-grid" style={{ fontSize: 13, color: '#92400e' }}>
-                   <div>Tiền cọc hoàn lại: <strong style={{ color: '#b45309' }}>{formatCurrency(depositRefund)}</strong></div>
-                   <div>Tiền cọc giữ lại: <strong>{formatCurrency(depositRetained)}</strong></div>
+                   <div>Hoàn trả cho Tenant: <strong style={{ color: '#b45309' }}>{formatCurrency(depositRefund)}</strong></div>
+                   <div>Chủ nhà giữ lại: <strong>{formatCurrency(depositRetained)}</strong></div>
+                   <div>Bồi thường / Phạt: <strong>{formatCurrency(compensation)}</strong></div>
                  </div>
                </div>
              );
@@ -364,6 +395,18 @@ const TerminationDetailsModal = ({ request, currentUserId, onClose, onRefresh })
                     placeholder="Nhập lý do từ chối..."
                     className="tm-textarea"
                   />
+                  <div style={{ marginTop: 8 }}>
+                    <label style={{ fontSize: 13, color: '#64748b', display: 'block', marginBottom: 4 }}>
+                      Tải lên hình ảnh/video bằng chứng (nếu có):
+                    </label>
+                    <input 
+                      type="file" 
+                      multiple 
+                      accept="image/*,video/*" 
+                      onChange={(e) => setRejectEvidenceFiles(Array.from(e.target.files))}
+                      style={{ fontSize: 13 }}
+                    />
+                  </div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
                     <button
                       type="button"

@@ -34,6 +34,10 @@ const TerminationRequest = sequelize.define('TerminationRequest', {
     type: DataTypes.JSON,
     allowNull: true,
   },
+  reject_evidence_urls: {
+    type: DataTypes.JSON,
+    allowNull: true,
+  },
   request_date: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,

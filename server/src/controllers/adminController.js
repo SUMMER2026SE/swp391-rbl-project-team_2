@@ -515,6 +515,48 @@ const resolveDispute = async (req, res, next) => {
 };
 
 // =========================================================
+// GET /api/admin/termination-disputes
+// Fetch all disputed termination requests
+// =========================================================
+const getTerminationDisputes = async (req, res, next) => {
+  try {
+    const terminationService = require('../services/terminationService');
+    const disputes = await terminationService.getTerminationDisputes();
+    return res.status(200).json({ success: true, data: disputes });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================================
+// POST /api/admin/termination-disputes/:requestId/resolve
+// Resolve Termination Dispute
+// =========================================================
+const resolveTerminationDispute = async (req, res, next) => {
+  try {
+    const { requestId } = req.params;
+    const { depositRefund, depositRetained, compensation, adminNote } = req.body;
+    const adminId = req.user.user_id;
+    const io = req.app.get('io');
+
+    const tService = require('../services/terminationService');
+    const result = await tService.resolveTerminationDispute(
+      requestId,
+      adminId,
+      depositRefund,
+      depositRetained,
+      compensation,
+      adminNote,
+      io
+    );
+
+    return res.status(200).json({ success: true, data: result, message: 'Dispute resolved successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =========================================================
 // GET /api/admin/verifications
 // Fetch all pending landlord verification requests
 // =========================================================
@@ -625,4 +667,6 @@ module.exports = {
   resolveDispute,
   getPendingVerifications,
   processVerification,
+  getTerminationDisputes,
+  resolveTerminationDispute,
 };

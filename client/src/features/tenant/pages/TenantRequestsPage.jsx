@@ -1094,7 +1094,7 @@ const TenantRequestsPage = () => {
                           </button>
                           {contract.status === 'active' && !contract.is_renewed && contract.renewalStatus !== 'declined' && contract.renewal_status !== 'declined' && (
                             <>
-                              {(!contract.renewalRequest || contract.renewalRequest.status === 'PENDING_INTENT') && (
+                              {(!contract.renewalRequest || contract.renewalRequest.status === 'PENDING_INTENT') && contract.endDate && ((new Date(contract.endDate) - new Date()) / (1000 * 60 * 60 * 24) <= 30) && (
                                 <>
                                   <button
                                     onClick={() => handleRenewContract(contract)}

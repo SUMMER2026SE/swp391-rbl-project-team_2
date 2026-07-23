@@ -9,7 +9,7 @@ const numberToWordsVN = (num) => {
   return '(Viết bằng chữ)';
 };
 
-const ContractDocumentModal = ({ isOpen, onClose, contract, onSign }) => {
+const ContractDocumentModal = ({ isOpen, onClose, contract, onSign, readOnly = false }) => {
   const { user } = useAuthStore();
   const sigCanvas = useRef({});
 
@@ -62,7 +62,7 @@ const ContractDocumentModal = ({ isOpen, onClose, contract, onSign }) => {
     <div className="contract-modal-overlay" onClick={onClose}>
       <div className="contract-modal-container" onClick={(e) => e.stopPropagation()}>
         <div className="contract-modal-header">
-          <h2><FileSignature size={20} /> Xem và Ký Hợp Đồng</h2>
+          <h2><FileSignature size={20} /> {readOnly ? 'Xem Hợp Đồng' : 'Xem và Ký Hợp Đồng'}</h2>
           <button className="contract-modal-close" onClick={onClose}>
             <X size={24} />
           </button>
@@ -147,6 +147,10 @@ const ContractDocumentModal = ({ isOpen, onClose, contract, onSign }) => {
                   <p className="subtext">(Ký, ghi rõ họ tên)</p>
                   {contract.tenantSignature ? (
                     <img src={contract.tenantSignature} alt="Tenant Signature" style={{ maxHeight: '100px', maxWidth: '100%' }} />
+                  ) : readOnly ? (
+                    <div className="signature-name-placeholder" style={{ marginTop: '10px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                      Chưa ký
+                    </div>
                   ) : (
                     <div style={{ border: '1px solid #e2e8f0', borderRadius: '4px', background: '#f8fafc', marginTop: '10px', position: 'relative' }}>
                       <SignatureCanvas
@@ -184,9 +188,11 @@ const ContractDocumentModal = ({ isOpen, onClose, contract, onSign }) => {
 
         <div className="contract-modal-footer">
           <button className="btn-cancel" onClick={onClose}>Đóng</button>
-          <button className="btn-sign-proceed" onClick={handleSignProceed}>
-            <FileSignature size={18} /> Đồng ý và Thanh toán Ký Hợp Đồng
-          </button>
+          {!readOnly && (
+            <button className="btn-sign-proceed" onClick={handleSignProceed}>
+              <FileSignature size={18} /> Đồng ý và Thanh toán Ký Hợp Đồng
+            </button>
+          )}
         </div>
       </div>
     </div>

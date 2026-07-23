@@ -121,9 +121,9 @@ const rejectRequest = async (req, res, next) => {
     const { id } = req.params;
     const reviewerId = req.user.userId;
     const { reviewNote } = req.body;
-    const io = req.app.get('io');
+    const evidenceFiles = req.files || [];
 
-    const result = await terminationService.rejectTerminationRequest(id, reviewerId, reviewNote, io);
+    const result = await terminationService.rejectTerminationRequest(id, reviewerId, reviewNote, evidenceFiles, io);
 
     return res.status(200).json({
       success: true,

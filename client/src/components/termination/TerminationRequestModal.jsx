@@ -14,6 +14,8 @@ const TerminationRequestModal = ({ contract, userRole = 'Tenant', onClose, onSuc
   
   // Custom financial inputs
   const depositVal = contract?.deposit_amount || contract?.depositAmount || contract?.deposit || 0;
+  const rentVal = contract?.monthly_rent || contract?.monthlyRent || contract?.room?.price_per_month || contract?.room?.pricePerMonth || 0;
+  
   const [customRefund, setCustomRefund] = useState(String(depositVal));
   const [customRetained, setCustomRetained] = useState('0');
   const [customCompensation, setCustomCompensation] = useState('0');
@@ -25,46 +27,73 @@ const TerminationRequestModal = ({ contract, userRole = 'Tenant', onClose, onSuc
   const isLandlord = userRole === 'Landlord' || userRole === 'landlord';
 
   useEffect(() => {
-    if (!isLandlord) {
-      if (contract?.status === 'pre_booked_active') {
-        if (terminationType === 'Mutual' || terminationType === 'LandlordViolationClaim') {
-          setCustomRefund(String(depositVal));
+    const isPrebooked = contract?.status === 'pre_booked_active';
+
+    if (isLandlord) {
+      if (terminationType === 'TenantViolationClaim' || terminationType === 'UnilateralLandlord') {
+        // Tenant violated -> Landlord keeps deposit + rent
+        setCustomRefund('0');
+        setCustomRetained(String(depositVal + rentVal));
+        setCustomCompensation('0');
+      } else if (terminationType === 'LandlordArbitraryBreak') {
+        // Landlord arbitrarily breaks -> Refund 100% deposit + 100% rent + Compensate 100% deposit
+        setCustomRefund(String(depositVal + rentVal));
+        setCustomRetained('0');
+        setCustomCompensation(String(depositVal));
+      } else if (terminationType === 'Mutual') {
+        // Landlord initiates mutual -> Usually offers 100% refund of deposit + rent
+        setCustomRefund(String(depositVal + rentVal));
+        setCustomRetained('0');
+        setCustomCompensation('0');
+      }
+    } else { // Tenant
+      if (isPrebooked) {
+        if (terminationType === 'LandlordViolationClaim') {
+          // Landlord violated before move-in -> 100% refund deposit & rent + 100% compensation
+          setCustomRefund(String(depositVal + rentVal));
           setCustomRetained('0');
-          setCustomCompensation('0');
-        } else {
+          setCustomCompensation(String(depositVal));
+        } else if (terminationType === 'TenantVoluntaryBreak' || terminationType === 'Mutual') {
+          // Tenant breaks before move-in -> apply 7-day rule for deposit, but 100% rent refund
           const startDateStr = contract?.startDate || contract?.start_date;
           let diffDays = 0;
           if (startDateStr) {
             const start = new Date(startDateStr);
             const today = new Date();
-            const diffTime = start.getTime() - today.getTime();
-            diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            diffDays = Math.ceil((start.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
           }
-          
           if (diffDays > 7) {
             const halfDeposit = depositVal / 2;
-            setCustomRefund(String(halfDeposit));
+            setCustomRefund(String(halfDeposit + rentVal));
             setCustomRetained(String(halfDeposit));
             setCustomCompensation('0');
           } else {
-            setCustomRefund('0');
+            setCustomRefund(String(rentVal));
             setCustomRetained(String(depositVal));
             setCustomCompensation('0');
           }
         }
-      } else {
-        if (terminationType === 'TenantVoluntaryBreak') {
+      } else { // Active (Moved in)
+        if (terminationType === 'Mutual') {
+          // Mutual termination after move-in -> split deposit 50/50, rent is lost (retained)
+          const halfDeposit = depositVal / 2;
+          setCustomRefund(String(halfDeposit));
+          setCustomRetained(String(halfDeposit + rentVal));
+          setCustomCompensation('0');
+        } else if (terminationType === 'TenantVoluntaryBreak') {
+          // Tenant breaks after move-in -> forfeits deposit + rent
           setCustomRefund('0');
-          setCustomRetained(String(depositVal));
+          setCustomRetained(String(depositVal + rentVal));
           setCustomCompensation('0');
-        } else if (terminationType === 'Mutual' || terminationType === 'LandlordViolationClaim') {
-          setCustomRefund(String(depositVal));
+        } else if (terminationType === 'LandlordViolationClaim') {
+          // Landlord violated after move-in -> 100% refund deposit & rent + 100% compensation
+          setCustomRefund(String(depositVal + rentVal));
           setCustomRetained('0');
-          setCustomCompensation('0');
+          setCustomCompensation(String(depositVal));
         }
       }
     }
-  }, [terminationType, contract?.status, contract?.startDate, contract?.start_date, depositVal, isLandlord]);
+  }, [terminationType, contract?.status, contract?.startDate, contract?.start_date, depositVal, rentVal, isLandlord]);
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -82,10 +111,6 @@ const TerminationRequestModal = ({ contract, userRole = 'Tenant', onClose, onSuc
   const reasonOptions = {
     Mutual: [
       'Hai bên đồng ý chấm dứt hợp đồng',
-      'Người thuê chuyển nơi làm việc',
-      'Người thuê chuyển sang phòng khác',
-      'Chủ trọ muốn sửa chữa hoặc cải tạo',
-      'Hai bên không còn nhu cầu tiếp tục hợp đồng',
     ],
     TenantVoluntaryBreak: [
       'Chuyển công tác',
@@ -386,7 +411,7 @@ const TerminationRequestModal = ({ contract, userRole = 'Tenant', onClose, onSuc
                 </div>
 
                 <div className="tm-financial-item">
-                  <label>Chủ nhà giữ cọc</label>
+                  <label>Chủ nhà giữ lại</label>
                   <input
                     type="number"
                     value={customRetained}
@@ -399,7 +424,7 @@ const TerminationRequestModal = ({ contract, userRole = 'Tenant', onClose, onSuc
                 </div>
 
                 <div className="tm-financial-item">
-                  <label>Bồi thường / Phạt cọc</label>
+                  <label>Bồi thường / Phạt</label>
                   <input
                     type="number"
                     value={customCompensation}

@@ -55,9 +55,13 @@ export const terminationService = {
     }
   },
 
-  rejectRequest: async (requestId, payload = {}) => {
+  rejectRequest: async (requestId, formData) => {
     try {
-      const response = await httpClient.put(`/termination/request/${requestId}/reject`, payload);
+      const response = await httpClient.put(`/termination/request/${requestId}/reject`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return response.data;
     } catch (error) {
       console.error('Error rejecting termination request:', error);
