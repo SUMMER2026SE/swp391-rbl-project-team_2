@@ -365,7 +365,7 @@ const approveTerminationRequest = async (requestId, reviewerId, reviewNote, cust
 /**
  * Reject a pending termination request
  */
-const rejectTerminationRequest = async (requestId, reviewerId, reviewNote, io = null) => {
+const rejectTerminationRequest = async (requestId, reviewerId, reviewNote, evidenceFiles = [], io = null) => {
   const request = await TerminationRequest.findOne({
     where: { request_id: requestId, status: 'PENDING' },
     include: [{ model: Contract, as: 'contract' }],
@@ -392,16 +392,16 @@ const rejectTerminationRequest = async (requestId, reviewerId, reviewNote, io = 
     throw error;
   }
 
-  // If it's a violation claim and the other party disagrees, it goes to DISPUTED (Admin solves)
-  if (request.termination_type === 'TenantViolationClaim' || request.termination_type === 'LandlordViolationClaim') {
-    request.status = 'DISPUTED';
-  } else {
-    request.status = 'REJECTED';
-  }
+  // Format evidence URLs
+  const rejectEvidenceUrls = evidenceFiles.map(file => file.path || file.location || file.url || `/uploads/${file.filename}`);
+
+  // Any rejection now goes straight to Admin (DISPUTED)
+  request.status = 'DISPUTED';
   
   request.reviewed_by = reviewerId;
   request.review_date = new Date();
-  request.review_note = reviewNote || (request.status === 'DISPUTED' ? 'Không đồng ý với cáo buộc vi phạm, chờ Admin giải quyết' : 'Đã từ chối yêu cầu chấm dứt');
+  request.review_note = reviewNote || 'Không đồng ý, chuyển sang Admin giải quyết';
+  request.reject_evidence_urls = rejectEvidenceUrls.length > 0 ? rejectEvidenceUrls : null;
   request.updated_at = new Date();
   await request.save();
 
@@ -409,8 +409,8 @@ const rejectTerminationRequest = async (requestId, reviewerId, reviewNote, io = 
   const recipientId = request.requested_by;
   const notif = await Notification.create({
     user_id: recipientId,
-    title: 'Yêu cầu chấm dứt hợp đồng đã bị từ chối',
-    message: `Yêu cầu chấm dứt hợp đồng #${contract.contract_number} đã bị từ chối. Lý do: ${reviewNote || 'Không có lý do cụ thể'}`,
+    title: 'Yêu cầu chấm dứt hợp đồng đang xảy ra tranh chấp',
+    message: `Yêu cầu chấm dứt hợp đồng #${contract.contract_number} không được đối phương đồng thuận và đã được chuyển cho Ban quản trị giải quyết. Ghi chú: ${reviewNote || 'Không có'}`,
     notification_type: 'contract',
     related_id: request.request_id,
   });
@@ -682,6 +682,127 @@ const confirmRefundReceipt = async (requestId, tenantId, io = null) => {
   return request.record;
 };
 
+/**
+ * Get all termination requests with DISPUTED status for Admin
+ */
+const getTerminationDisputes = async () => {
+  const requests = await TerminationRequest.findAll({
+    where: { status: 'DISPUTED' },
+    include: [
+      {
+        model: Contract,
+        as: 'contract',
+        include: [
+          { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city'] },
+          { model: User, as: 'tenant', attributes: ['user_id', 'full_name', 'phone', 'email'] },
+          { model: User, as: 'landlordContract', attributes: ['user_id', 'full_name', 'phone', 'email'] },
+        ],
+      },
+      { model: User, as: 'requester', attributes: ['user_id', 'full_name', 'email'] },
+      { model: User, as: 'reviewer', attributes: ['user_id', 'full_name', 'email'] },
+    ],
+    order: [['updated_at', 'DESC']],
+  });
+  return requests;
+};
+
+/**
+ * Resolve a termination dispute by Admin
+ */
+const resolveTerminationDispute = async (requestId, adminId, depositRefund, depositRetained, compensation, adminNote, io = null) => {
+  const request = await TerminationRequest.findOne({
+    where: { request_id: requestId, status: 'DISPUTED' },
+    include: [
+      {
+        model: Contract,
+        as: 'contract',
+        include: [{ model: Room, as: 'room' }],
+      },
+    ],
+  });
+
+  if (!request) {
+    const error = new Error('Không tìm thấy yêu cầu tranh chấp hoặc yêu cầu đã được xử lý.');
+    error.status = 404;
+    throw error;
+  }
+
+  const contract = request.contract;
+
+  // Calculate total payout based on exact admin inputs
+  const dRefund = parseFloat(depositRefund) || 0;
+  const dRetained = parseFloat(depositRetained) || 0;
+  const comp = parseFloat(compensation) || 0;
+  const remainingRent = 0; // Usually 0 for terminations
+
+  const totalPayoutToTenant = dRefund + remainingRent + comp;
+  const needsRefund = totalPayoutToTenant > 0;
+
+  // Update request
+  request.status = 'ACCEPTED'; // Admin forces acceptance
+  request.reviewed_by = adminId;
+  request.review_date = new Date();
+  request.review_note = `[Ban quản trị giải quyết]: ${adminNote}`;
+  request.updated_at = new Date();
+  await request.save();
+
+  // If no refund needed, close contract and room immediately
+  if (!needsRefund) {
+    contract.status = 'terminated';
+    contract.updated_at = new Date();
+    await contract.save();
+
+    if (contract.room) {
+      contract.room.status = 'available';
+      contract.room.available_quantity = (contract.room.available_quantity || 0) + 1;
+      await contract.room.save();
+    }
+  }
+
+  // Create record
+  const record = await TerminationRecord.create({
+    contract_id: contract.contract_id,
+    request_id: request.request_id,
+    termination_date: new Date(),
+    final_reason: `[Giải quyết tranh chấp] ${request.reason}`,
+    deposit_refund: dRefund,
+    deposit_retained: dRetained,
+    remaining_rent: remainingRent,
+    compensation: comp,
+    total_payout_to_tenant: totalPayoutToTenant,
+    final_note: adminNote,
+    refund_status: needsRefund ? 'PENDING_REFUND' : 'COMPLETED',
+  });
+
+  // Notify both parties
+  const notifyUser = async (userId, title, message) => {
+    const notif = await Notification.create({
+      user_id: userId,
+      title,
+      message,
+      notification_type: 'contract',
+      related_id: contract.contract_id,
+    });
+    if (io) {
+      io.to(`user_${userId}`).emit('new_notification', {
+        title: notif.title,
+        message: notif.message,
+        type: 'contract',
+        relatedId: contract.contract_id,
+      });
+    }
+  };
+
+  const commonMsg = needsRefund 
+    ? `Ban quản trị đã giải quyết tranh chấp hợp đồng #${contract.contract_number}. Đang chờ hoàn tiền.`
+    : `Ban quản trị đã giải quyết tranh chấp hợp đồng #${contract.contract_number}. Hợp đồng chính thức chấm dứt.`;
+
+  await notifyUser(contract.tenant_id, 'Tranh chấp hợp đồng đã được giải quyết', commonMsg);
+  await notifyUser(contract.landlord_id, 'Tranh chấp hợp đồng đã được giải quyết', commonMsg);
+
+  return { request, record };
+};
+
 module.exports = {
   calculateFinancialSettlement,
   createTerminationRequest,
@@ -693,4 +814,6 @@ module.exports = {
   getTerminationByContractId,
   uploadRefundProof,
   confirmRefundReceipt,
+  getTerminationDisputes,
+  resolveTerminationDispute,
 };

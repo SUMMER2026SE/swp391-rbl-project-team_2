@@ -51,7 +51,7 @@ router.get('/request/:id', terminationController.getRequestDetail);
 router.put('/request/:id/approve', terminationController.approveRequest);
 
 // PUT /api/termination/request/:id/reject - Reject request
-router.put('/request/:id/reject', terminationController.rejectRequest);
+router.put('/request/:id/reject', upload.array('evidenceFiles', 10), terminationController.rejectRequest);
 
 // POST /api/termination/request/:id/dispute - Raise dispute
 router.post('/request/:id/dispute', terminationController.disputeRequest);

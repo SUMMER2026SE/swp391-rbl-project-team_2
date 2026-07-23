@@ -202,8 +202,9 @@ const RoomDetailPage = () => {
         toast.error(t('roomDetail.selectTime', 'Please select a viewing time.'));
         return;
       }
-      if (viewingDate < todayDate) {
-        toast.error(t('roomDetail.invalidDate', 'Viewing date must be today or a future date.'));
+      const selectedDateTime = new Date(`${viewingDate}T${viewingTime}`);
+      if (selectedDateTime < new Date()) {
+        toast.error(t('roomDetail.invalidDate', 'Viewing time cannot be in the past.'));
         return;
       }
 
@@ -309,9 +310,10 @@ const RoomDetailPage = () => {
   const roomFacilities = roomData.facilities?.filter(f => f.category === 'room' || !f.category) || [];
   const nearbyFacilities = roomData.facilities?.filter(f => f.category === 'nearby') || [];
 
+  const fallbackThumbnail = roomData.thumbnailUrl || roomData.thumbnail_url;
   const images = roomData.images?.length > 0 
-    ? roomData.images.map(img => img.image_url.startsWith('http') ? img.image_url : `http://localhost:5000${img.image_url}`)
-    : (roomData.thumbnailUrl ? [roomData.thumbnailUrl.startsWith('http') ? roomData.thumbnailUrl : `http://localhost:5000${roomData.thumbnailUrl}`] : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60']);
+    ? roomData.images.map(img => img.image_url?.startsWith('http') ? img.image_url : `http://localhost:5000${img.image_url}`)
+    : (fallbackThumbnail ? [fallbackThumbnail.startsWith('http') ? fallbackThumbnail : `http://localhost:5000${fallbackThumbnail}`] : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&auto=format&fit=crop&q=60']);
     
   
 

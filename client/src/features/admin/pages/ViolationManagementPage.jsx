@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, AlertCircle, Shield, Search, Bell, Mail, MessageSquare } from 'lucide-react';
 import adminService from '../../../services/adminService';
+import ContractDocumentModal from '../../tenant/components/ContractDocumentModal';
 import './ViolationManagementPage.css';
 
 const ViolationManagementPage = () => {
@@ -10,10 +11,19 @@ const ViolationManagementPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [complaints, setComplaints] = useState([]);
   const [disputes, setDisputes] = useState([]);
+  const [terminationDisputes, setTerminationDisputes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [selectedDispute, setSelectedDispute] = useState(null);
+  const [selectedTermDispute, setSelectedTermDispute] = useState(null);
   const [disputeOutcome, setDisputeOutcome] = useState('');
+  const [showFullContract, setShowFullContract] = useState(false);
+  
+  // States for Termination Dispute Modal
+  const [termRefund, setTermRefund] = useState('0');
+  const [termRetained, setTermRetained] = useState('0');
+  const [termComp, setTermComp] = useState('0');
+  const [termNote, setTermNote] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
 
   useEffect(() => {
@@ -23,12 +33,14 @@ const ViolationManagementPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [compRes, dispRes] = await Promise.all([
+      const [compRes, dispRes, termDispRes] = await Promise.all([
         adminService.getAllComplaints(),
-        adminService.getAllDisputes()
+        adminService.getAllDisputes(),
+        adminService.getTerminationDisputes()
       ]);
       if (compRes.success) setComplaints(compRes.data);
       if (dispRes.success) setDisputes(dispRes.data);
+      if (termDispRes?.success) setTerminationDisputes(termDispRes.data);
     } catch (err) {
       console.error('Failed to fetch data:', err);
     } finally {
@@ -63,7 +75,20 @@ const ViolationManagementPage = () => {
     raw: d
   }));
 
-  const alerts = [...complaintAlerts, ...disputeAlerts].sort((a, b) => new Date(b.time) - new Date(a.time));
+  const termDisputeAlerts = terminationDisputes.map(d => ({
+    id: `term-${d.request_id}`,
+    type: 'termination_dispute',
+    severity: 'critical',
+    title: `Tranh chấp Hợp đồng #${d.contract?.contract_number} (${d.contract?.room?.title})`,
+    description: `Lý do: ${d.reason}\nGhi chú: ${d.review_note}`,
+    time: new Date(d.updated_at).toLocaleString('vi-VN'),
+    actionLabel: 'Giải quyết Hợp đồng',
+    secondaryAction: 'Ignore',
+    status: d.status,
+    raw: d
+  }));
+
+  const alerts = [...complaintAlerts, ...disputeAlerts, ...termDisputeAlerts].sort((a, b) => new Date(b.time) - new Date(a.time));
 
   // Resolved disputes history
   const resolvedDisputes = disputes.filter(d => d.status === 'dispute_resolved').map(d => ({
@@ -173,6 +198,12 @@ const ViolationManagementPage = () => {
                         if (alert.type === 'dispute') {
                           setSelectedDispute(alert.raw);
                           setDisputeOutcome('');
+                        } else if (alert.type === 'termination_dispute') {
+                          setSelectedTermDispute(alert.raw);
+                          setTermRefund(String(alert.raw.contract?.deposit_amount || 0));
+                          setTermRetained('0');
+                          setTermComp('0');
+                          setTermNote('');
                         } else {
                           setSelectedComplaint(alert);
                         }
@@ -368,6 +399,198 @@ const ViolationManagementPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Termination Dispute Resolution Modal */}
+      {selectedTermDispute && (
+        <div className="complaint-modal-overlay" onClick={() => setSelectedTermDispute(null)}>
+          <div className="complaint-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>Giải quyết Tranh chấp Hợp đồng</h3>
+              <button className="btn-close-modal" onClick={() => setSelectedTermDispute(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-group">
+                <label>Hợp đồng</label>
+                <p>#{selectedTermDispute.contract?.contract_number} - {selectedTermDispute.contract?.room?.title}</p>
+              </div>
+              <div className="detail-group">
+                <label>Khách thuê</label>
+                <p>{selectedTermDispute.contract?.tenant?.full_name}</p>
+              </div>
+              <div className="detail-group">
+                <label>Chủ nhà</label>
+                <p>{selectedTermDispute.contract?.landlordContract?.full_name}</p>
+              </div>
+              <div className="detail-group full-width">
+                <label>Nội dung tranh chấp</label>
+                <div className="description-box" style={{ whiteSpace: 'pre-wrap' }}>
+                  <strong>Lý do gốc:</strong> {selectedTermDispute.reason}<br/>
+                  <strong>Ghi chú tranh chấp:</strong> {selectedTermDispute.review_note}
+                  
+                  {(() => {
+                    const renderUrls = (urlsRaw, title) => {
+                      let urls = [];
+                      if (Array.isArray(urlsRaw)) urls = urlsRaw;
+                      else if (typeof urlsRaw === 'string') {
+                        try {
+                          urls = JSON.parse(urlsRaw);
+                          if (!Array.isArray(urls)) urls = [urlsRaw];
+                        } catch(e) { urls = [urlsRaw]; }
+                      }
+                      if (!urls || urls.length === 0) return null;
+                      return (
+                        <div style={{ marginTop: 12 }}>
+                          <strong style={{ fontSize: 13, color: '#475569' }}>{title}:</strong>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                            {urls.map((u, i) => {
+                              const fullUrl = u.startsWith('http') || u.startsWith('data:') ? u : `http://localhost:5000${u.startsWith('/') ? '' : '/'}${u}`;
+                              return (
+                                <a key={i} href={fullUrl} target="_blank" rel="noreferrer" style={{ width: 60, height: 60, borderRadius: 6, overflow: 'hidden', border: '1px solid #cbd5e1', display: 'block' }}>
+                                  <img src={fullUrl} alt="evidence" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div style="font-size:10px;text-align:center;padding-top:20px;">FILE</div>'; }} />
+                                </a>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    };
+                    return (
+                      <>
+                        {renderUrls(selectedTermDispute.evidence_urls, 'Bằng chứng của bên Yêu cầu')}
+                        {renderUrls(selectedTermDispute.reject_evidence_urls, 'Bằng chứng của bên Từ chối')}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              <div className="detail-group full-width" style={{ marginTop: '20px', background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <label style={{ color: '#0f172a', fontSize: '1rem', margin: 0 }}>Thông tin Hợp đồng</label>
+                  <button 
+                    onClick={() => setShowFullContract(true)}
+                    style={{ padding: '4px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 4, fontSize: 13, cursor: 'pointer' }}
+                  >
+                    Xem Bản Gốc Hợp Đồng
+                  </button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <span style={{ fontSize: 13, color: '#64748b' }}>Ngày bắt đầu:</span><br/>
+                    <strong style={{ color: '#0f172a' }}>{selectedTermDispute.contract?.start_date ? new Date(selectedTermDispute.contract.start_date).toLocaleDateString('vi-VN') : 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 13, color: '#64748b' }}>Ngày kết thúc:</span><br/>
+                    <strong style={{ color: '#0f172a' }}>{selectedTermDispute.contract?.end_date ? new Date(selectedTermDispute.contract.end_date).toLocaleDateString('vi-VN') : 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 13, color: '#64748b' }}>Tiền cọc đã nộp:</span><br/>
+                    <strong style={{ color: '#0f172a' }}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(selectedTermDispute.contract?.deposit_amount || selectedTermDispute.contract?.deposit || 0)}</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 13, color: '#64748b' }}>Tiền phòng mỗi tháng:</span><br/>
+                    <strong style={{ color: '#0f172a' }}>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(selectedTermDispute.contract?.monthly_rent || selectedTermDispute.contract?.room?.price_per_month || 0)}</strong>
+                  </div>
+                </div>
+                {selectedTermDispute.contract?.terms_and_conditions && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: 13, color: '#64748b', display: 'block', marginBottom: 4 }}>Điều khoản hợp đồng:</span>
+                    <div style={{ fontSize: 13, color: '#334155', maxHeight: '100px', overflowY: 'auto', background: '#fff', padding: 8, borderRadius: 4, border: '1px solid #cbd5e1', whiteSpace: 'pre-wrap' }}>
+                      {selectedTermDispute.contract.terms_and_conditions}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="detail-group full-width" style={{ marginTop: '20px' }}>
+                <label style={{ color: '#d97706', fontSize: '1.1rem', marginBottom: 12 }}>Phán quyết Tài chính (VND)</label>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>Tiền hoàn trả cho Tenant</label>
+                    <input 
+                      type="number" 
+                      value={termRefund}
+                      onChange={e => setTermRefund(e.target.value)}
+                      className="tm-input"
+                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: 4 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>Tiền Chủ nhà giữ lại</label>
+                    <input 
+                      type="number" 
+                      value={termRetained}
+                      onChange={e => setTermRetained(e.target.value)}
+                      className="tm-input"
+                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: 4 }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>Tiền bồi thường (nếu có)</label>
+                    <input 
+                      type="number" 
+                      value={termComp}
+                      onChange={e => setTermComp(e.target.value)}
+                      className="tm-input"
+                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: 4 }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>Ghi chú phán quyết (Bắt buộc)</label>
+                    <textarea 
+                      rows={3}
+                      value={termNote}
+                      onChange={e => setTermNote(e.target.value)}
+                      className="tm-input"
+                      placeholder="Nhập ghi chú hoặc lý do giải quyết..."
+                      style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: 4 }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setSelectedTermDispute(null)}>Đóng</button>
+              <button 
+                className="btn-primary" 
+                disabled={loading || !termNote.trim()}
+                style={{ opacity: (!termNote.trim() || loading) ? 0.5 : 1, background: '#dc2626' }}
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    await adminService.resolveTerminationDispute(selectedTermDispute.request_id, {
+                      depositRefund: termRefund,
+                      depositRetained: termRetained,
+                      compensation: termComp,
+                      adminNote: termNote
+                    });
+                    toast.success('Đã giải quyết tranh chấp hợp đồng thành công!');
+                    setSelectedTermDispute(null);
+                    fetchData();
+                  } catch (err) {
+                    toast.error('Lỗi khi giải quyết tranh chấp.');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                Xác nhận Phán quyết
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Contract Document Modal */}
+      {selectedTermDispute?.contract && (
+        <ContractDocumentModal 
+          isOpen={showFullContract} 
+          onClose={() => setShowFullContract(false)} 
+          contract={selectedTermDispute.contract} 
+          readOnly={true} 
+        />
       )}
     </div>
   );
