@@ -19,7 +19,7 @@ const MainLayout = () => {
       {isAuthenticated && (
         <Sidebar isCollapsed={!isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
       )}
-      <div className={`main-layout-wrapper ${isSidebarOpen && isAuthenticated ? 'sidebar-open' : ''}`} style={{ transition: 'margin-left 0.3s', marginLeft: isSidebarOpen && isAuthenticated ? '260px' : '0', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+      <div className={`main-layout-wrapper ${isSidebarOpen && isAuthenticated ? 'sidebar-open' : ''}`} style={{ transition: 'margin-left 0.3s, width 0.3s', marginLeft: isSidebarOpen && isAuthenticated ? '260px' : '0', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: isSidebarOpen && isAuthenticated ? 'calc(100% - 260px)' : '100%' }}>
         <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
 
       {/* Main Content */}

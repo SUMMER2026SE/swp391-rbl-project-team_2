@@ -45,14 +45,14 @@ const ComplaintsPage = () => {
   });
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'OPEN':
+    switch ((status || '').toLowerCase()) {
+      case 'open':
         return 'warning';
-      case 'IN_PROGRESS':
+      case 'in_progress':
         return 'info';
-      case 'RESOLVED':
+      case 'resolved':
         return 'success';
-      case 'CLOSED':
+      case 'closed':
         return 'default';
       default:
         return 'default';
@@ -60,12 +60,12 @@ const ComplaintsPage = () => {
   };
 
   const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'HIGH':
+    switch ((priority || '').toLowerCase()) {
+      case 'high':
         return 'danger';
-      case 'MEDIUM':
+      case 'medium':
         return 'warning';
-      case 'LOW':
+      case 'low':
         return 'success';
       default:
         return 'default';
@@ -138,7 +138,7 @@ const ComplaintsPage = () => {
           </button>
           {showStatusDropdown && (
             <div className="filter-dropdown-menu">
-              {['All', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].map(status => (
+              {['All', 'open', 'in_progress', 'resolved', 'closed'].map(status => (
                 <button
                   key={status}
                   className={`filter-dropdown-item ${statusFilter === status ? 'active' : ''}`}
@@ -147,7 +147,7 @@ const ComplaintsPage = () => {
                     setShowStatusDropdown(false);
                   }}
                 >
-                  {status.replace('_', ' ')}
+                  {status === 'All' ? 'All' : status.replace('_', ' ').toUpperCase()}
                 </button>
               ))}
             </div>
@@ -164,7 +164,7 @@ const ComplaintsPage = () => {
           </button>
           {showPriorityDropdown && (
             <div className="filter-dropdown-menu">
-              {['All', 'HIGH', 'MEDIUM', 'LOW'].map(priority => (
+              {['All', 'high', 'medium', 'low'].map(priority => (
                 <button
                   key={priority}
                   className={`filter-dropdown-item ${priorityFilter === priority ? 'active' : ''}`}
@@ -173,7 +173,7 @@ const ComplaintsPage = () => {
                     setShowPriorityDropdown(false);
                   }}
                 >
-                  {priority}
+                  {priority === 'All' ? 'All' : priority.toUpperCase()}
                 </button>
               ))}
             </div>
@@ -224,20 +224,63 @@ const ComplaintsPage = () => {
                   </td>
                   <td>
                     <Badge variant={getStatusColor(complaint.status)}>
-                      {complaint.status.replace('_', ' ')}
+                      {(complaint.status || '').replace('_', ' ').toUpperCase()}
                     </Badge>
                   </td>
                   <td>
-                    <button
-                      className="view-btn"
-                      onClick={() => {
-                        setSelectedComplaint(complaint);
-                        setNewStatus(complaint.status);
-                        setNewPriority(complaint.priority);
-                        setShowDetailModal(true);
-                      }}
-                    >
-                      <Eye size={14} />{t('complaints.view', 'View')}</button>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        className="view-btn"
+                        onClick={() => {
+                          setSelectedComplaint(complaint);
+                          setNewStatus(complaint.status);
+                          setNewPriority(complaint.priority);
+                          setShowDetailModal(true);
+                        }}
+                      >
+                        <Eye size={14} />{t('complaints.view', 'View')}
+                      </button>
+                      
+                      {complaint.status === 'open' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await updateStatus(complaint.id, 'in_progress');
+                              toast.success('Đã tiếp nhận khiếu nại');
+                            } catch(err) {
+                              toast.error(err.message || 'Failed to update');
+                            }
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '6px 12px', background: '#3b82f6', border: 'none',
+                            borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                          }}
+                        >
+                          <Clock size={14} /> Tiếp nhận
+                        </button>
+                      )}
+
+                      {complaint.status === 'in_progress' && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await updateStatus(complaint.id, 'resolved');
+                              toast.success('Đã xử lý xong');
+                            } catch(err) {
+                              toast.error(err.message || 'Failed to update');
+                            }
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '6px 12px', background: '#10b981', border: 'none',
+                            borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                          }}
+                        >
+                          <CheckCircle size={14} /> Hoàn tất
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -309,10 +352,10 @@ const ComplaintsPage = () => {
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
                     >
-                      <option value="OPEN">{t('complaints.open', 'Open')}</option>
-                      <option value="IN_PROGRESS">{t('complaints.inProgress', 'In Progress')}</option>
-                      <option value="RESOLVED">{t('complaints.resolved', 'Resolved')}</option>
-                      <option value="CLOSED">{t('complaints.closed', 'Closed')}</option>
+                      <option value="open">{t('complaints.open', 'Open')}</option>
+                      <option value="in_progress">{t('complaints.inProgress', 'In Progress')}</option>
+                      <option value="resolved">{t('complaints.resolved', 'Resolved')}</option>
+                      <option value="closed">{t('complaints.closed', 'Closed')}</option>
                     </select>
                     <Button
                       variant="secondary"
@@ -327,9 +370,9 @@ const ComplaintsPage = () => {
                       value={newPriority}
                       onChange={(e) => setNewPriority(e.target.value)}
                     >
-                      <option value="LOW">{t('complaints.low', 'Low')}</option>
-                      <option value="MEDIUM">{t('complaints.medium', 'Medium')}</option>
-                      <option value="HIGH">{t('complaints.high', 'High')}</option>
+                      <option value="low">{t('complaints.low', 'Low')}</option>
+                      <option value="medium">{t('complaints.medium', 'Medium')}</option>
+                      <option value="high">{t('complaints.high', 'High')}</option>
                     </select>
                     <Button
                       variant="secondary"

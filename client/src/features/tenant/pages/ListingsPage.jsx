@@ -38,7 +38,7 @@ const ListingsPage = () => {
 
   return (
     <div className="search-page pt-20">
-      <div className="container">
+      <div className="listings-container" style={{ padding: '1.5rem 2rem' }}>
         <div className="results-header mb-6">
           <h2 className="text-2xl font-bold">Available Listings</h2>
           <p className="text-gray-500">Showing {listings.length} results</p>

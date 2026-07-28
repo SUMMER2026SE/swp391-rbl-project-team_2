@@ -640,7 +640,7 @@ const TenantRequestsPage = () => {
 
   return (
     <div className="tenant-requests-page">
-      <div className="container">
+      <div className="tenant-requests-container">
         
         {/* Header Section */}
         <div className="page-header">
@@ -965,9 +965,21 @@ const TenantRequestsPage = () => {
                     <div className="request-actions-row">
                       <div className="action-buttons">
                         {request.status === 'approved' && (
-                          <button onClick={() => handleOpenContractRequest(request)} className="btn-action btn-contract">
-                            <FileSignature size={16} /> {t('tenantRequests.requestContract', 'Request Contract')}
-                          </button>
+                          (() => {
+                            const isExpired = request.requestedMoveInDate && new Date() > new Date(request.requestedMoveInDate);
+                            if (isExpired) {
+                              return (
+                                <button disabled className="btn-action btn-contract" style={{ background: '#94a3b8', cursor: 'not-allowed' }}>
+                                  <Timer size={16} /> Đã quá hạn ngày chuyển vào
+                                </button>
+                              );
+                            }
+                            return (
+                              <button onClick={() => handleOpenContractRequest(request)} className="btn-action btn-contract">
+                                <FileSignature size={16} /> {t('tenantRequests.requestContract', 'Request Contract')}
+                              </button>
+                            );
+                          })()
                         )}
 
                         {(request.status === 'pending' || request.status === 'approved') && (
@@ -1158,18 +1170,42 @@ const TenantRequestsPage = () => {
                             )
                           )}
                           {contract.status === 'pending_payment' && (
-                            <button
-                              onClick={() => navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${contract.roomId}&contractId=${contract.contractId}`)}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                padding: '6px 12px', background: '#7c3aed', 
-                                border: 'none',
-                                borderRadius: '6px', color: 'white', 
-                                fontSize: '13px', cursor: 'pointer', fontWeight: 500
-                              }}
-                            >
-                              <CreditCard size={14} /> {t('tenantRequests.payDeposit', 'Pay Deposit')}
-                            </button>
+                            (() => {
+                              const createdTime = new Date(contract.createdAt || contract.created_at || Date.now()).getTime();
+                              const isExpired = Date.now() - createdTime > 15 * 60 * 1000;
+                              
+                              if (isExpired) {
+                                return (
+                                  <button
+                                    disabled
+                                    style={{
+                                      display: 'flex', alignItems: 'center', gap: '6px',
+                                      padding: '6px 12px', background: '#94a3b8', 
+                                      border: 'none',
+                                      borderRadius: '6px', color: 'white', 
+                                      fontSize: '13px', cursor: 'not-allowed', fontWeight: 500
+                                    }}
+                                  >
+                                    <Timer size={14} /> Hết hạn thanh toán
+                                  </button>
+                                );
+                              }
+                              
+                              return (
+                                <button
+                                  onClick={() => navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${contract.roomId}&contractId=${contract.contractId}`)}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                    padding: '6px 12px', background: '#7c3aed', 
+                                    border: 'none',
+                                    borderRadius: '6px', color: 'white', 
+                                    fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                                  }}
+                                >
+                                  <CreditCard size={14} /> {t('tenantRequests.payDeposit', 'Pay Deposit')}
+                                </button>
+                              );
+                            })()
                           )}
                         </div>
                       </td>

@@ -313,17 +313,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
       {/* Sidebar Footer */}
       <div className="sidebar-footer">
-        <div className="support-btn-container" style={{ marginTop: '0.75rem' }}>
-          {isCollapsed ? (
-            <a href="#" onClick={handleLogout} className="sidebar-link logout-link" title="Đăng xuất" style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem' }}>
-              <LogOut size={20} style={{ transform: 'rotate(180deg)' }} />
-            </a>
-          ) : (
-            <a href="#" onClick={handleLogout} className="btn-support-center" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}>
-              <LogOut size={18} style={{ transform: 'rotate(180deg)' }} />
-              {t('sidebar.logout', 'Đăng xuất')}
-            </a>
-          )}
+        <div className="support-btn-container">
+          <a href="#" onClick={handleLogout} className="sidebar-link logout-link" title="Đăng xuất">
+            <LogOut size={20} style={{ transform: 'rotate(180deg)' }} />
+            {!isCollapsed && <span>{t('sidebar.logout', 'Đăng xuất')}</span>}
+          </a>
         </div>
       </div>
     </aside>

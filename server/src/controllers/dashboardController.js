@@ -8,10 +8,18 @@ const { Room, Contract, Payment, RentalRequest, Complaint, Notification, Viewing
 const getDashboardStatistics = async (req, res, next) => {
   try {
     const landlordId = req.user.userId;
-    const { period } = req.query;
+    const { period, startDate: queryStartDate, endDate: queryEndDate } = req.query;
 
     let dateCondition = {};
-    if (period) {
+    
+    if (queryStartDate && queryEndDate) {
+      dateCondition = {
+        created_at: {
+          [Op.gte]: new Date(queryStartDate),
+          [Op.lte]: new Date(queryEndDate),
+        },
+      };
+    } else if (period) {
       const now = new Date();
       let startDate = null;
 
@@ -101,6 +109,7 @@ const getDashboardStatistics = async (req, res, next) => {
           total: totalRooms,
           available: availableRooms,
           rented: rentedRooms,
+          other: totalRooms - availableRooms - rentedRooms,
         },
         contracts: {
           active: activeContracts,
@@ -135,10 +144,17 @@ const getDashboardStatistics = async (req, res, next) => {
 const getRecentActivity = async (req, res, next) => {
   try {
     const landlordId = req.user.userId;
-    const { limit = 10, period } = req.query;
+    const { limit = 10, period, startDate: queryStartDate, endDate: queryEndDate } = req.query;
 
     let dateCondition = {};
-    if (period) {
+    if (queryStartDate && queryEndDate) {
+      dateCondition = {
+        created_at: {
+          [Op.gte]: new Date(queryStartDate),
+          [Op.lte]: new Date(queryEndDate),
+        },
+      };
+    } else if (period) {
       const now = new Date();
       let startDate = null;
 
@@ -230,36 +246,89 @@ const getRecentActivity = async (req, res, next) => {
 const getRevenueChart = async (req, res, next) => {
   try {
     const landlordId = req.user.userId;
-    const { months = 12, period } = req.query;
+    const { months = 12, period, startDate: queryStartDate, endDate: queryEndDate } = req.query;
 
-    let monthsToFetch = parseInt(months);
-    if (period === 'Last 6 Months') {
-      monthsToFetch = 6;
+    let endDateObj = new Date();
+    let startDateObj = null;
+    let isDaily = false;
+    let diffDays = 0;
+
+    if (queryStartDate && queryEndDate) {
+      startDateObj = new Date(queryStartDate);
+      endDateObj = new Date(queryEndDate);
+    } else if (period === 'Last 7 Days') {
+      startDateObj = new Date();
+      startDateObj.setDate(startDateObj.getDate() - 7);
+    } else if (period === 'Last 30 Days') {
+      startDateObj = new Date();
+      startDateObj.setDate(startDateObj.getDate() - 30);
+    } else if (period === 'Last 6 Months') {
+      startDateObj = new Date();
+      startDateObj.setMonth(startDateObj.getMonth() - 6);
     } else if (period === 'This Year') {
-      monthsToFetch = new Date().getMonth() + 1;
+      startDateObj = new Date(endDateObj.getFullYear(), 0, 1);
     }
 
+    if (startDateObj) {
+      const diffTime = Math.abs(endDateObj - startDateObj);
+      diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    // Default to monthly if no start date, otherwise daily if <= 31 days
+    isDaily = diffDays > 0 && diffDays <= 31;
     const revenueData = [];
-    const now = new Date();
 
-    for (let i = monthsToFetch - 1; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+    if (isDaily) {
+      const daysToFetch = Math.min(diffDays + 1, 31); // Cap at 31 days just in case
+      for (let i = daysToFetch - 1; i >= 0; i--) {
+        const date = new Date(endDateObj.getFullYear(), endDateObj.getMonth(), endDateObj.getDate() - i);
+        const nextDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
 
-      const revenue = await Payment.sum('net_amount', {
-        where: {
-          landlord_id: landlordId,
-          status: 'completed',
-          paid_date: {
-            [Op.between]: [date, nextDate],
+        const revenue = await Payment.sum('net_amount', {
+          where: {
+            landlord_id: landlordId,
+            status: 'completed',
+            paid_date: {
+              [Op.between]: [date, nextDate],
+            },
           },
-        },
-      });
+        });
 
-      revenueData.push({
-        month: date.toLocaleString('default', { month: 'short', year: 'numeric' }),
-        revenue: revenue || 0,
-      });
+        const labelStr = date.toLocaleDateString('default', { day: '2-digit', month: 'short' });
+        revenueData.push({
+          label: labelStr,
+          month: labelStr, // backward compatibility
+          revenue: revenue || 0,
+        });
+      }
+    } else {
+      let monthsToFetch = 12;
+      if (startDateObj) {
+        monthsToFetch = Math.max(1, Math.ceil(diffDays / 30));
+      }
+      monthsToFetch = Math.min(monthsToFetch, 12);
+      
+      for (let i = monthsToFetch - 1; i >= 0; i--) {
+        const date = new Date(endDateObj.getFullYear(), endDateObj.getMonth() - i, 1);
+        const nextDate = new Date(endDateObj.getFullYear(), endDateObj.getMonth() - i + 1, 1);
+
+        const revenue = await Payment.sum('net_amount', {
+          where: {
+            landlord_id: landlordId,
+            status: 'completed',
+            paid_date: {
+              [Op.between]: [date, nextDate],
+            },
+          },
+        });
+
+        const labelStr = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+        revenueData.push({
+          label: labelStr,
+          month: labelStr,
+          revenue: revenue || 0,
+        });
+      }
     }
 
     return res.status(200).json({

@@ -40,7 +40,7 @@ const TenantDashboardPage = () => {
   }, []);
 
   return (
-    <div className="tenant-dashboard-page">
+    <div className="tenant-dashboard-page" style={{ padding: '1.5rem 2rem', width: '100%', maxWidth: '100%' }}>
       <div className="dashboard-header">
         <h1>{t('tenantDashboard.welcomeBack', 'Welcome back')}, {user?.fullName || 'Tenant'}!</h1>
         <p>{t('tenantDashboard.overview', 'Here is an overview of your rental activity.')}</p>

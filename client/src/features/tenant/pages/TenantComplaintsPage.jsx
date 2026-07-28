@@ -11,6 +11,7 @@ import './TenantComplaintsPage.css';
 
 const TenantComplaintsPage = () => {
   const { t } = useTranslation();
+  const isMounted = React.useRef(true);
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('All');
@@ -31,7 +32,11 @@ const TenantComplaintsPage = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   useEffect(() => {
+    isMounted.current = true;
     fetchComplaints();
+    return () => {
+      isMounted.current = false;
+    };
   }, [statusFilter]);
 
   useEffect(() => {
@@ -42,13 +47,15 @@ const TenantComplaintsPage = () => {
 
   const fetchComplaints = async () => {
     try {
-      setLoading(true);
+      if (isMounted.current) setLoading(true);
       const res = await tenantComplaintService.getComplaints(statusFilter);
-      setComplaints(res.data || []);
+      if (isMounted.current) setComplaints(res.data || []);
     } catch (error) {
-      toast.error('Failed to load complaints');
+      if (isMounted.current && error?.name !== 'CanceledError' && error?.message !== 'canceled') {
+        toast.error('Failed to load complaints');
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
   };
 
@@ -123,7 +130,7 @@ const TenantComplaintsPage = () => {
   };
 
   return (
-    <div className="tenant-complaints-page">
+    <div className="tenant-complaints-page" style={{ padding: '1.5rem 2rem', width: '100%', maxWidth: '100%' }}>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <h1 className="page-title">{t('tenantComplaints.title', 'Khiếu nại của tôi')}</h1>

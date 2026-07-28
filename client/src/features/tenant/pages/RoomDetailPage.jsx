@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  MapPin, Share2, Heart, MessageSquare, CheckCircle, Bed, Users, Maximize, Home, Compass, ChevronLeft, ShieldCheck, ShieldAlert, FileSignature
+  MapPin, Share2, Heart, MessageSquare, CheckCircle, Bed, Users, Maximize, Home, Compass, ChevronLeft, ShieldCheck, ShieldAlert, FileSignature, UploadCloud, Loader2
 } from 'lucide-react';
 import { favoriteService } from '../services/favoriteService';
 import { rentalRequestService } from '../services/rentalRequestService';
@@ -69,6 +69,40 @@ const RoomDetailPage = () => {
   const [tenantIcIssueDate, setTenantIcIssueDate] = useState('');
   const [tenantIcIssuePlace, setTenantIcIssuePlace] = useState('Cục Cảnh sát Quản lý hành chính về trật tự xã hội');
   const [tenantPermanentAddress, setTenantPermanentAddress] = useState('');
+  
+  const [isScanning, setIsScanning] = useState(false);
+  const fileInputRef = React.useRef(null);
+
+  const handleOCRScan = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      setIsScanning(true);
+      const res = await rentalRequestService.scanCCCD(file);
+      if (res.success && res.data) {
+        toast.success('Quét CCCD thành công!');
+        if (res.data.fullName) setTenantName(res.data.fullName);
+        if (res.data.idNumber) setTenantIc(res.data.idNumber);
+        if (res.data.address) setTenantPermanentAddress(res.data.address);
+        if (res.data.issueDate) {
+          // format dd/mm/yyyy to yyyy-mm-dd
+          const parts = res.data.issueDate.split('/');
+          if (parts.length === 3) {
+            setTenantIcIssueDate(`${parts[2]}-${parts[1]}-${parts[0]}`);
+          } else {
+            setTenantIcIssueDate(res.data.issueDate);
+          }
+        }
+        if (res.data.issuePlace) setTenantIcIssuePlace(res.data.issuePlace);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Không thể quét CCCD. Vui lòng thử lại với ảnh rõ nét hơn.');
+    } finally {
+      setIsScanning(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -261,7 +295,12 @@ const RoomDetailPage = () => {
         requestedMoveInDate: moveInDate,
         leaseDurationMonths: parseInt(leaseDuration, 10),
         phone: phone,
-        rentalPurpose: rentalPurpose
+        rentalPurpose: rentalPurpose,
+        tenantName,
+        tenantIc,
+        tenantIcIssueDate,
+        tenantIcIssuePlace,
+        tenantPermanentAddress
       });
 
       if (response.success) {
@@ -756,14 +795,27 @@ const RoomDetailPage = () => {
                 <input 
                   type="time" 
                   value={viewingTime} 
+                  min={viewingDate === todayDate ? new Date().toTimeString().slice(0, 5) : undefined}
                   onChange={(e) => setViewingTime(e.target.value)} 
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                 />
               </div>
             </div>
-            <div className="modal-actions">
+            {viewingDate && viewingTime && new Date(`${viewingDate}T${viewingTime}`) < new Date() && (
+              <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '8px', marginBottom: '0' }}>
+                * Giờ xem không thể ở trong quá khứ.
+              </p>
+            )}
+            <div className="modal-actions" style={{ marginTop: '16px' }}>
               <button className="btn-cancel" onClick={() => setShowDateModal(false)}>{t('roomDetail.cancel', 'Hủy')}</button>
-              <button className="btn-confirm" onClick={handleScheduleViewing}>{t('roomDetail.bookSchedule', 'Đặt lịch')}</button>
+              <button 
+                className="btn-confirm" 
+                onClick={handleScheduleViewing}
+                disabled={viewingDate && viewingTime && new Date(`${viewingDate}T${viewingTime}`) < new Date()}
+                style={{ opacity: (viewingDate && viewingTime && new Date(`${viewingDate}T${viewingTime}`) < new Date()) ? 0.5 : 1, cursor: (viewingDate && viewingTime && new Date(`${viewingDate}T${viewingTime}`) < new Date()) ? 'not-allowed' : 'pointer' }}
+              >
+                {t('roomDetail.bookSchedule', 'Đặt lịch')}
+              </button>
             </div>
           </div>
         </div>
@@ -788,6 +840,33 @@ const RoomDetailPage = () => {
                   {t('roomDetail.rentalRequestDesc', 'Gửi lời nhắn của bạn đến chủ trọ để đăng ký thuê phòng. Sau khi chủ trọ đồng ý yêu cầu, bạn mới thực hiện tạo hợp đồng.')}
                 </span>
               </p>
+            </div>
+
+            {/* OCR CCCD Upload */}
+            <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '10px', padding: '16px', marginBottom: '16px', textAlign: 'center' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>Tự động điền bằng CCCD</h3>
+              <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '12px' }}>Tải ảnh mặt trước CCCD để hệ thống tự quét và điền thông tin</p>
+              
+              <input 
+                type="file" 
+                accept="image/*" 
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleOCRScan}
+              />
+              
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isScanning}
+                style={{ 
+                  padding: '8px 16px', borderRadius: '8px', border: '1px solid #3b82f6', 
+                  background: '#eff6ff', color: '#2563eb', fontWeight: 500, fontSize: '0.9rem',
+                  display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: isScanning ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isScanning ? <Loader2 size={18} className="animate-spin" /> : <UploadCloud size={18} />}
+                {isScanning ? 'Đang quét...' : 'Tải lên mặt trước CCCD'}
+              </button>
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
@@ -842,6 +921,63 @@ const RoomDetailPage = () => {
                   style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
                 />
               </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Họ và tên *</label>
+                <input 
+                  type="text" 
+                  value={tenantName}
+                  onChange={(e) => setTenantName(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Số CCCD *</label>
+                <input 
+                  type="text" 
+                  value={tenantIc}
+                  onChange={(e) => setTenantIc(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ngày cấp CCCD *</label>
+                <input 
+                  type="date" 
+                  value={tenantIcIssueDate}
+                  onChange={(e) => setTenantIcIssueDate(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Nơi cấp CCCD *</label>
+                <input 
+                  type="text" 
+                  value={tenantIcIssuePlace}
+                  onChange={(e) => setTenantIcIssuePlace(e.target.value)}
+                  disabled={loading}
+                  style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Nơi thường trú *</label>
+              <input 
+                type="text" 
+                value={tenantPermanentAddress}
+                onChange={(e) => setTenantPermanentAddress(e.target.value)}
+                disabled={loading}
+                style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
+              />
             </div>
 
             <textarea

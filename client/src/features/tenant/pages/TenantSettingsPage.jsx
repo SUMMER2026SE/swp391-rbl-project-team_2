@@ -22,7 +22,7 @@ const TenantSettingsPage = () => {
   };
 
   return (
-    <div className="tenant-settings-page">
+    <div className="tenant-settings-page" style={{ padding: '1.5rem 2rem', width: '100%', maxWidth: '100%' }}>
       <div className="settings-header-banner">
         <div className="settings-header-content">
           <h1>{t('tenantSettings.title', 'Account Settings')}</h1>

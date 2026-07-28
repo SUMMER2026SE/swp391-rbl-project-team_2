@@ -23,6 +23,10 @@ const Room = sequelize.define('Room', {
     type: DataTypes.STRING(20),
     allowNull: true, // e.g. "101", "202", etc.
   },
+  batch_id: {
+    type: DataTypes.STRING(50),
+    allowNull: true, // Groups rooms created together in a single bulk operation
+  },
   title: {
     type: DataTypes.STRING(255),
     allowNull: false,

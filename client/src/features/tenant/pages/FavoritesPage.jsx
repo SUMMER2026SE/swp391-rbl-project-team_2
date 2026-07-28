@@ -52,7 +52,7 @@ const FavoritesPage = () => {
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (
-    <div className="favorites-page container">
+    <div className="favorites-page favorites-container">
       <div className="favorites-header">
         <h1>{t('favorites.title', 'Your Favorites')}</h1>
         <p>{t('favorites.subtitle', "Rooms you've saved for later consideration.")}</p>

@@ -16,6 +16,7 @@ import {
   Copy,
   DollarSign,
   Wrench,
+  Trash2,
 } from 'lucide-react';
 import { ROUTES } from '../../../constants';
 import { landlordService } from '../services/landlordService';
@@ -34,6 +35,7 @@ const PropertyDashboardPage = () => {
     count: 1,
     targetFloor: 1,
   });
+  const [deletingRooms, setDeletingRooms] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
@@ -105,6 +107,37 @@ const PropertyDashboardPage = () => {
   const formatPrice = (price) => {
     if (!price) return '0';
     return new Intl.NumberFormat('vi-VN').format(price);
+  };
+
+  const handleDeleteRoom = async (roomId, roomNumber, e) => {
+    e.stopPropagation();
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa phòng ${roomNumber || roomId}?`)) return;
+    try {
+      await landlordService.deleteRoom(roomId);
+      toast.success(`Đã xóa phòng ${roomNumber || roomId}`);
+      fetchDashboard();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Xóa phòng thất bại');
+    }
+  };
+
+  const handleDeleteFloor = async (floor) => {
+    const rooms = floorPlan[floor] || [];
+    if (rooms.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa TẤT CẢ ${rooms.length} phòng ở Tầng ${floor}?`)) return;
+    setDeletingRooms(true);
+    let successCount = 0;
+    for (const room of rooms) {
+      try {
+        await landlordService.deleteRoom(room.originalRoomId || room.roomId);
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to delete room ${room.roomId}:`, err);
+      }
+    }
+    setDeletingRooms(false);
+    toast.success(`Đã xóa ${successCount}/${rooms.length} phòng ở Tầng ${floor}`);
+    fetchDashboard();
   };
 
   const formatCurrency = (amount) => {
@@ -264,6 +297,32 @@ const PropertyDashboardPage = () => {
                 <Layers size={16} />
                 Floor {floor}
                 <span className="floor-count">{floorPlan[floor].length} rooms</span>
+                <button
+                  className="btn-delete-floor"
+                  title={`Xóa tất cả phòng ở Tầng ${floor}`}
+                  disabled={deletingRooms}
+                  onClick={() => handleDeleteFloor(floor)}
+                  style={{
+                    marginLeft: 'auto',
+                    background: 'none',
+                    border: '1px solid #fca5a5',
+                    color: '#ef4444',
+                    padding: '4px 12px',
+                    borderRadius: '6px',
+                    cursor: deletingRooms ? 'not-allowed' : 'pointer',
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s',
+                    opacity: deletingRooms ? 0.5 : 1,
+                  }}
+                  onMouseEnter={(e) => { if (!deletingRooms) { e.currentTarget.style.background = '#fef2f2'; } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
+                >
+                  <Trash2 size={13} />
+                  {deletingRooms ? 'Đang xóa...' : 'Xóa tầng'}
+                </button>
               </div>
               <div className="floor-rooms-grid">
                 {floorPlan[floor].map(room => (
@@ -308,6 +367,27 @@ const PropertyDashboardPage = () => {
                           onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}
                         >
                           <Copy size={13} />
+                        </button>
+                        <button
+                          className="btn-delete-room-icon"
+                          title="Xóa phòng này"
+                          onClick={(e) => handleDeleteRoom(room.originalRoomId || room.roomId, room.roomNumber, e)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '4px',
+                            color: '#64748b',
+                            cursor: 'pointer',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fef2f2'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}
+                        >
+                          <Trash2 size={13} />
                         </button>
                       </div>
                       <span className={`room-card-status-badge ${room.status}`}>

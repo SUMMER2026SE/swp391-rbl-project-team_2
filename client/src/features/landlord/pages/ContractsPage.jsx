@@ -161,8 +161,6 @@ const ContractsPage = () => {
           <h1 className="contracts__title">{t('contracts.contracts', 'Contracts')}</h1>
           <p className="contracts__subtitle">{t('contracts.manageRentalContractsAndAgreements', 'Manage rental contracts and agreements')}</p>
         </div>
-        <Button variant="primary">
-          <Plus size={18} />{t('contracts.newContract', 'New Contract')}</Button>
       </div>
 
       {/* Tabs */}

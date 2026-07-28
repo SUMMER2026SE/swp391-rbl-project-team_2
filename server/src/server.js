@@ -24,6 +24,7 @@ const tenantRoutes = require('./routes/tenantRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const terminationRoutes = require('./routes/terminationRoutes');
+const ocrRoutes = require('./routes/ocrRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -103,6 +104,7 @@ app.use('/api/tenant', tenantRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/termination', terminationRoutes);
+app.use('/api/ocr', ocrRoutes);
 
 // =========================================================
 // ERROR HANDLER

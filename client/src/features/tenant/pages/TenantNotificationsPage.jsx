@@ -124,7 +124,7 @@ const TenantNotificationsPage = () => {
   });
 
   return (
-    <div className="tenant-notifications-container">
+    <div className="tenant-notifications-container" style={{ padding: '1.5rem 2rem', width: '100%', maxWidth: '100%' }}>
       {/* Title & Top Section */}
       <div className="notifications-page-header">
         <div className="header-text-block">
