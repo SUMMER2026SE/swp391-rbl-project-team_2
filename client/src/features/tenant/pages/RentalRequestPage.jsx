@@ -160,7 +160,7 @@ const RentalRequestPage = () => {
 
   return (
     <div className="rental-request-page">
-      <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 1.5rem' }}>
+      <div className="rental-request-container" style={{ padding: '1.5rem 2rem' }}>
         
         <div className="request-content-layout">
           

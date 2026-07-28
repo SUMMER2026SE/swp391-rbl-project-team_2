@@ -5,7 +5,7 @@ import { MoreVertical, Lock, AlertCircle, ExternalLink, EyeOff, CheckCircle, Clo
 import { formatCurrency } from '../../../utils/format';
 import './ListingTable.css';
 
-const ListingTable = ({ listings, onUpdateStatus }) => {
+const ListingTable = ({ listings, onUpdateStatus, bulkMode, selectedRooms = [], onToggleSelect, onSelectAll }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const getStatusBadge = (status) => {
@@ -54,6 +54,16 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
       <table className="listing-table">
         <thead>
           <tr>
+            {bulkMode && (
+              <th style={{ width: '40px', textAlign: 'center' }}>
+                <input
+                  type="checkbox"
+                  checked={listings.length > 0 && listings.every(l => selectedRooms.includes(l.rawId))}
+                  onChange={onSelectAll}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                />
+              </th>
+            )}
             <th>{t('adminListings.tableProperty')}</th>
             <th>{t('adminListings.tableLandlord')}</th>
             <th>{t('adminListings.tableStatus')}</th>
@@ -62,7 +72,19 @@ const ListingTable = ({ listings, onUpdateStatus }) => {
         </thead>
         <tbody>
           {listings.map((listing) => (
-            <tr key={listing.id} className={listing.alert ? 'row-alert' : ''}>
+            <tr key={listing.id} className={`${listing.alert ? 'row-alert' : ''} ${selectedRooms.includes(listing.rawId) ? 'row-selected' : ''}`}
+              style={selectedRooms.includes(listing.rawId) ? { backgroundColor: '#eef2ff' } : {}}
+            >
+              {bulkMode && (
+                <td style={{ textAlign: 'center', width: '40px' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedRooms.includes(listing.rawId)}
+                    onChange={() => onToggleSelect(listing.rawId)}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                  />
+                </td>
+              )}
               <td className="listing-property">
                 <div className="property-info-cell">
                   <img src={listing.image} alt={listing.title} className="property-thumbnail" />

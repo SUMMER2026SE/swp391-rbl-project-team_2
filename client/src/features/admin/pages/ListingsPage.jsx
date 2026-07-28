@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronDown, List, Grid, MoreHorizontal, AlertTriangle } from 'lucide-react';
+import { Search, ChevronDown, List, Grid, MoreHorizontal, AlertTriangle, CheckSquare } from 'lucide-react';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import ListingTable from '../components/ListingTable';
@@ -23,12 +23,14 @@ const ListingsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
   
-  // Confirmation Modal State
   const [confirmDialog, setConfirmDialog] = useState({
     show: false,
     roomId: null,
     status: null
   });
+  const [selectedRooms, setSelectedRooms] = useState([]);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   useEffect(() => {
     fetchListings();
@@ -75,6 +77,45 @@ const ListingsPage = () => {
 
   const closeConfirmDialog = () => {
     setConfirmDialog({ show: false, roomId: null, status: null });
+  };
+
+  const handleToggleSelect = (roomId) => {
+    setSelectedRooms(prev =>
+      prev.includes(roomId) ? prev.filter(id => id !== roomId) : [...prev, roomId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const currentIds = currentListings.map(l => l.rawId);
+    const allSelected = currentIds.every(id => selectedRooms.includes(id));
+    if (allSelected) {
+      setSelectedRooms(prev => prev.filter(id => !currentIds.includes(id)));
+    } else {
+      setSelectedRooms(prev => [...new Set([...prev, ...currentIds])]);
+    }
+  };
+
+  const handleBulkAction = async (status) => {
+    if (selectedRooms.length === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 phòng.');
+      return;
+    }
+    if (!window.confirm(`Bạn có chắc muốn ${status === 'available' ? 'DUYỆT' : 'TỪ CHỐI'} ${selectedRooms.length} phòng đã chọn?`)) return;
+    setBulkProcessing(true);
+    let successCount = 0;
+    for (const roomId of selectedRooms) {
+      try {
+        await adminService.updateRoomStatus(roomId, status);
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to update room ${roomId}:`, err);
+      }
+    }
+    setBulkProcessing(false);
+    toast.success(`Đã cập nhật ${successCount}/${selectedRooms.length} phòng thành công!`);
+    setSelectedRooms([]);
+    setBulkMode(false);
+    fetchListings();
   };
 
   const filteredListings = listings.filter((item) => {
@@ -127,7 +168,57 @@ const ListingsPage = () => {
           <p className="admin-page-subtitle">{t('adminListings.subtitle')}</p>
         </div>
         <div className="header-actions">
-          <button className="btn-bulk-action">{t('adminListings.bulkActions')}</button>
+          <button
+            className={`btn-bulk-action ${bulkMode ? 'active' : ''}`}
+            onClick={() => { setBulkMode(!bulkMode); setSelectedRooms([]); }}
+            style={bulkMode ? { background: '#4f46e5', color: '#fff' } : {}}
+          >
+            <CheckSquare size={16} style={{ marginRight: '6px' }} />
+            {bulkMode ? 'Thoát chọn' : t('adminListings.bulkActions')}
+          </button>
+          {bulkMode && selectedRooms.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.85rem', color: '#4f46e5', fontWeight: '600' }}>
+                Đã chọn {selectedRooms.length} phòng
+              </span>
+              <button
+                className="btn-bulk-approve"
+                disabled={bulkProcessing}
+                onClick={() => handleBulkAction('available')}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: '#16a34a',
+                  color: '#fff',
+                  fontWeight: '600',
+                  fontSize: '0.85rem',
+                  cursor: bulkProcessing ? 'not-allowed' : 'pointer',
+                  opacity: bulkProcessing ? 0.6 : 1,
+                }}
+              >
+                {bulkProcessing ? 'Đang xử lý...' : '✅ Duyệt tất cả'}
+              </button>
+              <button
+                className="btn-bulk-reject"
+                disabled={bulkProcessing}
+                onClick={() => handleBulkAction('rejected')}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: '6px',
+                  border: '1px solid #fca5a5',
+                  background: '#fff',
+                  color: '#ef4444',
+                  fontWeight: '600',
+                  fontSize: '0.85rem',
+                  cursor: bulkProcessing ? 'not-allowed' : 'pointer',
+                  opacity: bulkProcessing ? 0.6 : 1,
+                }}
+              >
+                {bulkProcessing ? 'Đang xử lý...' : '❌ Từ chối tất cả'}
+              </button>
+            </div>
+          )}
           <div className="view-mode-toggle">
             <button 
               className={`btn-view ${viewMode === 'list' ? 'active' : ''}`}
@@ -189,7 +280,7 @@ const ListingsPage = () => {
               borderRadius: '999px',
               fontWeight: '600'
             }}>
-              {listings.filter(l => l.status.toLowerCase() === 'pending').length}
+              {listings.filter(l => l.status.toLowerCase() === 'pending').reduce((sum, l) => sum + (l.batchCount || 1), 0)}
             </span>
           )}
         </button>
@@ -269,7 +360,14 @@ const ListingsPage = () => {
         {loading ? (
           <div className="loading-state">{t('adminListings.loading')}</div>
         ) : viewMode === 'list' ? (
-          <ListingTable listings={currentListings} onUpdateStatus={handleUpdateStatus} />
+          <ListingTable
+            listings={currentListings}
+            onUpdateStatus={handleUpdateStatus}
+            bulkMode={bulkMode}
+            selectedRooms={selectedRooms}
+            onToggleSelect={handleToggleSelect}
+            onSelectAll={handleSelectAll}
+          />
         ) : (
           <ListingGrid listings={currentListings} onUpdateStatus={handleUpdateStatus} />
         )}

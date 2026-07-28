@@ -1,7 +1,11 @@
 .search-page {
-  padding-top: 3rem;
-  padding-bottom: 4rem;
+  padding: 1.5rem 0;
   background-color: var(--bg-main);
+}
+
+.search-page-container {
+  padding: 0 2rem;
+  max-width: 100%;
 }
 
 /* Layout Grid */

@@ -109,7 +109,7 @@ const TenantProfilePage = () => {
 
   return (
     <div className="profile-page-wrapper">
-      <div className="profile-page container">
+      <div className="profile-page">
         
         {/* Profile Header */}
         <div className="profile-header-card">

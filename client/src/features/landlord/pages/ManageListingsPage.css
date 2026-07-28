@@ -1,6 +1,7 @@
 /* Manage Listings Container */
 .manage-listings {
-  max-width: 1140px;
+  padding: 1rem 1.5rem;
+  max-width: 100%;
   margin: 0 auto;
 }
 

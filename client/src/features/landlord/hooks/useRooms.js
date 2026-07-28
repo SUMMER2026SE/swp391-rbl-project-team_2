@@ -21,7 +21,7 @@ export const useRooms = (params = {}) => {
       }
       setError(null);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
       setRooms([]);
     } finally {
       setLoading(false);

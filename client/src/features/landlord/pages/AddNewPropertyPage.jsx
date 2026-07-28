@@ -46,6 +46,9 @@ const AddNewPropertyPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [publishProgress, setPublishProgress] = useState({ current: 0, total: 0 });
+  const [showAutoGenerator, setShowAutoGenerator] = useState(false);
+  const [autoGenParams, setAutoGenParams] = useState({ totalRooms: '', startFloor: 1, maxPerFloor: 10 });
 
   // Block unverified landlords from posting rooms (Real-time check)
   useEffect(() => {
@@ -270,14 +273,19 @@ const AddNewPropertyPage = () => {
         setFormErrors(prev => ({ ...prev, rent: null }));
       }
     } else if (name === 'roomNumber') {
-      const trimmed = value.toString().trim().toLowerCase();
-      const duplicate = existingRooms.some(r => {
-        if (!r.roomNumber) return false;
-        const existingStr = r.roomNumber.toString().trim().toLowerCase();
-        const cleanExisting = existingStr.replace(/phòng|phong/g, '').trim();
-        const cleanInput = trimmed.replace(/phòng|phong/g, '').trim();
-        return cleanExisting === cleanInput || existingStr === trimmed;
-      });
+      const roomNumbers = value.toString().split(',').map(r => r.trim()).filter(Boolean);
+      let duplicate = false;
+      for (const rNum of roomNumbers) {
+        const trimmed = rNum.toLowerCase();
+        duplicate = existingRooms.some(r => {
+          if (!r.roomNumber) return false;
+          const existingStr = r.roomNumber.toString().trim().toLowerCase();
+          const cleanExisting = existingStr.replace(/phòng|phong/g, '').trim();
+          const cleanInput = trimmed.replace(/phòng|phong/g, '').trim();
+          return cleanExisting === cleanInput || existingStr === trimmed;
+        });
+        if (duplicate) break;
+      }
       if (duplicate) {
         setFormErrors(prev => ({ ...prev, roomNumber: 'Room is already exist' }));
       } else {
@@ -319,14 +327,19 @@ const AddNewPropertyPage = () => {
       if (formData.size && Number(formData.size) <= 0) errors.size = 'Size must be a positive number';
       if (!formData.maxOccupants) errors.maxOccupants = 'Please select max occupants';
       if (formData.roomNumber && formData.roomNumber.trim()) {
-        const trimmed = formData.roomNumber.trim().toLowerCase();
-        const duplicate = existingRooms.some(r => {
-          if (!r.roomNumber) return false;
-          const existingStr = r.roomNumber.toString().trim().toLowerCase();
-          const cleanExisting = existingStr.replace(/phòng|phong/g, '').trim();
-          const cleanInput = trimmed.replace(/phòng|phong/g, '').trim();
-          return cleanExisting === cleanInput || existingStr === trimmed;
-        });
+        const roomNumbers = formData.roomNumber.toString().split(',').map(r => r.trim()).filter(Boolean);
+        let duplicate = false;
+        for (const rNum of roomNumbers) {
+          const trimmed = rNum.toLowerCase();
+          duplicate = existingRooms.some(r => {
+            if (!r.roomNumber) return false;
+            const existingStr = r.roomNumber.toString().trim().toLowerCase();
+            const cleanExisting = existingStr.replace(/phòng|phong/g, '').trim();
+            const cleanInput = trimmed.replace(/phòng|phong/g, '').trim();
+            return cleanExisting === cleanInput || existingStr === trimmed;
+          });
+          if (duplicate) break;
+        }
         if (duplicate) {
           errors.roomNumber = 'Room is already exist';
         }
@@ -352,82 +365,136 @@ const AddNewPropertyPage = () => {
     setCurrentStep(prev => prev - 1);
   };
 
+  const handleGenerateRooms = () => {
+    const total = parseInt(autoGenParams.totalRooms);
+    const floor = parseInt(autoGenParams.startFloor);
+    const max = parseInt(autoGenParams.maxPerFloor);
+
+    if (!total || total <= 0 || !floor || floor <= 0 || !max || max <= 0) {
+      toast.error('Vui lòng nhập các thông số hợp lệ (lớn hơn 0).');
+      return;
+    }
+
+    let generatedRooms = [];
+    let currentFloor = floor;
+    let countOnCurrentFloor = 0;
+
+    for (let i = 0; i < total; i++) {
+      if (countOnCurrentFloor >= max) {
+        currentFloor++;
+        countOnCurrentFloor = 0;
+      }
+      const roomIndex = countOnCurrentFloor + 1;
+      const roomNumberStr = `${currentFloor}${roomIndex.toString().padStart(2, '0')}`;
+      generatedRooms.push(roomNumberStr);
+      countOnCurrentFloor++;
+    }
+
+    const newRoomStr = generatedRooms.join(', ');
+    setFormData(prev => ({ ...prev, roomNumber: newRoomStr }));
+    setShowAutoGenerator(false);
+    
+    // Trigger validation logic for roomNumber by calling handleInputChange artificially
+    const e = { target: { name: 'roomNumber', value: newRoomStr } };
+    handleInputChange(e);
+  };
+
   const handlePublish = async () => {
     setIsSubmitting(true);
     try {
-      let roomType = 'private_room';
+      const roomNumbers = formData.roomNumber 
+        ? formData.roomNumber.split(',').map(r => r.trim()).filter(Boolean)
+        : [''];
+        
+      const batchId = roomNumbers.length > 1 ? `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : null;
+        
+      setPublishProgress({ current: 0, total: roomNumbers.length });
 
-      const fd = new FormData();
-      fd.append('title', formData.title);
-      fd.append('description', formData.description);
-      fd.append('address', formData.address);
-      fd.append('city', formData.city);
-      fd.append('district', formData.district);
-      fd.append('pricePerMonth', Number(formData.rent));
-      fd.append('areaSqm', Number(formData.size) || 0);
-      fd.append('roomType', roomType);
-      fd.append('maxOccupants', parseInt(formData.maxOccupants) || 4);
+      for (let index = 0; index < roomNumbers.length; index++) {
+        const roomNum = roomNumbers[index];
+        setPublishProgress({ current: index + 1, total: roomNumbers.length });
+        
+        let roomType = 'private_room';
 
-      const propertyId = searchParams.get('propertyId');
-      const floor = searchParams.get('floor');
-      
-      if (propertyId) fd.append('propertyId', propertyId);
-      if (floor) fd.append('floor', floor);
-      if (formData.roomNumber) fd.append('roomNumber', formData.roomNumber);
-      if (formData.latitude) fd.append('latitude', formData.latitude);
-      if (formData.longitude) fd.append('longitude', formData.longitude);
+        const fd = new FormData();
+        fd.append('title', roomNumbers.length > 1 && roomNum ? `${formData.title} - ${roomNum}` : formData.title);
+        fd.append('description', formData.description);
+        fd.append('address', formData.address);
+        fd.append('city', formData.city);
+        fd.append('district', formData.district);
+        fd.append('pricePerMonth', Number(formData.rent));
+        fd.append('areaSqm', Number(formData.size) || 0);
+        fd.append('roomType', roomType);
+        fd.append('maxOccupants', parseInt(formData.maxOccupants) || 4);
 
-      if (selectedFiles && selectedFiles.length > 0) {
-        // Appending the first image as 'image' for multer upload.single('image')
-        fd.append('image', selectedFiles[0]);
-      }
+        const propertyId = searchParams.get('propertyId');
+        const defaultFloor = searchParams.get('floor');
+        
+        // Derive floor from room number prefix (e.g., 201 -> floor 2, 305 -> floor 3)
+        let roomFloor = defaultFloor;
+        if (roomNum && roomNum.length >= 3 && /^\d+$/.test(roomNum)) {
+          roomFloor = parseInt(roomNum.slice(0, roomNum.length - 2), 10) || defaultFloor;
+        }
+        
+        if (propertyId) fd.append('propertyId', propertyId);
+        if (roomFloor) fd.append('floor', roomFloor);
+        if (roomNum) fd.append('roomNumber', roomNum);
+        if (formData.latitude) fd.append('latitude', formData.latitude);
+        if (formData.longitude) fd.append('longitude', formData.longitude);
+        if (batchId) fd.append('batchId', batchId);
 
-      const result = await landlordService.createRoom(fd);
-      const newRoom = result.data || result;
-      const roomId = newRoom.roomId || newRoom.room_id;
+        if (selectedFiles && selectedFiles.length > 0) {
+          fd.append('image', selectedFiles[0]);
+        }
 
-      if (!roomId) {
-        throw new Error('Failed to retrieve Room ID from server response.');
-      }
+        const result = await landlordService.createRoom(fd);
+        const newRoom = result.data || result;
+        const roomId = newRoom.roomId || newRoom.room_id;
 
-      // If there are additional images, upload them via the legacy image uploader
-      if (selectedFiles && selectedFiles.length > 1) {
-        for (let i = 1; i < selectedFiles.length; i++) {
+        if (!roomId) {
+          throw new Error('Failed to retrieve Room ID from server response.');
+        }
+
+        if (selectedFiles && selectedFiles.length > 1) {
+          for (let i = 1; i < selectedFiles.length; i++) {
+            try {
+              await landlordService.uploadRoomImage(roomId, selectedFiles[i]);
+            } catch (uploadErr) {
+              console.error('Error uploading extra room image:', uploadErr);
+            }
+          }
+        }
+
+        const selectedAmenities = [];
+        [...roomAmenitiesList, ...nearbyAmenitiesList].forEach(amenity => {
+          if (formData[amenity.id]) {
+            selectedAmenities.push({ 
+              name: amenity.label, 
+              type: amenity.dbType || 'other',
+              category: roomAmenitiesList.some(r => r.id === amenity.id) ? 'room' : 'nearby'
+            });
+          }
+        });
+
+        for (const amenity of selectedAmenities) {
           try {
-            await landlordService.uploadRoomImage(roomId, selectedFiles[i]);
-          } catch (uploadErr) {
-            console.error('Error uploading extra room image:', uploadErr);
+            await landlordService.addFacility(roomId, {
+              facilityName: amenity.name,
+              facilityType: amenity.type,
+              category: amenity.category
+            });
+          } catch (facilityErr) {
+            console.error('Error adding facility:', facilityErr);
           }
         }
       }
 
-      const selectedAmenities = [];
-      [...roomAmenitiesList, ...nearbyAmenitiesList].forEach(amenity => {
-        if (formData[amenity.id]) {
-          selectedAmenities.push({ 
-            name: amenity.label, 
-            type: amenity.dbType || 'other',
-            category: roomAmenitiesList.some(r => r.id === amenity.id) ? 'room' : 'nearby'
-          });
-        }
-      });
-
-      for (const amenity of selectedAmenities) {
-        try {
-          await landlordService.addFacility(roomId, {
-            facilityName: amenity.name,
-            facilityType: amenity.type,
-            category: amenity.category
-          });
-        } catch (facilityErr) {
-          console.error('Error adding facility:', facilityErr);
-        }
-      }
-
       setIsSubmitting(false);
+      setPublishProgress({ current: 0, total: 0 });
       setShowSuccessModal(true);
     } catch (err) {
       setIsSubmitting(false);
+      setPublishProgress({ current: 0, total: 0 });
       toast.error(err.response?.data?.message || err.message || 'Failed to publish listing');
     }
   };
@@ -512,6 +579,61 @@ const AddNewPropertyPage = () => {
                   placeholder={t('addNewProperty.roomNumberPlaceholder', 'e.g. 101, A2')}
                 />
                 {formErrors.roomNumber && <span className="form-field-error-msg">{formErrors.roomNumber}</span>}
+              </div>
+
+              {/* Auto Generator Panel */}
+              <div className="form-group-field" style={{ gridColumn: '1 / -1', marginTop: '-10px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowAutoGenerator(!showAutoGenerator)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontWeight: '500', fontSize: '0.9rem', padding: '0' }}
+                >
+                  <Sparkles size={16} />
+                  <span>🪄 Tạo số phòng tự động</span>
+                </button>
+
+                {showAutoGenerator && (
+                  <div className="auto-gen-panel animation-fade-in" style={{ marginTop: '1rem', padding: '1.25rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div className="form-row-double-cols" style={{ marginBottom: '1rem' }}>
+                      <div className="form-group-field">
+                        <label className="form-input-label">Tổng số lượng phòng muốn tạo</label>
+                        <input
+                          type="number"
+                          value={autoGenParams.totalRooms}
+                          onChange={(e) => setAutoGenParams(p => ({ ...p, totalRooms: e.target.value }))}
+                          className="form-input-text"
+                          placeholder="VD: 25"
+                          min="1"
+                        />
+                      </div>
+                      <div className="form-row-double-cols" style={{ gap: '1rem' }}>
+                        <div className="form-group-field">
+                          <label className="form-input-label">Bắt đầu từ tầng</label>
+                          <input
+                            type="number"
+                            value={autoGenParams.startFloor}
+                            onChange={(e) => setAutoGenParams(p => ({ ...p, startFloor: e.target.value }))}
+                            className="form-input-text"
+                            min="1"
+                          />
+                        </div>
+                        <div className="form-group-field">
+                          <label className="form-input-label">Số phòng/tầng tối đa</label>
+                          <input
+                            type="number"
+                            value={autoGenParams.maxPerFloor}
+                            onChange={(e) => setAutoGenParams(p => ({ ...p, maxPerFloor: e.target.value }))}
+                            className="form-input-text"
+                            min="1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleGenerateRooms} style={{ width: '100%', justifyContent: 'center', background: '#fff' }}>
+                      Tạo danh sách
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -839,7 +961,7 @@ const AddNewPropertyPage = () => {
               onClick={handlePublish}
               isLoading={isSubmitting}
             >
-              <span>{t('addNewProperty.publishListing', 'Publish Listing')}</span>
+              <span>{isSubmitting && publishProgress.total > 1 ? `Đang đăng ${publishProgress.current}/${publishProgress.total}...` : t('addNewProperty.publishListing', 'Publish Listing')}</span>
               <Check size={16} />
             </Button>
           )}

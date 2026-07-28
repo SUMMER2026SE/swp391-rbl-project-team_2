@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Calendar,
@@ -55,9 +55,11 @@ const RevenueChart = ({ activeMonth, setActiveMonth, data, months }) => {
     return `${val}`;
   };
 
-  const points = data.map((val, i) => ({ x: getX(i), y: getY(val), val, month: months[i] }));
+  const points = data.map((val, i) => ({ x: getX(i), y: getY(val), val, label: months[i] }));
   
-  const barWidth = 36;
+  const maxBars = Math.max(points.length, 1);
+  const barWidth = Math.min(36, (chartW / maxBars) * 0.6); 
+  const linePath = points.length > 0 ? `M ${points.map(pt => `${pt.x},${pt.y}`).join(' L ')}` : '';
 
   return (
     <div className="revenue-chart-wrapper">
@@ -66,10 +68,6 @@ const RevenueChart = ({ activeMonth, setActiveMonth, data, months }) => {
           <linearGradient id="chartGradientSolid" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#2563EB" stopOpacity="0.8" />
             <stop offset="100%" stopColor="#2563EB" stopOpacity="0.4" />
-          </linearGradient>
-          <linearGradient id="chartGradientDashed" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2563EB" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#2563EB" stopOpacity="0.1" />
           </linearGradient>
         </defs>
 
@@ -87,63 +85,77 @@ const RevenueChart = ({ activeMonth, setActiveMonth, data, months }) => {
 
         {/* Bars */}
         {points.map((pt, i) => {
-          const isProjected = i === points.length - 1;
-          const isCurrent = i === points.length - 2;
           const barHeight = (padT + chartH) - pt.y;
           
           return (
             <g 
-              key={i} 
-              className="chart-bar-trigger"
+              key={`bar-${i}`}
               onMouseEnter={() => setActiveMonth(i)}
+              onMouseLeave={() => setActiveMonth(null)}
               style={{ cursor: 'pointer' }}
             >
-              {/* Invisible full-height hover target */}
-              <rect 
-                x={pt.x - barWidth / 2 - 10} 
-                y={padT} 
-                width={barWidth + 20} 
-                height={chartH} 
-                fill="transparent" 
-              />
+              {/* Invisible wider rect for easier hover */}
+              <rect x={pt.x - 20} y={padT} width={40} height={chartH} fill="transparent" />
               
               <rect
                 x={pt.x - barWidth / 2}
                 y={pt.y}
                 width={barWidth}
                 height={barHeight}
-                fill={isProjected ? "url(#chartGradientDashed)" : "url(#chartGradientSolid)"}
-                stroke="#2563EB"
-                strokeWidth={isProjected ? 1.5 : 0}
-                strokeDasharray={isProjected ? "4 4" : "none"}
-                rx="4"
-                ry="4"
-                style={{
-                  transition: 'all 0.3s ease',
-                  opacity: activeMonth === i ? 1 : (activeMonth !== null ? 0.6 : 1),
-                  transformOrigin: 'bottom',
-                  transform: activeMonth === i ? 'scaleY(1.02)' : 'scaleY(1)'
-                }}
+                rx={4}
+                fill={activeMonth === i ? "#2563EB" : "#93C5FD"}
+                opacity={activeMonth === i ? 1 : (activeMonth !== null ? 0.6 : 1)}
+                style={{ transition: 'all 0.3s ease' }}
               />
             </g>
           );
         })}
 
-        {/* X labels */}
+        {/* Line Chart */}
+        {points.length > 1 && (
+          <path
+            d={linePath}
+            fill="none"
+            stroke="#F59E0B"
+            strokeWidth="3"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            style={{ pointerEvents: 'none', filter: 'drop-shadow(0 4px 6px rgba(245, 158, 11, 0.2))' }}
+          />
+        )}
+        
+        {/* Data points for line chart */}
         {points.map((pt, i) => (
-          <g key={i}>
-            {i === points.length - 2 && (
-              <circle cx={pt.x} cy={height - 29} r="3" fill="#2563EB" />
-            )}
-            <text 
-              x={pt.x} 
-              y={height - 8} 
-              className={`chart-label ${activeMonth === i ? 'active' : ''} ${i === points.length - 2 ? 'current-month-lbl' : ''}`}
-            >
-              {pt.month}
-            </text>
-          </g>
+          <circle
+            key={`point-${i}`}
+            cx={pt.x}
+            cy={pt.y}
+            r={activeMonth === i ? 5 : 4}
+            fill={activeMonth === i ? "#F59E0B" : "#fff"}
+            stroke="#F59E0B"
+            strokeWidth="2"
+            style={{ pointerEvents: 'none', transition: 'all 0.3s ease' }}
+          />
         ))}
+
+        {/* X Axis Labels */}
+        {points.map((pt, i) => {
+          const step = Math.ceil(points.length / 10);
+          if (points.length > 12 && i % step !== 0 && i !== points.length - 1 && i !== 0) {
+            return null;
+          }
+          return (
+            <text
+              key={`x-${i}`}
+              x={pt.x}
+              y={padT + chartH + 20}
+              textAnchor="middle"
+              className={`chart-label ${activeMonth === i ? 'active' : ''}`}
+            >
+              {pt.label}
+            </text>
+          );
+        })}
       </svg>
     </div>
   );
@@ -153,11 +165,21 @@ const LandlordDashboard = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [activeMonth, setActiveMonth] = useState(5);
+  const [activeMonth, setActiveMonth] = useState(null);
   const [showPeriodFilter, setShowPeriodFilter] = useState(false);
   const [filterPeriod, setFilterPeriod] = useState('Last 30 Days');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [appliedStartDate, setAppliedStartDate] = useState(null);
+  const [appliedEndDate, setAppliedEndDate] = useState(null);
 
-  const { stats: statsData, recentActivity, revenueChart, expiringSummary, loading, error } = useLandlordStats(filterPeriod);
+  const { stats: statsData, recentActivity, revenueChart, expiringSummary, loading, error } = useLandlordStats(filterPeriod, appliedStartDate, appliedEndDate);
+
+  useEffect(() => {
+    if (revenueChart && revenueChart.length > 0) {
+      setActiveMonth(revenueChart.length - 1);
+    }
+  }, [revenueChart]);
 
   // Stats matching Figma design precisely
   const stats = [
@@ -250,16 +272,40 @@ const LandlordDashboard = () => {
 
   const handlePeriodChange = (period) => {
     setFilterPeriod(period);
-    setShowPeriodFilter(false);
+    if (period !== 'Tùy chỉnh') {
+      setAppliedStartDate(null);
+      setAppliedEndDate(null);
+      setShowPeriodFilter(false);
+    }
+  };
+
+  const handleApplyCustomDate = () => {
+    if (customStartDate && customEndDate) {
+      setAppliedStartDate(customStartDate);
+      setAppliedEndDate(customEndDate);
+      setShowPeriodFilter(false);
+    }
+  };
+
+  const getDisplayPeriod = () => {
+    if (filterPeriod === 'Tùy chỉnh' && appliedStartDate && appliedEndDate) {
+      try {
+        return `${new Date(appliedStartDate).toLocaleDateString('vi-VN')} - ${new Date(appliedEndDate).toLocaleDateString('vi-VN')}`;
+      } catch (e) {
+        return filterPeriod;
+      }
+    }
+    return filterPeriod;
   };
 
   const revenueChartData = revenueChart && revenueChart.length > 0 
-    ? revenueChart.slice(-6).map(item => item.revenue)
+    ? revenueChart.map(item => item.revenue)
     : [0, 0, 0, 0, 0, 0];
   const revenueChartMonths = revenueChart && revenueChart.length > 0
-    ? revenueChart.slice(-6).map(item => item.month.split(' ')[0])
+    ? revenueChart.map(item => item.label || item.month?.split(' ')[0] || '')
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
+  const totalRevenue = revenueChartData.reduce((a, b) => a + b, 0);
   const activeRevenue = activeMonth !== null ? revenueChartData[activeMonth] || 0 : 0;
   const isProjected = false; // The user wants actual revenue for the current month
 
@@ -272,25 +318,23 @@ const LandlordDashboard = () => {
           <h1 className="dashboard-main-title" style={{ fontSize: '2rem', fontWeight: '800', color: '#1E293B', letterSpacing: '-0.025em' }}>
             {t('landlord.dashboard.welcomeBack', 'Welcome back, {{name}}! 👋', { name: user?.fullName || 'Landlord' })}
           </h1>
-          <p className="dashboard-sub-title" style={{ color: '#64748B', fontSize: '0.975rem', marginTop: '0.25rem' }}>
+          <p className="dashboard-subtitle" style={{ fontSize: '0.95rem', color: '#64748B', marginTop: '0.25rem' }}>
             {t('landlord.dashboard.subtitle', "Here's what's happening with your properties today.")}
           </p>
         </div>
-        
-        {/* Actions bar (Filter dropdown & Button) */}
         <div className="dashboard-header-actions">
-          <div className="dashboard-filter-dropdown-container">
+          <div className="dashboard-period-selector" style={{ position: 'relative' }}>
             <button 
-              className="dashboard-filter-btn" 
+              className="dashboard-period-btn" 
               onClick={() => setShowPeriodFilter(!showPeriodFilter)}
             >
               <Calendar size={16} />
-              <span>{filterPeriod}</span>
+              <span>{getDisplayPeriod()}</span>
               <ChevronDown size={14} />
             </button>
             {showPeriodFilter && (
               <div className="dashboard-dropdown-menu">
-                {['Last 7 Days', 'Last 30 Days', 'Last 6 Months', 'This Year'].map((p) => (
+                {['Last 7 Days', 'Last 30 Days', 'Last 6 Months', 'This Year', 'Tùy chỉnh'].map((p) => (
                   <button 
                     key={p} 
                     className={`dropdown-menu-item ${filterPeriod === p ? 'active' : ''}`}
@@ -299,6 +343,41 @@ const LandlordDashboard = () => {
                     {p}
                   </button>
                 ))}
+                {filterPeriod === 'Tùy chỉnh' && (
+                  <div style={{ padding: '10px', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#64748b' }}>Từ ngày</label>
+                      <input 
+                        type="date" 
+                        max={new Date().toISOString().split('T')[0]}
+                        value={customStartDate} 
+                        onChange={e => setCustomStartDate(e.target.value)} 
+                        style={{ width: '100%', padding: '4px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '4px' }} 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#64748b' }}>Đến ngày</label>
+                      <input 
+                        type="date" 
+                        max={new Date().toISOString().split('T')[0]}
+                        value={customEndDate} 
+                        onChange={e => setCustomEndDate(e.target.value)} 
+                        style={{ width: '100%', padding: '4px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '4px' }} 
+                      />
+                    </div>
+                    <button 
+                      onClick={handleApplyCustomDate}
+                      disabled={!customStartDate || !customEndDate}
+                      style={{ 
+                        marginTop: '4px', padding: '6px', background: '#2563EB', color: 'white', 
+                        border: 'none', borderRadius: '4px', fontSize: '13px', cursor: (!customStartDate || !customEndDate) ? 'not-allowed' : 'pointer',
+                        opacity: (!customStartDate || !customEndDate) ? 0.5 : 1
+                      }}
+                    >
+                      Áp dụng
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

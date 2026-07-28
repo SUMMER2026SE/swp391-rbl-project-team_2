@@ -7,7 +7,7 @@ const { sequelize, Room, RoomImage, Facility, RoomFacility, User, Property } = r
 // =========================================================
 const createRoom = async (req, res, next) => {
   try {
-    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, propertyId, floor, roomNumber, quantity, latitude, longitude } = req.body;
+    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, propertyId, floor, roomNumber, quantity, latitude, longitude, batchId } = req.body;
     const landlordId = req.user.userId;
 
     // Verify landlord's account is verified before posting a room
@@ -73,6 +73,7 @@ const createRoom = async (req, res, next) => {
       available_quantity: quantity || 1,
       latitude: latitude ? parseFloat(latitude) : null,
       longitude: longitude ? parseFloat(longitude) : null,
+      batch_id: batchId || null,
     };
 
     if (req.file) {

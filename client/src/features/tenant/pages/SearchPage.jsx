@@ -502,7 +502,7 @@ const SearchPage = () => {
 
   return (
     <div className="search-page">
-      <div className="container">
+      <div className="search-page-container">
         <div className="search-layout">
           {/* Sidebar Filters */}
           <aside className="search-sidebar">

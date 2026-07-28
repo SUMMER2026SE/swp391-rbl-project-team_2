@@ -247,9 +247,11 @@ const getAllRooms = async (req, res, next) => {
       order: [['created_at', 'DESC']]
     });
 
-    const formattedRooms = rooms.map(room => {
-      // Create mock performance stats since it's not fully tracked in DB yet
-      return {
+    const formattedRooms = [];
+    const batchMap = new Map();
+
+    rooms.forEach(room => {
+      const roomData = {
         id: `PRP-${room.room_id.toString().padStart(4, '0')}`,
         rawId: room.room_id,
         title: room.title,
@@ -265,6 +267,26 @@ const getAllRooms = async (req, res, next) => {
         status: room.status.charAt(0).toUpperCase() + room.status.slice(1),
         performance: { views: Math.floor(Math.random() * 2000), inquiries: Math.floor(Math.random() * 50) }
       };
+
+      if (room.batch_id) {
+        if (batchMap.has(room.batch_id)) {
+          const batch = batchMap.get(room.batch_id);
+          batch.batchCount += 1;
+        } else {
+          roomData.batchCount = 1;
+          batchMap.set(room.batch_id, roomData);
+          formattedRooms.push(roomData);
+        }
+      } else {
+        formattedRooms.push(roomData);
+      }
+    });
+
+    formattedRooms.forEach(room => {
+      if (room.batchCount > 1) {
+        const baseTitle = room.title.includes(' - ') ? room.title.substring(0, room.title.lastIndexOf(' - ')) : room.title;
+        room.title = `${baseTitle} (Lô ${room.batchCount} phòng)`;
+      }
     });
 
     return res.status(200).json({ success: true, data: formattedRooms });
@@ -293,31 +315,61 @@ const updateRoomStatus = async (req, res, next) => {
       updateData.rejection_reason = null; // Clear if re-approved or changed
     }
 
-    await room.update(updateData);
+    let updatedCount = 0;
+    const { Notification } = require('../models');
 
-    if (updateData.status === 'rejected' && reason) {
-      const { Notification } = require('../models');
-      await Notification.create({
-        user_id: room.landlord_id,
-        title: 'Listing Rejected',
-        message: `Your listing "${room.title}" was rejected by the admin. Reason: ${reason}`,
-        notification_type: 'system',
-        related_id: room.room_id
+    if (room.batch_id) {
+      // Update all rooms in the same batch
+      const [count] = await Room.update(updateData, {
+        where: { batch_id: room.batch_id }
       });
-    } else if (updateData.status === 'available') {
-      const { Notification } = require('../models');
-      await Notification.create({
-        user_id: room.landlord_id,
-        title: 'Listing Approved',
-        message: `Good news! Your listing "${room.title}" has been approved and is now live.`,
-        notification_type: 'system',
-        related_id: room.room_id
+      updatedCount = count;
+
+      // Find all rooms in batch to send notifications
+      const batchRooms = await Room.findAll({
+        where: { batch_id: room.batch_id }
       });
+
+      const notifications = batchRooms.map(r => ({
+        user_id: r.landlord_id,
+        title: updateData.status === 'rejected' ? 'Listing Rejected' : 'Listing Approved',
+        message: updateData.status === 'rejected' 
+          ? `Your listing "${r.title}" was rejected by the admin. Reason: ${reason}`
+          : `Good news! Your listing "${r.title}" has been approved and is now live.`,
+        notification_type: 'system',
+        related_id: r.room_id
+      }));
+
+      if (notifications.length > 0) {
+        await Notification.bulkCreate(notifications);
+      }
+    } else {
+      // Update single room
+      await room.update(updateData);
+      updatedCount = 1;
+
+      if (updateData.status === 'rejected' && reason) {
+        await Notification.create({
+          user_id: room.landlord_id,
+          title: 'Listing Rejected',
+          message: `Your listing "${room.title}" was rejected by the admin. Reason: ${reason}`,
+          notification_type: 'system',
+          related_id: room.room_id
+        });
+      } else if (updateData.status === 'available') {
+        await Notification.create({
+          user_id: room.landlord_id,
+          title: 'Listing Approved',
+          message: `Good news! Your listing "${room.title}" has been approved and is now live.`,
+          notification_type: 'system',
+          related_id: room.room_id
+        });
+      }
     }
 
     return res.status(200).json({
       success: true,
-      message: `Room status updated to ${status}`
+      message: `Room status updated to ${status}. Total affected: ${updatedCount}`
     });
   } catch (error) {
     next(error);

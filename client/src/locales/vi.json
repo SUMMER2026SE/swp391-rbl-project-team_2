@@ -538,7 +538,7 @@
     "totalRooms": "Tổng số phòng",
     "availableUnits": "Phòng trống",
     "currentlyRented": "Đang cho thuê",
-    "pendingRequests": "Yêu cầu chờ duyệt",
+    "pendingRequests": "Khách xin thuê phòng",
     "live": "Đang hoạt động",
     "active": "Sẵn sàng",
     "occupied": "Đã thuê",
@@ -1179,7 +1179,7 @@
         "active": "Hoạt động",
         "currentlyRented": "Đã cho thuê",
         "occupied": "Đã thuê",
-        "pendingRequests": "Yêu cầu chờ duyệt",
+        "pendingRequests": "Khách xin thuê phòng",
         "actionNeeded": "Cần xử lý"
       },
       "revenueSummary": {

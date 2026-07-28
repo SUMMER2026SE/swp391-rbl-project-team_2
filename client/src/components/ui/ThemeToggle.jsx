@@ -55,7 +55,6 @@ const ThemeToggle = () => {
       title={`Chế độ: ${MODE_LABELS[theme]} — Nhấn để đổi`}
     >
       {getIcon()}
-      <span className="theme-toggle-label">{MODE_LABELS[theme]}</span>
     </button>
   );
 };

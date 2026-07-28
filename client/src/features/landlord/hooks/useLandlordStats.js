@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { landlordService } from '../services/landlordService';
 
-export const useLandlordStats = (period) => {
+export const useLandlordStats = (period, startDate = null, endDate = null) => {
   const [stats, setStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState(null);
   const [revenueChart, setRevenueChart] = useState(null);
@@ -13,10 +13,16 @@ export const useLandlordStats = (period) => {
     const fetchStats = async () => {
       try {
         setLoading(true);
+        const params = { period };
+        if (startDate && endDate) {
+          params.startDate = startDate;
+          params.endDate = endDate;
+        }
+        
         const [statsData, activityData, revenueData, expiringData] = await Promise.all([
-          landlordService.getStats({ period }),
-          landlordService.getRecentActivity({ period }),
-          landlordService.getRevenueChart({ period }),
+          landlordService.getStats(params),
+          landlordService.getRecentActivity(params),
+          landlordService.getRevenueChart(params),
           landlordService.getExpiringSummary(),
         ]);
         setStats(statsData.data || statsData);
@@ -36,7 +42,7 @@ export const useLandlordStats = (period) => {
     };
 
     fetchStats();
-  }, [period]);
+  }, [period, startDate, endDate]);
 
   return { stats, recentActivity, revenueChart, expiringSummary, loading, error };
 };

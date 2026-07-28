@@ -11,6 +11,23 @@ export const rentalRequestService = {
     }
   },
 
+  scanCCCD: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await httpClient.post('/ocr/cccd', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error('Error scanning CCCD:', error);
+      throw error;
+    }
+  },
+
   getMyRequests: async (params = {}) => {
     try {
       const response = await httpClient.get('/tenant/rental-requests', { params });

@@ -106,7 +106,7 @@ const DepositHistoryPage = () => {
   if (loading) return <div className="p-8 text-center">Loading...</div>;
   return (
     <div className="deposit-history-page">
-      <div className="container">
+      <div className="deposit-history-container">
         
         <div className="page-header">
           <h1>{t('depositHistory.title', 'Deposit History')}</h1>
