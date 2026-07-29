@@ -4,7 +4,7 @@ export const CONFIG = {
   APP_NAME: 'RentWise',
   API_URL,
   ENV: import.meta.env.MODE || 'development',
-  TIMEOUT: 10000,
+  TIMEOUT: 30000,
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
   FACEBOOK_APP_ID: import.meta.env.VITE_FACEBOOK_APP_ID || '',
 };

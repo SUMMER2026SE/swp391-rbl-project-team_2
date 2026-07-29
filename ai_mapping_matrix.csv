@@ -1,0 +1,42 @@
+No.	Critical Thinking & Problem Solving Evidence	Criterion 1	Criterion 2
+1	Yes - Modularized the architecture to ensure easy maintenance and strict scope adherence.	x	x
+2	Yes - Utilized Use Case Diagrams to clearly define system actors and their specific behaviors.	x	x
+3	Yes - Implemented Swimlane diagrams to provide a highly visual representation of the booking workflow.	x	x
+4	Yes - Prioritized traditional filtering as the core search mechanism for easier testing and exact requirement matching.	x	x
+5	Yes - Introduced RentalContract and Occupant entities to effectively manage rental histories and multi-tenant rooms.	x	x
+6	Yes - Discovered that a single currentTenantId in the Room table was insufficient for tracking historical rental records.	x	x
+7	Yes - Enforced payment deadlines to prevent landlords from experiencing prolonged waiting periods.	x	x
+8	Yes - Refactored 'Login' as a global precondition to significantly declutter the Use Case diagram.	x	x
+9	Yes - Aligned the Scope and Existing Systems sections in the SRS strictly with the RentWise domain.	x	x
+10	Yes - Added a transactionId field to accurately track payment states and prevent duplicate transaction errors.	x	x
+11	Yes - Refocused the Introduction and Scope sections specifically on long-term room rentals rather than generic hotels.	x	x
+12	Yes - Simplified ERD relationship explanations using practical examples to facilitate clear presentations to lecturers.	x	x
+13	Yes - Abstracted Authentication and Notification processes to prevent visual overload in system diagrams.	x	x
+14	Yes - Engineered a precise status lifecycle to clarify the booking flow from initial request to final contract.	x	x
+15	Yes - Detailed specific completed tasks in the Jira weekly update to ensure accurate sprint tracking.	x	x
+16	Yes - Deconstructed the React frontend into logical pages and components to streamline team workload distribution.	x	x
+17	Yes - Designed the search and filter UI to closely mirror actual tenant behavioral patterns.	x	x
+18	Yes - Adopted a simplified folder structure to prevent architectural overengineering in a student project.	x	x
+19	Yes - Identified and rectified a desktop-first UI design flaw by implementing comprehensive mobile responsiveness.	x	x
+20	Yes - Implemented strict frontend validation to reduce erroneous payloads before they hit backend APIs.	x	x
+21	Yes - Cleanly decoupled the backend authentication module into controllers, services, and middlewares.	x	x
+22	Yes - Secured the authentication schema by integrating password hashes, Google IDs, and safe OTP resets.	x	x
+23	Yes - Evaluated token storage vulnerabilities and prioritized secure storage mechanisms over basic localStorage.	x	x
+24	Yes - Secured the 'Forgot Password' flow to prevent malicious actors from exposing registered system emails.	x	x
+25	Yes - Enforced request payload whitelisting on profile updates to prevent unauthorized role or status modifications.	x	x
+26	Yes - Segmented the Landlord backend into rooms, requests, contracts, and dashboard modules for parallel team development.	x	x
+27	Yes - Validated Room APIs rigorously to prevent listings with missing prices, dimensions, addresses, or amenities.	x	x
+28	Yes - Enforced a strict approval logic sequence: landlords must approve requests before tenants can process deposits.	x	x
+29	Yes - Implemented resource ownership validation to prevent landlords from modifying properties belonging to others.	x	x
+30	Yes - Restricted contract generation to occur only after a rental request is approved and the deposit is successfully paid.	x	x
+31	Yes - Structured the Admin backend into User Management, Room Moderation, Complaint Handling, and Dashboards for scalability.	x	x
+32	Yes - Introduced a 'Hidden' status allowing Admins to pull down violating room posts even after initial approval.	x	x
+33	Yes - Replaced hard deletion with a 'Soft Delete' mechanism to permanently preserve contract, payment, and complaint histories.	x	x
+34	Yes - Added a 'Rejected' status to effectively dismiss invalid complaints or those lacking sufficient evidence.	x	x
+35	Yes - Prioritized actionable platform metrics (users, rooms, requests, complaints) over complex revenue analytics in the MVP.	x	x
+36	Yes - Shifted filtering logic to the backend and integrated a debounce hook to optimize performance and prevent API spam.	x	x
+37	Yes - Abstracted API fetching logic into custom React hooks, resulting in cleaner, highly reusable, and maintainable UI components.	x	x
+38	Yes - Replaced full-database cron scans with BullMQ background jobs to optimize server resources for automated deposit expirations.	x	x
+39	Yes - Decomposed the complex booking form into a user-friendly multi-step modal to prevent tenant cognitive overload.	x	x
+40	Yes - Integrated Cloudinary for permanent image storage and utilized the 'Rejected' status to filter out fraudulent evidence.	x	x
+41	Yes - Consolidated API endpoints for rental requests to streamline backend route maintenance and enable precise 404 error handling on the frontend.	x	x
