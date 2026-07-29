@@ -1,0 +1,9 @@
+Title,Description,Issue ID,URL,State,Assignee,Created At,Due Date,Milestone,Labels,Functions/Screens
+Fix API endpoint for Rental Requests,Change endpoint to /api/landlord/rental-requests and use PUT method,1,Group2/RentWise at main,Closed,AI Dev,15/07/2026,17/07/2026,iter1,"Task, Done",Rental Requests
+Implement Real-time Messaging,Use WebSocket for real-time updates in Messages Page,2,Group2/RentWise at main,Open,AI Dev,20/07/2026,25/07/2026,iter2,Feature,Messages
+Develop Violation Management UI,Create ViolationManagementPage for Admin to manage violations,3,Group2/RentWise at main,In Progress,AI Dev,22/07/2026,27/07/2026,iter2,"Task, UI",Violation Management
+Integrate Contract Document Modal,Build component for Tenant to view and sign contracts,4,Group2/RentWise at main,Open,AI Dev,23/07/2026,28/07/2026,iter2,Task,Tenant Contract
+Fix Landlord Profile Loading,Fetch profile from API instead of mock data and add loading state,5,Group2/RentWise at main,Closed,AI Dev,10/07/2026,12/07/2026,iter1,"Bug, Done",Landlord Profile
+Implement File Upload in Messages,Allow users to upload images and files in chat,6,Group2/RentWise at main,Open,AI Dev,24/07/2026,30/07/2026,iter3,Feature,Messages
+Add Notifications System,Real-time notifications for rent requests and messages,7,Group2/RentWise at main,Open,AI Dev,25/07/2026,01/08/2026,iter3,Feature,Notifications
+Test Complaint Processing,Write unit tests for the complaint service in backend,8,Group2/RentWise at main,Closed,AI Dev,20/07/2026,22/07/2026,iter2,"Task, Done",Complaints
