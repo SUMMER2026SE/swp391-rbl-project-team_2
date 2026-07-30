@@ -3,20 +3,20 @@ const { Op } = require('sequelize');
 const { Contract, Room, User, Notification, RenewalRequest } = require('../models');
 
 const runContractRenewalCheck = async () => {
-  console.log('Running daily cron job: Checking for contract renewals (60-30-10 rules)...');
-  await checkT60Renewals();
+  console.log('Running daily cron job: Checking for contract renewals (90-30-10 rules)...');
+  await checkT90Renewals();
   await checkT30Renewals();
   await checkT10Renewals();
   await runFutureContractTransitions();
   console.log('Daily cron job finished successfully.');
 };
 
-const checkT60Renewals = async () => {
+const checkT90Renewals = async () => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const targetDate = new Date(today);
-    targetDate.setDate(targetDate.getDate() + 60); // T-60
+    targetDate.setDate(targetDate.getDate() + 90); // T-90
     
     const startOfTargetDate = new Date(targetDate);
     startOfTargetDate.setHours(0, 0, 0, 0);
@@ -50,7 +50,7 @@ const checkT60Renewals = async () => {
         status: 'PENDING_INTENT'
       });
 
-      const message = `Hợp đồng phòng "${contract.room?.room_number || contract.room_id}" của bạn sẽ hết hạn sau 60 ngày nữa (${contract.end_date.toLocaleDateString('vi-VN')}). Bạn có muốn gia hạn hợp đồng không? Vui lòng xác nhận trước 30 ngày.`;
+      const message = `Hợp đồng phòng "${contract.room?.room_number || contract.room_id}" của bạn sẽ hết hạn sau 90 ngày nữa (3 tháng - vào ngày ${contract.end_date.toLocaleDateString('vi-VN')}). Bạn có muốn gia hạn hợp đồng không? Vui lòng xác nhận trước 30 ngày.`;
       
       const notification = await Notification.create({
         user_id: contract.tenant_id,
@@ -72,7 +72,7 @@ const checkT60Renewals = async () => {
       }
     }
   } catch (error) {
-    console.error('Error in checkT60Renewals:', error);
+    console.error('Error in checkT90Renewals:', error);
   }
 };
 

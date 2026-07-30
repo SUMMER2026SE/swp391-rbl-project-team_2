@@ -261,6 +261,7 @@ const initDatabase = async () => {
                 reason NVARCHAR(255) NOT NULL,
                 description NVARCHAR(MAX) NULL,
                 evidence_urls NVARCHAR(MAX) NULL,
+                reject_evidence_urls NVARCHAR(MAX) NULL,
                 request_date DATETIME DEFAULT GETDATE(),
                 requested_termination_date DATE NOT NULL,
                 is_unilateral BIT DEFAULT 0,
@@ -271,6 +272,13 @@ const initDatabase = async () => {
                 created_at DATETIME DEFAULT GETDATE(),
                 updated_at DATETIME DEFAULT GETDATE()
             );
+        END
+      `);
+
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('termination_requests') AND name = 'reject_evidence_urls')
+        BEGIN
+            ALTER TABLE termination_requests ADD reject_evidence_urls NVARCHAR(MAX) NULL;
         END
       `);
 
@@ -297,7 +305,28 @@ const initDatabase = async () => {
         END
       `);
 
-      // Add upcoming_vacancy_date to rooms table
+      // Add batch_id, bedrooms, rejection_reason, and upcoming_vacancy_date to rooms table
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'batch_id')
+        BEGIN
+            ALTER TABLE rooms ADD batch_id VARCHAR(50) NULL;
+        END
+      `);
+
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'bedrooms')
+        BEGIN
+            ALTER TABLE rooms ADD bedrooms INT DEFAULT 1;
+        END
+      `);
+
+      await sequelize.query(`
+        IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'rejection_reason')
+        BEGIN
+            ALTER TABLE rooms ADD rejection_reason NVARCHAR(1000) NULL;
+        END
+      `);
+
       await sequelize.query(`
         IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('rooms') AND name = 'upcoming_vacancy_date')
         BEGIN

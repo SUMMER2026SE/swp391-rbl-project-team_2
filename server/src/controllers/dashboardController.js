@@ -180,11 +180,13 @@ const getRecentActivity = async (req, res, next) => {
     const reqWhere = { landlord_id: landlordId };
     const payWhere = { landlord_id: landlordId };
     const compWhere = { landlord_id: landlordId };
+    const renewalWhere = { landlord_id: landlordId };
 
     if (period && dateCondition.created_at) {
       reqWhere.created_at = dateCondition.created_at;
       payWhere.created_at = dateCondition.created_at;
       compWhere.created_at = dateCondition.created_at;
+      renewalWhere.created_at = dateCondition.created_at;
     }
 
     // Recent rental requests
@@ -211,6 +213,21 @@ const getRecentActivity = async (req, res, next) => {
       attributes: ['complaint_id', 'title', 'status', 'priority', 'created_at'],
     });
 
+    // Recent renewal requests
+    const recentRenewals = await RenewalRequest.findAll({
+      where: renewalWhere,
+      limit: parseInt(limit),
+      order: [['created_at', 'DESC']],
+      attributes: ['id', 'status', 'created_at', 'contract_id'],
+      include: [
+        {
+          model: Contract,
+          as: 'contract',
+          include: [{ model: Room, as: 'room' }]
+        }
+      ]
+    });
+
     return res.status(200).json({
       success: true,
       data: {
@@ -231,6 +248,15 @@ const getRecentActivity = async (req, res, next) => {
           status: complaint.status,
           priority: complaint.priority,
           createdAt: complaint.created_at,
+        })),
+        recentRenewals: recentRenewals.map(renewal => ({
+          renewalId: renewal.id,
+          contractId: renewal.contract_id,
+          contractNumber: renewal.contract?.contract_number || '',
+          status: renewal.status,
+          createdAt: renewal.created_at,
+          roomNumber: renewal.contract?.room?.room_number || '',
+          roomTitle: renewal.contract?.room?.title || '',
         })),
       },
     });

@@ -15,13 +15,13 @@ const ContractDocument = ({ contract, role, onSign, onCancel, onRenew, onTermina
   if (!contract) return null;
 
   const today = new Date();
-  const startDate = new Date(contract.startDate);
-  const durationMonths = contract.endDate ? 
-    Math.round((new Date(contract.endDate) - startDate) / (1000 * 60 * 60 * 24 * 30)) : 
+  const startDate = new Date(contract.startDate || contract.start_date);
+  const durationMonths = (contract.endDate || contract.end_date) ? 
+    Math.round((new Date(contract.endDate || contract.end_date) - startDate) / (1000 * 60 * 60 * 24 * 30)) : 
     6;
 
-  const rentAmount = parseFloat(contract.monthlyRent);
-  const depositAmount = parseFloat(contract.depositAmount || contract.monthlyRent);
+  const rentAmount = parseFloat(contract.monthlyRent || contract.monthly_rent);
+  const depositAmount = parseFloat(contract.depositAmount || contract.deposit_amount || contract.monthlyRent || contract.monthly_rent);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN').format(amount);
@@ -101,7 +101,7 @@ const ContractDocument = ({ contract, role, onSign, onCancel, onRenew, onTermina
 
           <h5>3. Trách nhiệm Bên B</h5>
           <ul>
-            <li>Đặt cọc với số tiền là <strong>{formatCurrency(depositAmount)}</strong> đồng, thanh toán tiền thuê phòng hàng tháng vào ngày <strong>10</strong> + tiền điện + nước.</li>
+            <li>Đặt cọc với số tiền là <strong>{formatCurrency(depositAmount)}</strong> đồng, thanh toán tiền thuê phòng hàng tháng là <strong>{formatCurrency(rentAmount)}</strong> đồng vào ngày <strong>10</strong> (cộng thêm tiền điện + nước tiêu thụ thực tế).</li>
             <li>Đảm bảo các thiết bị và sửa chữa các hư hỏng trong phòng trong khi sử dụng. Nếu không sửa chữa thì khi trả phòng, bên A sẽ trừ vào tiền đặt cọc, giá trị cụ thể được tính theo giá thị trường.</li>
             <li>Chỉ sử dụng phòng trọ vào mục đích ở, với số lượng tối đa không quá 04 người (kể cả trẻ em); không chứa các thiết bị gây cháy nổ, hàng cấm... cung cấp giấy tờ tùy thân để đăng ký tạm trú theo quy định, giữ gìn an ninh trật tự, nếp sống văn hóa đô thị; không tụ tập nhậu nhẹt, cờ bạc và các hành vi vi phạm pháp luật khác.</li>
             <li>Không được tự ý cải tạo kiếm trúc phòng hoặc trang trí ảnh hưởng tới tường, cột, nền... Nếu có nhu cầu trên phải trao đổi với bên A để được thống nhất.</li>
@@ -109,8 +109,12 @@ const ContractDocument = ({ contract, role, onSign, onCancel, onRenew, onTermina
 
           <h5>4. Điều khoản thực hiện</h5>
           <ul>
-            <li>Hai bên nghiêm túc thực hiện những quy định trên trong thời hạn cho thuê, nếu bên A lấy phòng phải báo cho bên B ít nhất 01 tháng, hoặc ngược lại.</li>
-            <li>Sau thời hạn cho thuê <strong>{durationMonths}</strong> tháng nếu bên B có nhu cầu hai bên tiếp tục thương lượng giá thuê để gia hạn hợp đồng bằng miệng hoặc thực hiện như sau.</li>
+            <li>Hai bên phải tạo điều kiện thuận lợi cho nhau để thực hiện hợp đồng.</li>
+            <li>Nếu một trong hai bên vi phạm hợp đồng trong thời gian hợp đồng vẫn còn hiệu lực thì bên còn lại có quyền đơn phương chấm dứt hợp đồng thuê nhà trọ. Ngoài ra, nếu hành vi vi phạm đó gây tổn thất cho bên bị vi phạm thì bên vi phạm sẽ phải bồi thường mọi thiệt hại đã gây ra.</li>
+            <li>Trong trường hợp muốn chấm dứt hợp đồng trước thời hạn, bên đơn phương chấm dứt hợp đồng phải chịu mất tiền đặt cọc và bồi thường cho bên còn lại số tiền tương đương với 01 tháng tiền thuê phòng trọ. Đồng thời phải báo trước cho bên kia ít nhất 30 ngày.</li>
+            <li>Kết thúc hợp đồng, Bên A phải trả lại đầy đủ tiền đặt cọc cho bên B.</li>
+            <li>Bên nào vi phạm các điều khoản chung thì phải chịu trách nhiệm trước pháp luật.</li>
+            <li>Hợp đồng này được lập thành 02 bản và có giá trị pháp lý như nhau, mỗi bên giữ một bản.</li>
           </ul>
 
           <div className="contract-signatures">

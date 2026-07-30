@@ -138,7 +138,7 @@ const aiController = {
       if (isRoomSearch) {
         // 2. Fetch matched rooms from DB with full details
         const rooms = await SQLSearchService.searchRooms(searchCriteria);
-        const totalCount = rooms.length;
+        const totalCount = rooms.totalCount !== undefined ? rooms.totalCount : rooms.length;
 
         // 3. Generate a friendly summary
         let aiSummary = '';

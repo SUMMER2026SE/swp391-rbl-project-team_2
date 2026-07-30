@@ -3,10 +3,10 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const ocrController = {
   scanCCCD: async (req, res) => {
     try {
-      if (!req.file) {
+      if (!req.files || req.files.length !== 2) {
         return res.status(400).json({
           success: false,
-          message: 'Không tìm thấy file ảnh CCCD.',
+          message: 'Vui lòng tải lên đầy đủ 2 ảnh (mặt trước và mặt sau) của Căn cước công dân.',
         });
       }
 
@@ -20,34 +20,66 @@ const ocrController = {
 
       // Initialize Gemini
       const genAI = new GoogleGenerativeAI(apiKey);
-      // Use gemini-1.5-flash as it's the recommended model for multimodal tasks
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
       const prompt = `
 Bạn là một chuyên gia trích xuất dữ liệu từ Căn cước công dân (CCCD) Việt Nam.
-Hãy đọc ảnh mặt trước CCCD này và trích xuất các thông tin sau.
+Tôi đã gửi cho bạn 2 hình ảnh. Một ảnh là mặt trước, và một ảnh là mặt sau của cùng một Căn cước công dân (CCCD).
+Hãy phân tích cả hai ảnh và trích xuất các thông tin sau.
 Trạng thái ngày tháng (dob, issueDate) phải giữ nguyên định dạng trên thẻ (thường là dd/mm/yyyy).
-Trả về KẾT QUẢ DUY NHẤT LÀ ĐÚNG 1 CHUỖI JSON CHUẨN, không có bất kỳ định dạng markdown (\`\`\`json) nào hay văn bản giải thích nào khác.
+
+LƯU Ý QUAN TRỌNG:
+- Bạn phải kiểm tra kỹ lưỡng xem hai ảnh này có phải là mặt trước và mặt sau của một Căn cước công dân (hoặc Chứng minh nhân dân) Việt Nam hợp lệ và rõ nét hay không.
+- Nếu một hoặc cả hai ảnh bị mờ, bị cắt góc, bị che khuất thông tin, không đọc được, hoặc không phải là mặt trước và mặt sau của CCCD Việt Nam, hãy đặt "isValidCccd" thành false.
+- Chỉ trả về duy nhất chuỗi JSON chuẩn dưới đây, không kèm định dạng markdown hay giải thích nào khác.
+
 Cấu trúc JSON yêu cầu:
 {
+  "isValidCccd": true/false (true nếu có đủ cả mặt trước và mặt sau rõ nét và hợp lệ, false nếu ngược lại),
   "fullName": "Họ và tên",
   "idNumber": "Số CCCD (12 số)",
-  "dob": "Ngày sinh",
+  "dob": "Ngày sinh (dd/mm/yyyy)",
   "address": "Nơi thường trú (lấy đầy đủ)",
-  "issueDate": "Ngày cấp (nếu có, không có để trống)",
-  "issuePlace": "Nơi cấp (thường là Cục Cảnh sát Quản lý hành chính về trật tự xã hội)"
+  "issueDate": "Ngày cấp (dd/mm/yyyy)",
+  "issuePlace": "Nơi cấp (thường là Cục trưởng Cục Cảnh sát quản lý hành chính về trật tự xã hội hoặc Cục Cảnh sát QLHC về TTXH)"
 }
 `;
       
-      const imagePart = {
+      const imageParts = req.files.map(file => ({
         inlineData: {
-          data: req.file.buffer.toString("base64"),
-          mimeType: req.file.mimetype
+          data: file.buffer.toString("base64"),
+          mimeType: file.mimetype
         }
-      };
+      }));
 
-      const result = await model.generateContent([prompt, imagePart]);
-      const responseText = result.response.text();
+      let responseText = '';
+      let errorMsgs = [];
+
+      // Try gemini-2.5-flash first, fallback to gemini-1.5-flash and gemini-2.0-flash if needed
+      try {
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent([prompt, ...imageParts]);
+        responseText = result.response.text();
+      } catch (err) {
+        console.warn('Failed with gemini-2.5-flash, trying gemini-1.5-flash fallback:', err.message);
+        errorMsgs.push('gemini-2.5-flash: ' + err.message);
+        try {
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const result = await model.generateContent([prompt, ...imageParts]);
+          responseText = result.response.text();
+        } catch (err2) {
+          console.warn('Failed with gemini-1.5-flash, trying gemini-2.0-flash fallback:', err2.message);
+          errorMsgs.push('gemini-1.5-flash: ' + err2.message);
+          try {
+            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            const result = await model.generateContent([prompt, ...imageParts]);
+            responseText = result.response.text();
+          } catch (err3) {
+            console.error('All Gemini model requests failed:', err3);
+            errorMsgs.push('gemini-2.0-flash: ' + err3.message);
+            throw new Error('Tất cả các mô hình AI đều không khả dụng. Chi tiết lỗi: ' + errorMsgs.join('; '));
+          }
+        }
+      }
       
       // Clean up markdown block if Gemini still returns it
       const cleanedJsonText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -59,14 +91,14 @@ Cấu trúc JSON yêu cầu:
         console.error('Failed to parse Gemini JSON:', cleanedJsonText);
         return res.status(400).json({
           success: false,
-          message: 'Không thể trích xuất thông tin. Ảnh có thể bị mờ hoặc không phải CCCD.',
+          message: 'Không thể trích xuất thông tin. Ảnh tải lên có thể bị mờ, lóa sáng hoặc không phải Căn cước công dân. Vui lòng chụp lại ảnh rõ nét và thử lại!',
         });
       }
 
-      if (!parsedData.idNumber || !parsedData.fullName) {
+      if (parsedData.isValidCccd === false || !parsedData.idNumber || !parsedData.fullName || !parsedData.issueDate) {
         return res.status(400).json({
           success: false,
-          message: 'Ảnh không rõ ràng, không tìm thấy Số CCCD và Họ tên.',
+          message: 'Hình ảnh tải lên không hợp lệ hoặc không rõ ràng. Vui lòng tải lên ảnh chụp đầy đủ cả MẶT TRƯỚC và MẶT SAU Căn cước công dân rõ nét và thử lại!',
         });
       }
 

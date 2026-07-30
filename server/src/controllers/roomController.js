@@ -7,7 +7,7 @@ const { sequelize, Room, RoomImage, Facility, RoomFacility, User, Property } = r
 // =========================================================
 const createRoom = async (req, res, next) => {
   try {
-    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, propertyId, floor, roomNumber, quantity, latitude, longitude, batchId } = req.body;
+    const { title, description, address, city, district, ward, pricePerMonth, areaSqm, maxOccupants, propertyId, floor, roomNumber, quantity, latitude, longitude, batchId, batch_id } = req.body;
     const landlordId = req.user.userId;
 
     // Verify landlord's account is verified before posting a room
@@ -73,7 +73,7 @@ const createRoom = async (req, res, next) => {
       available_quantity: quantity || 1,
       latitude: latitude ? parseFloat(latitude) : null,
       longitude: longitude ? parseFloat(longitude) : null,
-      batch_id: batchId || null,
+      batch_id: batchId || batch_id || null,
     };
 
     if (req.file) {
@@ -818,9 +818,19 @@ const searchProperties = async (req, res, next) => {
     const where = { is_deleted: false };
 
     if (status) {
-      where.status = status;
+      if (status === 'all') {
+        where.status = { [Op.notIn]: ['inactive', 'pending', 'rejected'] };
+      } else {
+        where.status = status;
+      }
     } else {
-      where.status = { [Op.notIn]: ['inactive', 'pending', 'rejected'] };
+      where[Op.or] = [
+        { status: 'available' },
+        {
+          status: 'rented',
+          available_from: { [Op.ne]: null }
+        }
+      ];
     }
 
     if (landlordId) {

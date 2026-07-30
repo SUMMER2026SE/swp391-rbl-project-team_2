@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const { Op } = require('sequelize');
-const { Payment, ViewingSchedule, Room } = require('../models');
+const { Payment, ViewingSchedule, Room, Contract } = require('../models');
 
 // Helper function to log job runs
 const logJob = (jobName, message) => {
@@ -8,17 +8,55 @@ const logJob = (jobName, message) => {
 };
 
 const initCronJobs = () => {
-  // Case 1: Payment Timeout — auto-cancel after payment_deadline
+  // Case 1: Payment Timeout — auto-cancel after payment_deadline or 24 hours
   // Runs every 2 minutes for faster detection
   cron.schedule('*/2 * * * *', async () => {
     try {
       const now = new Date();
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      // Find contracts that are pending_payment and past 24 hours
+      const expiredContracts = await Contract.findAll({
+        where: {
+          status: 'pending_payment',
+          updated_at: { [Op.lt]: twentyFourHoursAgo }
+        }
+      });
+
+      if (expiredContracts.length > 0) {
+        logJob('Contract Payment Timeout (24h)', `Found ${expiredContracts.length} expired contracts pending payment.`);
+        for (const contract of expiredContracts) {
+          contract.status = 'cancelled';
+          contract.updated_at = now;
+          await contract.save();
+
+          await Payment.update(
+            { status: 'failed', updated_at: now },
+            { where: { contract_id: contract.contract_id, status: 'pending' } }
+          );
+
+          await ViewingSchedule.update(
+            { status: 'cancelled', updated_at: now },
+            { where: { room_id: contract.room_id, tenant_id: contract.tenant_id, status: 'pending_payment' } }
+          );
+
+          await Room.update(
+            { status: 'available' },
+            { where: { room_id: contract.room_id } }
+          );
+
+          logJob('Contract Payment Timeout', `Cancelled contract #${contract.contract_number} and reset room #${contract.room_id} to available.`);
+        }
+      }
       
-      // Find viewing schedules that are pending_payment and past their deadline
+      // Find viewing schedules that are pending_payment and past their deadline or 24h
       const expiredSchedules = await ViewingSchedule.findAll({
         where: {
           status: 'pending_payment',
-          payment_deadline: { [Op.lt]: now },
+          [Op.or]: [
+            { payment_deadline: { [Op.lt]: now } },
+            { updated_at: { [Op.lt]: twentyFourHoursAgo } }
+          ]
         }
       });
 

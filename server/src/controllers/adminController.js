@@ -1,4 +1,4 @@
-const { User, Role, Room, Payment, RentalRequest, Complaint, Contract, ViewingSchedule } = require('../models');
+const { User, Role, Room, Payment, RentalRequest, Complaint, Contract, ViewingSchedule, Property } = require('../models');
 const { Op } = require('sequelize');
 
 // =========================================================
@@ -247,47 +247,22 @@ const getAllRooms = async (req, res, next) => {
       order: [['created_at', 'DESC']]
     });
 
-    const formattedRooms = [];
-    const batchMap = new Map();
-
-    rooms.forEach(room => {
-      const roomData = {
-        id: `PRP-${room.room_id.toString().padStart(4, '0')}`,
-        rawId: room.room_id,
-        title: room.title,
-        location: `${room.district}, ${room.city}`,
-        district: room.district,
-        city: room.city,
-        room_type: room.room_type,
-        price: room.price_per_month,
-        image: room.thumbnail_url 
-          ? (room.thumbnail_url.startsWith('http') ? room.thumbnail_url : `${process.env.BASE_URL || 'http://localhost:5000'}${room.thumbnail_url.startsWith('/') ? '' : '/'}${room.thumbnail_url.replace(/\\/g, '/')}`)
-          : 'https://via.placeholder.com/200',
-        landlord: { name: room.landlord?.full_name, type: 'Verified Host' },
-        status: room.status.charAt(0).toUpperCase() + room.status.slice(1),
-        performance: { views: Math.floor(Math.random() * 2000), inquiries: Math.floor(Math.random() * 50) }
-      };
-
-      if (room.batch_id) {
-        if (batchMap.has(room.batch_id)) {
-          const batch = batchMap.get(room.batch_id);
-          batch.batchCount += 1;
-        } else {
-          roomData.batchCount = 1;
-          batchMap.set(room.batch_id, roomData);
-          formattedRooms.push(roomData);
-        }
-      } else {
-        formattedRooms.push(roomData);
-      }
-    });
-
-    formattedRooms.forEach(room => {
-      if (room.batchCount > 1) {
-        const baseTitle = room.title.includes(' - ') ? room.title.substring(0, room.title.lastIndexOf(' - ')) : room.title;
-        room.title = `${baseTitle} (Lô ${room.batchCount} phòng)`;
-      }
-    });
+    const formattedRooms = rooms.map(room => ({
+      id: `PRP-${room.room_id.toString().padStart(4, '0')}`,
+      rawId: room.room_id,
+      title: room.title,
+      location: `${room.district}, ${room.city}`,
+      district: room.district,
+      city: room.city,
+      room_type: room.room_type,
+      price: room.price_per_month,
+      image: room.thumbnail_url 
+        ? (room.thumbnail_url.startsWith('http') ? room.thumbnail_url : `${process.env.BASE_URL || 'http://localhost:5000'}${room.thumbnail_url.startsWith('/') ? '' : '/'}${room.thumbnail_url.replace(/\\/g, '/')}`)
+        : 'https://via.placeholder.com/200',
+      landlord: { name: room.landlord?.full_name, type: 'Verified Host' },
+      status: room.status.charAt(0).toUpperCase() + room.status.slice(1),
+      performance: { views: Math.floor(Math.random() * 2000), inquiries: Math.floor(Math.random() * 50) }
+    }));
 
     return res.status(200).json({ success: true, data: formattedRooms });
   } catch (error) {
@@ -315,56 +290,28 @@ const updateRoomStatus = async (req, res, next) => {
       updateData.rejection_reason = null; // Clear if re-approved or changed
     }
 
-    let updatedCount = 0;
     const { Notification } = require('../models');
 
-    if (room.batch_id) {
-      // Update all rooms in the same batch
-      const [count] = await Room.update(updateData, {
-        where: { batch_id: room.batch_id }
-      });
-      updatedCount = count;
+    // Update single room
+    await room.update(updateData);
+    const updatedCount = 1;
 
-      // Find all rooms in batch to send notifications
-      const batchRooms = await Room.findAll({
-        where: { batch_id: room.batch_id }
-      });
-
-      const notifications = batchRooms.map(r => ({
-        user_id: r.landlord_id,
-        title: updateData.status === 'rejected' ? 'Listing Rejected' : 'Listing Approved',
-        message: updateData.status === 'rejected' 
-          ? `Your listing "${r.title}" was rejected by the admin. Reason: ${reason}`
-          : `Good news! Your listing "${r.title}" has been approved and is now live.`,
+    if (updateData.status === 'rejected' && reason) {
+      await Notification.create({
+        user_id: room.landlord_id,
+        title: 'Listing Rejected',
+        message: `Your listing "${room.title}" was rejected by the admin. Reason: ${reason}`,
         notification_type: 'system',
-        related_id: r.room_id
-      }));
-
-      if (notifications.length > 0) {
-        await Notification.bulkCreate(notifications);
-      }
-    } else {
-      // Update single room
-      await room.update(updateData);
-      updatedCount = 1;
-
-      if (updateData.status === 'rejected' && reason) {
-        await Notification.create({
-          user_id: room.landlord_id,
-          title: 'Listing Rejected',
-          message: `Your listing "${room.title}" was rejected by the admin. Reason: ${reason}`,
-          notification_type: 'system',
-          related_id: room.room_id
-        });
-      } else if (updateData.status === 'available') {
-        await Notification.create({
-          user_id: room.landlord_id,
-          title: 'Listing Approved',
-          message: `Good news! Your listing "${room.title}" has been approved and is now live.`,
-          notification_type: 'system',
-          related_id: room.room_id
-        });
-      }
+        related_id: room.room_id
+      });
+    } else if (updateData.status === 'available') {
+      await Notification.create({
+        user_id: room.landlord_id,
+        title: 'Listing Approved',
+        message: `Good news! Your listing "${room.title}" has been approved and is now live.`,
+        notification_type: 'system',
+        related_id: room.room_id
+      });
     }
 
     return res.status(200).json({
@@ -703,6 +650,73 @@ const processVerification = async (req, res, next) => {
   }
 };
 
+const getAllProperties = async (req, res, next) => {
+  try {
+    const properties = await Property.findAll({
+      where: { is_deleted: false },
+      include: [
+        { model: User, as: 'landlord', attributes: ['full_name', 'email'] },
+        { model: Room, as: 'rooms', where: { is_deleted: false }, required: false, attributes: ['room_id', 'room_number', 'title', 'price_per_month', 'status'] }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    const formattedProperties = properties.map(prop => ({
+      id: `PROP-${prop.property_id.toString().padStart(4, '0')}`,
+      rawId: prop.property_id,
+      name: prop.name,
+      address: prop.address,
+      city: prop.city,
+      district: prop.district,
+      thumbnailUrl: prop.thumbnail_url 
+        ? (prop.thumbnail_url.startsWith('http') ? prop.thumbnail_url : `${process.env.BASE_URL || 'http://localhost:5000'}${prop.thumbnail_url.startsWith('/') ? '' : '/'}${prop.thumbnail_url.replace(/\\/g, '/')}`)
+        : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500',
+      landlord: { name: prop.landlord?.full_name, email: prop.landlord?.email },
+      status: prop.status.charAt(0).toUpperCase() + prop.status.slice(1),
+      roomCount: prop.rooms ? prop.rooms.length : 0,
+      rooms: prop.rooms ? prop.rooms.map(room => ({
+        roomId: room.room_id,
+        roomNumber: room.room_number,
+        title: room.title,
+        price: room.price_per_month,
+        status: room.status
+      })) : []
+    }));
+
+    return res.status(200).json({ success: true, data: formattedProperties });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updatePropertyStatus = async (req, res, next) => {
+  try {
+    const propertyId = req.params.id;
+    const { status } = req.body;
+
+    const property = await Property.findByPk(propertyId);
+    if (!property) {
+      return res.status(404).json({ success: false, message: 'Property not found' });
+    }
+
+    await property.update({ status: status.toLowerCase() });
+
+    // Synchronize status of all rooms in this property if hidden
+    if (status.toLowerCase() === 'hidden') {
+      await Room.update({ status: 'hidden' }, { where: { property_id: propertyId } });
+    } else if (status.toLowerCase() === 'active' || status.toLowerCase() === 'available') {
+      await Room.update({ status: 'available' }, { where: { property_id: propertyId } });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Property status updated to ${status}.`
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllUsers,
   updateUserStatus,
@@ -721,4 +735,6 @@ module.exports = {
   processVerification,
   getTerminationDisputes,
   resolveTerminationDispute,
+  getAllProperties,
+  updatePropertyStatus,
 };

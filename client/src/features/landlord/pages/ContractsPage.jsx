@@ -36,7 +36,10 @@ import './ContractsPage.css';
 const ContractsPage = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { contracts, loading, error, renewContract, terminateContract, updateContract, fetchContracts, approveRenewal, declineRenewal } = useContracts();
+
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(location.search || '');
     return (params.get('tab') || location.state?.tab) === 'terminations' ? 'terminations' : 'contracts';
@@ -49,6 +52,17 @@ const ContractsPage = () => {
       setActiveTab('terminations');
     }
   }, [location.search, location.state]);
+
+  useEffect(() => {
+    if (location.state?.autoApproveRenewalId && contracts.length > 0) {
+      const contract = contracts.find(c => c.renewalRequest?.id === location.state.autoApproveRenewalId);
+      if (contract) {
+        setSelectedContract(contract);
+        setShowApproveRenewalModal(true);
+        navigate(location.pathname, { replace: true, state: { ...location.state, autoApproveRenewalId: null } });
+      }
+    }
+  }, [location.state, contracts, navigate, location.pathname]);
 
   const sigCanvasRef = React.useRef({});
   const [searchTerm, setSearchTerm] = useState(location.state?.search || '');
@@ -67,16 +81,22 @@ const ContractsPage = () => {
   const [showApproveRenewalModal, setShowApproveRenewalModal] = useState(false);
   const [renewData, setRenewData] = useState({ duration: 12 });
   const [terminateReason, setTerminateReason] = useState('');
-
-  const navigate = useNavigate();
-  const { contracts, loading, error, renewContract, terminateContract, updateContract, fetchContracts, approveRenewal, declineRenewal } = useContracts();
+  const [isApproving, setIsApproving] = useState(false);
+  const [showDeclineReasonModal, setShowDeclineReasonModal] = useState(false);
+  const [declineReasonText, setDeclineReasonText] = useState('');
 
   const filteredContracts = contracts.filter(contract => {
-    const searchLower = (searchTerm || '').toLowerCase();
+    const searchLower = (searchTerm || '').trim().toLowerCase();
+    const tenantNameStr = (contract.tenantName || contract.tenant_name || contract.tenant?.full_name || '').toLowerCase();
+    const roomTitleStr = (contract.roomTitle || contract.room?.title || '').toLowerCase();
+    const contractNumStr = (contract.contractNumber || contract.contract_number || '').toLowerCase();
+    const roomNumStr = (contract.assignedRoomNumber || contract.assigned_room_number || contract.room?.room_number || '').toLowerCase();
+
     const matchesSearch = !searchLower ||
-      (contract.tenantName || '').toLowerCase().includes(searchLower) ||
-      (contract.roomTitle || '').toLowerCase().includes(searchLower) ||
-      (contract.contractNumber || '').toLowerCase().includes(searchLower);
+      tenantNameStr.includes(searchLower) ||
+      roomTitleStr.includes(searchLower) ||
+      contractNumStr.includes(searchLower) ||
+      roomNumStr.includes(searchLower);
     const matchesStatus = statusFilter === 'All' || (contract.status || '').toLowerCase() === statusFilter.toLowerCase();
     
     let matchesDate = true;
@@ -93,8 +113,14 @@ const ContractsPage = () => {
     return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
   });
 
-  const getStatusDisplay = (status) => {
+  const getStatusDisplay = (contract) => {
+    const status = contract?.status;
     const s = (status || '').toLowerCase();
+    
+    if (s === 'active' && contract?.renewalRequest?.status === 'PENDING_LANDLORD') {
+      return { icon: <Timer size={16} />, color: '#d97706', bg: '#fef3c7', label: 'Gia Hạn Chờ Duyệt' };
+    }
+    
     switch (s) {
       case 'active':
         return { icon: <CheckCircle2 size={16} />, color: '#059669', bg: '#d1fae5', label: 'Active' };
@@ -102,7 +128,7 @@ const ContractsPage = () => {
       case 'pending_signature':
         return { icon: <FileSignature size={16} />, color: '#b45309', bg: '#fef3c7', label: 'Pending Signature' };
       case 'pending_payment':
-        return { icon: <Clock size={16} />, color: '#7c3aed', bg: '#ede9fe', label: 'Pending Payment' };
+        return { icon: <Clock size={16} />, color: '#7c3aed', bg: '#ede9fe', label: 'Booking in Process' };
       case 'completed':
         return { icon: <CheckCircle2 size={16} />, color: '#059669', bg: '#d1fae5', label: 'Completed' };
       case 'expired':
@@ -332,14 +358,14 @@ const ContractsPage = () => {
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: '4px',
                         padding: '4px 10px', borderRadius: '9999px',
-                        backgroundColor: getStatusDisplay(contract.status).bg,
-                        color: getStatusDisplay(contract.status).color,
+                        backgroundColor: getStatusDisplay(contract).bg,
+                        color: getStatusDisplay(contract).color,
                         fontWeight: '600', fontSize: '12px',
-                        border: `1px solid ${getStatusDisplay(contract.status).color}33`
+                        border: `1px solid ${getStatusDisplay(contract).color}33`
                       }}
                     >
-                      {getStatusDisplay(contract.status).icon}
-                      {getStatusDisplay(contract.status).label}
+                      {getStatusDisplay(contract).icon}
+                      {getStatusDisplay(contract).label}
                     </div>
                   </td>
                   <td style={{ padding: '16px' }}>
@@ -435,14 +461,14 @@ const ContractsPage = () => {
                     style={{
                       display: 'flex', alignItems: 'center', gap: '6px',
                       padding: '6px 12px', borderRadius: '9999px',
-                      backgroundColor: getStatusDisplay(selectedContract.status).bg,
-                      color: getStatusDisplay(selectedContract.status).color,
+                      backgroundColor: getStatusDisplay(selectedContract).bg,
+                      color: getStatusDisplay(selectedContract).color,
                       fontWeight: '700', fontSize: '0.85rem',
-                      border: `1px solid ${getStatusDisplay(selectedContract.status).color}33`
+                      border: `1px solid ${getStatusDisplay(selectedContract).color}33`
                     }}
                   >
-                    {getStatusDisplay(selectedContract.status).icon}
-                    {getStatusDisplay(selectedContract.status).label}
+                    {getStatusDisplay(selectedContract).icon}
+                    {getStatusDisplay(selectedContract).label}
                   </div>
                 </div>
               </div>
@@ -583,7 +609,7 @@ const ContractsPage = () => {
               }}
               onSign={async (contract, signatureDataUrl) => {
                 try {
-                  await approveRenewal(contract.id || contract.contractId, signatureDataUrl);
+                  await approveRenewal(contract.renewalRequest?.id || contract.id || contract.contractId, signatureDataUrl);
                   toast.success('Hợp đồng gia hạn đã được duyệt và gửi cho khách!');
                   setShowContractModal(false);
                 } catch (err) {
@@ -692,27 +718,104 @@ const ContractsPage = () => {
 
             <div className="modal-footer">
               <Button
+                variant="outline"
+                disabled={isApproving}
+                style={{ color: '#dc2626', borderColor: '#dc2626' }}
+                onClick={() => setShowDeclineReasonModal(true)}
+              >Từ chối gia hạn</Button>
+              <Button
                 variant="secondary"
                 onClick={() => setShowApproveRenewalModal(false)}
               >Hủy</Button>
               <Button
                 variant="primary"
+                disabled={isApproving}
                 onClick={async () => {
                   if (sigCanvasRef.current && sigCanvasRef.current.isEmpty && sigCanvasRef.current.isEmpty()) {
                     toast.error("Vui lòng ký tên trước khi duyệt.");
                     return;
                   }
                   try {
+                    setIsApproving(true);
                     const signatureDataUrl = sigCanvasRef.current.getCanvas().toDataURL('image/png');
-                    await approveRenewal(selectedContract.contractId || selectedContract.id, signatureDataUrl);
+                    await approveRenewal(selectedContract.renewalRequest?.id || selectedContract.contractId || selectedContract.id, signatureDataUrl);
                     toast.success('Đã duyệt gia hạn thành công!');
                     setShowApproveRenewalModal(false);
                     setSelectedContract(null);
                   } catch (err) {
                     toast.error(err.message || 'Lỗi khi duyệt gia hạn');
+                  } finally {
+                    setIsApproving(false);
                   }
                 }}
-              >Duyệt & Tạo HĐ Mới</Button>
+              >{isApproving ? 'Đang xử lý...' : 'Duyệt & Tạo HĐ Mới'}</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Decline Reason Modal */}
+      {showDeclineReasonModal && selectedContract && (
+        <div className="modal-backdrop" style={{ zIndex: 1060 }} onClick={() => setShowDeclineReasonModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Lý do từ chối gia hạn</h3>
+              <button className="modal-close-btn" onClick={() => setShowDeclineReasonModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '12px' }}>
+                Vui lòng cung cấp lý do từ chối gia hạn hợp đồng phòng <strong>{selectedContract.roomTitle}</strong> của khách thuê <strong>{selectedContract.tenantName}</strong>:
+              </p>
+              <textarea
+                style={{
+                  width: '100%',
+                  height: '100px',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '14px',
+                  fontFamily: 'inherit',
+                  resize: 'none'
+                }}
+                placeholder="Nhập lý do từ chối tại đây..."
+                value={declineReasonText}
+                onChange={e => setDeclineReasonText(e.target.value)}
+              />
+            </div>
+            <div className="modal-footer">
+              <Button
+                variant="secondary"
+                onClick={() => setShowDeclineReasonModal(false)}
+              >
+                Hủy
+              </Button>
+              <Button
+                variant="danger"
+                isLoading={isApproving}
+                disabled={!declineReasonText.trim()}
+                onClick={async () => {
+                  try {
+                    setIsApproving(true);
+                    await declineRenewal(
+                      selectedContract.renewalRequest?.id || selectedContract.contractId || selectedContract.id,
+                      declineReasonText.trim()
+                    );
+                    toast.success('Đã từ chối gia hạn thành công!');
+                    setShowDeclineReasonModal(false);
+                    setShowApproveRenewalModal(false);
+                    setSelectedContract(null);
+                    setDeclineReasonText('');
+                  } catch (err) {
+                    toast.error(err.message || 'Lỗi khi từ chối gia hạn');
+                  } finally {
+                    setIsApproving(false);
+                  }
+                }}
+              >
+                Xác nhận từ chối
+              </Button>
             </div>
           </div>
         </div>

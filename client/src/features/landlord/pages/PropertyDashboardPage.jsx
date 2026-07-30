@@ -272,7 +272,11 @@ const PropertyDashboardPage = () => {
           </div>
           <div className="legend-item">
             <div className="legend-dot pending" />
-            <span>{t('propertyDashboard.pending', 'Pending')}</span>
+            <span>Pending Approval</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-dot booking" />
+            <span>Booking in Process</span>
           </div>
           <div className="legend-item">
             <div className="legend-dot maintenance" />
@@ -331,7 +335,7 @@ const PropertyDashboardPage = () => {
                     key={room.roomId}
                     title={room.status === 'available' ? 'Click to view room details' : `Rented by ${room.tenantName} - Click to view contracts`}
                     onClick={() => {
-                      if (room.status === 'rented' || room.status === 'pending') {
+                      if (room.status === 'rented' || room.status === 'booking') {
                         navigate(ROUTES.LANDLORD.CONTRACTS, { state: { search: room.tenantName } });
                       } else {
                         navigate(`/listings/${room.originalRoomId}`);
@@ -394,6 +398,7 @@ const PropertyDashboardPage = () => {
                         {room.status === 'available' && 'Available'}
                         {room.status === 'rented' && 'Rented'}
                         {room.status === 'pending' && 'Pending'}
+                        {room.status === 'booking' && 'Booking'}
                         {room.status === 'maintenance' && 'Repair'}
                         {room.status === 'inactive' && 'Inactive'}
                       </span>

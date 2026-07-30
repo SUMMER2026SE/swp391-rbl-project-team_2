@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const authMiddleware = require('../middlewares/authMiddleware');
+const isVerifiedLandlord = require('../middlewares/isVerifiedLandlord');
 
 // Controllers
 const roomController = require('../controllers/roomController');
@@ -116,18 +117,18 @@ router.get('/dashboard/expiring-summary', dashboardController.getExpiringSummary
 // =========================================================
 // PROPERTY ROUTES (Multi-property management)
 // =========================================================
-router.post('/properties', upload.single('image'), propertyController.createProperty);
+router.post('/properties', isVerifiedLandlord, upload.single('image'), propertyController.createProperty);
 router.get('/properties', propertyController.getProperties);
 router.get('/properties/:propertyId', propertyController.getPropertyDetails);
 router.put('/properties/:propertyId', upload.single('image'), propertyController.updateProperty);
 router.delete('/properties/:propertyId', propertyController.deleteProperty);
 router.get('/properties/:propertyId/dashboard', propertyController.getPropertyDashboard);
-router.post('/properties/:propertyId/rooms/duplicate', propertyController.duplicateRoom);
+router.post('/properties/:propertyId/rooms/duplicate', isVerifiedLandlord, propertyController.duplicateRoom);
 
 // =========================================================
 // ROOM ROUTES
 // =========================================================
-router.post('/rooms', upload.single('image'), roomController.createRoom);
+router.post('/rooms', isVerifiedLandlord, upload.single('image'), roomController.createRoom);
 router.get('/rooms', roomController.getLandlordRooms);
 router.get('/rooms/:roomId', roomController.getRoomDetails);
 router.put('/rooms/:roomId', upload.single('image'), roomController.updateRoom);

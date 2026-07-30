@@ -17,6 +17,6 @@ const upload = multer({
   }
 });
 
-router.post('/cccd', authMiddleware, upload.single('image'), ocrController.scanCCCD);
+router.post('/cccd', authMiddleware, upload.array('images', 2), ocrController.scanCCCD);
 
 module.exports = router;

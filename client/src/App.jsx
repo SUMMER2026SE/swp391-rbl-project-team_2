@@ -23,7 +23,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <Toaster position="top-center" />
+      <Toaster position="top-center" containerStyle={{ zIndex: 99999 }} />
       <AppRoutes />
       <AIChatWidget />
     </div>

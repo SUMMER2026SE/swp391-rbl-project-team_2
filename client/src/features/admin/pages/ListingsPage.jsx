@@ -1,16 +1,20 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { Search, ChevronDown, List, Grid, MoreHorizontal, AlertTriangle, CheckSquare } from 'lucide-react';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import ListingTable from '../components/ListingTable';
 import ListingGrid from '../components/ListingGrid';
+import PropertyTable from '../components/PropertyTable';
 import adminService from '../../../services/adminService';
 import './ListingsPage.css';
 
 const ListingsPage = () => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const [mainTab, setMainTab] = useState(location.state?.tab || 'listings'); // 'listings' or 'properties'
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -18,7 +22,9 @@ const ListingsPage = () => {
   const [districtFilter, setDistrictFilter] = useState('All');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'pending'
+  
   const [listings, setListings] = useState([]);
+  const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -33,13 +39,23 @@ const ListingsPage = () => {
   const [bulkProcessing, setBulkProcessing] = useState(false);
 
   useEffect(() => {
-    fetchListings();
-  }, []);
+    if (mainTab === 'listings') {
+      fetchListings();
+    } else {
+      fetchProperties();
+    }
+  }, [mainTab]);
+
+  useEffect(() => {
+    if (location.state?.tab) {
+      setMainTab(location.state.tab);
+    }
+  }, [location.state]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, cityFilter, districtFilter, activeTab]);
+  }, [searchTerm, statusFilter, cityFilter, districtFilter, activeTab, mainTab]);
 
   const fetchListings = async () => {
     try {
@@ -50,6 +66,20 @@ const ListingsPage = () => {
       }
     } catch (err) {
       console.error('Failed to fetch listings:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      const res = await adminService.getAllProperties();
+      if (res.success) {
+        setProperties(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch properties:', err);
     } finally {
       setLoading(false);
     }
@@ -68,9 +98,23 @@ const ListingsPage = () => {
       if (res.success) {
         toast.success('Room status updated successfully!');
         fetchListings();
+        fetchProperties();
       }
     } catch (err) {
       toast.error('Failed to update room status.');
+      console.error(err);
+    }
+  };
+
+  const handleUpdatePropertyStatus = async (propertyId, status) => {
+    try {
+      const res = await adminService.updatePropertyStatus(propertyId, status);
+      if (res.success) {
+        toast.success('Property status updated successfully!');
+        fetchProperties();
+      }
+    } catch (err) {
+      toast.error('Failed to update property status.');
       console.error(err);
     }
   };
@@ -128,8 +172,6 @@ const ListingsPage = () => {
     if (statusFilter !== 'All') {
       matchesStatus = item.status.toLowerCase() === statusFilter.toLowerCase();
     }
-    
-
 
     let matchesCity = true;
     if (cityFilter !== 'All') {
@@ -144,147 +186,219 @@ const ListingsPage = () => {
     return matchesSearch && matchesStatus && matchesCity && matchesDistrict;
   });
 
-  // Extract unique options from listings for filters
+  const filteredProperties = properties.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          item.landlord?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesStatus = true;
+    if (statusFilter !== 'All') {
+      matchesStatus = item.status.toLowerCase() === statusFilter.toLowerCase();
+    }
 
-  const uniqueCities = [...new Set(listings.map(item => item.city || (item.location ? item.location.split(', ').pop() : null)).filter(Boolean))];
+    let matchesCity = true;
+    if (cityFilter !== 'All') {
+      matchesCity = item.city === cityFilter;
+    }
+
+    let matchesDistrict = true;
+    if (districtFilter !== 'All') {
+      matchesDistrict = item.district === districtFilter;
+    }
+
+    return matchesSearch && matchesStatus && matchesCity && matchesDistrict;
+  });
+
+  // Extract unique options from listings or properties for filters
+  const currentSourceList = mainTab === 'listings' ? listings : properties;
+  const uniqueCities = [...new Set(currentSourceList.map(item => item.city || (item.location ? item.location.split(', ').pop() : null)).filter(Boolean))];
   // If a city is selected, filter districts by that city, else show all
   const filteredDistricts = cityFilter !== 'All' 
-    ? listings.filter(item => item.city === cityFilter || item.location?.includes(cityFilter))
-    : listings;
+    ? currentSourceList.filter(item => item.city === cityFilter || item.location?.includes(cityFilter))
+    : currentSourceList;
   const uniqueDistricts = [...new Set(filteredDistricts.map(item => item.district || (item.location ? item.location.split(', ')[0] : null)).filter(Boolean))];
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredListings.length / ITEMS_PER_PAGE);
+  const targetList = mainTab === 'listings' ? filteredListings : filteredProperties;
+  const totalPages = Math.ceil(targetList.length / ITEMS_PER_PAGE);
   const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
   const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-  const currentListings = filteredListings.slice(indexOfFirstItem, indexOfLastItem);
+  const currentListings = targetList.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="admin-page-container">
       {/* Header */}
       <div className="listings-page-header">
         <div className="header-titles">
-          <h1 className="admin-page-title">{t('adminListings.title')}</h1>
-          <p className="admin-page-subtitle">{t('adminListings.subtitle')}</p>
+          <h1 className="admin-page-title">{mainTab === 'listings' ? 'Listing Management' : 'Property Management'}</h1>
+          <p className="admin-page-subtitle">
+            {mainTab === 'listings' 
+              ? 'Quản lý tin đăng phòng trọ chi tiết của các chủ nhà' 
+              : 'Quản lý căn hộ, tòa nhà của các chủ nhà'}
+          </p>
         </div>
         <div className="header-actions">
-          <button
-            className={`btn-bulk-action ${bulkMode ? 'active' : ''}`}
-            onClick={() => { setBulkMode(!bulkMode); setSelectedRooms([]); }}
-            style={bulkMode ? { background: '#4f46e5', color: '#fff' } : {}}
-          >
-            <CheckSquare size={16} style={{ marginRight: '6px' }} />
-            {bulkMode ? 'Thoát chọn' : t('adminListings.bulkActions')}
-          </button>
-          {bulkMode && selectedRooms.length > 0 && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', color: '#4f46e5', fontWeight: '600' }}>
-                Đã chọn {selectedRooms.length} phòng
-              </span>
+          {mainTab === 'listings' && (
+            <>
               <button
-                className="btn-bulk-approve"
-                disabled={bulkProcessing}
-                onClick={() => handleBulkAction('available')}
-                style={{
-                  padding: '6px 16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: '#16a34a',
-                  color: '#fff',
-                  fontWeight: '600',
-                  fontSize: '0.85rem',
-                  cursor: bulkProcessing ? 'not-allowed' : 'pointer',
-                  opacity: bulkProcessing ? 0.6 : 1,
-                }}
+                className={`btn-bulk-action ${bulkMode ? 'active' : ''}`}
+                onClick={() => { setBulkMode(!bulkMode); setSelectedRooms([]); }}
+                style={bulkMode ? { background: '#4f46e5', color: '#fff' } : {}}
               >
-                {bulkProcessing ? 'Đang xử lý...' : '✅ Duyệt tất cả'}
+                <CheckSquare size={16} style={{ marginRight: '6px' }} />
+                {bulkMode ? 'Thoát chọn' : t('adminListings.bulkActions')}
               </button>
-              <button
-                className="btn-bulk-reject"
-                disabled={bulkProcessing}
-                onClick={() => handleBulkAction('rejected')}
-                style={{
-                  padding: '6px 16px',
-                  borderRadius: '6px',
-                  border: '1px solid #fca5a5',
-                  background: '#fff',
-                  color: '#ef4444',
-                  fontWeight: '600',
-                  fontSize: '0.85rem',
-                  cursor: bulkProcessing ? 'not-allowed' : 'pointer',
-                  opacity: bulkProcessing ? 0.6 : 1,
-                }}
-              >
-                {bulkProcessing ? 'Đang xử lý...' : '❌ Từ chối tất cả'}
-              </button>
-            </div>
+              {bulkMode && selectedRooms.length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#4f46e5', fontWeight: '600' }}>
+                    Đã chọn {selectedRooms.length} phòng
+                  </span>
+                  <button
+                    className="btn-bulk-approve"
+                    disabled={bulkProcessing}
+                    onClick={() => handleBulkAction('available')}
+                    style={{
+                      padding: '6px 16px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: '#16a34a',
+                      color: '#fff',
+                      fontWeight: '600',
+                      fontSize: '0.85rem',
+                      cursor: bulkProcessing ? 'not-allowed' : 'pointer',
+                      opacity: bulkProcessing ? 0.6 : 1,
+                    }}
+                  >
+                    {bulkProcessing ? 'Đang xử lý...' : '✅ Duyệt tất cả'}
+                  </button>
+                  <button
+                    className="btn-bulk-reject"
+                    disabled={bulkProcessing}
+                    onClick={() => handleBulkAction('rejected')}
+                    style={{
+                      padding: '6px 16px',
+                      borderRadius: '6px',
+                      border: '1px solid #fca5a5',
+                      background: '#fff',
+                      color: '#ef4444',
+                      fontWeight: '600',
+                      fontSize: '0.85rem',
+                      cursor: bulkProcessing ? 'not-allowed' : 'pointer',
+                      opacity: bulkProcessing ? 0.6 : 1,
+                    }}
+                  >
+                    {bulkProcessing ? 'Đang xử lý...' : '❌ Từ chối tất cả'}
+                  </button>
+                </div>
+              )}
+              <div className="view-mode-toggle">
+                <button 
+                  className={`btn-view ${viewMode === 'list' ? 'active' : ''}`}
+                  onClick={() => setViewMode('list')}
+                >
+                  <List size={18} />
+                </button>
+                <button 
+                  className={`btn-view ${viewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => setViewMode('grid')}
+                >
+                  <Grid size={18} />
+                </button>
+              </div>
+            </>
           )}
-          <div className="view-mode-toggle">
-            <button 
-              className={`btn-view ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
-            >
-              <List size={18} />
-            </button>
-            <button 
-              className={`btn-view ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid size={18} />
-            </button>
-          </div>
         </div>
       </div>
 
-      <div className="listings-tabs-container" style={{ display: 'flex', gap: '20px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0' }}>
-        <button 
-          className={`listing-tab ${activeTab === 'all' ? 'active' : ''}`}
-          onClick={() => setActiveTab('all')}
-          style={{ 
-            padding: '10px 4px', 
-            background: 'none', 
-            border: 'none', 
-            borderBottom: activeTab === 'all' ? '2px solid #4f46e5' : '2px solid transparent',
-            color: activeTab === 'all' ? '#4f46e5' : '#64748b',
-            fontWeight: activeTab === 'all' ? '600' : '500',
+      {/* Main Tabs: Listing Management & Property Management */}
+      <div className="main-tabs-container" style={{ display: 'flex', gap: '24px', marginBottom: '20px', borderBottom: '2px solid #e2e8f0' }}>
+        <button
+          className={`main-tab-btn ${mainTab === 'listings' ? 'active' : ''}`}
+          onClick={() => { setMainTab('listings'); setStatusFilter('All'); }}
+          style={{
+            padding: '12px 8px',
+            background: 'none',
+            border: 'none',
+            borderBottom: mainTab === 'listings' ? '3px solid #4f46e5' : '3px solid transparent',
+            color: mainTab === 'listings' ? '#4f46e5' : '#64748b',
+            fontWeight: '700',
             cursor: 'pointer',
-            fontSize: '0.95rem'
+            fontSize: '1.05rem',
+            transition: 'all 0.2s'
           }}
         >
-          {t('adminListings.allProperties')}
+          Listing Management (Phòng trọ)
         </button>
-        <button 
-          className={`listing-tab ${activeTab === 'pending' ? 'active' : ''}`}
-          onClick={() => setActiveTab('pending')}
-          style={{ 
-            padding: '10px 4px', 
-            background: 'none', 
-            border: 'none', 
-            borderBottom: activeTab === 'pending' ? '2px solid #4f46e5' : '2px solid transparent',
-            color: activeTab === 'pending' ? '#4f46e5' : '#64748b',
-            fontWeight: activeTab === 'pending' ? '600' : '500',
+        <button
+          className={`main-tab-btn ${mainTab === 'properties' ? 'active' : ''}`}
+          onClick={() => { setMainTab('properties'); setStatusFilter('All'); }}
+          style={{
+            padding: '12px 8px',
+            background: 'none',
+            border: 'none',
+            borderBottom: mainTab === 'properties' ? '3px solid #4f46e5' : '3px solid transparent',
+            color: mainTab === 'properties' ? '#4f46e5' : '#64748b',
+            fontWeight: '700',
             cursor: 'pointer',
-            fontSize: '0.95rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
+            fontSize: '1.05rem',
+            transition: 'all 0.2s'
           }}
         >
-          {t('adminListings.pendingApprovals')}
-          {listings.filter(l => l.status.toLowerCase() === 'pending').length > 0 && (
-            <span style={{ 
-              background: '#ef4444', 
-              color: 'white', 
-              fontSize: '0.75rem', 
-              padding: '2px 8px', 
-              borderRadius: '999px',
-              fontWeight: '600'
-            }}>
-              {listings.filter(l => l.status.toLowerCase() === 'pending').reduce((sum, l) => sum + (l.batchCount || 1), 0)}
-            </span>
-          )}
+          Property Management (Căn hộ)
         </button>
       </div>
+
+      {mainTab === 'listings' && (
+        <div className="listings-tabs-container" style={{ display: 'flex', gap: '20px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0' }}>
+          <button 
+            className={`listing-tab ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveTab('all')}
+            style={{ 
+              padding: '10px 4px', 
+              background: 'none', 
+              border: 'none', 
+              borderBottom: activeTab === 'all' ? '2px solid #4f46e5' : '2px solid transparent',
+              color: activeTab === 'all' ? '#4f46e5' : '#64748b',
+              fontWeight: activeTab === 'all' ? '600' : '500',
+              cursor: 'pointer',
+              fontSize: '0.95rem'
+            }}
+          >
+            {t('adminListings.allProperties')}
+          </button>
+          <button 
+            className={`listing-tab ${activeTab === 'pending' ? 'active' : ''}`}
+            onClick={() => setActiveTab('pending')}
+            style={{ 
+              padding: '10px 4px', 
+              background: 'none', 
+              border: 'none', 
+              borderBottom: activeTab === 'pending' ? '2px solid #4f46e5' : '2px solid transparent',
+              color: activeTab === 'pending' ? '#4f46e5' : '#64748b',
+              fontWeight: activeTab === 'pending' ? '600' : '500',
+              cursor: 'pointer',
+              fontSize: '0.95rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            {t('adminListings.pendingApprovals')}
+            {listings.filter(l => l.status.toLowerCase() === 'pending').length > 0 && (
+              <span style={{ 
+                background: '#ef4444', 
+                color: 'white', 
+                fontSize: '0.75rem', 
+                padding: '2px 8px', 
+                borderRadius: '999px',
+                fontWeight: '600'
+              }}>
+                {listings.filter(l => l.status.toLowerCase() === 'pending').length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
       <div className="listings-content-area">
         {/* Toolbar */}
@@ -293,15 +407,13 @@ const ListingsPage = () => {
             <Search size={18} className="search-icon" />
             <input 
               type="text" 
-              placeholder={t('adminListings.searchPlaceholder')} 
+              placeholder={mainTab === 'listings' ? t('adminListings.searchPlaceholder') : 'Tìm kiếm theo tên căn hộ hoặc chủ nhà...'} 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           
           <div className="toolbar-filters">
-
-
             <div className="filter-dropdown-wrapper">
               <select 
                 className="filter-select"
@@ -340,10 +452,10 @@ const ListingsPage = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="All">{t('adminListings.allStatuses')}</option>
-                <option value="available">{t('adminListings.statusActive')}</option>
-                <option value="pending">{t('adminListings.statusPending')}</option>
-                <option value="rented">{t('adminListings.statusOccupied')}</option>
-                <option value="rejected">{t('adminListings.statusRejected')}</option>
+                <option value="active">{t('adminListings.statusActive')}</option>
+                {mainTab === 'listings' && <option value="pending">{t('adminListings.statusPending')}</option>}
+                {mainTab === 'listings' && <option value="rented">{t('adminListings.statusOccupied')}</option>}
+                {mainTab === 'listings' && <option value="rejected">{t('adminListings.statusRejected')}</option>}
                 <option value="hidden">{t('adminListings.statusHidden')}</option>
               </select>
               <ChevronDown size={14} className="dropdown-icon" />
@@ -359,24 +471,32 @@ const ListingsPage = () => {
         {/* Table Content */}
         {loading ? (
           <div className="loading-state">{t('adminListings.loading')}</div>
-        ) : viewMode === 'list' ? (
-          <ListingTable
-            listings={currentListings}
-            onUpdateStatus={handleUpdateStatus}
-            bulkMode={bulkMode}
-            selectedRooms={selectedRooms}
-            onToggleSelect={handleToggleSelect}
-            onSelectAll={handleSelectAll}
-          />
+        ) : mainTab === 'listings' ? (
+          viewMode === 'list' ? (
+            <ListingTable
+              listings={currentListings}
+              onUpdateStatus={handleUpdateStatus}
+              bulkMode={bulkMode}
+              selectedRooms={selectedRooms}
+              onToggleSelect={handleToggleSelect}
+              onSelectAll={handleSelectAll}
+            />
+          ) : (
+            <ListingGrid listings={currentListings} onUpdateStatus={handleUpdateStatus} />
+          )
         ) : (
-          <ListingGrid listings={currentListings} onUpdateStatus={handleUpdateStatus} />
+          <PropertyTable
+            properties={currentListings}
+            onUpdateStatus={handleUpdatePropertyStatus}
+            onUpdateRoomStatus={handleUpdateStatus}
+          />
         )}
 
         {/* Pagination */}
-        {filteredListings.length > 0 && (
+        {targetList.length > 0 && (
           <div className="pagination-container">
             <span className="pagination-info">
-              {t('adminListings.showing', { start: indexOfFirstItem + 1, end: Math.min(indexOfLastItem, filteredListings.length), total: filteredListings.length })}
+              {t('adminListings.showing', { start: indexOfFirstItem + 1, end: Math.min(indexOfLastItem, targetList.length), total: targetList.length })}
             </span>
             <div className="pagination-controls">
               <button 

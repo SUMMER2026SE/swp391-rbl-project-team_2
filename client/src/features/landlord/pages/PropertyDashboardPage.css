@@ -218,6 +218,10 @@
 }
 
 .legend-dot.pending {
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+}
+
+.legend-dot.booking {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
 }
 
@@ -283,6 +287,11 @@
 }
 
 .floor-room-card.pending {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.floor-room-card.booking {
   background: #eef2ff;
   border-color: #c7d2fe;
 }
@@ -322,6 +331,8 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .room-card-status-badge.available {
@@ -335,6 +346,11 @@
 }
 
 .room-card-status-badge.pending {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.room-card-status-badge.booking {
   background: #e0e7ff;
   color: #6366f1;
 }

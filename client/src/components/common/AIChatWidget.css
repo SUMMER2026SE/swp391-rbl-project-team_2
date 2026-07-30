@@ -59,7 +59,9 @@
    ========================================================= */
 .ai-chat-window {
   width: 400px;
+  max-width: calc(100vw - 20px);
   height: 560px;
+  max-height: calc(100vh - 30px);
   background: var(--bg-card, #ffffff);
   border-radius: 20px;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);

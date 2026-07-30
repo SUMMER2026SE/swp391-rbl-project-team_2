@@ -41,7 +41,7 @@ const TenantNotificationsPage = () => {
           category = 'Requests';
           icon = <Home size={18} />;
           iconType = 'success';
-        } else if (notifType === 'contract_expiring') {
+        } else if (notifType === 'contract_expiring' || notifType === 'contract') {
           category = 'System';
           icon = <Bell size={18} />;
           iconType = 'danger';
@@ -113,6 +113,8 @@ const TenantNotificationsPage = () => {
 
     if (titleStr.includes('chấm dứt') || descStr.includes('chấm dứt')) {
       navigate('/tenant/requests', { state: { activeTab: 'terminations' } });
+    } else if (titleStr.includes('gia hạn') || descStr.includes('gia hạn') || titleStr.includes('hết hạn') || descStr.includes('hết hạn')) {
+      navigate('/tenant/requests', { state: { activeTab: 'contracts' } });
     } else {
       navigate('/tenant/requests');
     }

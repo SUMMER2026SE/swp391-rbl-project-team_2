@@ -2,15 +2,15 @@ import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../../../store/useAuthStore';
-import { 
-  Loader, 
-  AlertCircle, 
-  Home, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Loader,
+  AlertCircle,
+  Home,
+  MapPin,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  XCircle,
   Info,
   ChevronRight,
   FileText,
@@ -27,7 +27,8 @@ import {
   User,
   Layout,
   Eye,
-  Ban
+  Ban,
+  Sparkles
 } from 'lucide-react';
 import { rentalRequestService } from '../services/rentalRequestService';
 import Button from '../../../components/common/Button';
@@ -78,6 +79,46 @@ const TenantRequestsPage = () => {
   const [phone, setPhone] = useState('');
   const [rentalPurpose, setRentalPurpose] = useState('');
 
+  const [isScanning, setIsScanning] = useState(false);
+  const fileInputRef = React.useRef(null);
+
+  const handleOCRScan = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    if (files.length !== 2) {
+      toast.error('Vui lòng chọn đúng 2 ảnh (mặt trước và mặt sau) của Căn cước công dân!');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    
+    try {
+      setIsScanning(true);
+      const res = await rentalRequestService.scanCCCD(files);
+      if (res.success && res.data) {
+        toast.success('Quét CCCD thành công!');
+        if (res.data.fullName) setTenantName(res.data.fullName);
+        if (res.data.idNumber) setTenantIc(res.data.idNumber);
+        if (res.data.address) setTenantPermanentAddress(res.data.address);
+        if (res.data.issueDate) {
+          // format dd/mm/yyyy to yyyy-mm-dd
+          const parts = res.data.issueDate.split('/');
+          if (parts.length === 3) {
+            setTenantIcIssueDate(`${parts[2]}-${parts[1]}-${parts[0]}`);
+          } else {
+            setTenantIcIssueDate(res.data.issueDate);
+          }
+        }
+        if (res.data.issuePlace) setTenantIcIssuePlace(res.data.issuePlace);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Không thể quét CCCD. Vui lòng thử lại với ảnh rõ nét hơn.');
+    } finally {
+      setIsScanning(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const [selectedContractToSign, setSelectedContractToSign] = useState(null);
   const [showContractModal, setShowContractModal] = useState(false);
   const [submittingContract, setSubmittingContract] = useState(false);
@@ -90,14 +131,19 @@ const TenantRequestsPage = () => {
     cancelText: 'Cancel',
     type: 'primary'
   });
-  
+
   const [showRenewModal, setShowRenewModal] = useState(false);
   const [renewContractTarget, setRenewContractTarget] = useState(null);
   const [renewDuration, setRenewDuration] = useState('6');
 
+  const [viewingPage, setViewingPage] = useState(1);
+  const [rentalReqPage, setRentalReqPage] = useState(1);
+  const [contractsPage, setContractsPage] = useState(1);
+  const itemsPerPage = 4;
+
   const [showTerminationModal, setShowTerminationModal] = useState(false);
   const [selectedContractForTermination, setSelectedContractForTermination] = useState(null);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -263,7 +309,7 @@ const TenantRequestsPage = () => {
       setRentalPurpose(item.rentalPurpose || item.rental_purpose || '');
     }
     setContractMessage('');
-    
+
     // Format date to YYYY-MM-DD if it exists
     let defaultDate = '';
     if (item.requested_move_in_date) {
@@ -271,7 +317,7 @@ const TenantRequestsPage = () => {
     } else if (item.requestedMoveInDate) {
       defaultDate = new Date(item.requestedMoveInDate).toISOString().split('T')[0];
     }
-    
+
     setContractStartDate(defaultDate);
     setContractDuration(item.lease_duration_months?.toString() || item.leaseDurationMonths?.toString() || '6');
     setTenantName(user?.full_name || '');
@@ -362,8 +408,8 @@ const TenantRequestsPage = () => {
         fetchRentalRequests();
       } else if (selectedContractSchedule.scheduleId || selectedContractSchedule.schedule_id) {
         await rentalRequestService.requestContract(
-          selectedContractSchedule.scheduleId || selectedContractSchedule.schedule_id, 
-          contractMessage, contractStartDate, contractDuration, 
+          selectedContractSchedule.scheduleId || selectedContractSchedule.schedule_id,
+          contractMessage, contractStartDate, contractDuration,
           tenantName, tenantIc, tenantIcIssueDate, tenantIcIssuePlace, tenantPermanentAddress
         );
         toast.success('Contract requested successfully. Landlord will draft it shortly.');
@@ -371,8 +417,8 @@ const TenantRequestsPage = () => {
         fetchViewingSchedules();
       } else if (selectedContractSchedule.requestId || selectedContractSchedule.request_id) {
         await rentalRequestService.requestContractForRentalRequest(
-          selectedContractSchedule.requestId || selectedContractSchedule.request_id, 
-          contractMessage, contractStartDate, contractDuration, 
+          selectedContractSchedule.requestId || selectedContractSchedule.request_id,
+          contractMessage, contractStartDate, contractDuration,
           tenantName, tenantIc, tenantIcIssueDate, tenantIcIssuePlace, tenantPermanentAddress
         );
         toast.success('Contract requested successfully. Landlord will draft it shortly.');
@@ -451,7 +497,7 @@ const TenantRequestsPage = () => {
     }
     try {
       setSubmittingContract(true);
-      
+
       if (otpMode === 'renew') {
         await rentalRequestService.signRenewal(pendingContractId, { otp: otpCode });
         setShowOtpModal(false);
@@ -469,8 +515,8 @@ const TenantRequestsPage = () => {
         pdfBase64 = await html2pdf().from(element).outputPdf('datauristring');
       }
 
-      const response = await rentalRequestService.signContract(pendingContractId, { 
-        tenantSignature: pendingSignatureData, 
+      const response = await rentalRequestService.signContract(pendingContractId, {
+        tenantSignature: pendingSignatureData,
         otp: otpCode,
         contractPdf: pdfBase64
       });
@@ -543,9 +589,9 @@ const TenantRequestsPage = () => {
       toast.error('Số tháng gia hạn không hợp lệ.');
       return;
     }
-    
+
     setShowRenewModal(false);
-    
+
     setConfirmDialog({
       isOpen: true,
       title: 'Xác nhận gia hạn hợp đồng',
@@ -641,7 +687,7 @@ const TenantRequestsPage = () => {
   return (
     <div className="tenant-requests-page">
       <div className="tenant-requests-container">
-        
+
         {/* Header Section */}
         <div className="page-header">
           <h1>{t('tenantRequests.title', 'My Requests')}</h1>
@@ -650,7 +696,7 @@ const TenantRequestsPage = () => {
 
         {/* Tabs */}
         <div className="requests-tabs">
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'viewing' ? 'active' : ''}`}
             onClick={() => setActiveTab('viewing')}
             style={{ position: 'relative' }}
@@ -660,7 +706,7 @@ const TenantRequestsPage = () => {
               <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
             )}
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'requests' ? 'active' : ''}`}
             onClick={() => setActiveTab('requests')}
             style={{ position: 'relative' }}
@@ -670,7 +716,7 @@ const TenantRequestsPage = () => {
               <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
             )}
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'contracts' ? 'active' : ''}`}
             onClick={() => setActiveTab('contracts')}
             style={{ position: 'relative' }}
@@ -680,7 +726,7 @@ const TenantRequestsPage = () => {
               <span style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%' }}></span>
             )}
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'terminations' ? 'active' : ''}`}
             onClick={() => setActiveTab('terminations')}
             style={{ position: 'relative' }}
@@ -688,12 +734,12 @@ const TenantRequestsPage = () => {
             Chấm dứt & Quyết toán
           </button>
         </div>
-        
+
         {/* =================== TERMINATION TAB =================== */}
         {activeTab === 'terminations' && (
           <TerminationHistoryPage currentUserId={user?.user_id || user?.userId} userRole="Tenant" />
         )}
-        
+
 
         {/* =================== VIEWING SCHEDULES TAB =================== */}
         {activeTab === 'viewing' && (viewingSchedules.length === 0 ? (
@@ -708,185 +754,210 @@ const TenantRequestsPage = () => {
             </Button>
           </div>
         ) : (
-          <div className="requests-list">
-            {viewingSchedules.map((schedule) => {
-              const statusInfo = getStatusInfo(schedule.status);
-              const roomMatchingRequests = rentalRequests.filter(r => 
-                (r.roomId === schedule.roomId || r.room_id === schedule.roomId) && 
-                !['cancelled', 'canceled', 'rejected'].includes(r.status)
-              );
-              const existingRequest = roomMatchingRequests.sort((a, b) => (b.requestId || b.request_id || 0) - (a.requestId || a.request_id || 0))[0];
-              const primaryImage = schedule.room?.images?.find(img => img.is_primary)?.image_url || schedule.room?.images?.[0]?.image_url;
-              const roomImage = primaryImage
-                ? (primaryImage.startsWith('http') ? primaryImage : `http://localhost:5000${primaryImage}`) 
-                : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80';
-              
-              const requestDate = new Date(schedule.createdAt || Date.now()).toLocaleDateString('en-US', {
-                month: 'short', day: 'numeric', year: 'numeric'
-              });
-              
-              const scheduleDateObj = schedule.scheduledDate ? new Date(schedule.scheduledDate) : null;
-              const viewingDateOnly = scheduleDateObj 
-                ? scheduleDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                : 'TBD';
-              const viewingTimeOnly = scheduleDateObj
-                ? scheduleDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-                : '';
+          <>
+            <div className="requests-list">
+              {viewingSchedules.slice((viewingPage - 1) * itemsPerPage, viewingPage * itemsPerPage).map((schedule) => {
+                const statusInfo = getStatusInfo(schedule.status);
+                const roomMatchingRequests = rentalRequests.filter(r =>
+                  (r.roomId === schedule.roomId || r.room_id === schedule.roomId) &&
+                  !['cancelled', 'canceled', 'rejected'].includes(r.status)
+                );
+                const existingRequest = roomMatchingRequests.sort((a, b) => (b.requestId || b.request_id || 0) - (a.requestId || a.request_id || 0))[0];
+                const primaryImage = schedule.room?.images?.find(img => img.is_primary)?.image_url || schedule.room?.images?.[0]?.image_url;
+                const roomImage = primaryImage
+                  ? (primaryImage.startsWith('http') ? primaryImage : `http://localhost:5000${primaryImage}`)
+                  : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80';
 
-              const depositAmount = schedule.depositAmount 
-                ? parseFloat(schedule.depositAmount).toLocaleString('vi-VN') 
-                : null;
+                const requestDate = new Date(schedule.createdAt || Date.now()).toLocaleDateString('en-US', {
+                  month: 'short', day: 'numeric', year: 'numeric'
+                });
 
-              const hasCompletedPayment = schedule.payments?.some(p => p.status === 'completed');
-              const hasPendingPayment = schedule.payments?.some(p => p.status === 'pending');
+                const scheduleDateObj = schedule.scheduledDate ? new Date(schedule.scheduledDate) : null;
+                const viewingDateOnly = scheduleDateObj
+                  ? scheduleDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  : 'TBD';
+                const viewingTimeOnly = scheduleDateObj
+                  ? scheduleDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                  : '';
 
-              return (
-                <div key={schedule.scheduleId} className="request-card">
-                  <div className="request-image-wrapper">
-                    <img src={roomImage} alt={schedule.room?.title || 'Room'} />
-                    <div className="status-badge-container">
-                      <div className={`status-badge ${schedule.status}`} style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
-                        {statusInfo.icon}
-                        {statusInfo.label}
-                      </div>
-                    </div>
-                  </div>
+                const depositAmount = schedule.depositAmount
+                  ? parseFloat(schedule.depositAmount).toLocaleString('vi-VN')
+                  : null;
 
-                  <div className="request-content">
-                    <div className="request-top-info">
-                      <div className="title-row">
-                        <h3 
-                          onClick={() => navigate(`${ROUTES.ROOMS}/${schedule.roomId}`)}
-                          style={{ cursor: 'pointer', color: '#2563eb' }}
-                          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                        >
-                          {schedule.room?.title || 'Unknown Room'}
-                        </h3>
-                        <span className="request-date">{t('tenantRequests.requestedOn', 'Requested on')} {requestDate}</span>
-                      </div>
-                      <div className="address-row">
-                        <MapPin size={14} />
-                        <span>{[schedule.room?.address, schedule.room?.ward, schedule.room?.district, schedule.room?.city].filter(Boolean).join(', ') || t('tenantRequests.addressNotAvailable', 'Address not available')}</span>
+                const hasCompletedPayment = schedule.payments?.some(p => p.status === 'completed');
+                const hasPendingPayment = schedule.payments?.some(p => p.status === 'pending');
+
+                return (
+                  <div key={schedule.scheduleId} className="request-card">
+                    <div className="request-image-wrapper">
+                      <img src={roomImage} alt={schedule.room?.title || 'Room'} />
+                      <div className="status-badge-container">
+                        <div className={`status-badge ${schedule.status}`} style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
+                          {statusInfo.icon}
+                          {statusInfo.label}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="key-details-box">
-                      <div className="detail-item">
-                        <p className="detail-label">{t('tenantRequests.viewingDate', 'Viewing Date')}</p>
-                        <div className="detail-value">
-                          <Calendar size={16} />
-                          {viewingDateOnly}
+                    <div className="request-content">
+                      <div className="request-top-info">
+                        <div className="title-row">
+                          <h3
+                            onClick={() => navigate(`${ROUTES.ROOMS}/${schedule.roomId}`)}
+                            style={{ cursor: 'pointer', color: '#2563eb' }}
+                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                          >
+                            {schedule.room?.title || 'Unknown Room'}
+                          </h3>
+                          <span className="request-date">{t('tenantRequests.requestedOn', 'Requested on')} {requestDate}</span>
+                        </div>
+                        <div className="address-row">
+                          <MapPin size={14} />
+                          <span>{[schedule.room?.address, schedule.room?.ward, schedule.room?.district, schedule.room?.city].filter(Boolean).join(', ') || t('tenantRequests.addressNotAvailable', 'Address not available')}</span>
                         </div>
                       </div>
 
-                      {viewingTimeOnly && (
+                      <div className="key-details-box">
                         <div className="detail-item">
-                          <p className="detail-label">{t('tenantRequests.viewingTime', 'Viewing Time')}</p>
+                          <p className="detail-label">{t('tenantRequests.viewingDate', 'Viewing Date')}</p>
                           <div className="detail-value">
-                            <Clock size={16} />
-                            {viewingTimeOnly}
+                            <Calendar size={16} />
+                            {viewingDateOnly}
                           </div>
                         </div>
-                      )}
 
-                      {schedule.status === 'pending_payment' && schedule.paymentDeadline && (
-                        <div className="detail-item">
-                          <p className="detail-label">{t('tenantRequests.paymentDeadline', 'Payment Deadline')}</p>
-                          <div className="detail-value deadline-value">
-                            <Timer size={16} />
-                            <CountdownTimer deadline={schedule.paymentDeadline} />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="request-actions-row">
-                      <div className="action-buttons">
-                        {/* Pay deposit button for pending_payment */}
-                        {schedule.status === 'pending_payment' && (
-                          <>
-                            <button onClick={() => handlePayDeposit(schedule.scheduleId)} className="btn-action btn-pay">
-                              <CreditCard size={16} /> {t('tenantRequests.payDeposit', 'Pay Deposit')}
-                            </button>
-                            <button onClick={() => handleCancelViewing(schedule.scheduleId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
-                              <X size={16} /> {t('tenantRequests.cancel', 'Cancel')}
-                            </button>
-                          </>
-                        )}
-
-                        {/* Cancel button for pending/scheduled */}
-                        {(schedule.status === 'pending' || schedule.status === 'scheduled') && (
-                          <button onClick={() => handleCancelViewing(schedule.scheduleId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
-                            <X size={16} /> {t('tenantRequests.cancelSchedule', 'Cancel Schedule')}
-                          </button>
-                        )}
-
-                        {/* After viewing confirmed/completed — tenant can request contract, decline, or dispute */}
-                        {(schedule.status === 'confirmed' || schedule.status === 'completed') && (
-                          <>
-                            {schedule.tenantDecision === 'rejected' ? (
-                              <span className="status-message-inline" style={{ color: '#dc2626', background: '#fef2f2', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #fecdd3' }}>
-                                <Ban size={14} /> {t('tenantRequests.declinedToRent', 'Đã từ chối thuê')}
-                              </span>
-                            ) : (
-                              <>
-                                {existingRequest ? (
-                                  existingRequest.status === 'pending' ? (
-                                    <span className="status-message-inline" style={{ color: '#b45309', background: '#fef3c7', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #fde68a' }}>
-                                      <Clock size={14} /> {t('tenantRequests.rentalRequestPending', 'Đã gửi yêu cầu thuê (Chờ duyệt)')}
-                                    </span>
-                                  ) : existingRequest.status === 'approved' ? (
-                                    <span className="status-message-inline" style={{ color: '#059669', background: '#d1fae5', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #a7f3d0' }}>
-                                      <CheckCircle2 size={14} /> {t('tenantRequests.rentalRequestApproved', 'Yêu cầu thuê đã duyệt')}
-                                    </span>
-                                  ) : existingRequest.status === 'contract_requested' ? (
-                                    <span className="status-message-inline" style={{ color: '#0891b2', background: '#cffafe', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #a5f3fc' }}>
-                                      <Clock size={14} /> {t('tenantRequests.contractRequested', 'Đã yêu cầu hợp đồng')}
-                                    </span>
-                                  ) : (
-                                    <span className="status-message-inline" style={{ color: '#64748b', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #e2e8f0' }}>
-                                      <Info size={14} /> {t('tenantRequests.rentalRequestStatus', 'Yêu cầu thuê:')} {existingRequest.status}
-                                    </span>
-                                  )
-                                ) : (
-                                  <button onClick={() => handleOpenContractRequest(schedule, 'create_request')} className="btn-action" style={{ background: '#10b981', color: '#ffffff', border: 'none' }}>
-                                    <Home size={16} /> {t('tenantRequests.sendRentalRequest', 'Gửi yêu cầu thuê')}
-                                  </button>
-                                )}
-                                <button onClick={() => handleDeclineToRent(schedule.scheduleId)} className="btn-action" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
-                                  <Ban size={16} /> {t('tenantRequests.decline', 'Decline')}
-                                </button>
-                                <button onClick={() => handleOpenDispute(schedule)} className="btn-action btn-dispute">
-                                  <MessageSquare size={16} /> {t('tenantRequests.reportIssue', 'Report Issue')}
-                                </button>
-                              </>
-                            )}
-                          </>
-                        )}
-
-                        {/* Contract requested — waiting for landlord */}
-                        {schedule.status === 'contract_requested' && (
-                          <div className="status-message-inline">
-                            <Clock size={14} /> {t('tenantRequests.waitingForLandlord', 'Waiting for landlord to create contract...')}
+                        {viewingTimeOnly && (
+                          <div className="detail-item">
+                            <p className="detail-label">{t('tenantRequests.viewingTime', 'Viewing Time')}</p>
+                            <div className="detail-value">
+                              <Clock size={16} />
+                              {viewingTimeOnly}
+                            </div>
                           </div>
                         )}
 
-                        {/* Disputed — waiting for admin */}
-                        {schedule.status === 'disputed' && (
-                          <div className="status-message-inline warning">
-                            <Shield size={14} /> {t('tenantRequests.disputeUnderReview', 'Dispute under admin review')}
+                        {schedule.status === 'pending_payment' && schedule.paymentDeadline && (
+                          <div className="detail-item">
+                            <p className="detail-label">{t('tenantRequests.paymentDeadline', 'Payment Deadline')}</p>
+                            <div className="detail-value deadline-value">
+                              <Timer size={16} />
+                              <CountdownTimer deadline={schedule.paymentDeadline} />
+                            </div>
                           </div>
                         )}
-
                       </div>
+
+                      <div className="request-actions-row">
+                        <div className="action-buttons">
+                          {/* Pay deposit button for pending_payment */}
+                          {schedule.status === 'pending_payment' && (
+                            <>
+                              <button onClick={() => handlePayDeposit(schedule.scheduleId)} className="btn-action btn-pay">
+                                <CreditCard size={16} /> {t('tenantRequests.payDeposit', 'Pay Deposit')}
+                              </button>
+                              <button onClick={() => handleCancelViewing(schedule.scheduleId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
+                                <X size={16} /> {t('tenantRequests.cancel', 'Cancel')}
+                              </button>
+                            </>
+                          )}
+
+                          {/* Cancel button for pending/scheduled */}
+                          {(schedule.status === 'pending' || schedule.status === 'scheduled') && (
+                            <button onClick={() => handleCancelViewing(schedule.scheduleId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3' }}>
+                              <X size={16} /> {t('tenantRequests.cancelSchedule', 'Cancel Schedule')}
+                            </button>
+                          )}
+
+                          {/* After viewing confirmed/completed — tenant can request contract, decline, or dispute */}
+                          {(schedule.status === 'confirmed' || schedule.status === 'completed') && (
+                            <>
+                              {schedule.tenantDecision === 'rejected' ? (
+                                <span className="status-message-inline" style={{ color: '#dc2626', background: '#fef2f2', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #fecdd3' }}>
+                                  <Ban size={14} /> {t('tenantRequests.declinedToRent', 'Đã từ chối thuê')}
+                                </span>
+                              ) : (
+                                <>
+                                  {existingRequest ? (
+                                    existingRequest.status === 'pending' ? (
+                                      <span className="status-message-inline" style={{ color: '#b45309', background: '#fef3c7', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #fde68a' }}>
+                                        <Clock size={14} /> {t('tenantRequests.rentalRequestPending', 'Đã gửi yêu cầu thuê (Chờ duyệt)')}
+                                      </span>
+                                    ) : existingRequest.status === 'approved' ? (
+                                      <span className="status-message-inline" style={{ color: '#059669', background: '#d1fae5', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #a7f3d0' }}>
+                                        <CheckCircle2 size={14} /> {t('tenantRequests.rentalRequestApproved', 'Yêu cầu thuê đã duyệt')}
+                                      </span>
+                                    ) : existingRequest.status === 'contract_requested' ? (
+                                      <span className="status-message-inline" style={{ color: '#0891b2', background: '#cffafe', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #a5f3fc' }}>
+                                        <Clock size={14} /> {t('tenantRequests.contractRequested', 'Đã yêu cầu hợp đồng')}
+                                      </span>
+                                    ) : (
+                                      <span className="status-message-inline" style={{ color: '#64748b', background: '#f1f5f9', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid #e2e8f0' }}>
+                                        <Info size={14} /> {t('tenantRequests.rentalRequestStatus', 'Yêu cầu thuê:')} {existingRequest.status}
+                                      </span>
+                                    )
+                                  ) : (
+                                    <button onClick={() => handleOpenContractRequest(schedule, 'create_request')} className="btn-action" style={{ background: '#10b981', color: '#ffffff', border: 'none' }}>
+                                      <Home size={16} /> {t('tenantRequests.sendRentalRequest', 'Gửi yêu cầu thuê')}
+                                    </button>
+                                  )}
+                                  <button onClick={() => handleDeclineToRent(schedule.scheduleId)} className="btn-action" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
+                                    <Ban size={16} /> {t('tenantRequests.decline', 'Decline')}
+                                  </button>
+                                  <button onClick={() => handleOpenDispute(schedule)} className="btn-action btn-dispute">
+                                    <MessageSquare size={16} /> {t('tenantRequests.reportIssue', 'Report Issue')}
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          )}
+
+                          {/* Contract requested — waiting for landlord */}
+                          {schedule.status === 'contract_requested' && (
+                            <div className="status-message-inline">
+                              <Clock size={14} /> {t('tenantRequests.waitingForLandlord', 'Waiting for landlord to create contract...')}
+                            </div>
+                          )}
+
+                          {/* Disputed — waiting for admin */}
+                          {schedule.status === 'disputed' && (
+                            <div className="status-message-inline warning">
+                              <Shield size={14} /> {t('tenantRequests.disputeUnderReview', 'Dispute under admin review')}
+                            </div>
+                          )}
+
+                        </div>
+                      </div>
+
                     </div>
-                  
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination Controls for Viewing Schedules */}
+            {viewingSchedules.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '16px', marginTop: '16px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <button
+                  onClick={() => setViewingPage(p => Math.max(p - 1, 1))}
+                  disabled={viewingPage === 1}
+                  style={{ padding: '6px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: viewingPage === 1 ? '#f1f5f9' : '#fff', color: viewingPage === 1 ? '#94a3b8' : '#334155', cursor: viewingPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 500, fontSize: '13px' }}
+                >
+                  Trang trước
+                </button>
+                <span style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>
+                  Trang {viewingPage} / {Math.ceil(viewingSchedules.length / itemsPerPage) || 1} ({viewingSchedules.length} lịch xem)
+                </span>
+                <button
+                  onClick={() => setViewingPage(p => Math.min(p + 1, Math.ceil(viewingSchedules.length / itemsPerPage)))}
+                  disabled={viewingPage >= Math.ceil(viewingSchedules.length / itemsPerPage)}
+                  style={{ padding: '6px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: viewingPage >= Math.ceil(viewingSchedules.length / itemsPerPage) ? '#f1f5f9' : '#fff', color: viewingPage >= Math.ceil(viewingSchedules.length / itemsPerPage) ? '#94a3b8' : '#334155', cursor: viewingPage >= Math.ceil(viewingSchedules.length / itemsPerPage) ? 'not-allowed' : 'pointer', fontWeight: 500, fontSize: '13px' }}
+                >
+                  Trang sau
+                </button>
+              </div>
+            )}
+          </>
         ))}
 
         {/* =================== RENTAL REQUESTS TAB =================== */}
@@ -902,107 +973,132 @@ const TenantRequestsPage = () => {
             </Button>
           </div>
         ) : (
-          <div className="requests-list">
-            {rentalRequests.map((request) => {
-              const statusInfo = getStatusInfo(request.status);
-              const primaryImage = request.room?.thumbnail_url || (request.room?.images?.find(img => img.is_primary)?.image_url || request.room?.images?.[0]?.image_url);
-              const roomImage = primaryImage
-                ? (primaryImage.startsWith('http') ? primaryImage : `http://localhost:5000${primaryImage}`) 
-                : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80';
-              
-              const requestDate = new Date(request.createdAt || Date.now()).toLocaleDateString('en-US', {
-                month: 'short', day: 'numeric', year: 'numeric'
-              });
+          <>
+            <div className="requests-list">
+              {rentalRequests.slice((rentalReqPage - 1) * itemsPerPage, rentalReqPage * itemsPerPage).map((request) => {
+                const statusInfo = getStatusInfo(request.status);
+                const primaryImage = request.room?.thumbnail_url || (request.room?.images?.find(img => img.is_primary)?.image_url || request.room?.images?.[0]?.image_url);
+                const roomImage = primaryImage
+                  ? (primaryImage.startsWith('http') ? primaryImage : `http://localhost:5000${primaryImage}`)
+                  : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80';
 
-              return (
-                <div key={request.requestId} className="request-card">
-                  <div className="request-image-wrapper">
-                    <img src={roomImage} alt={request.room?.title || 'Room'} />
-                    <div className="status-badge-container">
-                      <div className={`status-badge ${request.status}`} style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
-                        {statusInfo.icon}
-                        {statusInfo.label}
-                      </div>
-                    </div>
-                  </div>
+                const requestDate = new Date(request.createdAt || Date.now()).toLocaleDateString('en-US', {
+                  month: 'short', day: 'numeric', year: 'numeric'
+                });
 
-                  <div className="request-content">
-                    <div className="request-top-info">
-                      <div className="title-row">
-                        <h3 
-                          onClick={() => navigate(`${ROUTES.ROOMS}/${request.roomId}`)}
-                          style={{ cursor: 'pointer', color: '#2563eb' }}
-                          onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                          onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                        >
-                          {request.room?.title || 'Unknown Room'}
-                        </h3>
-                        <span className="request-date">{t('tenantRequests.requestedOn', 'Requested on')} {requestDate}</span>
-                      </div>
-                      <div className="address-row">
-                        <MapPin size={14} />
-                        <span>{[request.room?.address, request.room?.ward, request.room?.district, request.room?.city].filter(Boolean).join(', ') || t('tenantRequests.addressNotAvailable', 'Address not available')}</span>
-                      </div>
-                    </div>
-
-                    <div className="key-details-box">
-                      <div className="detail-item">
-                        <p className="detail-label">{t('tenantRequests.moveInDate', 'Move-in Date')}</p>
-                        <div className="detail-value">
-                          <Calendar size={16} />
-                          {request.requestedMoveInDate ? new Date(request.requestedMoveInDate).toLocaleDateString('en-US') : 'TBD'}
-                        </div>
-                      </div>
-
-                      <div className="detail-item">
-                        <p className="detail-label">{t('tenantRequests.duration', 'Duration')}</p>
-                        <div className="detail-value">
-                          <Clock size={16} />
-                          {request.leaseDurationMonths || 6} {t('tenantRequests.months', 'months')}
+                return (
+                  <div key={request.requestId} className="request-card">
+                    <div className="request-image-wrapper">
+                      <img src={roomImage} alt={request.room?.title || 'Room'} />
+                      <div className="status-badge-container">
+                        <div className={`status-badge ${request.status}`} style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}>
+                          {statusInfo.icon}
+                          {statusInfo.label}
                         </div>
                       </div>
                     </div>
 
-                    <div className="request-actions-row">
-                      <div className="action-buttons">
-                        {request.status === 'approved' && (
-                          (() => {
-                            const moveInDateObj = request.requestedMoveInDate ? new Date(request.requestedMoveInDate) : null;
-                            if (moveInDateObj) moveInDateObj.setHours(23, 59, 59, 999);
-                            const isExpired = moveInDateObj && new Date() > moveInDateObj;
-                            if (isExpired) {
+                    <div className="request-content">
+                      <div className="request-top-info">
+                        <div className="title-row">
+                          <h3
+                            onClick={() => navigate(`${ROUTES.ROOMS}/${request.roomId}`)}
+                            style={{ cursor: 'pointer', color: '#2563eb' }}
+                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                          >
+                            {request.room?.title || 'Unknown Room'}
+                          </h3>
+                          <span className="request-date">{t('tenantRequests.requestedOn', 'Requested on')} {requestDate}</span>
+                        </div>
+                        <div className="address-row">
+                          <MapPin size={14} />
+                          <span>{[request.room?.address, request.room?.ward, request.room?.district, request.room?.city].filter(Boolean).join(', ') || t('tenantRequests.addressNotAvailable', 'Address not available')}</span>
+                        </div>
+                      </div>
+
+                      <div className="key-details-box">
+                        <div className="detail-item">
+                          <p className="detail-label">{t('tenantRequests.moveInDate', 'Move-in Date')}</p>
+                          <div className="detail-value">
+                            <Calendar size={16} />
+                            {request.requestedMoveInDate ? new Date(request.requestedMoveInDate).toLocaleDateString('en-US') : 'TBD'}
+                          </div>
+                        </div>
+
+                        <div className="detail-item">
+                          <p className="detail-label">{t('tenantRequests.duration', 'Duration')}</p>
+                          <div className="detail-value">
+                            <Clock size={16} />
+                            {request.leaseDurationMonths || 6} {t('tenantRequests.months', 'months')}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="request-actions-row">
+                        <div className="action-buttons">
+                          {request.status === 'approved' && (
+                            (() => {
+                              const moveInDateObj = request.requestedMoveInDate ? new Date(request.requestedMoveInDate) : null;
+                              if (moveInDateObj) moveInDateObj.setHours(23, 59, 59, 999);
+                              const isExpired = moveInDateObj && new Date() > moveInDateObj;
+                              if (isExpired) {
+                                return (
+                                  <button disabled className="btn-action btn-contract" style={{ background: '#94a3b8', cursor: 'not-allowed' }}>
+                                    <Timer size={16} /> Đã quá hạn ngày chuyển vào
+                                  </button>
+                                );
+                              }
                               return (
-                                <button disabled className="btn-action btn-contract" style={{ background: '#94a3b8', cursor: 'not-allowed' }}>
-                                  <Timer size={16} /> Đã quá hạn ngày chuyển vào
+                                <button onClick={() => handleOpenContractRequest(request)} className="btn-action btn-contract">
+                                  <FileSignature size={16} /> {t('tenantRequests.requestContract', 'Request Contract')}
                                 </button>
                               );
-                            }
-                            return (
-                              <button onClick={() => handleOpenContractRequest(request)} className="btn-action btn-contract">
-                                <FileSignature size={16} /> {t('tenantRequests.requestContract', 'Request Contract')}
-                              </button>
-                            );
-                          })()
-                        )}
+                            })()
+                          )}
 
-                        {(request.status === 'pending' || request.status === 'approved') && (
-                          <button onClick={() => handleCancelRequest(request.requestId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3', marginLeft: request.status === 'approved' ? '8px' : '0' }}>
-                            <X size={16} /> {t('tenantRequests.cancelRequest', 'Từ chối / Hủy')}
-                          </button>
-                        )}
-                        
-                        {request.status === 'contract_requested' && (
-                          <div className="status-message-inline">
-                            <Clock size={14} /> {t('tenantRequests.waitingForLandlord', 'Waiting for landlord to create contract...')}
-                          </div>
-                        )}
+                          {(request.status === 'pending' || request.status === 'approved') && (
+                            <button onClick={() => handleCancelRequest(request.requestId)} className="btn-action" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecdd3', marginLeft: request.status === 'approved' ? '8px' : '0' }}>
+                              <X size={16} /> {t('tenantRequests.cancelRequest', 'Từ chối / Hủy')}
+                            </button>
+                          )}
+
+                          {request.status === 'contract_requested' && (
+                            <div className="status-message-inline">
+                              <Clock size={14} /> {t('tenantRequests.waitingForLandlord', 'Waiting for landlord to create contract...')}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination Controls for Rental Requests */}
+            {rentalRequests.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '16px', marginTop: '16px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <button
+                  onClick={() => setRentalReqPage(p => Math.max(p - 1, 1))}
+                  disabled={rentalReqPage === 1}
+                  style={{ padding: '6px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: rentalReqPage === 1 ? '#f1f5f9' : '#fff', color: rentalReqPage === 1 ? '#94a3b8' : '#334155', cursor: rentalReqPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 500, fontSize: '13px' }}
+                >
+                  Trang trước
+                </button>
+                <span style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>
+                  Trang {rentalReqPage} / {Math.ceil(rentalRequests.length / itemsPerPage) || 1} ({rentalRequests.length} yêu cầu)
+                </span>
+                <button
+                  onClick={() => setRentalReqPage(p => Math.min(p + 1, Math.ceil(rentalRequests.length / itemsPerPage)))}
+                  disabled={rentalReqPage >= Math.ceil(rentalRequests.length / itemsPerPage)}
+                  style={{ padding: '6px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: rentalReqPage >= Math.ceil(rentalRequests.length / itemsPerPage) ? '#f1f5f9' : '#fff', color: rentalReqPage >= Math.ceil(rentalRequests.length / itemsPerPage) ? '#94a3b8' : '#334155', cursor: rentalReqPage >= Math.ceil(rentalRequests.length / itemsPerPage) ? 'not-allowed' : 'pointer', fontWeight: 500, fontSize: '13px' }}
+                >
+                  Trang sau
+                </button>
+              </div>
+            )}
+          </>
         ))}
 
         {/* =================== CONTRACTS TAB =================== */}
@@ -1031,192 +1127,218 @@ const TenantRequestsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {contracts.map((contract) => {
-                  const statusInfo = getStatusInfo(contract.status);
-                  
-                  const isValidDate = (d) => d && !isNaN(new Date(d).getTime());
-                  const startDate = isValidDate(contract.startDate)
-                    ? new Date(contract.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                    : 'N/A';
-                  
-                  const duration = contract.startDate && contract.endDate 
-                    ? Math.round((new Date(contract.endDate) - new Date(contract.startDate)) / (1000 * 60 * 60 * 24 * 30))
-                    : 0;
+                {(() => {
+                  const currentContracts = contracts.slice((contractsPage - 1) * itemsPerPage, contractsPage * itemsPerPage);
+                  return currentContracts.map((contract) => {
+                    const statusInfo = getStatusInfo(contract.status);
 
-                  return (
-                    <tr key={contract.contractId} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#e2e8f0', flexShrink: 0 }}>
-                            {contract.landlord?.avatar_url ? (
-                              <img src={contract.landlord.avatar_url} alt={contract.landlord?.full_name || 'Landlord'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 600, fontSize: '16px' }}>
-                                {contract.landlord?.full_name ? contract.landlord.full_name.charAt(0) : 'L'}
-                              </div>
+                    const isValidDate = (d) => d && !isNaN(new Date(d).getTime());
+                    const startDate = isValidDate(contract.startDate)
+                      ? new Date(contract.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      : 'N/A';
+
+                    const duration = contract.startDate && contract.endDate
+                      ? Math.round((new Date(contract.endDate) - new Date(contract.startDate)) / (1000 * 60 * 60 * 24 * 30))
+                      : 0;
+
+                    return (
+                      <tr key={contract.contractId} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#e2e8f0', flexShrink: 0 }}>
+                              {contract.landlord?.avatar_url ? (
+                                <img src={contract.landlord.avatar_url} alt={contract.landlord?.full_name || 'Landlord'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontWeight: 600, fontSize: '16px' }}>
+                                  {contract.landlord?.full_name ? contract.landlord.full_name.charAt(0) : 'L'}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 500, color: '#2563eb', marginBottom: '2px' }}>{contract.landlord?.full_name || 'N/A'}</div>
+                              <div style={{ fontSize: '13px', color: '#2563eb' }}>{contract.landlord?.email || 'N/A'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px', fontSize: '14px', color: '#2563eb' }}>
+                          {contract.room && (
+                            <span
+                              onClick={() => navigate(`${ROUTES.ROOMS}/${contract.roomId}`)}
+                              style={{ cursor: 'pointer' }}
+                              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                            >
+                              {contract.room.title}
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
+                          {startDate}
+                        </td>
+                        <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
+                          {duration} {t('tenantRequests.months', 'months')}
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          {(contract.renewalStatus === 'declined' || contract.renewal_status === 'declined') ? (
+                            <div className="status-badge declined" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: '#fee2e2', color: '#dc2626', fontWeight: '600', fontSize: '12px', border: '1px solid #fecdd3' }}>
+                              <Ban size={12} />
+                              Không gia hạn
+                            </div>
+                          ) : (
+                            <div className={`status-badge ${contract.status}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: statusInfo.bg, color: statusInfo.color, fontWeight: '600', fontSize: '12px', border: `1px solid ${statusInfo.color}33` }}>
+                              {statusInfo.icon}
+                              {statusInfo.label}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => handleSignContract(contract)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '6px 12px', background: contract.status === 'pending_signature' ? '#2563eb' : '#f8fafc',
+                                border: contract.status === 'pending_signature' ? 'none' : '1px solid #cbd5e1',
+                                borderRadius: '6px', color: contract.status === 'pending_signature' ? 'white' : '#475569',
+                                fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                              }}
+                            >
+                              <FileText size={14} /> {t('tenantRequests.viewContract', 'View Contract')}
+                            </button>
+                            {(contract.status === 'active' || contract.status === 'pre_booked_active') && contract.renewalStatus !== 'declined' && contract.renewal_status !== 'declined' && (
+                              <>
+                                {(!contract.renewalRequest || contract.renewalRequest.status === 'PENDING_INTENT' || contract.renewalRequest.status === 'COMPLETED' || contract.renewalRequest.status === 'REJECTED') && (
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                      onClick={() => handleRenewContract(contract)}
+                                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#059669', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                                    >
+                                      <FileText size={14} /> Gia hạn hợp đồng
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeclineRenewal(contract)}
+                                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#dc2626', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                                    >
+                                      <XCircle size={14} /> Không gia hạn
+                                    </button>
+                                  </div>
+                                )}
+                                {contract.renewalRequest?.status === 'PENDING_LANDLORD' && (
+                                  <span style={{ fontSize: '13px', color: '#0284c7', backgroundColor: '#e0f2fe', padding: '6px 12px', borderRadius: '6px', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                    <Clock size={14} /> Chờ chủ nhà duyệt gia hạn
+                                  </span>
+                                )}
+                                {contract.renewalRequest?.status === 'WAITING_TENANT_SIGN' && (
+                                  <button
+                                    onClick={() => handleSignRenewalContract(contract)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#2563eb', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
+                                  >
+                                    <FileSignature size={14} /> Ký HĐ Gia Hạn
+                                  </button>
+                                )}
+                              </>
                             )}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 500, color: '#2563eb', marginBottom: '2px' }}>{contract.landlord?.full_name || 'N/A'}</div>
-                            <div style={{ fontSize: '13px', color: '#2563eb' }}>{contract.landlord?.email || 'N/A'}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: '16px', fontSize: '14px', color: '#2563eb' }}>
-                        {contract.room && (
-                          <span 
-                            onClick={() => navigate(`${ROUTES.ROOMS}/${contract.roomId}`)}
-                            style={{ cursor: 'pointer' }}
-                            onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-                            onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
-                          >
-                            {contract.room.title}
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
-                        {startDate}
-                      </td>
-                      <td style={{ padding: '16px', fontSize: '14px', color: '#334155' }}>
-                        {duration} {t('tenantRequests.months', 'months')}
-                      </td>
-                      <td style={{ padding: '16px' }}>
-                        {(contract.renewalStatus === 'declined' || contract.renewal_status === 'declined') ? (
-                          <div className="status-badge declined" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: '#fee2e2', color: '#dc2626', fontWeight: '600', fontSize: '12px', border: '1px solid #fecdd3' }}>
-                            <Ban size={12} />
-                            Không gia hạn
-                          </div>
-                        ) : (
-                          <div className={`status-badge ${contract.status}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '9999px', backgroundColor: statusInfo.bg, color: statusInfo.color, fontWeight: '600', fontSize: '12px', border: `1px solid ${statusInfo.color}33` }}>
-                            {statusInfo.icon}
-                            {statusInfo.label}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: '16px' }}>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button
-                            onClick={() => handleSignContract(contract)}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: '6px',
-                              padding: '6px 12px', background: contract.status === 'pending_signature' ? '#2563eb' : '#f8fafc', 
-                              border: contract.status === 'pending_signature' ? 'none' : '1px solid #cbd5e1',
-                              borderRadius: '6px', color: contract.status === 'pending_signature' ? 'white' : '#475569', 
-                              fontSize: '13px', cursor: 'pointer', fontWeight: 500
-                            }}
-                          >
-                            <FileText size={14} /> {t('tenantRequests.viewContract', 'View Contract')}
-                          </button>
-                          {contract.status === 'active' && !contract.is_renewed && contract.renewalStatus !== 'declined' && contract.renewal_status !== 'declined' && (
-                            <>
-                              {(!contract.renewalRequest || contract.renewalRequest.status === 'PENDING_INTENT') && contract.endDate && ((new Date(contract.endDate) - new Date()) / (1000 * 60 * 60 * 24) <= 30) && (
-                                <>
-                                  <button
-                                    onClick={() => handleRenewContract(contract)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#059669', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
-                                  >
-                                    <FileText size={14} /> Gia hạn
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeclineRenewal(contract)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#dc2626', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
-                                  >
-                                    <X size={14} /> Không gia hạn
-                                  </button>
-                                </>
-                              )}
-                              {contract.renewalRequest?.status === 'PENDING_LANDLORD' && (
-                                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <Clock size={14}/> Đang chờ chủ nhà duyệt
-                                </span>
-                              )}
-                              {contract.renewalRequest?.status === 'WAITING_TENANT_SIGN' && (
+                            {(contract.status === 'active' || contract.status === 'pre_booked_active') && (
+                              contract.hasPendingTermination ? (
                                 <button
-                                  onClick={() => handleSignRenewalContract(contract)}
-                                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#2563eb', border: 'none', borderRadius: '6px', color: 'white', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}
-                                >
-                                  <FileSignature size={14} /> Ký HĐ Gia Hạn
-                                </button>
-                              )}
-                            </>
-                          )}
-                          {(contract.status === 'active' || contract.status === 'pre_booked_active') && (
-                            contract.hasPendingTermination ? (
-                              <button
-                                disabled
-                                style={{
-                                  display: 'flex', alignItems: 'center', gap: '6px',
-                                  padding: '6px 12px', background: '#94a3b8', 
-                                  border: 'none',
-                                  borderRadius: '6px', color: 'white', 
-                                  fontSize: '13px', cursor: 'not-allowed', fontWeight: 500
-                                }}
-                              >
-                                Đang chờ Hủy...
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setSelectedContractForTermination(contract);
-                                  setShowTerminationModal(true);
-                                }}
-                                style={{
-                                  display: 'flex', alignItems: 'center', gap: '6px',
-                                  padding: '6px 12px', background: '#ef4444', 
-                                  border: 'none',
-                                  borderRadius: '6px', color: 'white', 
-                                  fontSize: '13px', cursor: 'pointer', fontWeight: 500
-                                }}
-                              >
-                                Hủy hợp đồng
-                              </button>
-                            )
-                          )}
-                          {contract.status === 'pending_payment' && (
-                            (() => {
-                              const createdTime = new Date(contract.createdAt || contract.created_at || Date.now()).getTime();
-                              const isExpired = Date.now() - createdTime > 15 * 60 * 1000;
-                              
-                              if (isExpired) {
-                                return (
-                                  <button
-                                    disabled
-                                    style={{
-                                      display: 'flex', alignItems: 'center', gap: '6px',
-                                      padding: '6px 12px', background: '#94a3b8', 
-                                      border: 'none',
-                                      borderRadius: '6px', color: 'white', 
-                                      fontSize: '13px', cursor: 'not-allowed', fontWeight: 500
-                                    }}
-                                  >
-                                    <Timer size={14} /> Hết hạn thanh toán
-                                  </button>
-                                );
-                              }
-                              
-                              return (
-                                <button
-                                  onClick={() => navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${contract.roomId}&contractId=${contract.contractId}`)}
+                                  disabled
                                   style={{
                                     display: 'flex', alignItems: 'center', gap: '6px',
-                                    padding: '6px 12px', background: '#7c3aed', 
+                                    padding: '6px 12px', background: '#94a3b8',
                                     border: 'none',
-                                    borderRadius: '6px', color: 'white', 
+                                    borderRadius: '6px', color: 'white',
+                                    fontSize: '13px', cursor: 'not-allowed', fontWeight: 500
+                                  }}
+                                >
+                                  Đang chờ Hủy...
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setSelectedContractForTermination(contract);
+                                    setShowTerminationModal(true);
+                                  }}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                    padding: '6px 12px', background: '#ef4444',
+                                    border: 'none',
+                                    borderRadius: '6px', color: 'white',
                                     fontSize: '13px', cursor: 'pointer', fontWeight: 500
                                   }}
                                 >
-                                  <CreditCard size={14} /> {t('tenantRequests.payDeposit', 'Pay Deposit')}
+                                  Hủy hợp đồng
                                 </button>
-                              );
-                            })()
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                              )
+                            )}
+                            {contract.status === 'pending_payment' && (
+                              (() => {
+                                const createdTime = new Date(contract.createdAt || contract.created_at || Date.now()).getTime();
+                                const isExpired = Date.now() - createdTime > 15 * 60 * 1000;
+
+                                if (isExpired) {
+                                  return (
+                                    <button
+                                      disabled
+                                      style={{
+                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                        padding: '6px 12px', background: '#94a3b8',
+                                        border: 'none',
+                                        borderRadius: '6px', color: 'white',
+                                        fontSize: '13px', cursor: 'not-allowed', fontWeight: 500
+                                      }}
+                                    >
+                                      <Timer size={14} /> Hết hạn thanh toán
+                                    </button>
+                                  );
+                                }
+
+                                return (
+                                  <button
+                                    onClick={() => navigate(`${ROUTES.TENANT.PAYMENT}?roomId=${contract.roomId}&contractId=${contract.contractId}`)}
+                                    style={{
+                                      display: 'flex', alignItems: 'center', gap: '6px',
+                                      padding: '6px 12px', background: '#7c3aed',
+                                      border: 'none',
+                                      borderRadius: '6px', color: 'white',
+                                      fontSize: '13px', cursor: 'pointer', fontWeight: 500
+                                    }}
+                                  >
+                                    <CreditCard size={14} /> {t('tenantRequests.payDeposit', 'Pay Deposit')}
+                                  </button>
+                                );
+                              })()
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
+
+            {/* Pagination Controls for Tenant Contracts */}
+            {contracts.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '16px', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                <button
+                  onClick={() => setContractsPage(p => Math.max(p - 1, 1))}
+                  disabled={contractsPage === 1}
+                  style={{ padding: '6px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: contractsPage === 1 ? '#f1f5f9' : '#fff', color: contractsPage === 1 ? '#94a3b8' : '#334155', cursor: contractsPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 500, fontSize: '13px' }}
+                >
+                  Trang trước
+                </button>
+                <span style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>
+                  Trang {contractsPage} / {Math.ceil(contracts.length / itemsPerPage) || 1} ({contracts.length} hợp đồng)
+                </span>
+                <button
+                  onClick={() => setContractsPage(p => Math.min(p + 1, Math.ceil(contracts.length / itemsPerPage)))}
+                  disabled={contractsPage >= Math.ceil(contracts.length / itemsPerPage)}
+                  style={{ padding: '6px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: contractsPage >= Math.ceil(contracts.length / itemsPerPage) ? '#f1f5f9' : '#fff', color: contractsPage >= Math.ceil(contracts.length / itemsPerPage) ? '#94a3b8' : '#334155', cursor: contractsPage >= Math.ceil(contracts.length / itemsPerPage) ? 'not-allowed' : 'pointer', fontWeight: 500, fontSize: '13px' }}
+                >
+                  Trang sau
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -1244,14 +1366,14 @@ const TenantRequestsPage = () => {
               onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button 
+              <button
                 onClick={handleCloseDispute}
                 disabled={submittingDispute}
                 style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#fff', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem' }}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSubmitDispute}
                 disabled={submittingDispute}
                 style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#DC2626', color: '#fff', cursor: submittingDispute ? 'not-allowed' : 'pointer', opacity: submittingDispute ? 0.7 : 1, fontWeight: 600, fontSize: '0.9rem' }}
@@ -1279,20 +1401,20 @@ const TenantRequestsPage = () => {
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#166534', lineHeight: 1.6 }}>
                 <strong>Room:</strong> {selectedContractSchedule.room?.title}<br />
                 <span style={{ fontSize: '0.8rem', color: '#15803d', display: 'block', marginTop: '4px' }}>
-                  {modalMode === 'create_request' 
+                  {modalMode === 'create_request'
                     ? t('tenantRequests.sendRentalRequestDesc', 'Gửi lời nhắn của bạn đến chủ trọ để đăng ký thuê phòng. Sau khi chủ trọ đồng ý yêu cầu, bạn mới thực hiện tạo hợp đồng.')
                     : t('tenantRequests.requestContractDesc', 'Bạn sẽ thanh toán tiền đặt cọc và tiền nhà tháng đầu tiên khi ký hợp đồng.')}
                 </span>
               </p>
             </div>
-            
+
             {modalMode === 'create_request' ? (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Số điện thoại *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' }}
@@ -1302,8 +1424,8 @@ const TenantRequestsPage = () => {
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ngày dọn vào *</label>
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       value={contractStartDate}
                       min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setContractStartDate(e.target.value)}
@@ -1317,7 +1439,7 @@ const TenantRequestsPage = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Thời hạn thuê (Tháng) *</label>
-                    <select 
+                    <select
                       value={contractDuration}
                       onChange={(e) => setContractDuration(e.target.value)}
                       style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
@@ -1331,8 +1453,8 @@ const TenantRequestsPage = () => {
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Mục đích vào ở *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={rentalPurpose}
                       placeholder="Ví dụ: Đi học, Đi làm..."
                       onChange={(e) => setRentalPurpose(e.target.value)}
@@ -1348,8 +1470,8 @@ const TenantRequestsPage = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ngày dọn vào *</label>
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       value={contractStartDate}
                       min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setContractStartDate(e.target.value)}
@@ -1360,7 +1482,7 @@ const TenantRequestsPage = () => {
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Thời hạn thuê *</label>
-                    <select 
+                    <select
                       value={contractDuration}
                       onChange={(e) => setContractDuration(e.target.value)}
                       style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
@@ -1374,14 +1496,48 @@ const TenantRequestsPage = () => {
                   </div>
                 </div>
 
-                <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '20px 0 12px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>
-                  {t('tenantRequests.tenantInfoContract', 'Thông tin người thuê (Lập hợp đồng)')}
-                </h3>
-                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0 12px 0', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: 0 }}>
+                    {t('tenantRequests.tenantInfoContract', 'Thông tin người thuê (Lập hợp đồng)')}
+                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleOCRScan}
+                      accept="image/*"
+                      multiple
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isScanning}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        background: '#EEF2F6',
+                        border: '1px solid #CBD5E1',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        color: '#334155',
+                        cursor: isScanning ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <Sparkles size={14} style={{ color: '#7C3AED' }} />
+                      {isScanning ? 'Đang quét...' : 'Quét ảnh CCCD'}
+                    </button>
+                  </div>
+                </div>
+
                 <div style={{ marginBottom: '16px' }}>
                   <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Full Name *</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={tenantName}
                     onChange={(e) => setTenantName(e.target.value)}
                     style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
@@ -1392,8 +1548,8 @@ const TenantRequestsPage = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>CCCD/CMND (12 digits) *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       maxLength={12}
                       value={tenantIc}
                       onChange={(e) => setTenantIc(e.target.value.replace(/\D/g, ''))}
@@ -1403,8 +1559,8 @@ const TenantRequestsPage = () => {
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Date *</label>
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       value={tenantIcIssueDate}
                       onChange={(e) => setTenantIcIssueDate(e.target.value)}
                       max={new Date().toISOString().split('T')[0]}
@@ -1415,8 +1571,8 @@ const TenantRequestsPage = () => {
 
                 <div style={{ marginBottom: '16px' }}>
                   <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Issue Place *</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={tenantIcIssuePlace}
                     onChange={(e) => setTenantIcIssuePlace(e.target.value)}
                     style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
@@ -1426,8 +1582,8 @@ const TenantRequestsPage = () => {
 
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Permanent Address *</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={tenantPermanentAddress}
                     onChange={(e) => setTenantPermanentAddress(e.target.value)}
                     style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
@@ -1447,14 +1603,14 @@ const TenantRequestsPage = () => {
               onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button 
+              <button
                 onClick={handleCloseContractRequest}
                 disabled={submittingContract}
                 style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#fff', cursor: 'pointer', fontWeight: 500, fontSize: '0.9rem' }}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSubmitContractRequest}
                 disabled={submittingContract}
                 style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#059669', color: '#fff', cursor: submittingContract ? 'not-allowed' : 'pointer', opacity: submittingContract ? 0.7 : 1, fontWeight: 600, fontSize: '0.9rem' }}
@@ -1472,20 +1628,20 @@ const TenantRequestsPage = () => {
           <div className="modal-container" style={{ maxWidth: '400px', background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
               <h2 className="modal-title" style={{ fontSize: '18px' }}>{confirmDialog.title}</h2>
-              <button 
-                className="modal-close" 
+              <button
+                className="modal-close"
                 onClick={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="modal-body" style={{ padding: '24px' }}>
               <p style={{ margin: 0, fontSize: '15px', color: '#4b5563', lineHeight: 1.5 }}>
                 {confirmDialog.message}
               </p>
             </div>
-            
+
             <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
               <button
                 className="btn btn-secondary"
@@ -1500,13 +1656,13 @@ const TenantRequestsPage = () => {
                   setConfirmDialog(prev => ({ ...prev, isOpen: false }));
                   if (confirmDialog.onConfirm) confirmDialog.onConfirm();
                 }}
-                style={{ 
-                  padding: '8px 16px', 
-                  borderRadius: '6px', 
-                  border: 'none', 
-                  background: confirmDialog.type === 'danger' ? '#ef4444' : '#10b981', 
-                  color: '#fff', 
-                  cursor: 'pointer', 
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: confirmDialog.type === 'danger' ? '#ef4444' : '#10b981',
+                  color: '#fff',
+                  cursor: 'pointer',
                   fontWeight: 600,
                   marginLeft: '12px'
                 }}
@@ -1525,19 +1681,19 @@ const TenantRequestsPage = () => {
           <div className="modal-container" style={{ maxWidth: '400px', background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
               <h2 className="modal-title" style={{ fontSize: '18px' }}>Verify Contract Signature</h2>
-              <button 
-                className="modal-close" 
+              <button
+                className="modal-close"
                 onClick={() => setShowOtpModal(false)}
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="modal-body" style={{ padding: '24px' }}>
               <p style={{ margin: '0 0 16px 0', fontSize: '15px', color: '#4b5563', lineHeight: 1.5 }}>
                 An OTP has been sent to your email. Please enter the 6-digit code below to finalize signing this contract.
               </p>
-              <input 
+              <input
                 type="text"
                 placeholder="Enter 6-digit OTP"
                 value={otpCode}
@@ -1548,7 +1704,7 @@ const TenantRequestsPage = () => {
                 onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
               />
             </div>
-            
+
             <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
               <button
                 className="btn btn-secondary"
@@ -1562,13 +1718,13 @@ const TenantRequestsPage = () => {
                 className="btn btn-primary"
                 onClick={handleVerifyOtpAndSign}
                 disabled={submittingContract || otpCode.length !== 6}
-                style={{ 
-                  padding: '8px 16px', 
-                  borderRadius: '6px', 
-                  border: 'none', 
-                  background: (submittingContract || otpCode.length !== 6) ? '#9ca3af' : '#4f46e5', 
-                  color: '#fff', 
-                  cursor: (submittingContract || otpCode.length !== 6) ? 'not-allowed' : 'pointer', 
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: (submittingContract || otpCode.length !== 6) ? '#9ca3af' : '#4f46e5',
+                  color: '#fff',
+                  cursor: (submittingContract || otpCode.length !== 6) ? 'not-allowed' : 'pointer',
                   fontWeight: 600,
                   marginLeft: '12px',
                   display: 'flex',
@@ -1588,13 +1744,13 @@ const TenantRequestsPage = () => {
       {showContractModal && selectedContractToSign && (
         <div className="modal-backdrop" onClick={() => setShowContractModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', padding: '40px 20px', overflowY: 'auto', display: 'block' }}>
           <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative' }} onClick={e => e.stopPropagation()}>
-            <button 
+            <button
               onClick={() => setShowContractModal(false)}
               style={{ position: 'absolute', top: '10px', right: '10px', background: '#fff', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}
             >
               <X size={20} color="#475569" />
             </button>
-            <ContractDocument 
+            <ContractDocument
               contract={selectedContractToSign}
               role="tenant"
               onSign={proceedToSignContractInline}
@@ -1613,22 +1769,22 @@ const TenantRequestsPage = () => {
           <div className="modal-container" style={{ maxWidth: '400px', background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
               <h2 className="modal-title" style={{ fontSize: '18px' }}>{t('tenantRequests.renewContract', 'Gia hạn hợp đồng')}</h2>
-              <button 
-                className="modal-close" 
+              <button
+                className="modal-close"
                 onClick={() => setShowRenewModal(false)}
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="modal-body" style={{ padding: '24px' }}>
               <p style={{ margin: '0 0 16px 0', fontSize: '15px', color: '#4b5563', lineHeight: 1.5 }}>
                 {t('tenantRequests.renewContractDesc', 'Vui lòng nhập số tháng bạn muốn gia hạn cho hợp đồng này.')}
               </p>
               <div>
                 <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>{t('tenantRequests.durationMonths', 'Số tháng gia hạn')} *</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   min="1"
                   value={renewDuration}
                   onChange={(e) => setRenewDuration(e.target.value)}
@@ -1636,7 +1792,7 @@ const TenantRequestsPage = () => {
                 />
               </div>
             </div>
-            
+
             <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
               <button
                 className="btn btn-secondary"
@@ -1649,13 +1805,13 @@ const TenantRequestsPage = () => {
                 className="btn btn-primary"
                 onClick={handleRenewContractConfirm}
                 disabled={!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0}
-                style={{ 
-                  padding: '8px 16px', 
-                  borderRadius: '6px', 
-                  border: 'none', 
-                  background: (!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0) ? '#9ca3af' : '#10b981', 
-                  color: '#fff', 
-                  cursor: (!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0) ? 'not-allowed' : 'pointer', 
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: (!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0) ? '#9ca3af' : '#10b981',
+                  color: '#fff',
+                  cursor: (!renewDuration || isNaN(parseInt(renewDuration, 10)) || parseInt(renewDuration, 10) <= 0) ? 'not-allowed' : 'pointer',
                   fontWeight: 600,
                   marginLeft: '12px'
                 }}

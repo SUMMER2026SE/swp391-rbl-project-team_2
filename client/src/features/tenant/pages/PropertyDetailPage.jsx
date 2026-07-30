@@ -135,7 +135,7 @@ const PropertyDetailPage = () => {
                          text: room.status === 'available' 
                             ? t('roomDetail.statusAvailable', 'Available') 
                             : (room.status === 'rented' && (room.available_from || room.availableFrom)
-                              ? `Sắp trống (${new Date(room.available_from || room.availableFrom).toLocaleDateString('vi-VN')})`
+                              ? `Trống vào ngày ${new Date(room.available_from || room.availableFrom).toLocaleDateString('vi-VN')}`
                               : (room.status === 'reserved' 
                                 ? 'Booking in progress' 
                                 : (room.status === 'rented' 

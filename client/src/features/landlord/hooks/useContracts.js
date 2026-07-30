@@ -16,23 +16,23 @@ export const useContracts = (params = {}) => {
       const rawContracts = data.data || data.contracts || data;
       
       const mappedContracts = (Array.isArray(rawContracts) ? rawContracts : []).map(c => ({
-        id: c.contractId,
-        contractNumber: c.contractNumber,
-        roomId: c.roomId,
-        roomTitle: c.room?.title || 'Unknown Room',
-        tenantId: c.tenantId,
-        tenantName: c.tenant?.full_name || 'Unknown Tenant',
+        ...c,
+        id: c.contractId || c.contract_id,
+        contractNumber: c.contractNumber || c.contract_number,
+        roomId: c.roomId || c.room_id,
+        roomTitle: c.room?.title || c.roomTitle || 'Unknown Room',
+        tenantId: c.tenantId || c.tenant_id,
+        tenantName: c.tenantName || c.tenant_name || c.tenant?.full_name || 'Unknown Tenant',
         tenantEmail: c.tenant?.email,
         tenantPhone: c.tenant?.phone,
-        startDate: c.startDate,
-        endDate: c.endDate,
-        monthlyRent: c.monthlyRent,
-        depositAmount: c.depositAmount,
+        startDate: c.startDate || c.start_date,
+        endDate: c.endDate || c.end_date,
+        monthlyRent: c.monthlyRent || c.monthly_rent,
+        depositAmount: c.depositAmount || c.deposit_amount,
         status: (c.status || '').toUpperCase(),
         terms: c.termsAndConditions,
-        duration: Math.round((new Date(c.endDate) - new Date(c.startDate)) / (1000 * 60 * 60 * 24 * 30)) || 0,
+        duration: Math.round((new Date(c.endDate || c.end_date) - new Date(c.startDate || c.start_date)) / (1000 * 60 * 60 * 24 * 30)) || 0,
         renewalRequest: c.renewalRequest,
-        ...c
       }));
       
       setContracts(mappedContracts);
@@ -97,9 +97,9 @@ export const useContracts = (params = {}) => {
     }
   };
 
-  const declineRenewal = async (id) => {
+  const declineRenewal = async (id, reason) => {
     try {
-      const declined = await landlordService.declineRenewal(id);
+      const declined = await landlordService.declineRenewal(id, reason);
       fetchContracts();
       return declined;
     } catch (err) {

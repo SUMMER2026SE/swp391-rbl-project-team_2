@@ -88,6 +88,40 @@ const updateLandlordProfile = async (req, res, next) => {
       });
     }
 
+    // Lock verification checks
+    if (user.verification_status === 'verified') {
+      const normalizeCompare = (a, b) => {
+        if (a === undefined) return true;
+        const cleanA = (a || '').toString().trim();
+        const cleanB = (b || '').toString().trim();
+        return cleanA === cleanB;
+      };
+      
+      const formatDateCompare = (d1, d2) => {
+        if (d1 === undefined) return true;
+        if (!d1 && !d2) return true;
+        if (!d1 || !d2) return false;
+        try {
+          return new Date(d1).toISOString().split('T')[0] === new Date(d2).toISOString().split('T')[0];
+        } catch (e) {
+          return false;
+        }
+      };
+
+      const fullNameChanged = !normalizeCompare(fullName, user.full_name);
+      const icNumberChanged = !normalizeCompare(icNumber, user.ic_number);
+      const icIssueDateChanged = !formatDateCompare(icIssueDate, user.ic_issue_date);
+      const icIssuePlaceChanged = !normalizeCompare(icIssuePlace, user.ic_issue_place);
+      const permanentAddressChanged = !normalizeCompare(permanentAddress, user.permanent_address);
+
+      if (fullNameChanged || icNumberChanged || icIssueDateChanged || icIssuePlaceChanged || permanentAddressChanged) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tài khoản đã xác thực thông tin cá nhân. Bạn không thể tự thay đổi Họ tên, Số CCCD hoặc các thông tin xác thực khác.',
+        });
+      }
+    }
+
     const updateFields = [];
     const replacements = { userId: landlordId };
     
@@ -350,6 +384,28 @@ const submitVerification = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Vui lòng điền đầy đủ các thông tin CCCD (Số CCCD, Ngày cấp, Nơi cấp, Địa chỉ thường trú).',
+      });
+    }
+
+    // Call OCR to verify that the name on the CCCD matches the registered name
+    const { compareNames } = require('../utils/nameNormalizer');
+    const OcrService = require('../services/ocrService');
+    const ocrResult = await OcrService.scanCCCD(cccdFrontFile.path, cccdBackFile.path, user.full_name);
+    
+    if (!ocrResult.success || !ocrResult.data) {
+      return res.status(400).json({
+        success: false,
+        message: ocrResult.message || 'Không thể nhận diện được hình ảnh Căn cước công dân. Vui lòng gửi lại ảnh chụp rõ nét hơn!',
+      });
+    }
+
+    const ocrName = ocrResult.data.fullName || '';
+    const isMatch = compareNames(user.full_name, ocrName);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: `Hình ảnh tải lên không hợp lệ. Tên trên Căn cước công dân (${ocrName.toUpperCase()}) không trùng khớp với tên đăng ký tài khoản (${user.full_name.toUpperCase()}).`,
       });
     }
 

@@ -351,13 +351,16 @@ const getPropertyDashboard = async (req, res, next) => {
 
     rooms.forEach(r => {
       const q = r.quantity || 1;
-      const aq = (r.available_quantity !== undefined && r.available_quantity !== null)
-                 ? r.available_quantity
-                 : (r.status === 'rented' ? 0 : q);
+      const isAvailable = r.status === 'available';
+      const aq = isAvailable
+        ? ((r.available_quantity !== undefined && r.available_quantity !== null) ? Math.max(0, r.available_quantity) : q)
+        : 0;
       totalRooms += q;
       availableRooms += aq;
-      rentedRooms += (q - aq);
-      if (r.status === 'maintenance') maintenanceRooms += q; // Rough approximation
+      if (r.status === 'rented') {
+        rentedRooms += q;
+      }
+      if (r.status === 'maintenance') maintenanceRooms += q;
     });
 
     // Financial data SCOPED to this property only
@@ -418,10 +421,12 @@ const getPropertyDashboard = async (req, res, next) => {
           roomId: `contract-${contract.contract_id}`,
           originalRoomId: room.room_id,
           title: room.title,
-          roomNumber: contract.assigned_room_number ? `Phòng ${contract.assigned_room_number}` : `Chưa gán số phòng`,
+          roomNumber: contract.assigned_room_number 
+            ? (contract.assigned_room_number.toLowerCase().includes('phòng') ? contract.assigned_room_number : `Phòng ${contract.assigned_room_number}`)
+            : (room.room_number ? (room.room_number.toLowerCase().includes('phòng') ? room.room_number : `Phòng ${room.room_number}`) : (room.title || `Phòng ${room.room_id}`)),
           pricePerMonth: room.price_per_month,
           areaSqm: room.area_sqm,
-          status: (contract.status === 'active' || contract.status === 'completed') ? 'rented' : 'pending',
+          status: (contract.status === 'active' || contract.status === 'completed') ? 'rented' : 'booking',
           maxOccupants: room.max_occupants,
           thumbnailUrl: room.thumbnail_url,
           tenantName: contract.tenant_name
@@ -548,6 +553,9 @@ const duplicateRoom = async (req, res, next) => {
     const duplicateCount = Math.min(isCustomNumbers ? roomNumbers.length : (parseInt(count) || 1), 20); // Max 20 at a time
     const floor = targetFloor || sourceRoom.floor || 1;
 
+    // Generate a batch_id for this duplication batch if duplicating multiple rooms
+    const batchId = duplicateCount > 1 ? `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : null;
+
     // Get existing room count on that floor to auto-generate room numbers
     const existingOnFloor = await Room.count({
       where: { property_id: cleanPropertyId, floor, is_deleted: false },
@@ -622,6 +630,7 @@ const duplicateRoom = async (req, res, next) => {
         max_occupants: sourceRoom.max_occupants,
         status: 'pending',
         thumbnail_url: sourceRoom.thumbnail_url,
+        batch_id: batchId,
       });
 
       // Copy facilities

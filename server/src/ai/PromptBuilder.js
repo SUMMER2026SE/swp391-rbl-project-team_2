@@ -165,6 +165,7 @@ Detail Link: http://localhost:5173/rooms/${r.room_id}`;
   }
 
   static buildSearchSummaryPrompt(rooms, query, searchCriteria, totalCount, language = 'vi') {
+    const statsSource = (rooms && rooms.allRooms && rooms.allRooms.length > 0) ? rooms.allRooms : (rooms || []);
     let roomsData = language === 'vi' ? 'Không tìm thấy phòng trọ nào.' : 'No rooms found.';
     let minPrice = Infinity;
     let maxPrice = -Infinity;
@@ -173,8 +174,8 @@ Detail Link: http://localhost:5173/rooms/${r.room_id}`;
     const cities = new Set();
     const districts = new Set();
 
-    if (rooms && rooms.length > 0) {
-      roomsData = rooms.map((r, idx) => {
+    if (statsSource.length > 0) {
+      statsSource.forEach(r => {
         const priceNum = Number(r.price_per_month);
         if (!isNaN(priceNum)) {
           if (priceNum < minPrice) minPrice = priceNum;
@@ -187,7 +188,11 @@ Detail Link: http://localhost:5173/rooms/${r.room_id}`;
         }
         if (r.city) cities.add(r.city);
         if (r.district) districts.add(r.district);
+      });
+    }
 
+    if (rooms && rooms.length > 0) {
+      roomsData = rooms.map((r, idx) => {
         const price = r.price_per_month ? Number(r.price_per_month).toLocaleString('vi-VN') : 'N/A';
         const facilities = r.facilities ? r.facilities.map(f => f.facility_name).join(', ') : 'None';
         const status = r.status || 'N/A';
@@ -212,22 +217,24 @@ Detail Link: http://localhost:5173/rooms/${r.room_id}`;
       ? 'You MUST respond ENTIRELY in English. Use "I" and "you". Do NOT use Vietnamese.'
       : 'You MUST respond ENTIRELY in Vietnamese. Xưng "em/mình" và gọi "bạn/anh/chị".';
 
+    const finalTotalCount = (rooms && rooms.totalCount !== undefined) ? rooms.totalCount : totalCount;
+
     return `
 You are RentWise AI assistant. The user searched for rooms with this query: "${query}".
-The system retrieved ${totalCount} rooms from the SQL database as shown below:
+The system retrieved ${finalTotalCount} matching rooms from the SQL database as shown below:
 
 === ROOMS RETRIEVED ===
 ${roomsData}
 
 === REAL STATISTICS (USE THESE EXACT NUMBERS) ===
-- Matching rooms: ${totalCount}
+- Matching rooms: ${finalTotalCount}
 - Price range: ${priceRangeStr} VND/month
 - Locations: ${locationsStr || 'N/A'}
 
 === INSTRUCTIONS ===
 Write a brief AI Overview (3-5 bullet points) summarizing the search results.
 Mention:
-1. Number of matching rooms found.
+1. Number of matching rooms found (USE EXACTLY: ${finalTotalCount} phòng trọ).
 2. Actual price range (USE EXACTLY: ${priceRangeStr} VND/month).
 3. Main locations (USE EXACTLY: ${locationsStr}).
 4. Notable amenities or features.

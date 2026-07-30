@@ -24,6 +24,10 @@ router.get('/dashboard/recent-activities', adminController.getRecentActivities);
 router.get('/rooms', adminController.getAllRooms);
 router.put('/rooms/:id/status', adminController.updateRoomStatus);
 
+// Properties (Buildings)
+router.get('/properties', adminController.getAllProperties);
+router.put('/properties/:id/status', adminController.updatePropertyStatus);
+
 // Transactions, Complaints, Payouts
 router.get('/transactions', adminController.getAllTransactions);
 router.get('/complaints', adminController.getAllComplaints);

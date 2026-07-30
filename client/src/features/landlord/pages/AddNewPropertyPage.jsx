@@ -375,19 +375,34 @@ const AddNewPropertyPage = () => {
       return;
     }
 
+    const existingRoomNumbers = new Set(
+      existingRooms.map(r => r.roomNumber?.toString().trim()).filter(Boolean)
+    );
+
     let generatedRooms = [];
     let currentFloor = floor;
     let countOnCurrentFloor = 0;
 
-    for (let i = 0; i < total; i++) {
+    let roomsGenerated = 0;
+    while (roomsGenerated < total) {
       if (countOnCurrentFloor >= max) {
         currentFloor++;
         countOnCurrentFloor = 0;
       }
       const roomIndex = countOnCurrentFloor + 1;
       const roomNumberStr = `${currentFloor}${roomIndex.toString().padStart(2, '0')}`;
-      generatedRooms.push(roomNumberStr);
+
+      if (!existingRoomNumbers.has(roomNumberStr)) {
+        generatedRooms.push(roomNumberStr);
+        roomsGenerated++;
+      }
       countOnCurrentFloor++;
+
+      // Safety check to prevent infinite loop
+      if (currentFloor > floor + 100) {
+        toast.error('Không thể tạo thêm phòng vì số lượng phòng/tầng đạt giới hạn tối đa.');
+        break;
+      }
     }
 
     const newRoomStr = generatedRooms.join(', ');
@@ -441,7 +456,10 @@ const AddNewPropertyPage = () => {
         if (roomNum) fd.append('roomNumber', roomNum);
         if (formData.latitude) fd.append('latitude', formData.latitude);
         if (formData.longitude) fd.append('longitude', formData.longitude);
-        if (batchId) fd.append('batchId', batchId);
+        if (batchId) {
+          fd.append('batchId', batchId);
+          fd.append('batch_id', batchId);
+        }
 
         if (selectedFiles && selectedFiles.length > 0) {
           fd.append('image', selectedFiles[0]);
@@ -582,59 +600,65 @@ const AddNewPropertyPage = () => {
               </div>
 
               {/* Auto Generator Panel */}
-              <div className="form-group-field" style={{ gridColumn: '1 / -1', marginTop: '-10px' }}>
-                <button 
-                  type="button" 
-                  onClick={() => setShowAutoGenerator(!showAutoGenerator)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontWeight: '500', fontSize: '0.9rem', padding: '0' }}
-                >
-                  <Sparkles size={16} />
-                  <span>🪄 Tạo số phòng tự động</span>
-                </button>
+              {propertyIdParam && (
+                <div className="form-group-field" style={{ gridColumn: '1 / -1', marginTop: '-10px' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowAutoGenerator(!showAutoGenerator)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontWeight: '500', fontSize: '0.85rem', padding: '0' }}
+                  >
+                    <Sparkles size={14} style={{ color: '#7C3AED' }} />
+                    <span>Tạo số phòng tự động</span>
+                  </button>
 
-                {showAutoGenerator && (
-                  <div className="auto-gen-panel animation-fade-in" style={{ marginTop: '1rem', padding: '1.25rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <div className="form-row-double-cols" style={{ marginBottom: '1rem' }}>
-                      <div className="form-group-field">
-                        <label className="form-input-label">Tổng số lượng phòng muốn tạo</label>
-                        <input
-                          type="number"
-                          value={autoGenParams.totalRooms}
-                          onChange={(e) => setAutoGenParams(p => ({ ...p, totalRooms: e.target.value }))}
-                          className="form-input-text"
-                          placeholder="VD: 25"
-                          min="1"
-                        />
-                      </div>
-                      <div className="form-row-double-cols" style={{ gap: '1rem' }}>
-                        <div className="form-group-field">
-                          <label className="form-input-label">Bắt đầu từ tầng</label>
+                  {showAutoGenerator && (
+                    <div className="auto-gen-panel animation-fade-in" style={{ marginTop: '0.75rem', padding: '0.85rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                        <div style={{ flex: '1', minWidth: '120px' }}>
+                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Số lượng phòng</label>
+                          <input
+                            type="number"
+                            value={autoGenParams.totalRooms}
+                            onChange={(e) => setAutoGenParams(p => ({ ...p, totalRooms: e.target.value }))}
+                            style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem', outline: 'none' }}
+                            placeholder="VD: 25"
+                            min="1"
+                          />
+                        </div>
+                        <div style={{ flex: '1', minWidth: '100px' }}>
+                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Bắt đầu từ tầng</label>
                           <input
                             type="number"
                             value={autoGenParams.startFloor}
                             onChange={(e) => setAutoGenParams(p => ({ ...p, startFloor: e.target.value }))}
-                            className="form-input-text"
+                            style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem', outline: 'none' }}
                             min="1"
                           />
                         </div>
-                        <div className="form-group-field">
-                          <label className="form-input-label">Số phòng/tầng tối đa</label>
+                        <div style={{ flex: '1', minWidth: '120px' }}>
+                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Số phòng/tầng tối đa</label>
                           <input
                             type="number"
                             value={autoGenParams.maxPerFloor}
                             onChange={(e) => setAutoGenParams(p => ({ ...p, maxPerFloor: e.target.value }))}
-                            className="form-input-text"
+                            style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.85rem', outline: 'none' }}
                             min="1"
                           />
                         </div>
+                        <Button 
+                          variant="primary" 
+                          size="sm" 
+                          onClick={handleGenerateRooms} 
+                          style={{ height: '34px', padding: '0 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', background: '#10b981', borderColor: '#10b981' }}
+                        >
+                          Tạo nhanh
+                        </Button>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={handleGenerateRooms} style={{ width: '100%', justifyContent: 'center', background: '#fff' }}>
-                      Tạo danh sách
-                    </Button>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
+
             </div>
 
             <div className="form-group-field">

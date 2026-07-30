@@ -35,14 +35,14 @@ const saveBankDetails = async (req, res, next) => {
       });
     }
 
-    // AML Check: Bank account holder name must match verified landlord's full name
+    // AML Check: Bank account holder name must match landlord's full name
     const user = await User.findOne({ where: { user_id: userId } });
-    if (user && user.verification_status === 'verified') {
+    if (user) {
       const isMatch = compareNames(user.full_name, account_holder_name);
       if (!isMatch) {
         return res.status(400).json({
           success: false,
-          message: `Tên chủ tài khoản ngân hàng không khớp với Họ tên đã được xác thực chính chủ trên hệ thống (${user.full_name.toUpperCase()}). Vui lòng nhập đúng tên tài khoản ngân hàng của bạn.`,
+          message: `Tên chủ tài khoản ngân hàng không khớp với Họ tên của bạn trên hệ thống (${user.full_name.toUpperCase()}). Vui lòng nhập đúng tên tài khoản ngân hàng của bạn.`,
         });
       }
     }

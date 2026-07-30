@@ -37,7 +37,7 @@ async function getBase64Data(imagePath) {
  * Service to handle OCR scanning for CCCD
  */
 class OcrService {
-  async scanCCCD(frontImagePath, backImagePath) {
+  async scanCCCD(frontImagePath, backImagePath, registeredName) {
     try {
       console.log(`ℹ️ [OCR] Bắt đầu quét CCCD (Tải lên Cloudinary trước) ở chế độ: ${OCR_MODE}`);
 
@@ -68,6 +68,7 @@ class OcrService {
         return {
           success: true,
           data: {
+            fullName: registeredName || 'NGUYỄN VĂN A',
             icNumber: randomIcNumber,
             icIssueDate: `${randomYear}-${randomMonth}-${randomDay}`,
             icIssuePlace: 'Cục Cảnh sát quản lý hành chính về trật tự xã hội',
@@ -96,6 +97,7 @@ class OcrService {
             - Hãy đối chiếu với các địa danh thực tế của Việt Nam để ghi đúng tên xã/phường, quận/huyện, tỉnh/thành phố.
 
             {
+              "fullName": "Họ và tên ghi trên CCCD (Chữ in hoa có dấu)",
               "icNumber": "Số CCCD (chuỗi 12 chữ số viết liền)",
               "icIssueDate": "Ngày cấp định dạng YYYY-MM-DD",
               "icIssuePlace": "Nơi cấp (ghi chính xác cụm từ trên thẻ như 'Cục Cảnh sát QLHC về TTXH' hoặc tương đương)",
@@ -147,6 +149,7 @@ class OcrService {
         return {
           success: true,
           data: {
+            fullName: parsedData.fullName || '',
             icNumber: parsedData.icNumber || '',
             icIssueDate: parsedData.icIssueDate || '',
             icIssuePlace: parsedData.icIssuePlace || '',

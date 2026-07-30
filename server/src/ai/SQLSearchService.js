@@ -31,7 +31,7 @@ class SQLSearchService {
       const where = { is_deleted: false };
       const andConditions = [];
 
-      // Only filter by status if the user explicitly requested it
+      // By default, ONLY search for available rooms so rented/inactive rooms do not appear in AI search!
       if (criteria.status) {
         if (criteria.status === 'upcoming_vacancy') {
           // "Sắp trống" = rented rooms with an available_from date set
@@ -40,6 +40,8 @@ class SQLSearchService {
         } else {
           where.status = criteria.status;
         }
+      } else {
+        where.status = 'available';
       }
 
       if (criteria.district) {
@@ -105,7 +107,7 @@ class SQLSearchService {
 
       const rooms = await Room.findAll({
         where,
-        limit: 10,
+        limit: 100,
         order: [['created_at', 'DESC']],
         include
       });
@@ -120,13 +122,29 @@ class SQLSearchService {
         });
       }
 
+      // Diverse sampling: Pick up to 2 rooms per property so AI context spans different buildings & districts
+      const propertyMap = new Map();
+      const diverseSample = [];
+      for (const room of filteredRooms) {
+        const propKey = room.property_id ? `prop_${room.property_id}` : `room_${room.room_id}`;
+        const count = propertyMap.get(propKey) || 0;
+        if (count < 2) {
+          propertyMap.set(propKey, count + 1);
+          diverseSample.push(room);
+        }
+      }
+
+      const result = diverseSample.slice(0, 10);
+      result.allRooms = filteredRooms;
+      result.totalCount = filteredRooms.length;
+
       // Save to cache
       SQL_CACHE.set(cacheKey, {
-        data: filteredRooms,
+        data: result,
         timestamp: Date.now()
       });
 
-      return filteredRooms;
+      return result;
     } catch (err) {
       console.error('[SQLSearchService] Error searching rooms:', err.message);
       return [];

@@ -518,6 +518,25 @@
   color: #EF4444;
 }
 
+.activity-icon-container--purple {
+  background-color: #F5F3FF;
+  color: #7C3AED;
+}
+
+.activity-icon-container--green {
+  background-color: #D1FAE5;
+  color: #059669;
+}
+
+.activity-list-item.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.activity-list-item.clickable:hover {
+  background-color: #f1f5f9;
+}
+
 .activity-item-content {
   flex: 1;
   min-width: 0;

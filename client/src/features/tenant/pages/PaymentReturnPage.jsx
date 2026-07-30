@@ -16,6 +16,18 @@ const PaymentReturnPage = () => {
     const isVnPay = !!searchParams.get('vnp_ResponseCode');
     const isPayOS = !!searchParams.get('orderCode') || !!searchParams.get('status');
 
+    const vnpCode = searchParams.get('vnp_ResponseCode');
+    const payosStatus = searchParams.get('status');
+    const payosCancel = searchParams.get('cancel');
+    const payosCode = searchParams.get('code');
+
+    const isUserCancelled = 
+      payosCancel === 'true' || 
+      payosStatus === 'CANCELLED' || 
+      vnpCode === '24' || 
+      vnpCode === '11' || 
+      payosCode === '99';
+
     const verifyPayment = async () => {
       try {
         const queryParams = searchParams.toString();
@@ -25,18 +37,18 @@ const PaymentReturnPage = () => {
 
         const response = await api.get(endpoint);
         
-        if (response.success && (response.code === '00' || response.code === 'PAID')) {
+        if (!isUserCancelled && response.success) {
           setStatus('success');
-          setMessage('Deposit payment completed successfully!');
+          setMessage('Thanh toán tiền đặt cọc thành công!');
           setInvoiceData(response.data);
         } else {
           setStatus('error');
-          setMessage(response.message || 'Payment failed or was cancelled.');
-          if (response.data) setInvoiceData(response.data);
+          setMessage(isUserCancelled ? 'Thanh toán đã bị hủy bởi người dùng.' : (response.message || 'Thanh toán thất bại hoặc bị hủy.'));
+          setInvoiceData(null);
         }
       } catch (err) {
         setStatus('error');
-        setMessage('An error occurred while verifying the payment.');
+        setMessage(isUserCancelled ? 'Thanh toán đã bị hủy bởi người dùng.' : 'Đã có lỗi xảy ra khi xác thực thanh toán.');
       }
     };
 
@@ -44,7 +56,7 @@ const PaymentReturnPage = () => {
       verifyPayment();
     } else {
       setStatus('error');
-      setMessage('Invalid payment response.');
+      setMessage('Phản hồi thanh toán không hợp lệ.');
     }
   }, [searchParams]);
 
@@ -129,14 +141,14 @@ const PaymentReturnPage = () => {
             <div className="icon-wrapper error">
               <XCircle size={64} />
             </div>
-            <h2 className="payment-return-title">Payment Failed</h2>
+            <h2 className="payment-return-title">Thanh Toán Không Thành Công</h2>
             <p className="payment-return-message">{message}</p>
-            <div className="payment-return-actions">
-              <Button variant="outline" onClick={() => navigate(-1)}>
-                Go Back
+            <div className="payment-return-actions flex gap-4 mt-6">
+              <Button variant="outline" onClick={() => navigate('/tenant/requests')} className="w-full">
+                Danh Sách Hợp Đồng
               </Button>
-              <Button onClick={() => navigate('/tenant/requests')}>
-                My Requests
+              <Button onClick={() => navigate('/tenant/requests')} className="w-full">
+                Thử Lại Thanh Toán
               </Button>
             </div>
           </>

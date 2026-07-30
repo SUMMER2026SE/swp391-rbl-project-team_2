@@ -71,7 +71,6 @@ const TENANT_NAV = [
   { icon: <MessageSquare size={20} />, label: 'Tin nhắn', tKey: 'sidebar.messages', path: '/messages' },
   { icon: <Bell size={20} />, label: 'Thông báo', tKey: 'sidebar.notifications', path: ROUTES.TENANT.NOTIFICATIONS },
   { icon: <UserCircle size={20} />, label: 'Hồ sơ', tKey: 'sidebar.profile', path: ROUTES.TENANT.PROFILE },
-  { icon: <Settings size={20} />, label: 'Cài đặt', tKey: 'sidebar.settings', path: ROUTES.TENANT.SETTINGS },
 ];
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {

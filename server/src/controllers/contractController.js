@@ -116,11 +116,22 @@ const createContract = async (req, res, next) => {
 const getLandlordContracts = async (req, res, next) => {
   try {
     const landlordId = req.user.userId;
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status, search, page = 1, limit = 100 } = req.query;
 
     const where = { landlord_id: landlordId };
-    if (status) {
+    if (status && status !== 'All') {
       where.status = status;
+    }
+
+    if (search && search.trim()) {
+      const searchClean = search.trim();
+      where[Op.or] = [
+        { tenant_name: { [Op.like]: `%${searchClean}%` } },
+        { contract_number: { [Op.like]: `%${searchClean}%` } },
+        { assigned_room_number: { [Op.like]: `%${searchClean}%` } },
+        { '$tenant.full_name$': { [Op.like]: `%${searchClean}%` } },
+        { '$room.title$': { [Op.like]: `%${searchClean}%` } },
+      ];
     }
 
     const offset = (page - 1) * limit;
@@ -132,6 +143,7 @@ const getLandlordContracts = async (req, res, next) => {
         { model: User, as: 'tenant', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
         { model: RenewalRequest, as: 'renewalRequests', limit: 1, order: [['created_at', 'DESC']] }
       ],
+      subQuery: false,
       offset,
       limit: parseInt(limit),
       order: [['created_at', 'DESC']],

@@ -336,7 +336,7 @@ const ViewingSchedulesPage = () => {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'pending_payment': return t('status.pendingPayment', 'Pending Payment');
+      case 'pending_payment': return 'Booking in Process';
       case 'scheduled': return t('status.scheduled', 'Scheduled');
       case 'confirmed': return t('status.confirmed', 'Confirmed');
       case 'contract_requested': return t('status.contractRequested', 'Contract Requested');

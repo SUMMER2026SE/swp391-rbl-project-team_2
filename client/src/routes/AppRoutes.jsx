@@ -116,7 +116,7 @@ const AppRoutes = () => {
         <Route path="/tenant/deposit-history" element={<DepositHistoryPage />} />
         <Route path={ROUTES.TENANT.DEPOSIT_HISTORY} element={<DepositHistoryPage />} />
         <Route path={ROUTES.TENANT.PROFILE} element={<TenantProfilePage />} />
-        <Route path={ROUTES.TENANT.SETTINGS} element={<TenantSettingsPage />} />
+        <Route path={ROUTES.TENANT.SETTINGS} element={<Navigate to={ROUTES.TENANT.PROFILE} replace />} />
         <Route path={ROUTES.TENANT.CHAT_LANDLORD} element={<MessagesPage />} />
         <Route path="/messages" element={<MessagesPage />} />
       </Route>

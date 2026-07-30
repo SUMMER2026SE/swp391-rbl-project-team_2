@@ -1,7 +1,8 @@
 const { Op } = require('sequelize');
 const { Contract, Room, User, Notification, RenewalRequest, Payment, OtpVerification } = require('../models');
 const generateOtp = require('../utils/generateOtp');
-const { sendOtpEmail } = require('../utils/sendEmail');
+const { sendOtpEmail, sendContractEmail } = require('../utils/sendEmail');
+const { generateContractPdfBuffer } = require('../utils/contractPdfGenerator');
 
 // =========================================================
 // TENANT: Request Contract Renewal
@@ -17,7 +18,11 @@ const tenantRequestRenewal = async (req, res, next) => {
     }
 
     const contract = await Contract.findOne({
-      where: { contract_id: contractId, tenant_id: tenantId, status: 'active' },
+      where: { 
+        contract_id: contractId, 
+        tenant_id: tenantId, 
+        status: { [Op.in]: ['active', 'pre_booked_active'] } 
+      },
       include: [{ model: Room, as: 'room' }]
     });
 
@@ -25,13 +30,16 @@ const tenantRequestRenewal = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy hợp đồng.' });
     }
 
-    // Find existing request
+    // Find existing pending/unprocessed request
     let renewalReq = await RenewalRequest.findOne({
-      where: { contract_id: contractId }
+      where: { 
+        contract_id: contractId,
+        status: { [Op.notIn]: ['COMPLETED', 'REJECTED'] }
+      }
     });
 
     if (!renewalReq) {
-      // Create new if T-60 job hasn't run yet
+      // Create new if no active pending request exists
       renewalReq = await RenewalRequest.create({
         contract_id: contract.contract_id,
         tenant_id: contract.tenant_id,
@@ -83,7 +91,7 @@ const tenantRequestRenewal = async (req, res, next) => {
 const landlordApproveRenewal = async (req, res, next) => {
   try {
     const { requestId } = req.params;
-    const { proposedNewRent, additionalTerms } = req.body;
+    const { proposedNewRent, additionalTerms, landlordSignature } = req.body;
     const landlordId = req.user.userId;
 
     const renewalReq = await RenewalRequest.findOne({
@@ -95,27 +103,75 @@ const landlordApproveRenewal = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy yêu cầu gia hạn.' });
     }
 
-    if (renewalReq.status !== 'PENDING_LANDLORD') {
+    if (renewalReq.status === 'COMPLETED') {
+      return res.status(200).json({
+        success: true,
+        message: 'Yêu cầu gia hạn này đã được duyệt và hoàn tất trước đó.',
+        data: renewalReq
+      });
+    }
+
+    if (renewalReq.status !== 'PENDING_LANDLORD' && renewalReq.status !== 'WAITING_TENANT_SIGN') {
       return res.status(400).json({ success: false, message: 'Yêu cầu này không ở trạng thái chờ duyệt.' });
     }
 
-    const newRent = proposedNewRent || renewalReq.contract.monthly_rent;
+    const originalContract = renewalReq.contract;
+    const room = originalContract.room;
 
-    // Simulate 3rd party signature API call here
-    // In a real app, this would get a signature URL
-    
+    // Calculate new end date based on original end_date and requested duration
+    const newEndDate = new Date(originalContract.end_date);
+    newEndDate.setMonth(newEndDate.getMonth() + renewalReq.requested_duration_months);
+
+    const oldRent = parseFloat(originalContract.monthly_rent);
+    const newRent = parseFloat(proposedNewRent || renewalReq.proposed_new_rent || originalContract.monthly_rent);
+
+    // Update Original Contract directly (extending it)
+    await originalContract.update({
+      end_date: newEndDate,
+      monthly_rent: newRent,
+      terms_and_conditions: additionalTerms || renewalReq.additional_terms || originalContract.terms_and_conditions,
+      landlord_signature: landlordSignature || originalContract.landlord_signature,
+      is_renewed: true,
+      renewal_status: 'renewed',
+      status: 'active'
+    });
+
+    // Update Request to COMPLETED immediately
     await renewalReq.update({
       proposed_new_rent: newRent,
-      additional_terms: additionalTerms,
+      additional_terms: additionalTerms || renewalReq.additional_terms,
       landlord_signed_at: new Date(),
-      status: 'WAITING_TENANT_SIGN'
+      tenant_signed_at: new Date(),
+      status: 'COMPLETED',
+      new_contract_id: originalContract.contract_id
     });
+
+    // Deposit Difference Logic (If rent increased)
+    if (newRent > oldRent) {
+      const depositDiff = newRent - oldRent;
+      await Payment.create({
+        room_id: room.room_id,
+        tenant_id: originalContract.tenant_id,
+        landlord_id: originalContract.landlord_id,
+        contract_id: originalContract.contract_id,
+        amount: depositDiff,
+        payment_type: 'deposit_adjustment',
+        payment_method: 'vnpay',
+        status: 'pending',
+        due_date: originalContract.end_date, // Starts when extension starts
+      });
+    }
+
+    // Clear upcoming vacancy date
+    if (room) {
+      await room.update({ available_from: null });
+    }
 
     // Notify tenant
     await Notification.create({
       user_id: renewalReq.tenant_id,
-      title: 'Chủ nhà đã duyệt gia hạn',
-      message: `Chủ nhà đã duyệt yêu cầu gia hạn phòng "${renewalReq.contract.room?.room_number || renewalReq.contract.room_id}". Vui lòng kiểm tra giá mới và ký xác nhận.`,
+      title: 'Hợp đồng đã được gia hạn thành công',
+      message: `Chủ nhà đã duyệt yêu cầu gia hạn phòng "${renewalReq.contract.room?.room_number || renewalReq.contract.room_id}". Hợp đồng ${originalContract.contract_number} đã được gia hạn thêm ${renewalReq.requested_duration_months} tháng.`,
       notification_type: 'contract_renewal',
       related_id: renewalReq.id,
     });
@@ -123,14 +179,46 @@ const landlordApproveRenewal = async (req, res, next) => {
     const io = req.app.get('io');
     if (io) {
       io.to(`user_${renewalReq.tenant_id}`).emit('new_notification', {
-        title: 'Chủ nhà đã duyệt gia hạn',
+        title: 'Hợp đồng đã được gia hạn thành công',
         type: 'contract_renewal'
       });
     }
 
+    // Send PDF contract email to both tenant & landlord
+    try {
+      const pdfBuffer = await generateContractPdfBuffer({
+        contractNumber: originalContract.contract_number,
+        startDate: originalContract.start_date,
+        endDate: originalContract.end_date,
+        monthlyRent: originalContract.monthly_rent,
+        depositAmount: originalContract.deposit_amount,
+        termsAndConditions: originalContract.terms_and_conditions,
+        landlordName: originalContract.landlord_name,
+        landlordIc: originalContract.landlord_ic,
+        landlordIcIssueDate: originalContract.landlord_ic_issue_date,
+        landlordIcIssuePlace: originalContract.landlord_ic_issue_place,
+        landlordPermanentAddress: originalContract.landlord_permanent_address,
+        landlordSignature: originalContract.landlord_signature,
+        tenantName: originalContract.tenant_name,
+        tenantIc: originalContract.tenant_ic,
+        tenantIcIssueDate: originalContract.tenant_ic_issue_date,
+        tenantIcIssuePlace: originalContract.tenant_ic_issue_place,
+        tenantPermanentAddress: originalContract.tenant_permanent_address,
+        tenantSignature: originalContract.tenant_signature,
+      });
+
+      const tenantUser = await User.findByPk(originalContract.tenant_id);
+      const landlordUser = await User.findByPk(originalContract.landlord_id);
+
+      await sendContractEmail(tenantUser.email, pdfBuffer, originalContract.contract_number);
+      await sendContractEmail(landlordUser.email, pdfBuffer, originalContract.contract_number);
+    } catch (emailErr) {
+      console.error('Error generating/sending renewal contract PDF email:', emailErr);
+    }
+
     return res.status(200).json({
       success: true,
-      message: 'Duyệt yêu cầu gia hạn thành công. Đang chờ khách thuê ký.',
+      message: 'Duyệt yêu cầu gia hạn và duy trì hợp đồng thành công.',
       data: renewalReq
     });
   } catch (error) {
@@ -144,6 +232,7 @@ const landlordApproveRenewal = async (req, res, next) => {
 const landlordDeclineRenewal = async (req, res, next) => {
   try {
     const { requestId } = req.params;
+    const { reason } = req.body;
     const landlordId = req.user.userId;
 
     const renewalReq = await RenewalRequest.findOne({
@@ -169,10 +258,11 @@ const landlordDeclineRenewal = async (req, res, next) => {
     }
 
     // Notify tenant
+    const dateFormatted = contract.end_date ? new Date(contract.end_date).toLocaleDateString('vi-VN') : '';
     await Notification.create({
       user_id: renewalReq.tenant_id,
       title: 'Yêu cầu gia hạn bị từ chối',
-      message: `Chủ nhà đã từ chối yêu cầu gia hạn phòng "${renewalReq.contract.room?.room_number || renewalReq.contract.room_id}". Hợp đồng sẽ kết thúc vào ngày ${renewalReq.contract.end_date.toLocaleDateString('vi-VN')}.`,
+      message: `Chủ nhà đã từ chối yêu cầu gia hạn phòng "${contract.room?.room_number || contract.room_id}". Lý do: ${reason || 'Không có lý do cụ thể'}. Hợp đồng sẽ kết thúc vào ngày ${dateFormatted}.`,
       notification_type: 'contract_renewal',
       related_id: renewalReq.id,
     });
@@ -222,8 +312,9 @@ const tenantSendOtpForRenewal = async (req, res, next) => {
       purpose: 'sign_contract',
       expired_at: expiresAt,
     });
-
-    await sendOtpEmail(user.email, otpCode, 'sign_contract');
+    // Send email asynchronously
+    sendOtpEmail(user.email, otpCode, 'sign_contract').catch(err => console.error('Error sending OTP email:', err));
+    console.log(`🔑 [RENEWAL OTP] Sent OTP ${otpCode} to ${user.email} for contract ${contractId}`);
 
     return res.status(200).json({
       success: true,
@@ -345,6 +436,44 @@ const tenantSignRenewal = async (req, res, next) => {
     // Clear upcoming vacancy date
     if (room) {
       await room.update({ available_from: null });
+    }
+
+    // Send PDF contract email to both tenant & landlord
+    try {
+      const pdfBuffer = await generateContractPdfBuffer({
+        contractNumber: newContract.contract_number,
+        startDate: newContract.start_date,
+        endDate: newContract.end_date,
+        monthlyRent: newContract.monthly_rent,
+        depositAmount: newContract.deposit_amount,
+        room: room || {},
+        landlord: {},
+        tenant: {},
+        landlordName: newContract.landlord_name,
+        landlordIc: newContract.landlord_ic,
+        landlordIcIssueDate: newContract.landlord_ic_issue_date,
+        landlordIcIssuePlace: newContract.landlord_ic_issue_place,
+        landlordPermanentAddress: newContract.landlord_permanent_address,
+        landlordSignature: newContract.landlord_signature,
+        tenantName: newContract.tenant_name,
+        tenantIc: newContract.tenant_ic,
+        tenantIcIssueDate: newContract.tenant_ic_issue_date,
+        tenantIcIssuePlace: newContract.tenant_ic_issue_place,
+        tenantPermanentAddress: newContract.tenant_permanent_address,
+        tenantSignature: newContract.tenant_signature,
+      });
+
+      const tenantUser = await User.findByPk(tenantId);
+      const landlordUser = await User.findByPk(originalContract.landlord_id);
+
+      if (tenantUser && tenantUser.email) {
+        await sendContractEmail(tenantUser.email, newContract.contract_number, pdfBuffer);
+      }
+      if (landlordUser && landlordUser.email) {
+        await sendContractEmail(landlordUser.email, newContract.contract_number, pdfBuffer);
+      }
+    } catch (emailErr) {
+      console.error('❌ Failed to send renewal contract PDF email:', emailErr.message);
     }
 
     // Notify landlord

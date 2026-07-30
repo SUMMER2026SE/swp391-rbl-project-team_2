@@ -381,9 +381,9 @@ export const landlordService = {
     }
   },
 
-  declineRenewal: async (id) => {
+  declineRenewal: async (id, reason) => {
     try {
-      const response = await httpClient.put(`/landlord/renewal-requests/${id}/decline`);
+      const response = await httpClient.put(`/landlord/renewal-requests/${id}/decline`, { reason });
       return response;
     } catch (error) {
       console.error('Error declining renewal contract:', error);

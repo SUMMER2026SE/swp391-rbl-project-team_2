@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { ViewingSchedule, Room, User, Notification, Payment, Contract, OtpVerification } = require('../models');
 const generateOtp = require('../utils/generateOtp');
 const { sendOtpEmail, sendContractEmail } = require('../utils/sendEmail');
+const { generateContractPdfBuffer } = require('../utils/contractPdfGenerator');
 const crypto = require('crypto');
 const vnp_TmnCode = process.env.VNP_TMN_CODE || '98KLJQXT';
 const vnp_HashSecret = process.env.VNP_HASH_SECRET || '7HVTWYRFWK4H9EMWOLX9R7GH8VXKGKI8';
@@ -1154,25 +1155,22 @@ const sendContractOtp = async (req, res, next) => {
     const tenantId = req.user.userId;
 
     const contract = await Contract.findOne({
-      where: { contract_id: contractId, tenant_id: tenantId },
+      where: { contract_id: contractId },
     });
 
     if (!contract) {
-      return res.status(404).json({ success: false, message: 'Contract not found.' });
-    }
-
-    if (contract.status !== 'pending_signature') {
-      return res.status(400).json({
-        success: false,
-        message: 'This contract is not pending signature.',
-      });
+      return res.status(404).json({ success: false, message: 'Hợp đồng không tồn tại.' });
     }
 
     const tenant = await User.findByPk(tenantId);
+    const recipientEmail = tenant?.email || req.user.email;
+
+    if (!recipientEmail) {
+      return res.status(400).json({ success: false, message: 'Không tìm thấy Email của bạn để gửi mã OTP.' });
+    }
 
     const otpCode = generateOtp();
-    const expiredAt = new Date();
-    expiredAt.setMinutes(expiredAt.getMinutes() + 5);
+    const expiredAt = new Date(Date.now() + 5 * 60 * 1000);
 
     await OtpVerification.create({
       user_id: tenantId,
@@ -1181,11 +1179,13 @@ const sendContractOtp = async (req, res, next) => {
       expired_at: expiredAt,
     });
 
-    await sendOtpEmail(tenant.email, otpCode, 'sign_contract');
+    // Send email asynchronously so we don't block the response
+    sendOtpEmail(recipientEmail, otpCode, 'sign_contract').catch(err => console.error('Error sending OTP email:', err));
+    console.log(`🔑 [CONTRACT OTP] Sent OTP ${otpCode} to ${recipientEmail} for contract ${contractId}`);
 
     return res.status(200).json({
       success: true,
-      message: 'OTP sent to your email. Please check your inbox to sign the contract.',
+      message: 'Mã OTP đã được gửi về Email của bạn. Vui lòng kiểm tra hòm thư.',
     });
   } catch (error) {
     next(error);
@@ -1207,7 +1207,7 @@ const signContract = async (req, res, next) => {
     }
 
     const contract = await Contract.findOne({
-      where: { contract_id: contractId, tenant_id: tenantId },
+      where: { contract_id: contractId },
       include: [
         { model: Room, as: 'room' },
         { model: User, as: 'landlordContract' }
@@ -1218,11 +1218,8 @@ const signContract = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Contract not found.' });
     }
 
-    if (contract.status !== 'pending_signature') {
-      return res.status(400).json({
-        success: false,
-        message: 'This contract is not pending signature.',
-      });
+    if (!contract.tenant_id) {
+      contract.tenant_id = tenantId;
     }
 
     // Verify OTP
@@ -1262,7 +1259,7 @@ const signContract = async (req, res, next) => {
     if (isRenewal) {
       contract.status = 'active';
       contract.updated_at = new Date();
-      
+
       // Update original contract to completed if it's not already
       if (originalContract.status === 'active') {
         originalContract.status = 'completed';
@@ -1275,14 +1272,46 @@ const signContract = async (req, res, next) => {
 
     await contract.save();
 
-    // Send contract PDF email to landlord and tenant if provided
-    if (contractPdf) {
-      const tenantUser = await User.findByPk(tenantId);
-      if (tenantUser && tenantUser.email) {
-        await sendContractEmail(tenantUser.email, contract.contract_number, contractPdf);
-      }
-      if (contract.landlordContract && contract.landlordContract.email) {
-        await sendContractEmail(contract.landlordContract.email, contract.contract_number, contractPdf);
+    // Send contract PDF email immediately only for renewal contracts. Normal contracts wait for successful payment.
+    if (isRenewal) {
+      try {
+        let pdfToAttach = contractPdf;
+        if (!pdfToAttach) {
+          pdfToAttach = await generateContractPdfBuffer({
+            contractNumber: contract.contract_number,
+            startDate: contract.start_date,
+            endDate: contract.end_date,
+            monthlyRent: contract.monthly_rent,
+            depositAmount: contract.deposit_amount,
+            room: contract.room || {},
+            landlord: contract.landlordContract || {},
+            tenant: req.user,
+            landlordName: contract.landlord_name,
+            landlordIc: contract.landlord_ic,
+            landlordIcIssueDate: contract.landlord_ic_issue_date,
+            landlordIcIssuePlace: contract.landlord_ic_issue_place,
+            landlordPermanentAddress: contract.landlord_permanent_address,
+            landlordSignature: contract.landlord_signature,
+            tenantName: contract.tenant_name,
+            tenantIc: contract.tenant_ic,
+            tenantIcIssueDate: contract.tenant_ic_issue_date,
+            tenantIcIssuePlace: contract.tenant_ic_issue_place,
+            tenantPermanentAddress: contract.tenant_permanent_address,
+            tenantSignature: contract.tenant_signature,
+          });
+        }
+
+        const tenantUser = await User.findByPk(tenantId);
+        const landlordUser = contract.landlordContract || (contract.landlord_id ? await User.findByPk(contract.landlord_id) : null);
+
+        if (tenantUser && tenantUser.email) {
+          await sendContractEmail(tenantUser.email, contract.contract_number, pdfToAttach);
+        }
+        if (landlordUser && landlordUser.email) {
+          await sendContractEmail(landlordUser.email, contract.contract_number, pdfToAttach);
+        }
+      } catch (emailErr) {
+        console.error('❌ Failed to generate or send contract PDF email:', emailErr.message);
       }
     }
 
@@ -1328,7 +1357,7 @@ const signContract = async (req, res, next) => {
     await Notification.create({
       user_id: contract.landlord_id,
       title: isRenewal ? 'Contract Renewed' : 'Contract Signed (Pending Payment)',
-      message: isRenewal 
+      message: isRenewal
         ? `Tenant has signed the renewal contract for "${contract.room.title}". The contract is now active.`
         : `Tenant has signed the rental contract for "${contract.room.title}". Waiting for deposit payment.`,
       notification_type: 'contract',
@@ -1357,12 +1386,19 @@ const getTenantContracts = async (req, res, next) => {
   try {
     const tenantId = req.user.userId;
 
-    const { RenewalRequest, TerminationRequest } = require('../models');
+    const { RenewalRequest, TerminationRequest, RoomImage } = require('../models');
     const { Op } = require('sequelize');
     const contracts = await Contract.findAll({
       where: { tenant_id: tenantId },
       include: [
-        { model: Room, as: 'room', attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month', 'area_sqm', 'room_type', 'bedrooms', 'max_occupants'] },
+        {
+          model: Room,
+          as: 'room',
+          attributes: ['room_id', 'title', 'address', 'ward', 'district', 'city', 'price_per_month', 'area_sqm', 'room_type', 'bedrooms', 'max_occupants', 'thumbnail_url'],
+          include: [
+            { model: RoomImage, as: 'images', attributes: ['image_id', 'image_url', 'is_primary'] }
+          ]
+        },
         { model: User, as: 'landlordContract', attributes: ['user_id', 'full_name', 'email', 'phone', 'avatar_url'] },
         { model: RenewalRequest, as: 'renewalRequests', limit: 1, order: [['created_at', 'DESC']] },
         { model: TerminationRequest, as: 'terminationRequests', where: { status: { [Op.in]: ['PENDING', 'ACCEPTED'] } }, required: false }
@@ -1427,7 +1463,7 @@ const cancelContract = async (req, res, next) => {
     if (contract.status === 'active' || contract.status === 'completed') {
       return res.status(400).json({ success: false, message: 'Cannot cancel an active or completed contract.' });
     }
-    
+
     contract.status = 'cancelled';
     await contract.save();
 
@@ -1447,169 +1483,169 @@ const cancelContract = async (req, res, next) => {
   }
 };
 
-  // =========================================================
-  // POST /api/tenant/contracts/:contractId/renew
-  // Tenant requests contract renewal
-  // =========================================================
-  const renewContract = async (req, res, next) => {
-    try {
-      const { contractId } = req.params;
-      const tenantId = req.user.userId;
-      const { durationMonths } = req.body;
+// =========================================================
+// POST /api/tenant/contracts/:contractId/renew
+// Tenant requests contract renewal
+// =========================================================
+const renewContract = async (req, res, next) => {
+  try {
+    const { contractId } = req.params;
+    const tenantId = req.user.userId;
+    const { durationMonths } = req.body;
 
-      const oldContract = await Contract.findOne({
-        where: { contract_id: contractId, tenant_id: tenantId, status: 'active' },
-        include: [{ model: Room, as: 'room' }]
-      });
+    const oldContract = await Contract.findOne({
+      where: { contract_id: contractId, tenant_id: tenantId, status: 'active' },
+      include: [{ model: Room, as: 'room' }]
+    });
 
-      if (!oldContract) {
-        return res.status(404).json({ success: false, message: 'Không tìm thấy hợp đồng đang hoạt động.' });
-      }
+    if (!oldContract) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy hợp đồng đang hoạt động.' });
+    }
 
-      if (oldContract.is_renewed) {
-        return res.status(400).json({ success: false, message: 'Hợp đồng này đã được gia hạn.' });
-      }
+    if (oldContract.is_renewed) {
+      return res.status(400).json({ success: false, message: 'Hợp đồng này đã được gia hạn.' });
+    }
 
-      // Mark old as renewed
-      oldContract.is_renewed = true;
-      oldContract.renewal_status = 'renewed';
-      await oldContract.save();
+    // Mark old as renewed
+    oldContract.is_renewed = true;
+    oldContract.renewal_status = 'renewed';
+    await oldContract.save();
 
-      // Create new draft contract
-      const start = new Date(oldContract.end_date);
-      const end = new Date(start);
-      end.setMonth(end.getMonth() + parseInt(durationMonths || 12));
+    // Create new draft contract
+    const start = new Date(oldContract.end_date);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + parseInt(durationMonths || 12));
 
-      const timestamp = Date.now().toString().slice(-6);
-      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
 
-      const newContract = await Contract.create({
-        room_id: oldContract.room_id,
-        tenant_id: oldContract.tenant_id,
-        landlord_id: oldContract.landlord_id,
-        contract_number: `CT-${timestamp}-${random}`,
-        status: 'draft',
-        start_date: start,
-        end_date: end,
-        monthly_rent: oldContract.monthly_rent,
-        deposit_amount: oldContract.deposit_amount,
-        tenant_name: oldContract.tenant_name,
-        tenant_ic: oldContract.tenant_ic,
-        tenant_ic_issue_date: oldContract.tenant_ic_issue_date,
-        tenant_ic_issue_place: oldContract.tenant_ic_issue_place,
-        tenant_permanent_address: oldContract.tenant_permanent_address,
-        renewal_contract_id: oldContract.contract_id
-      });
+    const newContract = await Contract.create({
+      room_id: oldContract.room_id,
+      tenant_id: oldContract.tenant_id,
+      landlord_id: oldContract.landlord_id,
+      contract_number: `CT-${timestamp}-${random}`,
+      status: 'draft',
+      start_date: start,
+      end_date: end,
+      monthly_rent: oldContract.monthly_rent,
+      deposit_amount: oldContract.deposit_amount,
+      tenant_name: oldContract.tenant_name,
+      tenant_ic: oldContract.tenant_ic,
+      tenant_ic_issue_date: oldContract.tenant_ic_issue_date,
+      tenant_ic_issue_place: oldContract.tenant_ic_issue_place,
+      tenant_permanent_address: oldContract.tenant_permanent_address,
+      renewal_contract_id: oldContract.contract_id
+    });
 
-      // Notify landlord
-      await Notification.create({
-        user_id: oldContract.landlord_id,
+    // Notify landlord
+    await Notification.create({
+      user_id: oldContract.landlord_id,
+      title: 'Yêu cầu gia hạn hợp đồng',
+      message: `Khách thuê đã yêu cầu gia hạn hợp đồng phòng "${oldContract.room ? oldContract.room.title : oldContract.room_id}". Vui lòng kiểm tra và gửi lại hợp đồng.`,
+      notification_type: 'contract',
+      related_id: newContract.contract_id,
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${oldContract.landlord_id}`).emit('new_notification', {
         title: 'Yêu cầu gia hạn hợp đồng',
         message: `Khách thuê đã yêu cầu gia hạn hợp đồng phòng "${oldContract.room ? oldContract.room.title : oldContract.room_id}". Vui lòng kiểm tra và gửi lại hợp đồng.`,
-        notification_type: 'contract',
-        related_id: newContract.contract_id,
+        type: 'contract'
       });
-
-      const io = req.app.get('io');
-      if (io) {
-        io.to(`user_${oldContract.landlord_id}`).emit('new_notification', {
-          title: 'Yêu cầu gia hạn hợp đồng',
-          message: `Khách thuê đã yêu cầu gia hạn hợp đồng phòng "${oldContract.room ? oldContract.room.title : oldContract.room_id}". Vui lòng kiểm tra và gửi lại hợp đồng.`,
-          type: 'contract'
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: 'Đã gửi yêu cầu gia hạn. Vui lòng chờ chủ nhà duyệt.',
-        data: newContract
-      });
-
-    } catch (error) {
-      next(error);
     }
-  };
 
-  // =========================================================
-  // POST /api/tenant/contracts/:contractId/decline-renewal
-  // Tenant declines renewal (declares they will move out on contract expiry)
-  // =========================================================
-  const declineContractRenewal = async (req, res, next) => {
-    try {
-      const { contractId } = req.params;
-      const tenantId = req.user.userId;
+    return res.status(200).json({
+      success: true,
+      message: 'Đã gửi yêu cầu gia hạn. Vui lòng chờ chủ nhà duyệt.',
+      data: newContract
+    });
 
-      const contract = await Contract.findOne({
-        where: { contract_id: contractId, tenant_id: tenantId, status: 'active' },
-        include: [{ model: Room, as: 'room' }]
-      });
+  } catch (error) {
+    next(error);
+  }
+};
 
-      if (!contract) {
-        return res.status(404).json({ success: false, message: 'Không tìm thấy hợp đồng đang hoạt động.' });
-      }
+// =========================================================
+// POST /api/tenant/contracts/:contractId/decline-renewal
+// Tenant declines renewal (declares they will move out on contract expiry)
+// =========================================================
+const declineContractRenewal = async (req, res, next) => {
+  try {
+    const { contractId } = req.params;
+    const tenantId = req.user.userId;
 
-      // Mark the contract as not renewing
-      contract.is_renewed = false;
-      contract.renewal_status = 'declined';
-      await contract.save();
+    const contract = await Contract.findOne({
+      where: { contract_id: contractId, tenant_id: tenantId, status: 'active' },
+      include: [{ model: Room, as: 'room' }]
+    });
 
-      // Update Room availability date to end_date + 1 day
-      const room = await Room.findByPk(contract.room_id);
-      if (room) {
-        const nextDay = new Date(contract.end_date);
-        nextDay.setDate(nextDay.getDate() + 1);
-        room.available_from = nextDay.toISOString().substring(0, 10);
-        await room.save();
-      }
+    if (!contract) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy hợp đồng đang hoạt động.' });
+    }
 
-      // Notify landlord
-      const { Notification } = require('../models');
-      await Notification.create({
-        user_id: contract.landlord_id,
+    // Mark the contract as not renewing
+    contract.is_renewed = false;
+    contract.renewal_status = 'declined';
+    await contract.save();
+
+    // Update Room availability date to end_date + 1 day
+    const room = await Room.findByPk(contract.room_id);
+    if (room) {
+      const nextDay = new Date(contract.end_date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      room.available_from = nextDay.toISOString().substring(0, 10);
+      await room.save();
+    }
+
+    // Notify landlord
+    const { Notification } = require('../models');
+    await Notification.create({
+      user_id: contract.landlord_id,
+      title: 'Khách thuê từ chối gia hạn',
+      message: `Khách thuê phòng "${contract.room ? contract.room.title : contract.room_id}" đã xác nhận không gia hạn và sẽ chuyển đi vào ngày ${new Date(contract.end_date).toLocaleDateString('vi-VN')}. Phòng này hiện đã khả dụng để người khác đặt trước.`,
+      notification_type: 'contract',
+      related_id: contract.contract_id,
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${contract.landlord_id}`).emit('new_notification', {
         title: 'Khách thuê từ chối gia hạn',
-        message: `Khách thuê phòng "${contract.room ? contract.room.title : contract.room_id}" đã xác nhận không gia hạn và sẽ chuyển đi vào ngày ${new Date(contract.end_date).toLocaleDateString('vi-VN')}. Phòng này hiện đã khả dụng để người khác đặt trước.`,
-        notification_type: 'contract',
-        related_id: contract.contract_id,
+        message: `Khách thuê phòng "${contract.room ? contract.room.title : contract.room_id}" đã xác nhận không gia hạn và sẽ chuyển đi vào ngày ${new Date(contract.end_date).toLocaleDateString('vi-VN')}.`,
+        type: 'contract'
       });
-
-      const io = req.app.get('io');
-      if (io) {
-        io.to(`user_${contract.landlord_id}`).emit('new_notification', {
-          title: 'Khách thuê từ chối gia hạn',
-          message: `Khách thuê phòng "${contract.room ? contract.room.title : contract.room_id}" đã xác nhận không gia hạn và sẽ chuyển đi vào ngày ${new Date(contract.end_date).toLocaleDateString('vi-VN')}.`,
-          type: 'contract'
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: 'Bạn đã xác nhận không gia hạn hợp đồng thành công. Ngày trả phòng dự kiến: ' + new Date(contract.end_date).toLocaleDateString('vi-VN'),
-      });
-    } catch (error) {
-      next(error);
     }
-  };
 
-  module.exports = {
-    createViewingSchedule,
-    getLandlordViewingSchedules,
-    getViewingScheduleDetails,
-    updateViewingSchedule,
-    confirmViewing,
-    markNoShow,
-    deleteViewingSchedule,
-    getTenantViewingSchedules,
-    requestViewing,
-    retryPayment,
-    requestContract,
-    disputeViewingSchedule,
-    cancelViewingScheduleTenant,
-    declineViewingScheduleTenant,
-    createContractFromViewing,
-    sendContractOtp,
-    signContract,
-    getTenantContracts,
-    cancelContract,
-    renewContract,
-    declineContractRenewal,
-  };
+    return res.status(200).json({
+      success: true,
+      message: 'Bạn đã xác nhận không gia hạn hợp đồng thành công. Ngày trả phòng dự kiến: ' + new Date(contract.end_date).toLocaleDateString('vi-VN'),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createViewingSchedule,
+  getLandlordViewingSchedules,
+  getViewingScheduleDetails,
+  updateViewingSchedule,
+  confirmViewing,
+  markNoShow,
+  deleteViewingSchedule,
+  getTenantViewingSchedules,
+  requestViewing,
+  retryPayment,
+  requestContract,
+  disputeViewingSchedule,
+  cancelViewingScheduleTenant,
+  declineViewingScheduleTenant,
+  createContractFromViewing,
+  sendContractOtp,
+  signContract,
+  getTenantContracts,
+  cancelContract,
+  renewContract,
+  declineContractRenewal,
+};

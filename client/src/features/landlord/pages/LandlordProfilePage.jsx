@@ -71,6 +71,7 @@ const LandlordProfilePage = () => {
   const [phoneError, setPhoneError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
   const fileInputRef = React.useRef(null);
+  const isVerified = (profile?.verificationStatus || profile?.verification_status || user?.verificationStatus || user?.verification_status) === 'verified';
 
   // Identity Verification state
   const [verifyForm, setVerifyForm] = useState({ icNumber: '', icIssueDate: '', icIssuePlace: '', permanentAddress: '' });
@@ -305,6 +306,27 @@ const LandlordProfilePage = () => {
     e.preventDefault();
     setBankLoading(true);
     setBankError('');
+
+    const normalizeName = (name) => {
+      if (!name) return '';
+      return name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "d")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
+    };
+
+    const displayProfile = profile || user || {};
+    const landlordName = displayProfile.fullName || displayProfile.full_name || '';
+    
+    if (normalizeName(bankForm.account_holder_name) !== normalizeName(landlordName)) {
+      setBankError(`Tên chủ sở hữu tài khoản ngân hàng phải trùng khớp với Họ tên của bạn trên hệ thống (${landlordName.toUpperCase()}).`);
+      setBankLoading(false);
+      return;
+    }
 
     try {
       const response = await landlordService.saveBankDetails(bankForm);
@@ -943,7 +965,10 @@ const LandlordProfilePage = () => {
                   onChange={(e) => setEditForm(prev => ({ ...prev, fullName: e.target.value }))}
                   placeholder="Enter your full name"
                   required
+                  disabled={isVerified}
+                  className={isVerified ? 'edit-input-disabled' : ''}
                 />
+                {isVerified && <span className="edit-field-hint" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', display: 'block' }}>Họ tên không thể thay đổi sau khi đã xác thực</span>}
               </div>
 
               <div className="edit-form-group">
@@ -984,7 +1009,10 @@ const LandlordProfilePage = () => {
                   value={editForm.icNumber}
                   onChange={(e) => setEditForm(prev => ({ ...prev, icNumber: e.target.value.replace(/\D/g, '') }))}
                   placeholder="Enter 12 digit ID number"
+                  disabled={isVerified}
+                  className={isVerified ? 'edit-input-disabled' : ''}
                 />
+                {isVerified && <span className="edit-field-hint" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', display: 'block' }}>Số CCCD không thể thay đổi sau khi đã xác thực</span>}
               </div>
 
               <div className="edit-form-group">
@@ -995,7 +1023,10 @@ const LandlordProfilePage = () => {
                   value={editForm.icIssueDate}
                   onChange={(e) => setEditForm(prev => ({ ...prev, icIssueDate: e.target.value }))}
                   max={new Date().toISOString().split('T')[0]}
+                  disabled={isVerified}
+                  className={isVerified ? 'edit-input-disabled' : ''}
                 />
+                {isVerified && <span className="edit-field-hint" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', display: 'block' }}>Ngày cấp không thể thay đổi sau khi đã xác thực</span>}
               </div>
 
               <div className="edit-form-group">
@@ -1005,7 +1036,10 @@ const LandlordProfilePage = () => {
                   value={editForm.icIssuePlace}
                   onChange={(e) => setEditForm(prev => ({ ...prev, icIssuePlace: e.target.value }))}
                   placeholder="e.g. Cục Cảnh sát QLHC về TTXH"
+                  disabled={isVerified}
+                  className={isVerified ? 'edit-input-disabled' : ''}
                 />
+                {isVerified && <span className="edit-field-hint" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', display: 'block' }}>Nơi cấp không thể thay đổi sau khi đã xác thực</span>}
               </div>
 
               <div className="edit-form-group">
@@ -1015,7 +1049,10 @@ const LandlordProfilePage = () => {
                   value={editForm.permanentAddress}
                   onChange={(e) => setEditForm(prev => ({ ...prev, permanentAddress: e.target.value }))}
                   placeholder="Enter your permanent address"
+                  disabled={isVerified}
+                  className={isVerified ? 'edit-input-disabled' : ''}
                 />
+                {isVerified && <span className="edit-field-hint" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', display: 'block' }}>Địa chỉ thường trú không thể thay đổi sau khi đã xác thực</span>}
               </div>
 
               {editError && (

@@ -3,10 +3,11 @@ import toast from 'react-hot-toast';
 import { 
   Calendar, ShieldCheck, Star, Edit, Edit3, Lock, Bell, 
   CreditCard, ChevronRight, Wrench, ThermometerSnowflake, 
-  CheckCircle2, Clock, ArrowRight, Plus, Save, X, Camera
+  CheckCircle2, Clock, ArrowRight, Plus, Save, X, Camera, Key
 } from 'lucide-react';
 import useAuthStore from '../../../store/useAuthStore';
 import { authService } from '../../auth/services/authService';
+import ChangePasswordModal from '../../auth/components/ChangePasswordModal';
 import { API_URL } from '../../../config';
 import { useTranslation } from 'react-i18next';
 import './TenantProfilePage.css';
@@ -17,6 +18,7 @@ const TenantProfilePage = () => {
   const { t } = useTranslation();
   const { user, updateUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     phone: ''
@@ -241,14 +243,53 @@ const TenantProfilePage = () => {
               )}
             </div>
 
-
+            {/* Account Security & Password */}
+            <div className="profile-card security-info-card" style={{ marginTop: '20px', background: '#fff', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <div className="card-header" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Key size={20} style={{ color: '#2563eb' }} />
+                <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#1e293b', margin: 0 }}>Bảo mật tài khoản</h2>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Lock size={20} style={{ color: '#2563eb' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '15px', color: '#1e293b' }}>Đổi mật khẩu</div>
+                    <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>Cập nhật mật khẩu định kỳ để duy trì bảo mật tài khoản</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsPasswordModalOpen(true)}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#2563eb',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <Lock size={14} /> Đổi mật khẩu
+                </button>
+              </div>
+            </div>
 
           </aside>
 
-          {/* Main Content removed */}
-
         </div>
       </div>
+
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+      />
     </div>
   );
 };

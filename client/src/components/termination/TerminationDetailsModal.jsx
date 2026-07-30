@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 const TerminationDetailsModal = ({ request, currentUserId, onClose, onRefresh }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [confirmConfig, setConfirmConfig] = useState(null);
 
   // Review states
   const [showRejectInput, setShowRejectInput] = useState(false);
@@ -43,19 +44,23 @@ const TerminationDetailsModal = ({ request, currentUserId, onClose, onRefresh })
   };
 
   const handleApprove = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn CHẤP NHẬN yêu cầu chấm dứt hợp đồng này không? Hợp đồng sẽ chính thức chấm dứt.')) return;
-    try {
-      setLoading(true);
-      setError(null);
-      await terminationService.approveRequest(request.request_id, { reviewNote });
-      if (onRefresh) onRefresh();
-      onClose();
-    } catch (err) {
-      console.error(err);
-      setError(err.message || 'Lỗi khi chấp nhận yêu cầu.');
-    } finally {
-      setLoading(false);
-    }
+    setConfirmConfig({
+      message: 'Bạn có chắc chắn muốn CHẤP NHẬN yêu cầu chấm dứt hợp đồng này không? Hợp đồng sẽ chính thức chấm dứt.',
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          await terminationService.approveRequest(request.request_id, { reviewNote });
+          if (onRefresh) onRefresh();
+          onClose();
+        } catch (err) {
+          console.error(err);
+          setError(err.message || 'Lỗi khi chấp nhận yêu cầu.');
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const handleReject = async () => {
@@ -123,19 +128,23 @@ const TerminationDetailsModal = ({ request, currentUserId, onClose, onRefresh })
   };
 
   const handleConfirmRefund = async () => {
-    if (!window.confirm('Bạn xác nhận đã nhận đủ tiền hoàn cọc? Hợp đồng sẽ chính thức kết thúc.')) return;
-    try {
-      setLoading(true);
-      setError(null);
-      await terminationService.confirmRefundReceipt(request.request_id);
-      if (onRefresh) onRefresh();
-      onClose();
-    } catch (err) {
-      console.error(err);
-      setError(err.message || 'Lỗi khi xác nhận nhận tiền.');
-    } finally {
-      setLoading(false);
-    }
+    setConfirmConfig({
+      message: 'Bạn xác nhận đã nhận đủ tiền hoàn cọc? Hợp đồng sẽ chính thức kết thúc.',
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          await terminationService.confirmRefundReceipt(request.request_id);
+          if (onRefresh) onRefresh();
+          onClose();
+        } catch (err) {
+          console.error(err);
+          setError(err.message || 'Lỗi khi xác nhận nhận tiền.');
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const getStatusBadge = (status) => {
@@ -554,6 +563,40 @@ const TerminationDetailsModal = ({ request, currentUserId, onClose, onRefresh })
           </button>
         </div>
       </div>
+
+      {/* Custom Confirm Modal */}
+      {confirmConfig && (
+        <div className="modal-backdrop" style={{ zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <div className="modal-content" style={{ maxWidth: '400px', padding: '24px', borderRadius: '12px', background: '#fff', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>Xác nhận</h4>
+            <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
+              {confirmConfig.message}
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setConfirmConfig(null)}
+                className="tm-btn tm-btn-secondary"
+                style={{ padding: '8px 16px', borderRadius: '6px', fontSize: '14px', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', cursor: 'pointer' }}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const callback = confirmConfig.onConfirm;
+                  setConfirmConfig(null);
+                  callback();
+                }}
+                className="tm-btn tm-btn-primary"
+                style={{ padding: '8px 16px', borderRadius: '6px', fontSize: '14px', border: 'none', background: '#059669', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

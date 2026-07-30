@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import {
@@ -19,6 +19,7 @@ import './ReviewListingPage.css';
 const ReviewListingPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const [roomData, setRoomData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -147,7 +148,10 @@ const ReviewListingPage = () => {
       {/* Back Button */}
       <button
         className="back-btn"
-        onClick={() => navigate('/admin/listings')}
+        onClick={() => {
+          const fromTab = location.state?.fromTab || 'listings';
+          navigate('/admin/listings', { state: { tab: fromTab } });
+        }}
         style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontWeight: 500, marginBottom: 20, fontSize: '0.95rem' }}
       >
         <ChevronLeft size={18} />

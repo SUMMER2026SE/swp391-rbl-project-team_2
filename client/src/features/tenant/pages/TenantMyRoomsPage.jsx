@@ -34,17 +34,26 @@ const TenantMyRoomsPage = () => {
     }
   };
 
-  const getImageUrl = (imageStr) => {
-    if (!imageStr) return 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800';
-    try {
-      if (typeof imageStr === 'string' && imageStr.startsWith('[')) {
-        const parsed = JSON.parse(imageStr);
-        return parsed[0] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800';
-      }
-      return imageStr;
-    } catch (e) {
-      return imageStr;
+  const getImageUrl = (room) => {
+    if (!room) return 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800';
+    
+    // Check primary image from RoomImage model array
+    const primaryImgObj = room.images?.find(img => img.is_primary) || room.images?.[0];
+    let rawPath = room.thumbnail_url || primaryImgObj?.image_url || primaryImgObj?.imageUrl || room.image_url || room.image;
+
+    if (typeof rawPath === 'string' && rawPath.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(rawPath);
+        rawPath = parsed[0];
+      } catch (e) {}
     }
+
+    if (!rawPath || typeof rawPath !== 'string') {
+      return 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800';
+    }
+
+    if (rawPath.startsWith('http')) return rawPath;
+    return `http://localhost:5000${rawPath.startsWith('/') ? '' : '/'}${rawPath}`;
   };
 
   const formatPrice = (price) => {
@@ -117,7 +126,7 @@ const TenantMyRoomsPage = () => {
                   {/* Image Section */}
                   <div style={{ width: '280px', minHeight: '200px', flexShrink: 0 }}>
                     <img 
-                      src={getImageUrl(room.images || room.image)} 
+                      src={getImageUrl(room)} 
                       alt={room.title}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />

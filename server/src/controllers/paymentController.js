@@ -425,257 +425,9 @@ const vnpayReturn = async (req, res, next) => {
       });
       if (payment) {
         if (rspCode === '00') {
-          await payment.update({ 
-            status: 'completed', 
-            transaction_id: transactionNo,
-            paid_date: new Date(),
-            updated_at: new Date()
-          });
+          const updatedPayment = await processPaymentSuccess(payment, transactionNo);
 
-          // Cancel all other pending payments for this room
-          const { Op } = require('sequelize');
-          await Payment.update(
-            { status: 'cancelled', updated_at: new Date() },
-            { 
-              where: { 
-                room_id: payment.room_id, 
-                payment_id: { [Op.ne]: payment.payment_id },
-                status: 'pending' 
-              } 
-            }
-          );
-
-          if (payment.payment_type === 'viewing_deposit' && payment.viewing_schedule_id) {
-            const { ViewingSchedule } = require('../models');
-            await ViewingSchedule.update(
-              { status: 'scheduled' }, 
-              { where: { schedule_id: payment.viewing_schedule_id } }
-            );
-          } else if (payment.contract_id) {
-            const contract = await Contract.findByPk(payment.contract_id);
-            if (contract) {
-              const start = new Date(contract.start_date);
-              start.setHours(0, 0, 0, 0);
-              const now = new Date();
-              now.setHours(0, 0, 0, 0);
-
-              const isFutureContract = start > now;
-              if (isFutureContract) {
-                await contract.update({ status: 'pre_booked_active', tenant_agreed: true });
-              } else {
-                await contract.update({ status: 'active', tenant_agreed: true });
-              }
-              
-              const room = await Room.findByPk(contract.room_id);
-              if (room) {
-                if (isFutureContract) {
-                  room.available_from = contract.end_date;
-                } else {
-                  if (room.available_quantity !== null) {
-                    room.available_quantity -= 1;
-                    if (room.available_quantity <= 0) {
-                      room.status = 'rented';
-                    }
-                  } else {
-                    room.status = 'rented';
-                  }
-                }
-                await room.save();
-              }
-              
-              const { ViewingSchedule, Notification } = require('../models');
-              const viewingSchedule = await ViewingSchedule.findOne({
-                where: { room_id: contract.room_id, tenant_id: payment.tenant_id, status: 'contract_created' }
-              });
-              
-              if (viewingSchedule) {
-                await viewingSchedule.update({ status: 'completed', tenant_decision: 'rented' });
-              }
-
-              // Cancel all other active viewing schedules for this room
-              const { Op } = require('sequelize');
-              const otherSchedules = await ViewingSchedule.findAll({
-                where: {
-                  room_id: contract.room_id,
-                  status: { [Op.in]: ['pending', 'scheduled', 'confirmed', 'completed', 'contract_requested', 'contract_created'] },
-                  schedule_id: { [Op.ne]: viewingSchedule ? viewingSchedule.schedule_id : null }
-                }
-              });
-
-              for (const sched of otherSchedules) {
-                await sched.update({
-                  status: 'cancelled',
-                  notes: (sched.notes ? sched.notes + '\n' : '') + '[SYSTEM]: Room has been rented by another tenant.'
-                });
-                
-                await Notification.create({
-                  user_id: sched.tenant_id,
-                  title: 'Viewing Cancelled',
-                  message: `Your viewing schedule for "${room ? room.title : 'room'}" has been cancelled because the room was just rented by another tenant.`,
-                  notification_type: 'viewing_schedule',
-                  related_id: sched.schedule_id,
-                });
-              }
-
-              // Cancel all other active rental requests for this room
-              const { RentalRequest } = require('../models');
-              const otherRequests = await RentalRequest.findAll({
-                where: {
-                  room_id: contract.room_id,
-                  status: { [Op.in]: ['pending', 'approved', 'contract_requested', 'contract_created'] }
-                }
-              });
-
-              for (const req of otherRequests) {
-                await req.update({
-                  status: 'cancelled',
-                  rejection_reason: '[SYSTEM]: Room has been rented by another tenant.'
-                });
-                
-                await Notification.create({
-                  user_id: req.tenant_id,
-                  title: 'Request Cancelled',
-                  message: `Your rental request for "${room ? room.title : 'room'}" has been cancelled because the room was just rented by another tenant.`,
-                  notification_type: 'rental_request',
-                  related_id: req.request_id,
-                });
-              }
-
-              // Cancel all other active contracts for this room
-              const otherContracts = await Contract.findAll({
-                where: {
-                  room_id: contract.room_id,
-                  status: { [Op.in]: ['draft', 'pending_signature'] },
-                  contract_id: { [Op.ne]: contract.contract_id }
-                }
-              });
-
-              for (const otherC of otherContracts) {
-                await otherC.update({ status: 'cancelled' });
-                
-                await Notification.create({
-                  user_id: otherC.tenant_id,
-                  title: 'Contract Cancelled',
-                  message: `Your rental contract for "${room ? room.title : 'room'}" has been cancelled because the room was just rented by another tenant.`,
-                  notification_type: 'contract',
-                  related_id: otherC.contract_id,
-                });
-              }
-
-              await Notification.create({
-                user_id: contract.landlord_id,
-                title: 'Contract Signed & Paid',
-                message: `Tenant has signed the rental contract and paid the deposit + 1st month rent for "${room ? room.title : 'room'}". The rental is now active.`,
-                notification_type: 'contract',
-                related_id: contract.contract_id,
-              });
-              
-              const total = parseFloat(payment.amount);
-              await payment.update({
-                  platform_fee: total * 0.05,
-                  net_amount: total * 0.95,
-                  refund_amount: 0,
-                  payout_status: 'completed',
-                  payout_date: new Date()
-              });
-            }
-          } else {
-            const rentalRequest = await RentalRequest.findOne({
-              where: {
-                room_id: payment.room_id,
-                tenant_id: payment.tenant_id,
-                status: 'approved'
-              }
-            });
-
-            if (rentalRequest) {
-              await rentalRequest.update({ status: 'deposit_paid' });
-            }
-
-            const room = await Room.findByPk(payment.room_id);
-            if (room) {
-              if (room.available_quantity !== null) {
-                room.available_quantity -= 1;
-                if (room.available_quantity <= 0) {
-                  room.status = 'rented';
-                }
-              } else {
-                room.status = 'rented';
-              }
-              await room.save();
-
-              // Cancel all other active viewing schedules for this room
-              const { ViewingSchedule, Contract, Notification } = require('../models');
-              const { Op } = require('sequelize');
-              const otherSchedules = await ViewingSchedule.findAll({
-                where: {
-                  room_id: payment.room_id,
-                  status: { [Op.in]: ['pending', 'scheduled', 'confirmed', 'completed', 'contract_requested', 'contract_created'] }
-                }
-              });
-
-              for (const sched of otherSchedules) {
-                await sched.update({
-                  status: 'cancelled',
-                  notes: (sched.notes ? sched.notes + '\n' : '') + '[SYSTEM]: Room has been rented by another tenant.'
-                });
-                
-                await Notification.create({
-                  user_id: sched.tenant_id,
-                  title: 'Viewing Cancelled',
-                  message: `Your viewing schedule for "${room.title}" has been cancelled because the room was just rented by another tenant.`,
-                  notification_type: 'viewing_schedule',
-                  related_id: sched.schedule_id,
-                });
-              }
-
-              // Cancel all other active rental requests for this room
-              const otherRequests = await RentalRequest.findAll({
-                where: {
-                  room_id: payment.room_id,
-                  status: { [Op.in]: ['pending', 'approved', 'contract_requested', 'contract_created'] },
-                  request_id: { [Op.ne]: rentalRequest ? rentalRequest.request_id : null }
-                }
-              });
-
-              for (const req of otherRequests) {
-                await req.update({
-                  status: 'cancelled',
-                  rejection_reason: '[SYSTEM]: Room has been rented by another tenant.'
-                });
-                
-                await Notification.create({
-                  user_id: req.tenant_id,
-                  title: 'Request Cancelled',
-                  message: `Your rental request for "${room.title}" has been cancelled because the room was just rented by another tenant.`,
-                  notification_type: 'rental_request',
-                  related_id: req.request_id,
-                });
-              }
-
-              // Cancel all other active contracts for this room
-              const otherContracts = await Contract.findAll({
-                where: {
-                  room_id: payment.room_id,
-                  status: { [Op.in]: ['draft', 'pending_signature'] }
-                }
-              });
-
-              for (const otherC of otherContracts) {
-                await otherC.update({ status: 'cancelled' });
-                
-                await Notification.create({
-                  user_id: otherC.tenant_id,
-                  title: 'Contract Cancelled',
-                  message: `Your rental contract for "${room.title}" has been cancelled because the room was just rented by another tenant.`,
-                  notification_type: 'contract',
-                  related_id: otherC.contract_id,
-                });
-              }
-            }
-          }
-          
-          const paymentData = payment.toJSON();
+          const paymentData = updatedPayment.toJSON();
           paymentData.landlord = paymentData.landlordPayment;
           delete paymentData.landlordPayment;
           
@@ -810,7 +562,7 @@ const cancelPayment = async (req, res, next) => {
   }
 };
 
-const processPaymentSuccess = async (payment, transactionId) => {
+async function processPaymentSuccess(payment, transactionId) {
   if (payment.status === 'completed') {
     return payment;
   }
@@ -841,7 +593,12 @@ const processPaymentSuccess = async (payment, transactionId) => {
       { where: { schedule_id: payment.viewing_schedule_id } }
     );
   } else if (payment.contract_id) {
-    const contract = await Contract.findByPk(payment.contract_id);
+    const contract = await Contract.findByPk(payment.contract_id, {
+      include: [
+        { model: Room, as: 'room' },
+        { model: User, as: 'landlordContract' }
+      ]
+    });
     if (contract) {
       const start = new Date(contract.start_date);
       start.setHours(0, 0, 0, 0);
@@ -849,11 +606,8 @@ const processPaymentSuccess = async (payment, transactionId) => {
       now.setHours(0, 0, 0, 0);
 
       const isFutureContract = start > now;
-      if (isFutureContract) {
-        await contract.update({ status: 'pre_booked_active', tenant_agreed: true });
-      } else {
-        await contract.update({ status: 'active', tenant_agreed: true });
-      }
+      // Always update contract status to 'active' upon successful payment as requested
+      await contract.update({ status: 'active', tenant_agreed: true });
       
       const room = await Room.findByPk(contract.room_id);
       if (room) {
@@ -957,6 +711,48 @@ const processPaymentSuccess = async (payment, transactionId) => {
         notification_type: 'contract',
         related_id: contract.contract_id,
       });
+
+      // Send contract PDF email to landlord and tenant after successful payment
+      try {
+        const { generateContractPdfBuffer } = require('../utils/contractPdfGenerator');
+        const { sendContractEmail } = require('../utils/sendEmail');
+
+        const tenantUser = await User.findByPk(payment.tenant_id);
+        const landlordUser = contract.landlordContract || (contract.landlord_id ? await User.findByPk(contract.landlord_id) : null);
+
+        console.log(`🔑 [PAYMENT SUCCESS] Generating PDF contract on server for contract: ${contract.contract_number}...`);
+        const pdfToAttach = await generateContractPdfBuffer({
+          contractNumber: contract.contract_number,
+          startDate: contract.start_date,
+          endDate: contract.end_date,
+          monthlyRent: contract.monthly_rent,
+          depositAmount: contract.deposit_amount,
+          room: contract.room || {},
+          landlord: contract.landlordContract || {},
+          tenant: tenantUser || {},
+          landlordName: contract.landlord_name,
+          landlordIc: contract.landlord_ic,
+          landlordIcIssueDate: contract.landlord_ic_issue_date,
+          landlordIcIssuePlace: contract.landlord_ic_issue_place,
+          landlordPermanentAddress: contract.landlord_permanent_address,
+          landlordSignature: contract.landlord_signature,
+          tenantName: contract.tenant_name,
+          tenantIc: contract.tenant_ic,
+          tenantIcIssueDate: contract.tenant_ic_issue_date,
+          tenantIcIssuePlace: contract.tenant_ic_issue_place,
+          tenantPermanentAddress: contract.tenant_permanent_address,
+          tenantSignature: contract.tenant_signature,
+        });
+
+        if (tenantUser && tenantUser.email) {
+          await sendContractEmail(tenantUser.email, contract.contract_number, pdfToAttach);
+        }
+        if (landlordUser && landlordUser.email) {
+          await sendContractEmail(landlordUser.email, contract.contract_number, pdfToAttach);
+        }
+      } catch (emailErr) {
+        console.error('❌ Failed to generate or send contract PDF email after payment:', emailErr.message);
+      }
     }
   } else {
     const { RentalRequest, Notification } = require('../models');
@@ -1087,7 +883,10 @@ const payosReturn = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Payment not found' });
     }
 
-    if (status === 'PAID' || req.query.code === '00') {
+    const isCancelled = req.query.cancel === 'true' || status === 'CANCELLED' || req.query.code === '99';
+    const isSuccess = !isCancelled && (status === 'PAID' || (req.query.code === '00' && status !== 'CANCELLED'));
+
+    if (isSuccess) {
       const updatedPayment = await processPaymentSuccess(payment, payment.transaction_id || `payos_${orderCode}_${Date.now()}`);
 
       const paymentData = updatedPayment.toJSON();
@@ -1110,7 +909,7 @@ const payosReturn = async (req, res, next) => {
       return res.status(200).json({
         success: false,
         message: 'Payment cancelled or failed',
-        code: '99',
+        code: req.query.code || '99',
         payment_id: orderCode
       });
     }

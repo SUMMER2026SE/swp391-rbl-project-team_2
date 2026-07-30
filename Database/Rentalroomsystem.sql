@@ -331,6 +331,7 @@ CREATE TABLE [dbo].[payments](
 	[payout_date] [datetime] NULL,
 	[created_at] [datetime] NULL,
 	[updated_at] [datetime] NULL,
+	[withdrawal_id] [int] NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[payment_id] ASC
@@ -357,6 +358,8 @@ CREATE TABLE [dbo].[properties](
 	[is_deleted] [bit] NULL,
 	[created_at] [datetime] NULL,
 	[updated_at] [datetime] NULL,
+	[latitude] [decimal](10, 8) NULL,
+	[longitude] [decimal](11, 8) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[property_id] ASC
@@ -380,6 +383,13 @@ CREATE TABLE [dbo].[rental_requests](
 	[rejection_reason] [nvarchar](max) NULL,
 	[created_at] [datetime] NULL,
 	[updated_at] [datetime] NULL,
+	[tenant_name] [nvarchar](100) NULL,
+	[tenant_ic] [varchar](20) NULL,
+	[tenant_ic_issue_date] [date] NULL,
+	[tenant_ic_issue_place] [nvarchar](255) NULL,
+	[tenant_permanent_address] [nvarchar](255) NULL,
+	[tenant_phone] [varchar](20) NULL,
+	[rental_purpose] [nvarchar](500) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[request_id] ASC
@@ -464,6 +474,12 @@ CREATE TABLE [dbo].[rooms](
 	[is_deleted] [bit] NULL,
 	[updated_at] [datetime] NULL,
 	[created_at] [datetime] NULL,
+	[latitude] [decimal](10, 8) NULL,
+	[longitude] [decimal](11, 8) NULL,
+	[quantity] [int] DEFAULT 1,
+	[available_quantity] [int] DEFAULT 1,
+	[upcoming_vacancy_date] [date] NULL,
+	[batch_id] [varchar](50) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[room_id] ASC
@@ -493,6 +509,11 @@ CREATE TABLE [dbo].[users](
 	[ic_issue_date] [date] NULL,
 	[ic_issue_place] [nvarchar](255) NULL,
 	[permanent_address] [nvarchar](500) NULL,
+	[cccd_front_url] [nvarchar](500) NULL,
+	[cccd_back_url] [nvarchar](500) NULL,
+	[face_photo_url] [nvarchar](500) NULL,
+	[verification_status] [varchar](20) DEFAULT 'unverified',
+	[verification_notes] [nvarchar](1000) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[user_id] ASC
@@ -524,8 +545,151 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-SET IDENTITY_
 
+/****** Object:  Table [dbo].[user_bank_details] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'user_bank_details')
+BEGIN
+CREATE TABLE [dbo].[user_bank_details](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[user_id] [int] NOT NULL UNIQUE,
+	[bank_name] [nvarchar](255) NOT NULL,
+	[account_number] [varchar](50) NOT NULL,
+	[account_holder_name] [nvarchar](255) NOT NULL,
+	[branch] [nvarchar](255) NULL,
+	[created_at] [datetime] DEFAULT GETDATE(),
+	[updated_at] [datetime] DEFAULT GETDATE(),
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+CONSTRAINT [FK_user_bank_details_user] FOREIGN KEY ([user_id]) REFERENCES [dbo].[users]([user_id])
+) ON [PRIMARY]
+END
+GO
+
+/****** Object:  Table [dbo].[withdrawal_requests] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'withdrawal_requests')
+BEGIN
+CREATE TABLE [dbo].[withdrawal_requests](
+	[withdrawal_id] [int] IDENTITY(1,1) NOT NULL,
+	[user_id] [int] NOT NULL,
+	[amount] [decimal](10, 2) NOT NULL,
+	[bank_name] [nvarchar](255) NOT NULL,
+	[account_number] [varchar](50) NOT NULL,
+	[account_holder_name] [nvarchar](255) NOT NULL,
+	[status] [varchar](50) DEFAULT 'pending',
+	[transaction_proof_url] [nvarchar](500) NULL,
+	[admin_notes] [nvarchar](max) NULL,
+	[created_at] [datetime] DEFAULT GETDATE(),
+	[updated_at] [datetime] DEFAULT GETDATE(),
+PRIMARY KEY CLUSTERED 
+(
+	[withdrawal_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+CONSTRAINT [FK_withdrawal_requests_user] FOREIGN KEY ([user_id]) REFERENCES [dbo].[users]([user_id])
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+END
+GO
+
+/****** Object:  Table [dbo].[termination_requests] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'termination_requests')
+BEGIN
+CREATE TABLE [dbo].[termination_requests](
+	[request_id] [int] IDENTITY(1,1) NOT NULL,
+	[contract_id] [int] NOT NULL,
+	[requested_by] [int] NOT NULL,
+	[termination_type] [varchar](50) NOT NULL,
+	[reason] [nvarchar](255) NOT NULL,
+	[description] [nvarchar](max) NULL,
+	[evidence_urls] [nvarchar](max) NULL,
+	[reject_evidence_urls] [nvarchar](max) NULL,
+	[request_date] [datetime] DEFAULT GETDATE(),
+	[requested_termination_date] [date] NOT NULL,
+	[is_unilateral] [bit] DEFAULT 0,
+	[status] [varchar](20) DEFAULT 'PENDING',
+	[reviewed_by] [int] NULL,
+	[review_date] [datetime] NULL,
+	[review_note] [nvarchar](max) NULL,
+	[created_at] [datetime] DEFAULT GETDATE(),
+	[updated_at] [datetime] DEFAULT GETDATE(),
+PRIMARY KEY CLUSTERED 
+(
+	[request_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+END
+GO
+
+/****** Object:  Table [dbo].[termination_records] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'termination_records')
+BEGIN
+CREATE TABLE [dbo].[termination_records](
+	[termination_id] [int] IDENTITY(1,1) NOT NULL,
+	[contract_id] [int] NOT NULL,
+	[request_id] [int] NULL,
+	[termination_date] [datetime] DEFAULT GETDATE(),
+	[final_reason] [nvarchar](max) NOT NULL,
+	[deposit_refund] [decimal](10, 2) DEFAULT 0.00,
+	[deposit_retained] [decimal](10, 2) DEFAULT 0.00,
+	[remaining_rent] [decimal](10, 2) DEFAULT 0.00,
+	[compensation] [decimal](10, 2) DEFAULT 0.00,
+	[total_payout_to_tenant] [decimal](10, 2) DEFAULT 0.00,
+	[final_note] [nvarchar](max) NULL,
+	[refund_status] [varchar](50) DEFAULT 'NONE',
+	[refund_proof_url] [nvarchar](max) NULL,
+	[created_at] [datetime] DEFAULT GETDATE(),
+PRIMARY KEY CLUSTERED 
+(
+	[termination_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+END
+GO
+
+/****** Object:  Table [dbo].[contract_renewal_requests] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'contract_renewal_requests')
+BEGIN
+CREATE TABLE [dbo].[contract_renewal_requests](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[contract_id] [int] NOT NULL,
+	[tenant_id] [int] NOT NULL,
+	[landlord_id] [int] NOT NULL,
+	[requested_duration_months] [int] NOT NULL,
+	[proposed_new_rent] [decimal](10, 2) NULL,
+	[additional_terms] [nvarchar](max) NULL,
+	[landlord_signed_at] [datetime] NULL,
+	[tenant_signed_at] [datetime] NULL,
+	[status] [varchar](50) DEFAULT 'PENDING_INTENT' NOT NULL,
+	[new_contract_id] [int] NULL,
+	[deadline_to_sign] [datetime] NULL,
+	[created_at] [datetime] DEFAULT GETDATE(),
+	[updated_at] [datetime] DEFAULT GETDATE(),
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+END
 GO
 
 SET IDENTITY_INSERT [dbo].[users] ON;

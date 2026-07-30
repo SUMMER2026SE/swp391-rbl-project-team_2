@@ -14,6 +14,8 @@ import {
   Key,
   Bed,
   Hourglass,
+  Timer,
+  CheckCircle2,
 } from 'lucide-react';
 import { ROUTES } from '../../../constants';
 import Button from '../../../components/common/Button';
@@ -253,6 +255,19 @@ const LandlordDashboard = () => {
         iconClass: 'activity-icon-container--red',
         text: t('landlord.dashboard.recentActivity.complaintReported', 'Complaint reported: {{title}}', { title: c.title }),
         date: new Date(c.createdAt)
+      })),
+      ...(recentActivity.recentRenewals || []).map(ren => ({
+        id: `ren-${ren.renewalId}`,
+        icon: ren.status === 'COMPLETED' ? <CheckCircle2 size={18} /> : <Timer size={18} />,
+        iconClass: ren.status === 'COMPLETED' ? 'activity-icon-container--green' : 'activity-icon-container--purple',
+        text: ren.status === 'COMPLETED'
+          ? `Đã ký hợp đồng gia hạn phòng "${ren.roomNumber || ren.roomTitle}".`
+          : `Khách thuê yêu cầu gia hạn phòng "${ren.roomNumber || ren.roomTitle}".`,
+        date: new Date(ren.createdAt),
+        type: ren.status === 'COMPLETED' ? 'renewal-completed' : 'renewal',
+        contractId: ren.contractId,
+        contractNumber: ren.contractNumber,
+        renewalId: ren.renewalId
       }))
     ];
 
@@ -467,7 +482,15 @@ const LandlordDashboard = () => {
           
           <div className="dashboard-activity-list">
             {activities.map((act) => (
-              <div className="activity-list-item" key={act.id}>
+              <div 
+                className={`activity-list-item ${act.type === 'renewal' ? 'clickable' : ''}`} 
+                key={act.id}
+                onClick={() => {
+                  if (act.type === 'renewal') {
+                    navigate(ROUTES.LANDLORD.CONTRACTS, { state: { autoApproveRenewalId: act.renewalId, search: act.contractNumber || '' } });
+                  }
+                }}
+              >
                 <div className="activity-avatar-or-icon">
                   {act.avatar ? (
                     <div className="activity-avatar-img-container">

@@ -37,6 +37,16 @@ export const adminService = {
     const response = await api.put(`/admin/rooms/${roomId}/status`, body);
     return response;
   },
+  
+  // Properties (Buildings)
+  getAllProperties: async () => {
+    const response = await api.get('/admin/properties');
+    return response;
+  },
+  updatePropertyStatus: async (propertyId, status) => {
+    const response = await api.put(`/admin/properties/${propertyId}/status`, { status });
+    return response;
+  },
 
   // Transactions
   getAllTransactions: async () => {

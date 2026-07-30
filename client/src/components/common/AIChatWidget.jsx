@@ -242,18 +242,92 @@ const AIChatWidget = () => {
   };
 
   // -------------------------------------------------------
+  // DRAGGABLE CHATBOT WIDGET
+  // -------------------------------------------------------
+  const [position, setPosition] = useState(null);
+  const dragRef = useRef({ isDragging: false, startX: 0, startY: 0, initialLeft: 0, initialTop: 0, hasMoved: false });
+
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return;
+    const widgetElem = e.currentTarget.closest('.ai-chat-widget');
+    if (!widgetElem) return;
+
+    const rect = widgetElem.getBoundingClientRect();
+    dragRef.current = {
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialLeft: rect.left,
+      initialTop: rect.top,
+      hasMoved: false
+    };
+
+    const handleMouseMove = (moveEvent) => {
+      const dx = moveEvent.clientX - dragRef.current.startX;
+      const dy = moveEvent.clientY - dragRef.current.startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        dragRef.current.hasMoved = true;
+        const newLeft = Math.max(10, Math.min(window.innerWidth - rect.width - 10, dragRef.current.initialLeft + dx));
+        const newTop = Math.max(10, Math.min(window.innerHeight - rect.height - 10, dragRef.current.initialTop + dy));
+        setPosition({ left: newLeft, top: newTop });
+      }
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      setTimeout(() => {
+        dragRef.current.isDragging = false;
+      }, 50);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // -------------------------------------------------------
   // RENDER
   // -------------------------------------------------------
   if (isAuthenticated && user?.role !== 'TENANT') {
     return null;
   }
 
+  // Calculate position styles cleanly so opened chat window never overflows screen
+  let widgetStyle = {};
+  if (position) {
+    if (isOpen) {
+      const chatWidth = Math.min(400, window.innerWidth - 20);
+      const chatHeight = isMinimized ? 70 : Math.min(560, window.innerHeight - 20);
+      const clampLeft = Math.max(10, Math.min(position.left, window.innerWidth - chatWidth - 15));
+      const clampTop = Math.max(10, Math.min(position.top, window.innerHeight - chatHeight - 15));
+
+      widgetStyle = {
+        left: `${clampLeft}px`,
+        top: `${clampTop}px`,
+        bottom: 'auto',
+        right: 'auto',
+        position: 'fixed'
+      };
+    } else {
+      const clampLeft = Math.max(10, Math.min(position.left, window.innerWidth - 74));
+      const clampTop = Math.max(10, Math.min(position.top, window.innerHeight - 74));
+
+      widgetStyle = {
+        left: `${clampLeft}px`,
+        top: `${clampTop}px`,
+        bottom: 'auto',
+        right: 'auto',
+        position: 'fixed'
+      };
+    }
+  }
+
   return (
-    <div className="ai-chat-widget">
+    <div className="ai-chat-widget" style={widgetStyle}>
       {isOpen ? (
         <div className="ai-chat-window" style={isMinimized ? { height: 'auto' } : {}}>
           {/* HEADER */}
-          <div className="ai-chat-header">
+          <div className="ai-chat-header" onMouseDown={handleMouseDown} style={{ cursor: 'grab', userSelect: 'none' }} title="Kéo để di chuyển vị trí">
             <div className="ai-chat-header-info">
               <div className="ai-chat-avatar">
                 <RentalWiseIcon size={24} />
@@ -263,7 +337,7 @@ const AIChatWidget = () => {
                 <p>{isTyping ? '💬 Đang trả lời...' : '🟢 Trực tuyến'}</p>
               </div>
             </div>
-            <div className="ai-chat-header-actions">
+            <div className="ai-chat-header-actions" onMouseDown={(e) => e.stopPropagation()}>
               <button
                 onClick={handleReset}
                 className="ai-header-btn"
@@ -368,7 +442,20 @@ const AIChatWidget = () => {
           )}
         </div>
       ) : (
-        <button className="ai-chat-toggle" onClick={() => setIsOpen(true)} title="Chat với AI">
+        <button
+          className="ai-chat-toggle"
+          onMouseDown={handleMouseDown}
+          onClick={(e) => {
+            if (dragRef.current.hasMoved) {
+              e.preventDefault();
+              e.stopPropagation();
+              return;
+            }
+            setIsOpen(true);
+          }}
+          title="Chat với AI (Kéo để di chuyển vị trí)"
+          style={{ cursor: 'grab' }}
+        >
           <RentalWiseIcon size={32} />
         </button>
       )}

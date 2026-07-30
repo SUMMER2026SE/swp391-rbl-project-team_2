@@ -1,9 +1,7 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -74,52 +72,62 @@ const sendOtpEmail = async (toEmail, otpCode, purpose) => {
   }
 };
 
-const sendContractEmail = async (toEmail, contractNumber, pdfBase64) => {
+const sendContractEmail = async (toEmail, contractNumber, pdfData) => {
   try {
     const html = `
-      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb;">
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 32px; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb;">
         <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #1e293b; font-size: 24px; margin: 0 0 8px 0;">
-            📄 Contract Signed
+          <h1 style="color: #1e293b; font-size: 22px; margin: 0 0 8px 0;">
+            📄 Hợp Đồng Thuê Nhà Đã Được Ký Thành Công
           </h1>
           <p style="color: #64748b; font-size: 14px; margin: 0;">
-            Your rental contract has been successfully signed!
+            Hệ Thống Quản Lý Phòng Trọ RentWise
           </p>
         </div>
         
         <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-          Hello, <br/><br/>
-          The rental contract <strong>${contractNumber}</strong> has been successfully signed by the tenant.
-          Please find the signed contract document attached to this email as a PDF.
+          Xin chào,<br/><br/>
+          Hợp đồng thuê nhà trọ số <strong>${contractNumber}</strong> đã được hai bên hoàn tất ký kết trực tuyến.<br/>
+          Tệp tài liệu hợp đồng hoàn chỉnh (bao gồm đầy đủ các điều khoản và chữ ký số) đã được đính kèm ở định dạng PDF cùng email này.
         </p>
+
+        <div style="background: #f8fafc; border-left: 4px solid #2563eb; padding: 16px; margin: 20px 0; border-radius: 4px;">
+          <p style="margin: 0; font-size: 13px; color: #475569;">
+            📌 <strong>Lưu ý:</strong> Quý khách vui lòng tải tệp PDF đính kèm về máy để lưu trữ hợp đồng có giá trị pháp lý giữa các bên.
+          </p>
+        </div>
         
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
         
         <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-          &copy; 2026 Smart Rental Room System
+          &copy; 2026 RentWise - Smart Rental Room System
         </p>
       </div>
     `;
 
-    // pdfBase64 is data:application/pdf;base64,....
-    const base64Data = pdfBase64.split(';base64,').pop();
+    let attachmentContent;
+    if (Buffer.isBuffer(pdfData)) {
+      attachmentContent = pdfData;
+    } else if (typeof pdfData === 'string') {
+      const base64Clean = pdfData.includes(';base64,') ? pdfData.split(';base64,').pop() : pdfData;
+      attachmentContent = Buffer.from(base64Clean, 'base64');
+    }
 
     await transporter.sendMail({
-      from: `"Smart Rental Room System" <${process.env.EMAIL_USER}>`,
+      from: `"RentWise System" <${process.env.EMAIL_USER}>`,
       to: toEmail,
-      subject: `📄 Signed Contract: ${contractNumber}`,
+      subject: `📄 [RentWise] File PDF Hợp đồng thuê nhà đã ký: ${contractNumber}`,
       html: html,
       attachments: [
         {
-          filename: `Contract_${contractNumber}.pdf`,
-          content: base64Data,
-          encoding: 'base64',
+          filename: `HopDongThueNha_${contractNumber}.pdf`,
+          content: attachmentContent,
           contentType: 'application/pdf'
         }
       ]
     });
 
-    console.log(`✅ Contract email sent to ${toEmail}`);
+    console.log(`✅ Contract email with PDF attached sent to ${toEmail}`);
   } catch (error) {
     console.error('❌ Error sending contract email:', error.message);
   }

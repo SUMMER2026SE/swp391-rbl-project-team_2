@@ -11,10 +11,16 @@ export const rentalRequestService = {
     }
   },
 
-  scanCCCD: async (file) => {
+  scanCCCD: async (files) => {
     try {
       const formData = new FormData();
-      formData.append('image', file);
+      if (Array.isArray(files)) {
+        files.forEach(file => {
+          formData.append('images', file);
+        });
+      } else {
+        formData.append('images', files);
+      }
       
       const response = await httpClient.post('/ocr/cccd', formData, {
         headers: {
