@@ -711,10 +711,11 @@ const TenantRequestsPage = () => {
           <div className="requests-list">
             {viewingSchedules.map((schedule) => {
               const statusInfo = getStatusInfo(schedule.status);
-              const existingRequest = rentalRequests.find(r => 
+              const roomMatchingRequests = rentalRequests.filter(r => 
                 (r.roomId === schedule.roomId || r.room_id === schedule.roomId) && 
                 !['cancelled', 'canceled', 'rejected'].includes(r.status)
               );
+              const existingRequest = roomMatchingRequests.sort((a, b) => (b.requestId || b.request_id || 0) - (a.requestId || a.request_id || 0))[0];
               const primaryImage = schedule.room?.images?.find(img => img.is_primary)?.image_url || schedule.room?.images?.[0]?.image_url;
               const roomImage = primaryImage
                 ? (primaryImage.startsWith('http') ? primaryImage : `http://localhost:5000${primaryImage}`) 
