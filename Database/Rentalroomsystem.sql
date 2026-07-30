@@ -2005,7 +2005,8 @@ BEGIN
         created_at DATETIME DEFAULT GETDATE(),
         updated_at DATETIME DEFAULT GETDATE(),
         CONSTRAINT FK_termination_requests_contract FOREIGN KEY (contract_id) REFERENCES contracts(contract_id),
-        CONSTRAINT FK_termination_requests_requested_by FOREIGN KEY (requested_by) REFERENCES users(user_id)
+        CONSTRAINT FK_termination_requests_requested_by FOREIGN KEY (requested_by) REFERENCES users(user_id),
+        CONSTRAINT FK_termination_requests_reviewed_by FOREIGN KEY (reviewed_by) REFERENCES users(user_id)
     );
 END
 GO
@@ -2027,7 +2028,8 @@ BEGIN
         refund_status VARCHAR(50) DEFAULT 'NONE',
         refund_proof_url NVARCHAR(MAX) NULL,
         created_at DATETIME DEFAULT GETDATE(),
-        CONSTRAINT FK_termination_records_contract FOREIGN KEY (contract_id) REFERENCES contracts(contract_id)
+        CONSTRAINT FK_termination_records_contract FOREIGN KEY (contract_id) REFERENCES contracts(contract_id),
+        CONSTRAINT FK_termination_records_request FOREIGN KEY (request_id) REFERENCES termination_requests(request_id)
     );
 END
 GO
@@ -2051,9 +2053,57 @@ BEGIN
         updated_at DATETIME DEFAULT GETDATE(),
         CONSTRAINT FK_renewal_requests_contract FOREIGN KEY (contract_id) REFERENCES contracts(contract_id),
         CONSTRAINT FK_renewal_requests_tenant FOREIGN KEY (tenant_id) REFERENCES users(user_id),
-        CONSTRAINT FK_renewal_requests_landlord FOREIGN KEY (landlord_id) REFERENCES users(user_id)
+        CONSTRAINT FK_renewal_requests_landlord FOREIGN KEY (landlord_id) REFERENCES users(user_id),
+        CONSTRAINT FK_renewal_requests_new_contract FOREIGN KEY (new_contract_id) REFERENCES contracts(contract_id)
     );
 END
 GO
 
+-- =========================================================
+-- USER BANK DETAILS TABLE
+-- =========================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'user_bank_details')
+BEGIN
+    CREATE TABLE [dbo].[user_bank_details](
+        [id] [int] IDENTITY(1,1) NOT NULL,
+        [user_id] [int] NOT NULL UNIQUE,
+        [bank_name] [nvarchar](255) NOT NULL,
+        [account_number] [varchar](50) NOT NULL,
+        [account_holder_name] [nvarchar](255) NOT NULL,
+        [branch] [nvarchar](255) NULL,
+        [created_at] [datetime] DEFAULT GETDATE(),
+        [updated_at] [datetime] DEFAULT GETDATE(),
+    PRIMARY KEY CLUSTERED 
+    (
+        [id] ASC
+    )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+    CONSTRAINT FK_user_bank_details_user FOREIGN KEY ([user_id]) REFERENCES [dbo].[users]([user_id])
+    ) ON [PRIMARY]
+END
+GO
 
+-- =========================================================
+-- WITHDRAWAL REQUESTS TABLE
+-- =========================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'withdrawal_requests')
+BEGIN
+    CREATE TABLE [dbo].[withdrawal_requests](
+        [withdrawal_id] [int] IDENTITY(1,1) NOT NULL,
+        [user_id] [int] NOT NULL,
+        [amount] [decimal](10, 2) NOT NULL,
+        [bank_name] [nvarchar](255) NOT NULL,
+        [account_number] [varchar](50) NOT NULL,
+        [account_holder_name] [nvarchar](255) NOT NULL,
+        [status] [varchar](20) DEFAULT 'pending',
+        [transaction_proof_url] [nvarchar](500) NULL,
+        [admin_notes] [nvarchar](max) NULL,
+        [created_at] [datetime] DEFAULT GETDATE(),
+        [updated_at] [datetime] DEFAULT GETDATE(),
+    PRIMARY KEY CLUSTERED 
+    (
+        [withdrawal_id] ASC
+    )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+    CONSTRAINT FK_withdrawal_requests_user FOREIGN KEY ([user_id]) REFERENCES [dbo].[users]([user_id])
+    ) ON [PRIMARY]
+END
+GO
