@@ -1347,23 +1347,28 @@ const TenantRequestsPage = () => {
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Move-in Date (Tự động điền) *</label>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Ngày dọn vào *</label>
                     <input 
                       type="date" 
                       value={contractStartDate}
-                      disabled
-                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setContractStartDate(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
+                      onFocus={(e) => e.target.style.borderColor = '#059669'}
+                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Duration (Tự động điền) *</label>
+                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Thời hạn thuê *</label>
                     <select 
                       value={contractDuration}
-                      disabled
-                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                      onChange={(e) => setContractDuration(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '2px solid #E5E7EB', borderRadius: '8px', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', backgroundColor: '#fff' }}
+                      onFocus={(e) => e.target.style.borderColor = '#059669'}
+                      onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24].map(m => (
-                        <option key={m} value={m}>{m} Month{m > 1 ? 's' : ''}</option>
+                        <option key={m} value={m}>{m} Tháng</option>
                       ))}
                     </select>
                   </div>
