@@ -967,7 +967,9 @@ const TenantRequestsPage = () => {
                       <div className="action-buttons">
                         {request.status === 'approved' && (
                           (() => {
-                            const isExpired = request.requestedMoveInDate && new Date() > new Date(request.requestedMoveInDate);
+                            const moveInDateObj = request.requestedMoveInDate ? new Date(request.requestedMoveInDate) : null;
+                            if (moveInDateObj) moveInDateObj.setHours(23, 59, 59, 999);
+                            const isExpired = moveInDateObj && new Date() > moveInDateObj;
                             if (isExpired) {
                               return (
                                 <button disabled className="btn-action btn-contract" style={{ background: '#94a3b8', cursor: 'not-allowed' }}>
